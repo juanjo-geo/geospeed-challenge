@@ -161,11 +161,16 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const feedback = lastResult ? getRoundFeedback(lastResult.distance) : null;
   const showStreak = streak >= 2;
 
+  // Right panel visible only after click result
+  const showRightPanel = isWide && showPopup && lastResult && feedback;
+
   // Layout classes based on mode
   const layoutClass = isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(10rem,15vw,13rem)_minmax(0,1fr)_clamp(14rem,22vw,18rem)]'
+      ? showRightPanel
+        ? 'grid grid-cols-[clamp(10rem,15vw,13rem)_minmax(0,1fr)_clamp(14rem,22vw,18rem)] transition-all duration-300'
+        : 'grid grid-cols-[clamp(10rem,15vw,13rem)_minmax(0,1fr)] transition-all duration-300'
       : 'grid grid-cols-[clamp(9rem,14vw,11rem)_minmax(0,1fr)]'; // medium: sidebar + map (no right panel)
 
   return (
@@ -365,61 +370,55 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         )}
       </div>
 
-      {/* ──── Right result panel (wide mode only) ──── */}
-      {isWide && (
-        <div className="min-h-0 overflow-y-auto border-l border-border bg-card/40">
-          {showPopup && lastResult && feedback ? (
-            <div className="flex h-full flex-col justify-center gap-4 p-5">
-              <div className="text-center">
-                <span className="text-3xl">{feedback.emoji}</span>
-                <p className={`mt-1 text-lg font-black ${feedback.color}`}>{feedback.phrase}</p>
-                {showStreak && (
-                  <p className="mt-0.5 animate-score-pop text-sm font-bold text-orange-400">🔥 Racha ×{streak} {streak >= 3 && `(+${(streak - 2) * 15}%)`}</p>
-                )}
-              </div>
-
-              <div className="text-center">
-                <h3 className="text-xl font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                  {lastResult.city.name}
-                </h3>
-                <p className="text-lg font-bold text-foreground">{lastResult.city.country}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-muted/60 p-3 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Distancia</p>
-                  <p className="font-mono text-base font-bold">{formatDistance(lastResult.distance)}</p>
-                </div>
-                <div className="rounded-lg bg-muted/60 p-3 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Tiempo</p>
-                  <p className="font-mono text-base font-bold">{lastResult.timeUsed}s</p>
-                </div>
-                <div className="rounded-lg bg-muted/60 p-3 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Base</p>
-                  <p className="font-mono text-base font-bold">{lastResult.basePoints}</p>
-                </div>
-                <div className="rounded-lg bg-muted/60 p-3 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Total</p>
-                  <p className="font-mono text-base font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                    {lastResult.totalPoints}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={advanceRound}
-                className="mt-auto w-full rounded-lg py-3 text-base font-bold transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-                aria-label={`Siguiente ronda, avance automático en ${autoAdvanceTimer} segundos`}
-              >
-                SIGUIENTE ({autoAdvanceTimer}s)
-              </button>
+      {/* ──── Right result panel (wide mode, only after click) ──── */}
+      {showRightPanel && (
+        <div className="min-h-0 overflow-y-auto border-l border-border bg-card/40 animate-slide-in-right">
+          <div className="flex h-full flex-col justify-center gap-4 p-5">
+            <div className="text-center">
+              <span className="text-3xl">{feedback.emoji}</span>
+              <p className={`mt-1 text-lg font-black ${feedback.color}`}>{feedback.phrase}</p>
+              {showStreak && (
+                <p className="mt-0.5 animate-score-pop text-sm font-bold text-orange-400">🔥 Racha ×{streak} {streak >= 3 && `(+${(streak - 2) * 15}%)`}</p>
+              )}
             </div>
-          ) : (
-            <div className="flex h-full items-center justify-center p-5 text-center text-sm text-muted-foreground">
-              Acertá en el mapa para ver aquí el resultado de la ronda.
+
+            <div className="text-center">
+              <h3 className="text-xl font-bold" style={{ color: 'hsl(var(--primary))' }}>
+                {lastResult.city.name}
+              </h3>
+              <p className="text-lg font-bold text-foreground">{lastResult.city.country}</p>
             </div>
-          )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-muted/60 p-3 text-center">
+                <p className="text-[11px] uppercase text-muted-foreground">Distancia</p>
+                <p className="font-mono text-base font-bold">{formatDistance(lastResult.distance)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/60 p-3 text-center">
+                <p className="text-[11px] uppercase text-muted-foreground">Tiempo</p>
+                <p className="font-mono text-base font-bold">{lastResult.timeUsed}s</p>
+              </div>
+              <div className="rounded-lg bg-muted/60 p-3 text-center">
+                <p className="text-[11px] uppercase text-muted-foreground">Base</p>
+                <p className="font-mono text-base font-bold">{lastResult.basePoints}</p>
+              </div>
+              <div className="rounded-lg bg-muted/60 p-3 text-center">
+                <p className="text-[11px] uppercase text-muted-foreground">Total</p>
+                <p className="font-mono text-base font-bold" style={{ color: 'hsl(var(--primary))' }}>
+                  {lastResult.totalPoints}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={advanceRound}
+              className="mt-auto w-full rounded-lg py-3 text-base font-bold transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring"
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              aria-label={`Siguiente ronda, avance automático en ${autoAdvanceTimer} segundos`}
+            >
+              SIGUIENTE ({autoAdvanceTimer}s)
+            </button>
+          </div>
         </div>
       )}
     </div>
