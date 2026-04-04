@@ -125,11 +125,12 @@ const Index = () => {
         setPhase('countdown');
       }
     };
+    const onOrientationChange = () => setTimeout(check, 300);
     window.addEventListener('resize', check);
-    window.addEventListener('orientationchange', () => setTimeout(check, 300));
+    window.addEventListener('orientationchange', onOrientationChange);
     return () => {
       window.removeEventListener('resize', check);
-      window.removeEventListener('orientationchange', check);
+      window.removeEventListener('orientationchange', onOrientationChange);
     };
   }, [phase]);
 
@@ -463,14 +464,14 @@ function RotateScreen({ onLandscapeDetected }: { onLandscapeDetected: () => void
         onLandscapeDetected();
       }
     };
+    const onOrientationChange = () => setTimeout(check, 200);
     // Check immediately in case already landscape
     check();
     window.addEventListener('resize', check);
-    // Also listen for orientation change on mobile
-    window.addEventListener('orientationchange', () => setTimeout(check, 200));
+    window.addEventListener('orientationchange', onOrientationChange);
     return () => {
       window.removeEventListener('resize', check);
-      window.removeEventListener('orientationchange', () => {});
+      window.removeEventListener('orientationchange', onOrientationChange);
     };
   }, [onLandscapeDetected]);
 

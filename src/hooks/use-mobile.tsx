@@ -68,17 +68,17 @@ export function useGameLayoutMode(): GameLayoutMode {
 
   React.useEffect(() => {
     const onChange = () => setMode(detectGameLayoutMode());
+    const onOrientationChange = () => setTimeout(onChange, 100);
 
     window.addEventListener("resize", onChange);
-    window.addEventListener("orientationchange", () => setTimeout(onChange, 100));
+    window.addEventListener("orientationchange", onOrientationChange);
 
-    // Also listen to matchMedia for more reliable detection
     const portraitQuery = window.matchMedia("(orientation: portrait)");
     portraitQuery.addEventListener("change", onChange);
 
     return () => {
       window.removeEventListener("resize", onChange);
-      window.removeEventListener("orientationchange", onChange);
+      window.removeEventListener("orientationchange", onOrientationChange);
       portraitQuery.removeEventListener("change", onChange);
     };
   }, []);
@@ -92,13 +92,14 @@ export function useIsLandscapeViewport(): boolean {
 
   React.useEffect(() => {
     const onChange = () => setIsLandscape(detectIsLandscape());
+    const onOrientationChange = () => setTimeout(onChange, 100);
 
     window.addEventListener("resize", onChange);
-    window.addEventListener("orientationchange", () => setTimeout(onChange, 100));
+    window.addEventListener("orientationchange", onOrientationChange);
 
     return () => {
       window.removeEventListener("resize", onChange);
-      window.removeEventListener("orientationchange", onChange);
+      window.removeEventListener("orientationchange", onOrientationChange);
     };
   }, []);
 
@@ -115,13 +116,14 @@ export function useIsMobile(): boolean {
 
   React.useEffect(() => {
     const onChange = () => setIsMobile(detectIsMobile());
+    const onOrientationChange = () => setTimeout(onChange, 100);
 
     window.addEventListener("resize", onChange);
-    window.addEventListener("orientationchange", () => setTimeout(onChange, 100));
+    window.addEventListener("orientationchange", onOrientationChange);
 
     return () => {
       window.removeEventListener("resize", onChange);
-      window.removeEventListener("orientationchange", onChange);
+      window.removeEventListener("orientationchange", onOrientationChange);
     };
   }, []);
 
@@ -139,13 +141,14 @@ export function useIsPortraitMobile(): boolean {
     const check = () => {
       setIsPortraitMobile(isTouchDevice() && window.innerHeight > window.innerWidth);
     };
+    const onOrientationChange = () => setTimeout(check, 200);
     window.addEventListener("resize", check);
-    window.addEventListener("orientationchange", () => setTimeout(check, 200));
+    window.addEventListener("orientationchange", onOrientationChange);
     const portraitQuery = window.matchMedia("(orientation: portrait)");
     portraitQuery.addEventListener("change", check);
     return () => {
       window.removeEventListener("resize", check);
-      window.removeEventListener("orientationchange", check);
+      window.removeEventListener("orientationchange", onOrientationChange);
       portraitQuery.removeEventListener("change", check);
     };
   }, []);
