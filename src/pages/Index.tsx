@@ -206,37 +206,7 @@ const Index = () => {
     }
 
     if (phase === 'rotate') {
-      return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] gap-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
-          <div className="animate-bounce" style={{ animationDuration: '2s' }}>
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="4" y="2" width="16" height="20" rx="2" />
-              <line x1="12" y1="18" x2="12" y2="18.01" />
-            </svg>
-          </div>
-          <div className="relative w-20 h-20">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="animate-[spin_3s_ease-in-out_infinite]" style={{ transformOrigin: 'center' }}>
-              <path d="M7.5 21L3 12l4.5-9h9L21 12l-4.5 9z" opacity="0" />
-              <polyline points="15 3 21 3 21 9" />
-              <path d="M21 3l-7 7" />
-            </svg>
-          </div>
-          <div className="text-center px-8">
-            <p className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-              📱 GIRA TU TELÉFONO
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Para una mejor experiencia, juega en modo horizontal
-            </p>
-          </div>
-          <button
-            onClick={() => setPhase('countdown')}
-            className="mt-4 px-6 py-2.5 rounded-lg text-xs font-bold border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]"
-          >
-            CONTINUAR IGUAL →
-          </button>
-        </div>
-      );
+      return <RotateScreen onLandscapeDetected={() => setPhase('countdown')} />;
     }
 
     if (phase === 'countdown') {
@@ -479,5 +449,51 @@ const Index = () => {
     </>
   );
 };
+
+/** Rotate-screen that auto-advances once landscape is detected */
+function RotateScreen({ onLandscapeDetected }: { onLandscapeDetected: () => void }) {
+  useEffect(() => {
+    const check = () => {
+      if (window.innerWidth > window.innerHeight) {
+        onLandscapeDetected();
+      }
+    };
+    // Check immediately in case already landscape
+    check();
+    window.addEventListener('resize', check);
+    // Also listen for orientation change on mobile
+    window.addEventListener('orientationchange', () => setTimeout(check, 200));
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', () => {});
+    };
+  }, [onLandscapeDetected]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] gap-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+      <div className="animate-bounce" style={{ animationDuration: '2s' }}>
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2" />
+          <line x1="12" y1="18" x2="12" y2="18.01" />
+        </svg>
+      </div>
+      <div className="relative w-20 h-20">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="animate-[spin_3s_ease-in-out_infinite]" style={{ transformOrigin: 'center' }}>
+          <path d="M7.5 21L3 12l4.5-9h9L21 12l-4.5 9z" opacity="0" />
+          <polyline points="15 3 21 3 21 9" />
+          <path d="M21 3l-7 7" />
+        </svg>
+      </div>
+      <div className="text-center px-8">
+        <p className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+          📱 GIRA TU TELÉFONO
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Para jugar necesitas modo horizontal
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default Index;

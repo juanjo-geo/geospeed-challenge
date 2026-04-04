@@ -369,42 +369,39 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className="absolute bottom-3 left-1/2 z-10 w-[min(92vw,30rem)] -translate-x-1/2 animate-slide-in-right"
+            className="absolute top-2 right-2 z-10 w-[clamp(11rem,40vw,16rem)] animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex max-h-[min(48dvh,26rem)] flex-col justify-center gap-2 overflow-y-auto rounded-2xl border border-border bg-card/88 p-3 shadow-2xl backdrop-blur-md sm:p-4">
+            <div className="flex max-h-[min(85dvh,24rem)] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border bg-card/50 p-2.5 shadow-2xl backdrop-blur-md">
               <div className="text-center">
-                <span className="text-2xl sm:text-3xl">{feedback.emoji}</span>
-                <p className={`text-sm sm:text-base font-black mt-0.5 ${feedback.color}`}>{feedback.phrase}</p>
-                {showStreak && (
-                  <p className="text-xs font-bold text-orange-400 mt-0.5 animate-score-pop">🔥 Racha ×{streak} {streak >= 3 && `(+${(streak - 2) * 15}%)`}</p>
-                )}
+                <span className="text-xl">{feedback.emoji}</span>
+                <p className={`text-xs font-black ${feedback.color}`}>{feedback.phrase}</p>
               </div>
 
               <div className="text-center">
-                <h3 className="text-base sm:text-lg font-bold" style={{ color: 'hsl(var(--primary))' }}>
+                <h3 className="text-sm font-bold" style={{ color: 'hsl(var(--primary))' }}>
                   {lastResult.city.name}
                 </h3>
-                <p className="text-sm sm:text-base font-bold text-foreground">{lastResult.city.country}</p>
+                <p className="text-xs font-bold text-foreground">{lastResult.city.country}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                <div className="bg-muted/60 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Distancia</p>
-                  <p className="font-mono font-bold text-xs sm:text-sm">{formatDistance(lastResult.distance)}</p>
+              <div className="grid grid-cols-2 gap-1">
+                <div className="bg-muted/60 rounded-md p-1.5 text-center">
+                  <p className="text-[8px] text-muted-foreground uppercase">Distancia</p>
+                  <p className="font-mono font-bold text-[11px]">{formatDistance(lastResult.distance)}</p>
                 </div>
-                <div className="bg-muted/60 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Tiempo</p>
-                  <p className="font-mono font-bold text-xs sm:text-sm">{lastResult.timeUsed}s</p>
+                <div className="bg-muted/60 rounded-md p-1.5 text-center">
+                  <p className="text-[8px] text-muted-foreground uppercase">Tiempo</p>
+                  <p className="font-mono font-bold text-[11px]">{lastResult.timeUsed}s</p>
                 </div>
-                <div className="bg-muted/60 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Base</p>
-                  <p className="font-mono font-bold text-xs sm:text-sm">{lastResult.basePoints}</p>
+                <div className="bg-muted/60 rounded-md p-1.5 text-center">
+                  <p className="text-[8px] text-muted-foreground uppercase">Base</p>
+                  <p className="font-mono font-bold text-[11px]">{lastResult.basePoints}</p>
                 </div>
-                <div className="bg-muted/60 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Total</p>
-                  <p className="font-mono font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>
+                <div className="bg-muted/60 rounded-md p-1.5 text-center">
+                  <p className="text-[8px] text-muted-foreground uppercase">Total</p>
+                  <p className="font-mono font-bold text-[11px]" style={{ color: 'hsl(var(--primary))' }}>
                     {lastResult.totalPoints}
                   </p>
                 </div>
@@ -412,9 +409,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
               <button
                 onClick={advanceRound}
-                className="w-full py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full py-1.5 rounded-lg font-bold text-xs transition-all active:scale-[0.97]"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-                aria-label={`Siguiente ronda, avance automático en ${autoAdvanceTimer} segundos`}
               >
                 SIGUIENTE ({autoAdvanceTimer}s)
               </button>
