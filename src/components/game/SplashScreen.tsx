@@ -16,9 +16,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-4 transition-all duration-700 ease-out"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-4 transition-all duration-700 ease-out game-bg"
       style={{
-        background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)',
         opacity: phase === 'exit' ? 0 : 1,
         transform: phase === 'exit' ? 'scale(1.05)' : 'scale(1)',
       }}

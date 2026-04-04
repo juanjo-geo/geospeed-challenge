@@ -37,7 +37,7 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
   const opponentReady = isHost ? room.guest_ready : room.host_ready;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 game-bg">
       <div className="w-full max-w-md">
         {/* Room code */}
         <div className="text-center mb-8 animate-fade-in-up">

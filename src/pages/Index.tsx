@@ -217,7 +217,7 @@ const Index = () => {
 
     if (phase === 'countdown') {
       return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh]" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg">
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
             {modeLabel} — {difficultyLabels[difficulty]}
           </p>
@@ -237,7 +237,7 @@ const Index = () => {
 
     if (phase === 'ta-select') {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 overflow-y-auto" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 overflow-y-auto game-bg">
           <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl text-center animate-fade-in-up my-4">
             <p className="text-3xl sm:text-4xl mb-2 sm:mb-3">⚡</p>
             <h2 className="text-xl sm:text-2xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>CONTRARRELOJ EXTREMO</h2>
@@ -316,7 +316,7 @@ const Index = () => {
         ? taResult.rounds.reduce((s, r) => s + r.distance, 0) / taResult.rounds.length
         : 0;
       return (
-        <div className="min-h-[100dvh] flex items-center justify-center px-3 py-4 sm:p-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+        <div className="min-h-[100dvh] flex items-center justify-center px-3 py-4 sm:p-6 game-bg">
           <div className="bg-card border rounded-xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl animate-fade-in-up text-center">
             <p className="text-3xl sm:text-4xl mb-2">⚡</p>
             <h2 className="text-xl sm:text-2xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>¡TIEMPO!</h2>
@@ -476,7 +476,7 @@ function RotateScreen({ onLandscapeDetected }: { onLandscapeDetected: () => void
   }, [onLandscapeDetected]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] gap-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] gap-6 game-bg">
       <div className="animate-bounce" style={{ animationDuration: '2s' }}>
         <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="2" width="16" height="20" rx="2" />

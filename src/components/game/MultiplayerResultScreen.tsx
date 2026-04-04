@@ -21,7 +21,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
   const modeLabel = MODE_CONFIG.find(m => m.key === room.mode)?.label || room.mode;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 game-bg">
       <div className="w-full max-w-md animate-fade-in-up">
         {/* Result header */}
         <div className="text-center mb-8">

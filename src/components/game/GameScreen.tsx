@@ -93,13 +93,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   }, [currentRound, isWaiting, currentCity, isPortraitMobile]);
 
   useEffect(() => {
-    if (!isWaiting || !lastResult) return;
+    if (!isWaiting || !lastResult || isPortraitMobile) return;
     const timeout = setTimeout(() => setShowPopup(true), 2000);
     return () => clearTimeout(timeout);
-  }, [isWaiting, lastResult]);
+  }, [isWaiting, lastResult, isPortraitMobile]);
 
   useEffect(() => {
-    if (!showPopup) return;
+    if (!showPopup || isPortraitMobile) return;
     setAutoAdvanceTimer(AUTO_ADVANCE_SECONDS);
     const interval = setInterval(() => {
       setAutoAdvanceTimer(prev => {
@@ -112,7 +112,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [showPopup]);
+  }, [showPopup, isPortraitMobile]);
 
   const advanceRound = useCallback(() => {
     if (currentRound + 1 >= TOTAL_ROUNDS) {
@@ -189,7 +189,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     >
       {/* Portrait blocker — covers gameplay when phone is rotated to portrait */}
       {isPortraitMobile && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 game-bg">
           <div className="animate-bounce" style={{ animationDuration: '2s' }}>
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="4" y="2" width="16" height="20" rx="2" />
@@ -207,24 +207,30 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="flex min-h-0 flex-col px-3 py-3 gap-2 border-r border-border bg-card/50 overflow-y-auto overflow-x-hidden">
+        <div className="flex min-h-0 flex-col px-3 py-3 gap-0 border-r border-border bg-card/60 overflow-y-auto overflow-x-hidden">
           {/* Logo */}
-          <div className="text-center mb-1">
-            <span className="text-xl font-bold tracking-widest" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+          <div className="text-center pb-2 mb-2 border-b border-border/50">
+            <span className="text-base font-black tracking-widest text-glow" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
           </div>
 
-          {/* City name */}
-          <div className="text-center shrink-0">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider leading-none" id="city-label">Encuentra</p>
-            <p className="text-sm font-bold leading-tight break-words" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">{currentCity.name}</p>
+          {/* City to find */}
+          <div className="shrink-0 mb-2 rounded-lg px-2 py-2 bg-primary/8 border border-primary/20 text-center">
+            <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5" id="city-label">Encuentra</p>
+            <p className="text-sm font-black leading-tight break-words" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">
+              {currentCity.name}
+            </p>
           </div>
 
           {/* Score */}
-          <div className="text-center shrink-0 relative">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider leading-none">Puntos</p>
-            <p className={`text-lg font-mono font-bold ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
+          <div className="text-center shrink-0 relative mb-2 pb-2 border-b border-border/50">
+            <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Puntos</p>
+            <p
+              className={`text-xl font-mono font-black ${scorePop ? 'animate-score-pop' : ''}`}
+              style={{ color: 'hsl(var(--primary))', textShadow: '0 0 16px hsl(var(--primary) / 0.4)' }}
+              aria-live="polite"
+            >
               {score.toLocaleString()}
             </p>
             {floatPoints !== null && (
@@ -235,46 +241,50 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Progress */}
-          <div className="text-center shrink-0">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider leading-none">Ronda</p>
-            <p className="text-sm font-mono font-bold">{currentRound + 1}/{TOTAL_ROUNDS}</p>
-            <div className="mt-1 flex flex-wrap justify-center gap-0.5">
+          <div className="text-center shrink-0 mb-2 pb-2 border-b border-border/50">
+            <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Ronda</p>
+            <p className="text-sm font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-xs">/{TOTAL_ROUNDS}</span></p>
+            <div className="mt-1.5 flex flex-wrap justify-center gap-1">
               {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => {
                 const round = rounds[i];
-                let dotColor = 'bg-muted';
+                let dotClass = 'bg-muted';
                 if (round) {
-                  dotColor = round.distance < 500 ? 'bg-green-500' : round.distance < 2000 ? 'bg-yellow-500' : 'bg-red-500';
+                  dotClass = round.distance < 500 ? 'bg-green-500' : round.distance < 2000 ? 'bg-yellow-400' : 'bg-red-500';
                 } else if (i === currentRound) {
-                  dotColor = 'bg-primary animate-pulse';
+                  dotClass = 'bg-primary animate-pulse';
                 }
-                return <div key={i} className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />;
+                return <div key={i} className={`h-2 w-2 rounded-full transition-colors duration-300 ${dotClass}`} />;
               })}
             </div>
           </div>
 
-          {/* Streak */}
-          {showStreak && (
-            <div className="text-center shrink-0 animate-score-pop">
-              <span className="inline-block rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-bold text-orange-400">
-                🔥×{streak}{streak >= 3 && <span className="ml-0.5 text-[9px] opacity-80">+{(streak - 2) * 15}%</span>}
-              </span>
-            </div>
-          )}
-
-          {/* Multiplier */}
-          {mult && (
-            <div className="text-center shrink-0">
-              <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                mult.value >= 2 ? 'bg-green-500/20 text-green-400' : mult.value >= 1 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
-              }`}>
-                {mult.emoji} {mult.label}
-              </span>
-            </div>
-          )}
+          {/* Streak + Multiplier */}
+          <div className="flex flex-col gap-1 shrink-0 mb-2">
+            {showStreak && (
+              <div className="text-center animate-score-pop">
+                <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold text-orange-400">
+                  🔥×{streak}{streak >= 3 && <span className="ml-0.5 text-[9px] opacity-80">+{(streak - 2) * 15}%</span>}
+                </span>
+              </div>
+            )}
+            {mult && (
+              <div className="text-center">
+                <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                  mult.value >= 2
+                    ? 'bg-green-500/15 border-green-500/30 text-green-400'
+                    : mult.value >= 1
+                    ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400'
+                    : 'bg-red-500/15 border-red-500/30 text-red-400'
+                }`}>
+                  {mult.emoji} {mult.label}
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Timer */}
           <div className="mt-auto shrink-0">
-            <p className="text-center text-[9px] italic text-muted-foreground mb-0.5">Velocidad y precisión</p>
+            <p className="text-center text-[8px] italic text-muted-foreground mb-1">Velocidad y precisión</p>
             <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} />
           </div>
         </div>
@@ -339,57 +349,64 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           gameMode={gameMode}
         />
 
-        {/* Round result — overlay on compact + medium + wide */}
+        {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
             className="absolute top-3 right-3 z-10 w-[clamp(14rem,22vw,18rem)] animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex flex-col justify-center gap-3 rounded-2xl border border-border bg-card/50 p-4 shadow-2xl backdrop-blur-md">
+            <div className="flex flex-col justify-center gap-2.5 rounded-2xl border border-border/80 bg-card/60 p-4 shadow-2xl backdrop-blur-md">
+              {/* Feedback */}
               <div className="text-center">
-                <span className="text-3xl">{feedback.emoji}</span>
+                <span
+                  className="text-5xl block animate-record-pop"
+                  style={{ filter: 'drop-shadow(0 0 10px currentColor)' }}
+                >{feedback.emoji}</span>
                 <p className={`mt-1 text-lg font-black ${feedback.color}`}>{feedback.phrase}</p>
                 {showStreak && (
-                  <p className="mt-0.5 animate-score-pop text-sm font-bold text-orange-400">🔥 Racha ×{streak} {streak >= 3 && `(+${(streak - 2) * 15}%)`}</p>
+                  <p className="mt-0.5 animate-score-pop text-sm font-bold text-orange-400">
+                    🔥 Racha ×{streak}{streak >= 3 && ` (+${(streak - 2) * 15}%)`}
+                  </p>
                 )}
               </div>
 
-              <div className="text-center">
-                <h3 className="text-xl font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                  {lastResult.city.name}
-                </h3>
-                <p className="text-lg font-bold text-foreground">{lastResult.city.country}</p>
+              {/* City */}
+              <div className="text-center border-t border-border/50 pt-2">
+                <h3 className="text-lg font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
+                <p className="text-sm font-semibold text-foreground/80">{lastResult.city.country}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-muted/60 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Distancia</p>
-                  <p className="font-mono text-base font-bold">{formatDistance(lastResult.distance)}</p>
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="rounded-lg bg-muted/50 p-2 text-center">
+                  <p className="text-[10px] uppercase text-muted-foreground">Distancia</p>
+                  <p className="font-mono text-sm font-bold">{formatDistance(lastResult.distance)}</p>
                 </div>
-                <div className="rounded-lg bg-muted/60 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Tiempo</p>
-                  <p className="font-mono text-base font-bold">{lastResult.timeUsed}s</p>
+                <div className="rounded-lg bg-muted/50 p-2 text-center">
+                  <p className="text-[10px] uppercase text-muted-foreground">Tiempo</p>
+                  <p className="font-mono text-sm font-bold">{lastResult.timeUsed}s</p>
                 </div>
-                <div className="rounded-lg bg-muted/60 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Base</p>
-                  <p className="font-mono text-base font-bold">{lastResult.basePoints}</p>
+                <div className="rounded-lg bg-muted/50 p-2 text-center">
+                  <p className="text-[10px] uppercase text-muted-foreground">Base</p>
+                  <p className="font-mono text-sm font-bold">{lastResult.basePoints}</p>
                 </div>
-                <div className="rounded-lg bg-muted/60 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Total</p>
-                  <p className="font-mono text-base font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                    {lastResult.totalPoints}
+                {/* Total — highlighted */}
+                <div className="rounded-lg p-2 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
+                  <p className="text-[10px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
+                  <p className="font-mono text-sm font-black" style={{ color: 'hsl(var(--primary))', textShadow: '0 0 10px hsl(var(--primary) / 0.4)' }}>
+                    {lastResult.totalPoints.toLocaleString()}
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={advanceRound}
-                className="w-full rounded-lg py-2.5 text-base font-bold transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-xl py-2.5 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
                 aria-label={`Siguiente ronda, avance automático en ${autoAdvanceTimer} segundos`}
               >
-                SIGUIENTE ({autoAdvanceTimer}s)
+                SIGUIENTE ({autoAdvanceTimer}s) →
               </button>
             </div>
           </div>
@@ -401,46 +418,45 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex max-h-[min(85dvh,24rem)] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border bg-card/50 p-2.5 shadow-2xl backdrop-blur-md">
+            <div className="flex max-h-[min(85dvh,24rem)] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-2.5 shadow-2xl backdrop-blur-md">
               <div className="text-center">
-                <span className="text-xl">{feedback.emoji}</span>
+                <span className="text-2xl block animate-record-pop">{feedback.emoji}</span>
                 <p className={`text-xs font-black ${feedback.color}`}>{feedback.phrase}</p>
               </div>
 
-              <div className="text-center">
-                <h3 className="text-sm font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                  {lastResult.city.name}
-                </h3>
-                <p className="text-xs font-bold text-foreground">{lastResult.city.country}</p>
+              <div className="text-center border-t border-border/40 pt-1">
+                <h3 className="text-sm font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
+                <p className="text-xs text-foreground/80">{lastResult.city.country}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-1">
-                <div className="bg-muted/60 rounded-md p-1.5 text-center">
+                <div className="bg-muted/50 rounded-lg p-1.5 text-center">
                   <p className="text-[8px] text-muted-foreground uppercase">Distancia</p>
                   <p className="font-mono font-bold text-[11px]">{formatDistance(lastResult.distance)}</p>
                 </div>
-                <div className="bg-muted/60 rounded-md p-1.5 text-center">
+                <div className="bg-muted/50 rounded-lg p-1.5 text-center">
                   <p className="text-[8px] text-muted-foreground uppercase">Tiempo</p>
                   <p className="font-mono font-bold text-[11px]">{lastResult.timeUsed}s</p>
                 </div>
-                <div className="bg-muted/60 rounded-md p-1.5 text-center">
+                <div className="bg-muted/50 rounded-lg p-1.5 text-center">
                   <p className="text-[8px] text-muted-foreground uppercase">Base</p>
                   <p className="font-mono font-bold text-[11px]">{lastResult.basePoints}</p>
                 </div>
-                <div className="bg-muted/60 rounded-md p-1.5 text-center">
-                  <p className="text-[8px] text-muted-foreground uppercase">Total</p>
-                  <p className="font-mono font-bold text-[11px]" style={{ color: 'hsl(var(--primary))' }}>
-                    {lastResult.totalPoints}
+                {/* Total — highlighted */}
+                <div className="rounded-lg p-1.5 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
+                  <p className="text-[8px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
+                  <p className="font-mono font-black text-[11px]" style={{ color: 'hsl(var(--primary))' }}>
+                    {lastResult.totalPoints.toLocaleString()}
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={advanceRound}
-                className="w-full py-1.5 rounded-lg font-bold text-xs transition-all active:scale-[0.97]"
+                className="w-full py-1.5 rounded-lg font-black text-xs transition-all active:scale-[0.97] btn-glow"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
               >
-                SIGUIENTE ({autoAdvanceTimer}s)
+                SIGUIENTE ({autoAdvanceTimer}s) →
               </button>
             </div>
           </div>

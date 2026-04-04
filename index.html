@@ -8,6 +8,8 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- Apply saved theme before first paint to avoid flash -->
+    <script>(function(){try{if(localStorage.getItem('geospeed_theme')==='light')document.documentElement.classList.add('light')}catch(e){}})()</script>
     <title>GeoSpeed IQ Challenge</title>
     <meta name="description" content="GeoSpeed IQ Challenge - ¿Cuánto conoces el mundo? Localiza ciudades en el mapa y demuestra tu conocimiento geográfico." />
     <meta name="author" content="GeoSpeed" />

@@ -52,7 +52,7 @@ export default function MultiplayerLobby({ onRoomReady, onBack }: MultiplayerLob
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 game-bg">
       <div className="animate-fade-in-up mb-6">
         <h1 className="text-3xl font-black tracking-tight text-center" style={{ fontFamily: 'Impact, system-ui', color: 'hsl(var(--primary))' }}>
           🎮 MODO DUELO

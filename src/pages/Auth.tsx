@@ -53,7 +53,7 @@ export default function Auth() {
 
   if (confirmSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center p-6 game-bg">
         <div className="bg-card border rounded-xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
           <p className="text-4xl mb-3">✉️</p>
           <h2 className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))' }}>¡Revisa tu email!</h2>
@@ -73,7 +73,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-6 game-bg">
       <div className="bg-card border rounded-xl p-8 max-w-sm w-full shadow-2xl animate-fade-in-up">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-black" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>

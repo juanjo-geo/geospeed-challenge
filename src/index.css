@@ -42,6 +42,53 @@
     --sidebar-accent-foreground: 45 80% 92%;
     --sidebar-border: 150 12% 24%;
     --sidebar-ring: 44 91% 61%;
+
+    /* Background gradient vars */
+    --bg-from: 150 40% 4%;
+    --bg-to: 150 30% 7%;
+  }
+
+  /* ── Light mode: parchment cartográfico ── */
+  :root.light {
+    --background: 40 22% 92%;
+    --foreground: 150 35% 10%;
+
+    --card: 38 18% 97%;
+    --card-foreground: 150 35% 10%;
+
+    --popover: 38 18% 97%;
+    --popover-foreground: 150 35% 10%;
+
+    --primary: 44 82% 36%;
+    --primary-foreground: 38 18% 97%;
+
+    --secondary: 40 14% 84%;
+    --secondary-foreground: 150 35% 10%;
+
+    --muted: 40 12% 86%;
+    --muted-foreground: 150 12% 40%;
+
+    --accent: 44 82% 36%;
+    --accent-foreground: 38 18% 97%;
+
+    --destructive: 0 75% 44%;
+    --destructive-foreground: 38 18% 97%;
+
+    --border: 40 14% 76%;
+    --input: 40 14% 76%;
+    --ring: 44 82% 36%;
+
+    --sidebar-background: 38 20% 89%;
+    --sidebar-foreground: 150 35% 10%;
+    --sidebar-primary: 44 82% 36%;
+    --sidebar-primary-foreground: 38 18% 97%;
+    --sidebar-accent: 40 14% 84%;
+    --sidebar-accent-foreground: 150 35% 10%;
+    --sidebar-border: 40 14% 76%;
+    --sidebar-ring: 44 82% 36%;
+
+    --bg-from: 40 22% 92%;
+    --bg-to: 38 18% 87%;
   }
 }
 
@@ -65,6 +112,34 @@
   }
 }
 
+/* ── Background gradient utility ── */
+.game-bg {
+  background: linear-gradient(180deg, hsl(var(--bg-from)) 0%, hsl(var(--bg-to)) 100%);
+}
+
+/* ── Glow utilities ── */
+.text-glow {
+  text-shadow:
+    0 0 20px hsl(var(--primary) / 0.55),
+    0 0 50px hsl(var(--primary) / 0.2);
+}
+
+.btn-glow {
+  box-shadow:
+    0 4px 20px hsl(var(--primary) / 0.35),
+    0 1px 4px hsl(var(--primary) / 0.15);
+}
+
+.border-glow {
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.25),
+    0 0 14px hsl(var(--primary) / 0.12);
+}
+
+.timer-danger-glow {
+  box-shadow: 0 0 10px hsl(0 84% 60% / 0.5), 0 0 20px hsl(0 84% 60% / 0.2);
+}
+
 @keyframes shimmer {
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
@@ -76,17 +151,35 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px hsl(44 91% 61% / 0.3); }
-  50% { box-shadow: 0 0 24px hsl(44 91% 61% / 0.6); }
+  0%, 100% { box-shadow: 0 0 8px hsl(var(--primary) / 0.3); }
+  50%       { box-shadow: 0 0 28px hsl(var(--primary) / 0.65), 0 0 48px hsl(var(--primary) / 0.2); }
 }
 
 .animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow-subtle {
+  0%, 100% { box-shadow: 0 0 6px hsl(var(--primary) / 0.2); }
+  50%       { box-shadow: 0 0 18px hsl(var(--primary) / 0.45); }
+}
+
+.animate-pulse-glow-subtle {
+  animation: pulse-glow-subtle 2.5s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 400ms ease both;
 }
 
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in-up {
@@ -99,20 +192,31 @@
 .animation-delay-300 { animation-delay: 300ms; }
 .animation-delay-350 { animation-delay: 350ms; }
 .animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
 
 /* Score pop animation */
 @keyframes score-pop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.25); }
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.28); }
   100% { transform: scale(1); }
 }
 .animate-score-pop {
   animation: score-pop 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Record celebration — big pop + glow */
+@keyframes record-pop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-record-pop {
+  animation: record-pop 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Points float-up */
 @keyframes float-up {
-  0% { opacity: 1; transform: translateY(0); }
+  0%   { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-32px); }
 }
 .animate-float-up {
@@ -121,11 +225,11 @@
 
 /* Slide in from right */
 @keyframes slide-in-right {
-  0% { transform: translateX(100%); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
+  0%   { transform: translateX(110%); opacity: 0; }
+  100% { transform: translateX(0);    opacity: 1; }
 }
 .animate-slide-in-right {
-  animation: slide-in-right 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slide-in-right 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Focus visible for accessibility */

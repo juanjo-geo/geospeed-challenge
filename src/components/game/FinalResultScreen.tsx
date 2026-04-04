@@ -87,18 +87,32 @@ export default function FinalResultScreen({
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-start sm:items-center justify-center px-3 py-4 sm:px-4 sm:py-6 md:p-6 overflow-y-auto" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
-      <div className="bg-card border rounded-xl p-4 sm:p-6 md:p-8 max-w-md w-full shadow-2xl animate-fade-in-up" role="dialog" aria-label="Resultado final">
+    <div className="min-h-[100dvh] flex items-start sm:items-center justify-center px-3 py-4 sm:px-4 sm:py-6 md:p-6 overflow-y-auto game-bg">
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 md:p-8 max-w-md w-full shadow-2xl animate-fade-in-up relative overflow-hidden" role="dialog" aria-label="Resultado final">
+
+        {/* Top accent line */}
+        <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, hsl(var(--primary)/0) 0%, hsl(var(--primary)) 50%, hsl(var(--primary)/0) 100%)` }} />
+
         {reason === 'timeout' && (
           <div className="text-center mb-3 sm:mb-4">
-            <span className="text-2xl sm:text-3xl" role="img" aria-label="Tiempo agotado">⏰</span>
+            <span className="text-3xl sm:text-4xl block animate-record-pop" role="img" aria-label="Tiempo agotado">⏰</span>
             <p className="text-red-400 font-bold mt-1 sm:mt-2 text-sm sm:text-base">¡Se acabó el tiempo!</p>
           </div>
         )}
         {reason === 'complete' && (
           <div className="text-center mb-3 sm:mb-4">
-            <span className="text-2xl sm:text-3xl" role="img" aria-label="Felicidades">{isNewRecord ? '🏆' : '🎉'}</span>
-            <p className="font-bold mt-1 sm:mt-2 text-sm sm:text-base" style={{ color: 'hsl(var(--primary))' }}>
+            <span
+              className={`text-3xl sm:text-5xl block ${isNewRecord ? 'animate-record-pop' : 'animate-fade-in'}`}
+              role="img"
+              aria-label="Felicidades"
+              style={isNewRecord ? { filter: 'drop-shadow(0 0 16px hsl(44 91% 61% / 0.7))' } : {}}
+            >
+              {isNewRecord ? '🏆' : '🎉'}
+            </span>
+            <p
+              className={`font-black mt-1 sm:mt-2 text-sm sm:text-base ${isNewRecord ? 'text-glow' : ''}`}
+              style={{ color: 'hsl(var(--primary))' }}
+            >
               {isNewRecord ? '¡NUEVO RÉCORD PERSONAL!' : '¡Partida completada!'}
             </p>
           </div>
@@ -106,7 +120,11 @@ export default function FinalResultScreen({
 
         <div className="text-center mb-4 sm:mb-5 md:mb-6">
           <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mb-1 sm:mb-2">Puntuación total</p>
-          <p className="text-3xl sm:text-4xl md:text-5xl font-black font-mono" style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
+          <p
+            className={`text-3xl sm:text-4xl md:text-5xl font-black font-mono ${isNewRecord ? 'text-glow animate-score-pop' : ''}`}
+            style={{ color: 'hsl(var(--primary))' }}
+            aria-live="polite"
+          >
             {totalScore.toLocaleString()}
           </p>
           {previousBest > 0 && (

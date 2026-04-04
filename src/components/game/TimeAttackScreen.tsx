@@ -123,7 +123,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     <div className={`h-[100dvh] flex overflow-hidden bg-background ${hasSidebar ? 'flex-row' : 'flex-col'}`} role="main" aria-label="Modo contrarreloj">
       {/* Portrait blocker */}
       {isPortraitMobile && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 game-bg">
           <div className="animate-bounce" style={{ animationDuration: '2s' }}>
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="4" y="2" width="16" height="20" rx="2" />
