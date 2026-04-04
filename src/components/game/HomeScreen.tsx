@@ -48,9 +48,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   }, [rankingMode, showRanking]);
 
   return (
-    <main className="min-h-[100dvh] flex flex-col items-center px-3 py-4 sm:px-4 sm:py-6 md:p-6 overflow-y-auto" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }} aria-label="Pantalla de inicio GeoSpeed">
+    <main className="min-h-[100dvh] flex flex-col items-center px-3 pt-6 pb-4 sm:px-4 sm:pt-8 sm:pb-6 md:px-6 md:pt-10 md:pb-6 overflow-y-auto" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }} aria-label="Pantalla de inicio GeoSpeed">
       {/* User bar */}
-      <div className="w-full max-w-md md:max-w-lg mb-3 sm:mb-4 animate-fade-in-up flex items-center justify-between gap-2">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up flex items-center justify-between gap-2">
         <EnergyBar />
         <div className="flex items-center gap-1.5 sm:gap-2">
           {user ? (
@@ -97,7 +97,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         const badges = getPlayerBadges();
         const unlockedCount = badges.filter(b => b.unlocked).length;
         return (
-          <div className="w-full max-w-md md:max-w-lg mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
+          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
             <div className="bg-card border rounded-lg p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3">
               <span className="text-xl sm:text-2xl">{level.emoji}</span>
               <div className="flex-1 min-w-0">
@@ -117,7 +117,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* Stats */}
       {stats.gamesPlayed > 0 && (
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3 mb-3 sm:mb-5 md:mb-6 w-full max-w-md md:max-w-lg animate-fade-in-up animation-delay-200" role="group" aria-label="Estadísticas del jugador">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3 mb-3 sm:mb-5 md:mb-6 w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-200" role="group" aria-label="Estadísticas del jugador">
           <StatCard label="Partidas" value={stats.gamesPlayed.toString()} />
           <StatCard label="Récord" value={stats.bestScore.toLocaleString()} />
           <StatCard label="Dist. prom." value={`${avgDist.toLocaleString()} km`} />
@@ -125,7 +125,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       )}
 
       {/* Mode selector */}
-      <div className="w-full max-w-md md:max-w-lg mb-3 sm:mb-4 animate-fade-in-up animation-delay-250">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-250">
         <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest" id="mode-label">Modalidad</p>
         <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2" role="radiogroup" aria-labelledby="mode-label">
           {MODE_CONFIG.map(m => {
@@ -160,7 +160,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </div>
 
       {/* Difficulty selector */}
-      <div className="w-full max-w-md md:max-w-lg mb-3 sm:mb-4 animate-fade-in-up animation-delay-300" role="group" aria-label="Seleccionar dificultad">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-300" role="group" aria-label="Seleccionar dificultad">
         <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">Elige dificultad</p>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {DIFF_CONFIG.map(d => (
@@ -179,7 +179,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </div>
 
       {/* Daily Challenge */}
-      <div className="w-full max-w-md md:max-w-lg mb-2 sm:mb-3 animate-fade-in-up animation-delay-350">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-350">
         <button
           onClick={onDailyChallenge}
           className="w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 active:scale-[0.97]"
@@ -195,7 +195,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </div>
 
       {/* Special modes */}
-      <div className="w-full max-w-md md:max-w-lg mb-3 sm:mb-5 animate-fade-in-up animation-delay-400 grid grid-cols-2 gap-1.5 sm:gap-2">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-5 animate-fade-in-up animation-delay-400 grid grid-cols-2 gap-1.5 sm:gap-2">
         <button
           onClick={onTimeAttack}
           className="flex items-center gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-lg border-2 border-red-500/40 hover:border-red-500 bg-card transition-all duration-200 active:scale-[0.97]"
@@ -221,7 +221,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </div>
 
       {/* Collapsible Ranking */}
-      <div className="w-full max-w-md md:max-w-lg animate-fade-in-up animation-delay-400">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-400">
         <button
           onClick={() => setShowRanking(prev => !prev)}
           className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-lg border border-border bg-card/50 text-xs sm:text-sm font-bold text-muted-foreground hover:bg-muted transition-all active:scale-[0.97]"
@@ -273,7 +273,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* Collapsible History */}
       {history.length > 0 && (
-        <div className="w-full max-w-md md:max-w-lg mt-2 sm:mt-3 animate-fade-in-up animation-delay-400">
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mt-2 sm:mt-3 animate-fade-in-up animation-delay-400">
           <button
             onClick={() => setShowHistory(prev => !prev)}
             className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-lg border border-border bg-card/50 text-xs sm:text-sm font-bold text-muted-foreground hover:bg-muted transition-all active:scale-[0.97]"
