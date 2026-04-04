@@ -128,6 +128,31 @@ export function useIsMobile(): boolean {
   return isMobile;
 }
 
+/** Returns true when on a touch device in portrait orientation */
+export function useIsPortraitMobile(): boolean {
+  const [isPortraitMobile, setIsPortraitMobile] = React.useState(() => {
+    if (typeof window === "undefined") return false;
+    return isTouchDevice() && window.innerHeight > window.innerWidth;
+  });
+
+  React.useEffect(() => {
+    const check = () => {
+      setIsPortraitMobile(isTouchDevice() && window.innerHeight > window.innerWidth);
+    };
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", () => setTimeout(check, 200));
+    const portraitQuery = window.matchMedia("(orientation: portrait)");
+    portraitQuery.addEventListener("change", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
+      portraitQuery.removeEventListener("change", check);
+    };
+  }, []);
+
+  return isPortraitMobile;
+}
+
 /**
  * @deprecated Use useGameLayoutMode() instead.
  * Kept for backward compatibility — returns true when mode is 'wide' or 'medium'.

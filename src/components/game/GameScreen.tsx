@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/sounds';
-import { useGameLayoutMode, type GameLayoutMode } from '@/hooks/use-mobile';
+import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 import TimerBar from './TimerBar';
 
@@ -44,6 +44,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const isCompact = layoutMode === 'compact';
   const isWide = layoutMode === 'wide';
   const hasSidebar = layoutMode !== 'compact'; // medium + wide
+  const isPortraitMobile = useIsPortraitMobile();
   const [cities] = useState(() => getRandomCities(difficulty, TOTAL_ROUNDS, gameMode, seed));
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
@@ -61,6 +62,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   const currentCity = cities[currentRound];
 
+  // Main round timer — starts fresh each round
   useEffect(() => {
     if (isWaiting || !currentCity) return;
     roundStartRef.current = Date.now();
@@ -81,6 +83,30 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
     return () => clearInterval(timerRef.current);
   }, [currentRound, isWaiting, currentCity]);
+
+  // Pause/resume timer when portrait overlay shows/hides
+  useEffect(() => {
+    if (isWaiting || !currentCity) return;
+    if (isPortraitMobile) {
+      // Pause: clear interval
+      clearInterval(timerRef.current);
+    } else {
+      // Resume: restart interval from current timeLeft
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            playGameOver();
+            onGameOver(rounds, 'timeout');
+            return 0;
+          }
+          if (prev <= 6) playTick();
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isPortraitMobile]);
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
@@ -177,6 +203,24 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       role="main"
       aria-label="Pantalla de juego"
     >
+      {/* Portrait blocker — covers gameplay when phone is rotated to portrait */}
+      {isPortraitMobile && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+          <div className="animate-bounce" style={{ animationDuration: '2s' }}>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" />
+              <line x1="12" y1="18" x2="12" y2="18.01" />
+            </svg>
+          </div>
+          <p className="text-lg font-black" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+            📱 GIRA TU TELÉFONO
+          </p>
+          <p className="text-sm text-muted-foreground text-center px-8">
+            Gira tu teléfono a horizontal para seguir jugando
+          </p>
+        </div>
+      )}
+
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
         <div className="flex min-h-0 flex-col px-3 py-3 gap-2 border-r border-border bg-card/50 overflow-y-auto overflow-x-hidden">

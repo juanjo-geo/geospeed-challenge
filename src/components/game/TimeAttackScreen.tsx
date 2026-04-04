@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, type Difficulty, type GameMode } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/sounds';
-import { useGameLayoutMode } from '@/hooks/use-mobile';
+import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 
 const GLOBAL_TIME = 60;
@@ -29,6 +29,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const layoutMode = useGameLayoutMode();
   const isCompact = layoutMode === 'compact';
   const hasSidebar = layoutMode !== 'compact';
+  const isPortraitMobile = useIsPortraitMobile();
   const [cities] = useState(() => getRandomCities(difficulty, POOL_SIZE, gameMode));
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -46,11 +47,19 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
   const currentCity = cities[currentIdx % cities.length];
 
+  const globalTimerRef = useRef<ReturnType<typeof setInterval>>();
+
+  // Global countdown timer
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (isPortraitMobile) {
+      clearInterval(globalTimerRef.current);
+      return;
+    }
+
+    globalTimerRef.current = setInterval(() => {
       setGlobalTime(prev => {
         if (prev <= 1) {
-          clearInterval(interval);
+          clearInterval(globalTimerRef.current);
           if (!gameOverRef.current) {
             gameOverRef.current = true;
             playGameOver();
@@ -66,8 +75,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(interval);
-  }, [onGameOver]);
+    return () => clearInterval(globalTimerRef.current);
+  }, [onGameOver, isPortraitMobile]);
 
   useEffect(() => {
     roundStartRef.current = Date.now();
@@ -112,6 +121,24 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
   return (
     <div className={`h-[100dvh] flex overflow-hidden bg-background ${hasSidebar ? 'flex-row' : 'flex-col'}`} role="main" aria-label="Modo contrarreloj">
+      {/* Portrait blocker */}
+      {isPortraitMobile && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, hsl(150 40% 4%) 0%, hsl(150 30% 7%) 100%)' }}>
+          <div className="animate-bounce" style={{ animationDuration: '2s' }}>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" />
+              <line x1="12" y1="18" x2="12" y2="18.01" />
+            </svg>
+          </div>
+          <p className="text-lg font-black" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+            📱 GIRA TU TELÉFONO
+          </p>
+          <p className="text-sm text-muted-foreground text-center px-8">
+            Gira tu teléfono a horizontal para seguir jugando
+          </p>
+        </div>
+      )}
+
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
         <div className="w-[clamp(9rem,14vw,13rem)] shrink-0 flex flex-col p-3 gap-3 border-r border-border bg-card/50 overflow-y-auto">
