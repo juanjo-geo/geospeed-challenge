@@ -62,11 +62,19 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   const currentCity = cities[currentRound];
 
-  // Main round timer — starts fresh each round
+  // Reset timeLeft and roundStart when a new round begins
   useEffect(() => {
-    if (isWaiting || !currentCity) return;
+    if (!currentCity) return;
     roundStartRef.current = Date.now();
     setTimeLeft(MAX_TIME);
+  }, [currentRound, currentCity]);
+
+  // Single timer effect — pauses when waiting, portrait, or no city
+  useEffect(() => {
+    if (isWaiting || !currentCity || isPortraitMobile) {
+      clearInterval(timerRef.current);
+      return;
+    }
 
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
@@ -82,31 +90,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [currentRound, isWaiting, currentCity]);
-
-  // Pause/resume timer when portrait overlay shows/hides
-  useEffect(() => {
-    if (isWaiting || !currentCity) return;
-    if (isPortraitMobile) {
-      // Pause: clear interval
-      clearInterval(timerRef.current);
-    } else {
-      // Resume: restart interval from current timeLeft
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            playGameOver();
-            onGameOver(rounds, 'timeout');
-            return 0;
-          }
-          if (prev <= 6) playTick();
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [isPortraitMobile]);
+  }, [currentRound, isWaiting, currentCity, isPortraitMobile]);
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
