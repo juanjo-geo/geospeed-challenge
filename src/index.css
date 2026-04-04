@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 25% 10%;
+    --foreground: 45 80% 92%;
+
+    --card: 150 20% 14%;
+    --card-foreground: 45 80% 92%;
+
+    --popover: 150 20% 14%;
+    --popover-foreground: 45 80% 92%;
+
+    --primary: 44 91% 61%;
+    --primary-foreground: 150 40% 4%;
+
+    --secondary: 150 15% 20%;
+    --secondary-foreground: 45 80% 92%;
+
+    --muted: 150 12% 18%;
+    --muted-foreground: 150 10% 60%;
+
+    --accent: 44 91% 61%;
+    --accent-foreground: 150 40% 4%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 150 12% 24%;
+    --input: 150 12% 24%;
+    --ring: 44 91% 61%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 150 20% 12%;
+    --sidebar-foreground: 45 80% 92%;
+    --sidebar-primary: 44 91% 61%;
+    --sidebar-primary-foreground: 150 40% 4%;
+    --sidebar-accent: 150 15% 20%;
+    --sidebar-accent-foreground: 45 80% 92%;
+    --sidebar-border: 150 12% 24%;
+    --sidebar-ring: 44 91% 61%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    /* Support safe areas for notch devices (iPhone X+, etc.) */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    /* Prevent pull-to-refresh and bounce on mobile */
+    overscroll-behavior: none;
+    /* Prevent text selection during gameplay */
+    -webkit-user-select: none;
+    user-select: none;
+    /* Prevent iOS tap highlight */
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px hsl(44 91% 61% / 0.3); }
+  50% { box-shadow: 0 0 24px hsl(44 91% 61% / 0.6); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-250 { animation-delay: 250ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-350 { animation-delay: 350ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+
+/* Score pop animation */
+@keyframes score-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.animate-score-pop {
+  animation: score-pop 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Points float-up */
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-32px); }
+}
+.animate-float-up {
+  animation: float-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slide in from right */
+@keyframes slide-in-right {
+  0% { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

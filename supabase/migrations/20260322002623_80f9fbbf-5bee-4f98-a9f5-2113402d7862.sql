@@ -1,0 +1,1 @@
+ALTER TABLE public.leaderboard ADD COLUMN mode text NOT NULL DEFAULT 'world';

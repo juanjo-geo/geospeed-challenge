@@ -1,0 +1,1 @@
+REVOKE SELECT (host_secret, guest_secret) ON public.game_rooms FROM anon, authenticated;
