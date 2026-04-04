@@ -65,6 +65,8 @@ const Index = () => {
   const [mpRoom, setMpRoom] = useState<GameRoom | null>(null);
   const [mpIsHost, setMpIsHost] = useState(false);
   const mpRoomRef = useRef<GameRoom | null>(null);
+  // Stable game key — only increments when a NEW game is explicitly started
+  const gameKeyRef = useRef(0);
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
@@ -109,6 +111,7 @@ const Index = () => {
     } else if (isMobile && window.innerHeight > window.innerWidth) {
       setPhase('rotate');
     } else {
+      gameKeyRef.current += 1;
       setPhase('countdown');
     }
   }, [isMobile]);
@@ -118,6 +121,7 @@ const Index = () => {
     if (phase !== 'rotate') return;
     const check = () => {
       if (window.innerWidth > window.innerHeight) {
+        gameKeyRef.current += 1;
         setPhase('countdown');
       }
     };
@@ -147,7 +151,7 @@ const Index = () => {
     setPhase('final');
   }, [difficulty, gameMode]);
 
-  const handlePlayAgain = useCallback(() => setPhase('countdown'), []);
+  const handlePlayAgain = useCallback(() => { gameKeyRef.current += 1; setPhase('countdown'); }, []);
   const handleGoHome = useCallback(() => setPhase('home'), []);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
@@ -200,6 +204,7 @@ const Index = () => {
         if (isMobile && window.innerHeight > window.innerWidth) {
           setPhase('rotate');
         } else {
+          gameKeyRef.current += 1;
           setPhase('countdown');
         }
       }} />;
@@ -269,7 +274,7 @@ const Index = () => {
                 VOLVER
               </button>
               <button
-                onClick={() => setPhase('ta-playing')}
+                onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
               >
@@ -284,7 +289,7 @@ const Index = () => {
     if (phase === 'ta-playing') {
       return (
         <TimeAttackScreen
-          key={Date.now()}
+          key={`ta-${gameKeyRef.current}`}
           difficulty={difficulty}
           gameMode={gameMode}
           onGameOver={(result) => {
@@ -332,7 +337,7 @@ const Index = () => {
             </div>
 
             <div className="flex gap-2 sm:gap-3">
-              <button onClick={() => setPhase('ta-playing')} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+              <button onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
                 REINTENTAR ⚡
               </button>
               <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted">
@@ -407,7 +412,7 @@ const Index = () => {
     if (phase === 'playing') {
       return (
         <GameScreen
-          key={Date.now()}
+          key={`classic-${gameKeyRef.current}`}
           difficulty={difficulty}
           gameMode={gameMode}
           onRoundComplete={() => {}}
