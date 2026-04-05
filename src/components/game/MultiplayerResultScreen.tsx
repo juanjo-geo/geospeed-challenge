@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { type GameRoom, fetchRoom, listenForFinished } from '@/lib/multiplayerUtils';
-import { supabase } from '@/integrations/supabase/client';
+import { type GameRoom, fetchRoom, setupFinishedBroadcast } from '@/lib/multiplayerUtils';
 import { MODE_CONFIG } from '@/data/cities';
 
 interface MultiplayerResultScreenProps {
@@ -21,13 +20,11 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
   const myName = isHost ? room.host_name : (room.guest_name || '???');
   const opponentName = isHost ? (room.guest_name || '???') : room.host_name;
 
-  // Opponent finished detection — multiple signals:
-  // 1. DB column host_finished/guest_finished (if migration applied)
-  // 2. Realtime broadcast from opponent
-  // 3. Polling: opponent score changed from initial value
+  // --- Opponent-finished detection (3 independent signals) ---
   const dbFinished = isHost ? room.guest_finished : room.host_finished;
   const [broadcastScore, setBroadcastScore] = useState<number | null>(null);
   const broadcastReceivedRef = useRef(false);
+  const [pollTimedOut, setPollTimedOut] = useState(false);
 
   // Opponent is done if ANY signal fires
   const opponentFinished = dbFinished === true || broadcastScore !== null;
@@ -39,45 +36,59 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
   const iWon = opponentFinished && myScore > opponentScore;
   const tie = opponentFinished && myScore === opponentScore;
   const modeLabel = MODE_CONFIG.find(m => m.key === room.mode)?.label || room.mode;
-  const [pollTimedOut, setPollTimedOut] = useState(false);
 
-  // PRIMARY: Listen for opponent's "finished" broadcast via Realtime
+  // PRIMARY: Realtime broadcast — sends "I finished" repeatedly AND listens for opponent.
+  // Uses role-specific channel names so send/listen channels never collide.
   useEffect(() => {
     if (opponentFinished) return;
 
-    const channel = listenForFinished(room.id, isHost, (score) => {
+    const cleanup = setupFinishedBroadcast(room.id, isHost, myScore, (oppScore) => {
       if (!broadcastReceivedRef.current) {
         broadcastReceivedRef.current = true;
-        setBroadcastScore(score);
+        setBroadcastScore(oppScore);
       }
     });
 
-    return () => { supabase.removeChannel(channel); };
-  }, [room.id, isHost, opponentFinished]);
+    return cleanup;
+  }, [room.id, isHost, myScore, opponentFinished]);
 
-  // FALLBACK: Poll the DB for changes (covers both finished flags AND score changes)
+  // FALLBACK: Poll the DB every 2 s for score changes / finished flags.
+  // Works even if broadcast fails (e.g. firewalls, Realtime outage).
   useEffect(() => {
     if (opponentFinished) return;
 
+    // Capture opponent score at mount — any change means they submitted
     const initialOppScore = isHost ? room.guest_score : room.host_score;
 
     const checkRoom = async () => {
-      const freshRoom = await fetchRoom(room.id);
-      if (!freshRoom) return;
+      try {
+        const freshRoom = await fetchRoom(room.id);
+        if (!freshRoom) return;
 
-      // Check finished flag (works if migration applied)
-      const oppDoneFlag = isHost ? freshRoom.guest_finished : freshRoom.host_finished;
-      if (oppDoneFlag && onRoomUpdate) {
-        onRoomUpdate(freshRoom);
-        return;
-      }
+        // Signal 1: finished flag (if migration applied)
+        const oppDoneFlag = isHost ? freshRoom.guest_finished : freshRoom.host_finished;
+        if (oppDoneFlag) {
+          const freshOppScore = isHost ? freshRoom.guest_score : freshRoom.host_score;
+          if (!broadcastReceivedRef.current) {
+            broadcastReceivedRef.current = true;
+            setBroadcastScore(freshOppScore);
+          }
+          if (onRoomUpdate) onRoomUpdate(freshRoom);
+          return;
+        }
 
-      // Check if opponent score changed from initial (works without migration)
-      const freshOppScore = isHost ? freshRoom.guest_score : freshRoom.host_score;
-      if (freshOppScore !== initialOppScore) {
-        setBroadcastScore(freshOppScore);
-        if (onRoomUpdate) onRoomUpdate(freshRoom);
-        return;
+        // Signal 2: opponent score changed from initial value
+        const freshOppScore = isHost ? freshRoom.guest_score : freshRoom.host_score;
+        if (freshOppScore !== initialOppScore) {
+          if (!broadcastReceivedRef.current) {
+            broadcastReceivedRef.current = true;
+            setBroadcastScore(freshOppScore);
+          }
+          if (onRoomUpdate) onRoomUpdate(freshRoom);
+          return;
+        }
+      } catch (err) {
+        console.warn('[multiplayer] poll error:', err);
       }
     };
 

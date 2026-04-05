@@ -117,8 +117,18 @@ Deno.serve(async (req) => {
           });
         }
         const scoreField = isHost ? "host_score" : "guest_score";
+        updateData = { [scoreField]: score, current_round: round };
+
+        // Try to set finished flag if the column exists (migration may not be applied)
         const finishedField = isHost ? "host_finished" : "guest_finished";
-        updateData = { [scoreField]: score, current_round: round, [finishedField]: true };
+        const { error: finishedErr } = await supabase
+          .from("game_rooms")
+          .update({ [finishedField]: true })
+          .eq("id", room_id);
+        // Ignore error — column may not exist yet
+        if (finishedErr) {
+          console.warn("Could not set finished flag (column may not exist):", finishedErr.message);
+        }
         break;
       }
 

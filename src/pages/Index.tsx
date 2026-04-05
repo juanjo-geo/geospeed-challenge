@@ -13,7 +13,7 @@ import TutorialOverlay from '@/components/game/TutorialOverlay';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
 import StoreScreen from '@/components/game/StoreScreen';
-import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom, broadcastFinished } from '@/lib/multiplayerUtils';
+import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
@@ -248,10 +248,8 @@ const Index = () => {
     setFinalRounds(rounds);
     setFinalScore(total);
     if (mpRoomRef.current) {
-      // 1. Save score to DB via edge function
+      // Save score to DB via edge function (broadcast is handled by MultiplayerResultScreen)
       updateRoomScore(mpRoomRef.current.id, mpIsHost, total, rounds.length);
-      // 2. Broadcast "I finished" to opponent via Realtime (works without DB migration)
-      broadcastFinished(mpRoomRef.current.id, mpIsHost, total);
       // Optimistic local update so the result screen shows correct score immediately
       setMpRoom(prev => {
         if (!prev) return prev;

@@ -231,8 +231,10 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
         </div>
       )}
 
-      {/* ──── Map area — explicit h-full so WorldMapCanvas gets height in grid context ──── */}
-      <div className="relative h-full min-w-0 overflow-hidden">
+      {/* ──── Map area ──── */}
+      <div className="relative min-h-0 min-w-0">
+        {/* Absolute fill guarantees WorldMapCanvas gets height in any layout context */}
+        <div className="absolute inset-0 overflow-hidden">
         {/* Floating HUD (compact only) */}
         {isCompact && (
           <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
@@ -305,6 +307,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             )}
           </div>
         )}
+        </div>{/* close absolute inset-0 wrapper */}
       </div>
     </div>
   );

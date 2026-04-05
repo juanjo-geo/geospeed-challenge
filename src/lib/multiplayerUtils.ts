@@ -166,45 +166,71 @@ export async function fetchRoom(roomId: string): Promise<GameRoom | null> {
 }
 
 /**
- * Broadcast "I finished" to the opponent via Supabase Realtime broadcast.
- * This is the PRIMARY mechanism for detecting game completion — it works
- * even if the DB migration for host_finished/guest_finished hasn't been applied.
+ * Create a single broadcast channel that both SENDS "I finished" and LISTENS
+ * for the opponent's "I finished" event.
+ *
+ * Key design decisions:
+ * - Uses role-specific channel names to avoid same-client channel collisions.
+ *   Each player sends on their OWN outgoing channel and listens on the OPPONENT's.
+ * - The sender re-broadcasts every 2 s for up to 60 s so the message isn't lost
+ *   if the opponent's listener connects after the first broadcast.
+ * - Returns a cleanup function that removes both channels.
  */
-export function broadcastFinished(roomId: string, isHost: boolean, score: number) {
-  const channelName = `game-broadcast-${roomId}`;
-  const channel = supabase.channel(channelName);
-  channel.subscribe((status) => {
-    if (status === 'SUBSCRIBED') {
-      channel.send({
-        type: 'broadcast',
-        event: 'player_finished',
-        payload: { isHost, score },
-      });
-      // Keep channel alive briefly so message delivers, then clean up
-      setTimeout(() => supabase.removeChannel(channel), 3000);
-    }
-  });
-}
-
-/**
- * Listen for opponent "finished" broadcast.
- * Returns the channel so the caller can clean it up.
- */
-export function listenForFinished(
+export function setupFinishedBroadcast(
   roomId: string,
   isHost: boolean,
-  callback: (opponentScore: number) => void
-) {
-  const channelName = `game-broadcast-${roomId}`;
-  const channel = supabase.channel(channelName);
-  channel
+  myScore: number,
+  onOpponentFinished: (opponentScore: number) => void,
+): () => void {
+  const myRole = isHost ? 'host' : 'guest';
+  const oppRole = isHost ? 'guest' : 'host';
+
+  // --- Outgoing channel: I tell the opponent I'm done ---
+  const sendChannelName = `game-finish-${roomId}-${myRole}`;
+  const sendChannel = supabase.channel(sendChannelName);
+  let sendInterval: ReturnType<typeof setInterval> | null = null;
+
+  sendChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      const send = () => {
+        sendChannel.send({
+          type: 'broadcast',
+          event: 'player_finished',
+          payload: { isHost, score: myScore },
+        });
+      };
+      send(); // immediate
+      sendInterval = setInterval(send, 2000); // repeat every 2 s
+      // Stop after 60 s to avoid infinite sends
+      setTimeout(() => {
+        if (sendInterval) clearInterval(sendInterval);
+      }, 60_000);
+    }
+  });
+
+  // --- Incoming channel: listen for opponent's finish ---
+  const listenChannelName = `game-finish-${roomId}-${oppRole}`;
+  const listenChannel = supabase.channel(listenChannelName);
+  let received = false;
+
+  listenChannel
     .on('broadcast', { event: 'player_finished' }, (msg) => {
+      if (received) return;
       const payload = msg.payload as { isHost: boolean; score: number };
-      // Only react to the OPPONENT's finish event
+      // Double-check it's actually the opponent
       if (payload.isHost !== isHost) {
-        callback(payload.score);
+        received = true;
+        onOpponentFinished(payload.score);
+        // Stop re-broadcasting once we know both sides are done
+        if (sendInterval) clearInterval(sendInterval);
       }
     })
     .subscribe();
-  return channel;
+
+  // Cleanup function — caller invokes on unmount
+  return () => {
+    if (sendInterval) clearInterval(sendInterval);
+    supabase.removeChannel(sendChannel);
+    supabase.removeChannel(listenChannel);
+  };
 }
