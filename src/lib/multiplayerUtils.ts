@@ -15,6 +15,8 @@ export interface GameRoom {
   seed: number;
   host_ready: boolean;
   guest_ready: boolean;
+  host_finished: boolean;
+  guest_finished: boolean;
   created_at: string;
 }
 

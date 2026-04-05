@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
           });
         }
         const scoreField = isHost ? "host_score" : "guest_score";
-        updateData = { [scoreField]: score, current_round: round };
+        const finishedField = isHost ? "host_finished" : "guest_finished";
+        updateData = { [scoreField]: score, current_round: round, [finishedField]: true };
         break;
       }
 

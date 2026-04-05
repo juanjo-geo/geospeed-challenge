@@ -71,13 +71,18 @@ const Index = () => {
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
+  // Keep room subscription alive for the whole match lifecycle.
+  // Only re-subscribe when the room ID changes, not when phase changes,
+  // so we don't miss real-time updates during the mp-playing → mp-final transition.
+  const mpPhaseActive = phase === 'mp-playing' || phase === 'mp-final';
   useEffect(() => {
-    if ((phase !== 'mp-playing' && phase !== 'mp-final') || !mpRoom) return;
+    if (!mpPhaseActive || !mpRoom) return;
     const channel = subscribeToRoom(mpRoom.id, (updated) => {
       setMpRoom(updated);
     });
     return () => { channel.unsubscribe(); };
-  }, [phase, mpRoom?.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mpRoom?.id, mpPhaseActive]);
 
   // Countdown logic
   useEffect(() => {
@@ -199,9 +204,23 @@ const Index = () => {
     setFinalRounds(rounds);
     setFinalScore(total);
     if (mpRoomRef.current) {
+      // Update score and mark this player as finished (sets host_finished/guest_finished = true)
       updateRoomScore(mpRoomRef.current.id, mpIsHost, total, rounds.length);
+      // Optimistic local update so the result screen shows correct score immediately
+      // without waiting for the real-time subscription to propagate the DB change
+      setMpRoom(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ...(mpIsHost
+            ? { host_score: total, host_finished: true }
+            : { guest_score: total, guest_finished: true }),
+          current_round: rounds.length,
+        };
+      });
     }
-    setTimeout(() => setPhase('mp-final'), 3000);
+    // Go to result screen immediately — MultiplayerResultScreen waits for opponentFinished flag
+    setPhase('mp-final');
   }, [mpIsHost]);
 
   const handleMpPlayAgain = useCallback(() => setPhase('mp-lobby'), []);
