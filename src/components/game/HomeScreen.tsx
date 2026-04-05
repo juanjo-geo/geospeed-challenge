@@ -40,8 +40,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [rankingMode, setRankingMode] = useState<string>('all');
   const [showRanking, setShowRanking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showMoreModes, setShowMoreModes] = useState(false);
   const history = getGameHistory();
   const playerLevel = getPlayerLevel();
+  const isNewPlayer = stats.gamesPlayed === 0;
 
   useEffect(() => {
     if (showRanking) {
@@ -106,6 +108,158 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         ¿Cuánto conoces el mundo?
       </p>
 
+      {/* ══════════════════════════════════════════
+          NUEVO JUGADOR — layout simplificado
+      ══════════════════════════════════════════ */}
+      {isNewPlayer && (
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl flex flex-col gap-3 sm:gap-4 animate-fade-in-up animation-delay-150">
+
+          {/* Guía de inicio */}
+          <p className="text-center text-[11px] sm:text-xs text-muted-foreground uppercase tracking-widest">
+            ¿Por dónde quieres empezar?
+          </p>
+
+          {/* ── Hero card: Entrenamiento ── */}
+          <div
+            className="relative rounded-2xl border-2 border-blue-500/60 overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, hsl(var(--card)) 0%, rgba(59,130,246,0.08) 100%)' }}
+          >
+            {/* Línea top accent */}
+            <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,179,237,0.8), transparent)' }} />
+            {/* Badge recomendado */}
+            <div className="absolute top-3 right-3 bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+              ✨ Recomendado
+            </div>
+            <div className="p-4 sm:p-5">
+              <div className="flex items-start gap-3 mb-3 sm:mb-4">
+                <span className="text-4xl sm:text-5xl leading-none">🎓</span>
+                <div>
+                  <h2 className="font-black text-base sm:text-lg text-blue-400 leading-tight">Modo Entrenamiento</h2>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Pistas visuales en el mapa · 6 ciudades · sin presión de tiempo</p>
+                </div>
+              </div>
+              <ul className="text-[10px] sm:text-xs text-muted-foreground space-y-1 mb-4 pl-1">
+                <li className="flex items-center gap-1.5"><span className="text-blue-400">✓</span> El mapa te muestra la zona donde está la ciudad</li>
+                <li className="flex items-center gap-1.5"><span className="text-blue-400">✓</span> Aprende las ubicaciones sin frustrarte</li>
+                <li className="flex items-center gap-1.5"><span className="text-blue-400">✓</span> Ideal si nunca has jugado antes</li>
+              </ul>
+              <button
+                onClick={onStartTraining}
+                className="w-full py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base tracking-wide transition-all active:scale-[0.97] hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, rgb(59,130,246), rgb(99,102,241))', color: '#fff' }}
+              >
+                COMENZAR ENTRENAMIENTO →
+              </button>
+            </div>
+          </div>
+
+          {/* Divisor */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest shrink-0">o si prefieres saltar directo</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* ── Jugar ahora (fácil + mundo) ── */}
+          <button
+            onClick={() => onStartGame('easy', 'world')}
+            className="w-full flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-xl border-2 border-green-500/40 hover:border-green-500 bg-card transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(142_71%_45%/0.2)]"
+          >
+            <span className="text-3xl sm:text-4xl leading-none">🟢</span>
+            <div className="text-left flex-1 min-w-0">
+              <div className="font-black text-sm sm:text-base text-green-400">Jugar ahora</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">Modo Fácil · Mapamundi · 13 ciudades · 15s por ronda</div>
+            </div>
+            <span className="text-muted-foreground text-lg shrink-0">▶</span>
+          </button>
+
+          {/* ── Ver más modos (acordeón) ── */}
+          <div>
+            <button
+              onClick={() => setShowMoreModes(p => !p)}
+              className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl border border-border bg-card/50 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.97]"
+            >
+              🗂 Ver todos los modos
+              <span className={`transition-transform duration-300 ${showMoreModes ? 'rotate-180' : ''}`}>▾</span>
+            </button>
+
+            <div className={`overflow-hidden transition-all duration-500 ease-out ${showMoreModes ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+              <div className="flex flex-col gap-2">
+                {/* Desafío Diario */}
+                <button
+                  onClick={onDailyChallenge}
+                  className="w-full flex items-center gap-2 sm:gap-3 p-3 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 active:scale-[0.97]"
+                >
+                  <span className="text-xl sm:text-2xl shrink-0">📅</span>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="font-black text-xs sm:text-sm text-amber-400">Desafío Diario</div>
+                    <div className="text-[9px] sm:text-[10px] text-muted-foreground">Mismas ciudades para todos · {new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}</div>
+                  </div>
+                </button>
+                {/* Contrarreloj + Duelo */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={onTimeAttack}
+                    className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97]"
+                  >
+                    <span className="text-lg shrink-0">⚡</span>
+                    <div className="text-left min-w-0">
+                      <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrarreloj</div>
+                      <div className="text-[8px] sm:text-[9px] text-muted-foreground">60s infinitas</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={onMultiplayer}
+                    className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97]"
+                  >
+                    <span className="text-lg shrink-0">🎮</span>
+                    <div className="text-left min-w-0">
+                      <div className="font-bold text-[10px] sm:text-xs text-primary">Modo Duelo</div>
+                      <div className="text-[8px] sm:text-[9px] text-muted-foreground">1v1 en vivo</div>
+                    </div>
+                  </button>
+                </div>
+                {/* Modalidad + Dificultad compactas */}
+                <div className="bg-card border border-border rounded-xl p-3">
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest mb-2 text-center">Elegir modalidad y dificultad</p>
+                  <div className="grid grid-cols-5 gap-1 mb-2" role="radiogroup">
+                    {MODE_CONFIG.map(m => {
+                      const lock = MODE_UNLOCK[m.key];
+                      const isLocked = !!(lock && playerLevel.level < lock.level);
+                      const isSelected = selectedMode === m.key;
+                      return (
+                        <button key={m.key} onClick={() => !isLocked && setSelectedMode(m.key)} disabled={isLocked}
+                          className={`flex flex-col items-center gap-0.5 p-1 rounded-lg border transition-all ${isLocked ? 'border-border opacity-40 cursor-not-allowed' : isSelected ? 'border-primary bg-primary/10' : 'border-border bg-muted/50 hover:border-primary/50'}`}>
+                          <span className="text-base">{isLocked ? '🔒' : m.emoji}</span>
+                          <span className={`text-[8px] font-bold ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>{m.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {DIFF_CONFIG.map(d => (
+                      <button key={d.key} onClick={() => onStartGame(d.key, selectedMode)}
+                        className={`flex items-center justify-center gap-1 p-2 rounded-lg border-2 bg-card transition-all active:scale-[0.97] ${d.borderClass}`}>
+                        <span className="text-sm">{d.emoji}</span>
+                        <span className="font-bold text-[10px] sm:text-xs text-foreground">{d.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom spacer */}
+          <div className="h-4 sm:h-6 shrink-0" />
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════
+          JUGADOR RECURRENTE — layout completo
+      ══════════════════════════════════════════ */}
+      {!isNewPlayer && (
+        <>
       {/* ── Level badge ── */}
       {stats.gamesPlayed > 0 && (() => {
         const level = getPlayerLevel();
@@ -347,6 +501,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* Bottom spacer */}
       <div className="h-4 sm:h-6 shrink-0" />
+        </>
+      )}
     </main>
   );
 }
