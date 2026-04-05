@@ -526,7 +526,7 @@ export function getMapBounds(mode: GameMode): MapBounds {
     case 'africa':
       return { latMin: -38, latMax: 40, lonMin: -25, lonMax: 60 };
     default:
-      return { latMin: -60, latMax: 78, lonMin: -180, lonMax: 180 };
+      return { latMin: -90, latMax: 85, lonMin: -180, lonMax: 180 };
   }
 }
 
