@@ -181,8 +181,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const layoutClass = isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(10rem,15vw,13rem)_minmax(0,1fr)]'
-      : 'grid grid-cols-[clamp(9rem,14vw,11rem)_minmax(0,1fr)]'; // medium: sidebar + map
+      ? 'grid grid-cols-[clamp(11rem,15vw,14rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(10rem,14vw,12rem)_minmax(0,1fr)]'; // medium: sidebar + map
 
   return (
     <div
@@ -221,12 +221,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           {/* City to find */}
           <div className="shrink-0 mb-2 rounded-lg px-2 py-2 bg-primary/8 border border-primary/20 text-center">
             {isTraining && (
-              <span className="inline-block mb-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[8px] font-bold text-blue-400 uppercase tracking-widest">
+              <span className="inline-block mb-1 rounded-full bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[7px] font-bold text-primary uppercase tracking-wider">
                 🎓 Entrenamiento
               </span>
             )}
             <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5" id="city-label">Encuentra</p>
-            <p className="text-sm font-black leading-tight break-words" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">
+            <p className="text-sm font-black leading-tight break-words hyphens-auto" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">
               {currentCity.name}
             </p>
             {isTraining && !isWaiting && (

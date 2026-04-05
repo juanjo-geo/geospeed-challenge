@@ -121,32 +121,31 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
           {/* ── Hero card: Entrenamiento ── */}
           <div
-            className="relative rounded-2xl border-2 border-blue-500/60 overflow-hidden animate-fade-in-up"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--card)) 0%, rgba(59,130,246,0.10) 100%)' }}
+            className="relative rounded-2xl border-2 border-primary/60 overflow-hidden animate-fade-in-up"
+            style={{ background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--primary) / 0.10) 100%)' }}
           >
             {/* Línea top accent */}
-            <div className="absolute inset-x-0 top-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,179,237,1), transparent)' }} />
+            <div className="absolute inset-x-0 top-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, hsl(var(--primary)), transparent)' }} />
             {/* Badge recomendado */}
-            <div className="absolute top-3 right-3 bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg">
+            <div className="absolute top-3 right-3 bg-primary text-primary-foreground text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg">
               ✨ Recomendado
             </div>
             <div className="p-4 sm:p-5 md:p-6">
               <div className="flex items-start gap-3 md:gap-4 mb-3 sm:mb-4">
                 <span className="text-4xl sm:text-5xl md:text-6xl leading-none">🎓</span>
                 <div>
-                  <h2 className="font-black text-base sm:text-lg md:text-xl text-blue-400 leading-tight">Modo Entrenamiento</h2>
+                  <h2 className="font-black text-base sm:text-lg md:text-xl text-primary leading-tight">Modo Entrenamiento</h2>
                   <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-0.5">Pistas visuales en el mapa · 6 ciudades · sin presión de tiempo</p>
                 </div>
               </div>
               <ul className="text-[10px] sm:text-xs md:text-sm text-muted-foreground space-y-1.5 mb-4 md:mb-5 pl-1">
-                <li className="flex items-center gap-1.5"><span className="text-blue-400 font-bold">✓</span> El mapa te muestra la zona donde está la ciudad</li>
-                <li className="flex items-center gap-1.5"><span className="text-blue-400 font-bold">✓</span> Aprende las ubicaciones sin frustrarte</li>
-                <li className="flex items-center gap-1.5"><span className="text-blue-400 font-bold">✓</span> Ideal si nunca has jugado antes</li>
+                <li className="flex items-center gap-1.5"><span className="text-primary font-bold">✓</span> El mapa te muestra la zona donde está la ciudad</li>
+                <li className="flex items-center gap-1.5"><span className="text-primary font-bold">✓</span> Aprende las ubicaciones sin frustrarte</li>
+                <li className="flex items-center gap-1.5"><span className="text-primary font-bold">✓</span> Ideal si nunca has jugado antes</li>
               </ul>
               <button
                 onClick={onStartTraining}
-                className="w-full py-3 sm:py-3.5 md:py-4 rounded-xl font-black text-sm sm:text-base md:text-lg tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg"
-                style={{ background: 'linear-gradient(135deg, rgb(59,130,246), rgb(99,102,241))', color: '#fff' }}
+                className="w-full py-3 sm:py-3.5 md:py-4 rounded-xl font-black text-sm sm:text-base md:text-lg tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
               >
                 COMENZAR ENTRENAMIENTO →
               </button>
@@ -302,12 +301,12 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-250">
         <button
           onClick={onStartTraining}
-          className="w-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 border-blue-500/40 hover:border-blue-500 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+          className="w-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-primary/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
           aria-label="Modo entrenamiento para novatos"
         >
           <span className="text-xl sm:text-2xl shrink-0">🎓</span>
           <div className="text-left flex-1 min-w-0">
-            <div className="font-bold text-xs sm:text-sm text-blue-400">Modo Entrenamiento</div>
+            <div className="font-bold text-xs sm:text-sm text-primary">Modo Entrenamiento</div>
             <div className="text-[9px] sm:text-[10px] text-muted-foreground">Pistas en el mapa · 6 ciudades · aprende geografía</div>
           </div>
         </button>
