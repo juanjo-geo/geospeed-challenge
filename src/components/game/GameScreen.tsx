@@ -381,7 +381,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
-            className="absolute inset-y-0 right-3 z-10 w-[clamp(18rem,32vw,26rem)] flex items-center animate-slide-in-right"
+            className="absolute inset-y-0 right-3 z-10 w-[clamp(22rem,42vw,32rem)] flex items-center animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
@@ -443,7 +443,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(13rem,55vw,20rem)]' : 'right-2 w-[clamp(15rem,50vw,22rem)]'}`}
+            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(16rem,65vw,24rem)]' : 'right-2 w-[clamp(18rem,55vw,28rem)]'}`}
             role="dialog"
             aria-label="Resultado de la ronda"
           >
