@@ -210,18 +210,18 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="flex min-h-0 flex-col px-3 py-3 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden sidebar-safe-left">
+        <div className="flex min-h-0 flex-col px-2 py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden sidebar-safe-left">
           {/* Logo */}
-          <div className="text-center pb-2 mb-2 border-b border-border/50">
-            <span className="text-xl font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+          <div className="text-center pb-1.5 mb-1.5 border-b border-border/50">
+            <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
           </div>
 
           {/* City to find */}
-          <div className="shrink-0 mb-2 rounded-lg px-2 py-2 bg-primary/8 border border-primary/20 text-center">
+          <div className="shrink-0 mb-1.5 rounded-lg px-2 py-1.5 bg-primary/8 border border-primary/20 text-center">
             {isTraining && (
-              <span className="inline-block mb-1 rounded-full bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[7px] font-bold text-primary uppercase tracking-wider">
+              <span className="inline-block mb-0.5 rounded-full bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[7px] font-bold text-primary uppercase tracking-wider">
                 🎓 Entrenamiento
               </span>
             )}
@@ -230,17 +230,17 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               {currentCity.name}
             </p>
             {isTraining && !isWaiting && (
-              <p className="mt-1 text-[9px] text-muted-foreground">
+              <p className="mt-0.5 text-[9px] text-muted-foreground">
                 🌍 Pista: <span className="font-bold text-foreground/80">{currentCity.country}</span>
               </p>
             )}
           </div>
 
           {/* Score */}
-          <div className="text-center shrink-0 relative mb-2 pb-2 border-b border-border/50">
+          <div className="text-center shrink-0 relative mb-1.5 pb-1.5 border-b border-border/50">
             <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Puntos</p>
             <p
-              className={`text-xl font-mono font-black ${scorePop ? 'animate-score-pop' : ''}`}
+              className={`text-lg font-mono font-black ${scorePop ? 'animate-score-pop' : ''}`}
               style={{ color: 'hsl(var(--primary))', textShadow: '0 0 16px hsl(var(--primary) / 0.4)' }}
               aria-live="polite"
             >
@@ -254,7 +254,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Progress */}
-          <div className="text-center shrink-0 mb-2 pb-2 border-b border-border/50">
+          <div className="text-center shrink-0 mb-1.5 pb-1.5 border-b border-border/50">
             <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Ronda</p>
             <p className="text-sm font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-xs">/{totalRounds}</span></p>
             <div className="mt-1.5 flex flex-wrap justify-center gap-1">
@@ -272,7 +272,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Streak + Multiplier */}
-          <div className="flex flex-col gap-1 shrink-0 mb-2">
+          <div className="flex flex-col gap-1 shrink-0 mb-1.5">
             {showStreak && (
               <div className="text-center animate-score-pop">
                 <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold text-orange-400">
@@ -373,7 +373,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
-            className="absolute top-3 right-3 z-10 w-[clamp(14rem,22vw,18rem)] animate-slide-in-right"
+            className="absolute top-1/2 -translate-y-1/2 right-3 z-10 w-[clamp(14rem,22vw,18rem)] animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
@@ -435,11 +435,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className="absolute top-2 right-2 z-10 w-[clamp(11rem,40vw,16rem)] animate-slide-in-right"
+            className={`absolute z-10 animate-slide-in-right ${isCompact ? 'top-[4.5rem] right-2 w-[clamp(10rem,38vw,14rem)]' : 'top-2 right-2 w-[clamp(11rem,40vw,16rem)]'}`}
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex max-h-[min(85dvh,24rem)] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-2.5 shadow-2xl backdrop-blur-md">
+            <div className="flex max-h-[min(75dvh,22rem)] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-2 shadow-2xl backdrop-blur-md">
               <div className="text-center">
                 <span className="text-2xl block animate-record-pop">{feedback.emoji}</span>
                 <p className={`text-xs font-black ${feedback.color}`}>{feedback.phrase}</p>
