@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { type GameRoom, fetchRoom } from '@/lib/multiplayerUtils';
+import { useState, useEffect, useRef } from 'react';
+import { type GameRoom, fetchRoom, listenForFinished } from '@/lib/multiplayerUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { MODE_CONFIG } from '@/data/cities';
 
 interface MultiplayerResultScreenProps {
@@ -12,28 +13,75 @@ interface MultiplayerResultScreenProps {
 
 const diffLabels: Record<string, string> = { easy: '🟢 Fácil', medium: '🟡 Medio', hard: '🔴 Experto' };
 
-const POLL_INTERVAL = 3000; // 3 seconds
-const POLL_MAX_DURATION = 5 * 60 * 1000; // 5 minutes timeout
+const POLL_INTERVAL = 2000;
+const POLL_MAX_DURATION = 5 * 60 * 1000;
 
 export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onGoHome, onRoomUpdate }: MultiplayerResultScreenProps) {
   const myScore = isHost ? room.host_score : room.guest_score;
-  const opponentScore = isHost ? room.guest_score : room.host_score;
   const myName = isHost ? room.host_name : (room.guest_name || '???');
   const opponentName = isHost ? (room.guest_name || '???') : room.host_name;
 
-  // Use dedicated finished flags — score DEFAULT 0 cannot be used as "not played" signal
-  const myFinished = isHost ? room.host_finished : room.guest_finished;
-  const opponentFinished = isHost ? room.guest_finished : room.host_finished;
+  // Opponent finished detection — multiple signals:
+  // 1. DB column host_finished/guest_finished (if migration applied)
+  // 2. Realtime broadcast from opponent
+  // 3. Polling: opponent score changed from initial value
+  const dbFinished = isHost ? room.guest_finished : room.host_finished;
+  const [broadcastScore, setBroadcastScore] = useState<number | null>(null);
+  const broadcastReceivedRef = useRef(false);
 
+  // Opponent is done if ANY signal fires
+  const opponentFinished = dbFinished === true || broadcastScore !== null;
+  const opponentScore = broadcastScore !== null
+    ? broadcastScore
+    : (isHost ? room.guest_score : room.host_score);
+
+  const myFinished = true; // We're on the result screen, so WE already finished
   const iWon = opponentFinished && myScore > opponentScore;
   const tie = opponentFinished && myScore === opponentScore;
   const modeLabel = MODE_CONFIG.find(m => m.key === room.mode)?.label || room.mode;
   const [pollTimedOut, setPollTimedOut] = useState(false);
 
-  // Polling fallback — if Realtime subscription misses the opponent's finish event,
-  // periodically check the room state directly from the database.
+  // PRIMARY: Listen for opponent's "finished" broadcast via Realtime
   useEffect(() => {
-    if (opponentFinished) return; // already done
+    if (opponentFinished) return;
+
+    const channel = listenForFinished(room.id, isHost, (score) => {
+      if (!broadcastReceivedRef.current) {
+        broadcastReceivedRef.current = true;
+        setBroadcastScore(score);
+      }
+    });
+
+    return () => { supabase.removeChannel(channel); };
+  }, [room.id, isHost, opponentFinished]);
+
+  // FALLBACK: Poll the DB for changes (covers both finished flags AND score changes)
+  useEffect(() => {
+    if (opponentFinished) return;
+
+    const initialOppScore = isHost ? room.guest_score : room.host_score;
+
+    const checkRoom = async () => {
+      const freshRoom = await fetchRoom(room.id);
+      if (!freshRoom) return;
+
+      // Check finished flag (works if migration applied)
+      const oppDoneFlag = isHost ? freshRoom.guest_finished : freshRoom.host_finished;
+      if (oppDoneFlag && onRoomUpdate) {
+        onRoomUpdate(freshRoom);
+        return;
+      }
+
+      // Check if opponent score changed from initial (works without migration)
+      const freshOppScore = isHost ? freshRoom.guest_score : freshRoom.host_score;
+      if (freshOppScore !== initialOppScore) {
+        setBroadcastScore(freshOppScore);
+        if (onRoomUpdate) onRoomUpdate(freshRoom);
+        return;
+      }
+    };
+
+    checkRoom(); // immediate check
 
     const startTime = Date.now();
     const interval = setInterval(async () => {
@@ -42,13 +90,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
         setPollTimedOut(true);
         return;
       }
-      const freshRoom = await fetchRoom(room.id);
-      if (freshRoom) {
-        const oppDone = isHost ? freshRoom.guest_finished : freshRoom.host_finished;
-        if (oppDone && onRoomUpdate) {
-          onRoomUpdate(freshRoom);
-        }
-      }
+      await checkRoom();
     }, POLL_INTERVAL);
 
     return () => clearInterval(interval);

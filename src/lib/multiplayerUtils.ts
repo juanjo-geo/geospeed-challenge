@@ -115,7 +115,14 @@ export async function updateRoomStatus(roomId: string, status: string): Promise<
 }
 
 export async function updateRoomScore(roomId: string, isHost: boolean, score: number, round: number): Promise<boolean> {
-  return invokeRoomUpdate(roomId, 'update_score', { score, round });
+  // Retry up to 3 times with 1s delay — guards against transient network errors
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const ok = await invokeRoomUpdate(roomId, 'update_score', { score, round });
+    if (ok) return true;
+    if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+  }
+  console.error('[multiplayer] updateRoomScore failed after 3 attempts for room', roomId);
+  return false;
 }
 
 let channelCounter = 0;
@@ -137,8 +144,8 @@ export function subscribeToRoom(roomId: string, callback: (room: GameRoom) => vo
 }
 
 /**
- * Fetch room state directly from the public view (polling fallback).
- * Used when Realtime subscription might miss updates.
+ * Fetch room state for polling fallback.
+ * Tries the public view first (always works), then direct table as fallback.
  */
 export async function fetchRoom(roomId: string): Promise<GameRoom | null> {
   const { data, error } = await (supabase
@@ -146,6 +153,58 @@ export async function fetchRoom(roomId: string): Promise<GameRoom | null> {
     .select('*')
     .eq('id', roomId)
     .single() as any);
-  if (error || !data) return null;
-  return data as GameRoom;
+  if (!error && data) return data as GameRoom;
+
+  // Fallback to direct table
+  const { data: direct, error: directErr } = await (supabase
+    .from('game_rooms' as any)
+    .select('*')
+    .eq('id', roomId)
+    .single() as any);
+  if (directErr || !direct) return null;
+  return direct as GameRoom;
+}
+
+/**
+ * Broadcast "I finished" to the opponent via Supabase Realtime broadcast.
+ * This is the PRIMARY mechanism for detecting game completion — it works
+ * even if the DB migration for host_finished/guest_finished hasn't been applied.
+ */
+export function broadcastFinished(roomId: string, isHost: boolean, score: number) {
+  const channelName = `game-broadcast-${roomId}`;
+  const channel = supabase.channel(channelName);
+  channel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      channel.send({
+        type: 'broadcast',
+        event: 'player_finished',
+        payload: { isHost, score },
+      });
+      // Keep channel alive briefly so message delivers, then clean up
+      setTimeout(() => supabase.removeChannel(channel), 3000);
+    }
+  });
+}
+
+/**
+ * Listen for opponent "finished" broadcast.
+ * Returns the channel so the caller can clean it up.
+ */
+export function listenForFinished(
+  roomId: string,
+  isHost: boolean,
+  callback: (opponentScore: number) => void
+) {
+  const channelName = `game-broadcast-${roomId}`;
+  const channel = supabase.channel(channelName);
+  channel
+    .on('broadcast', { event: 'player_finished' }, (msg) => {
+      const payload = msg.payload as { isHost: boolean; score: number };
+      // Only react to the OPPONENT's finish event
+      if (payload.isHost !== isHost) {
+        callback(payload.score);
+      }
+    })
+    .subscribe();
+  return channel;
 }
