@@ -1,29 +1,18 @@
 /**
  * GeoSpeed IQ Challenge — Service Worker
  *
- * Strategy: Cache-first for static assets, network-first for API calls.
- * Enables offline play (except multiplayer and leaderboard sync).
+ * Strategy: Network-first for ALL requests (ensures fresh deploys are picked up).
+ * Falls back to cache only when offline.
  */
 
-const CACHE_NAME = 'geospeed-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/favicon.ico',
-];
+const CACHE_NAME = 'geospeed-v3';
 
-// Install: cache shell assets
+// Install: skip waiting to activate immediately
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: delete ALL old caches so stale code is never served
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -33,33 +22,25 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: cache-first for static, network-first for API
+// Fetch: NETWORK-FIRST for everything.
+// Only fall back to cache when the network is unavailable.
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Network-first for Supabase API, auth, and realtime
-  if (url.hostname.includes('supabase') || url.pathname.startsWith('/auth')) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  // Cache-first for everything else (assets, pages)
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        // Don't cache non-ok responses or opaque responses
-        if (!response || response.status !== 200) return response;
-        // Cache the fetched response for next time
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful responses for offline fallback
+        if (response && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+        }
         return response;
-      });
-    })
+      })
+      .catch(() => {
+        // Network failed — try cache as fallback
+        return caches.match(event.request);
+      })
   );
 });

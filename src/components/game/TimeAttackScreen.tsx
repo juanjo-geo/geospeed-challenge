@@ -137,7 +137,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       : 'grid grid-cols-[clamp(13rem,25vw,16rem)_minmax(0,1fr)]';
 
   return (
-    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass}`} role="main" aria-label="Modo contrareloj">
+    <div className={`min-h-0 overflow-hidden bg-background ${layoutClass}`} role="main" aria-label="Modo contrareloj" style={{ height: '100dvh', minHeight: '100vh' }}>
       {/* Portrait blocker */}
       {isPortraitMobile && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 game-bg">
@@ -231,8 +231,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
         </div>
       )}
 
-      {/* ──── Map area — identical structure to GameScreen ──── */}
-      <div className="relative h-full min-w-0 overflow-hidden">
+      {/* ──── Map area ──── */}
+      <div className="relative min-w-0 overflow-hidden" style={{ height: '100%', minHeight: 0 }}>
         {/* Floating HUD (compact only) */}
         {isCompact && (
           <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
