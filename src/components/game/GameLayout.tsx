@@ -50,8 +50,8 @@ export default function GameLayout({
         </div>
       )}
 
-      {/* Map area — always takes remaining space */}
-      <div className="relative flex-1 min-h-0 min-w-0">
+      {/* Map area — h-full gives children explicit height in grid context */}
+      <div className="relative h-full min-w-0 overflow-hidden">
         {children}
       </div>
 

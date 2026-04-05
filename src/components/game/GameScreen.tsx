@@ -340,8 +340,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         </div>
       )}
 
-      {/* ──── Map area (all modes) ──── */}
-      <div className="relative flex-1 min-h-0 min-w-0">
+      {/* ──── Map area (all modes) — h-full gives WorldMapCanvas explicit height in grid ──── */}
+      <div className="relative h-full min-w-0 overflow-hidden">
         {/* Floating HUD overlay (compact mode only) */}
         {isCompact && (
           <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
