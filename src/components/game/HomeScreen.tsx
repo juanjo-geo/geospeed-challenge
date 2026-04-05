@@ -23,7 +23,7 @@ const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string
   { key: 'hard',   label: 'Experto', emoji: '🔴', desc: '30 difíciles',  borderClass: 'border-red-500/40    hover:border-red-500',    glowClass: 'hover:shadow-[0_0_18px_hsl(0_84%_60%/0.25)]'   },
 ];
 
-const MEDALS = ['🥇', '🥈', '🥉', '4.', '5.'];
+const MEDALS = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
 
 const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> = {
   asia:   { level: 2, label: 'Nv.2' },
@@ -144,8 +144,67 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       )}
 
-      {/* ── Mode selector ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-250">
+      {/* ── Modo Entrenamiento ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-250">
+        <button
+          onClick={onStartTraining}
+          className="w-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 border-blue-500/40 hover:border-blue-500 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+          aria-label="Modo entrenamiento para novatos"
+        >
+          <span className="text-xl sm:text-2xl shrink-0">🎓</span>
+          <div className="text-left flex-1 min-w-0">
+            <div className="font-bold text-xs sm:text-sm text-blue-400">Modo Entrenamiento</div>
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground">Pistas en el mapa · 6 ciudades · aprende geografía</div>
+          </div>
+        </button>
+      </div>
+
+      {/* ── Desafío Diario ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
+        <button
+          onClick={onDailyChallenge}
+          className="w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 active:scale-[0.97] animate-pulse-glow-subtle"
+          aria-label="Desafío diario"
+        >
+          <span className="text-xl sm:text-2xl shrink-0">📅</span>
+          <div className="text-left flex-1 min-w-0">
+            <div className="font-black text-xs sm:text-sm text-amber-400">DESAFÍO DIARIO</div>
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">Mismas ciudades para todos · ¿Quién hace más puntos?</div>
+          </div>
+          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
+            {new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+          </span>
+        </button>
+      </div>
+
+      {/* ── Contrarreloj + Duelo ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-2 gap-1.5 sm:gap-2">
+        <button
+          onClick={onTimeAttack}
+          className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
+          aria-label="Modo contrarreloj extremo"
+        >
+          <span className="text-lg sm:text-xl shrink-0">⚡</span>
+          <div className="text-left min-w-0">
+            <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrarreloj</div>
+            <div className="text-[8px] sm:text-[10px] text-muted-foreground">60s · infinitas</div>
+          </div>
+        </button>
+        <button
+          onClick={onMultiplayer}
+          className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
+          aria-label="Modo duelo 1 contra 1"
+        >
+          <span className="text-lg sm:text-xl shrink-0">🎮</span>
+          <div className="text-left min-w-0">
+            <div className="font-bold text-[10px] sm:text-xs text-primary">Modo Duelo</div>
+            <div className="text-[8px] sm:text-[10px] text-muted-foreground">1v1 en vivo</div>
+          </div>
+        </button>
+      </div>
+
+      {/* ── Modalidad ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-400">
         <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest" id="mode-label">Modalidad</p>
         <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2" role="radiogroup" aria-labelledby="mode-label">
           {MODE_CONFIG.map(m => {
@@ -178,8 +237,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       </div>
 
-      {/* ── Difficulty selector ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-300" role="group" aria-label="Seleccionar dificultad">
+      {/* ── Dificultad ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-5 animate-fade-in-up animation-delay-450" role="group" aria-label="Seleccionar dificultad">
         <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">Elige dificultad</p>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {DIFF_CONFIG.map(d => (
@@ -197,61 +256,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       </div>
 
-      {/* ── Daily Challenge ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-350">
-        <button
-          onClick={onDailyChallenge}
-          className="w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 active:scale-[0.97] animate-pulse-glow-subtle"
-          aria-label="Desafío diario"
-        >
-          <span className="text-xl sm:text-2xl shrink-0" style={{ filter: 'drop-shadow(0 0 6px hsl(38 92% 50% / 0.6))' }}>📅</span>
-          <div className="text-left flex-1 min-w-0">
-            <div className="font-black text-xs sm:text-sm text-amber-400">DESAFÍO DIARIO</div>
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">Mismas ciudades para todos · ¿Quién hace más puntos?</div>
-          </div>
-          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
-            {new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}
-          </span>
-        </button>
-      </div>
-
-      {/* ── Special modes ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-5 animate-fade-in-up animation-delay-400 grid grid-cols-2 gap-1.5 sm:gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
-        <button
-          onClick={onTimeAttack}
-          className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
-          aria-label="Modo contrarreloj extremo"
-        >
-          <span className="text-lg sm:text-xl shrink-0">⚡</span>
-          <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrarreloj</div>
-            <div className="text-[8px] sm:text-[10px] text-muted-foreground">60s · infinitas</div>
-          </div>
-        </button>
-        <button
-          onClick={onMultiplayer}
-          className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
-          aria-label="Modo duelo 1 contra 1"
-        >
-          <span className="text-lg sm:text-xl shrink-0">🎮</span>
-          <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-primary">Modo Duelo</div>
-            <div className="text-[8px] sm:text-[10px] text-muted-foreground">1v1 en vivo</div>
-          </div>
-        </button>
-        <button
-          onClick={onStartTraining}
-          className="col-span-2 flex items-center justify-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 border-blue-500/40 hover:border-blue-500 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
-          aria-label="Modo entrenamiento para novatos"
-        >
-          <span className="text-lg sm:text-xl shrink-0">🎓</span>
-          <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-blue-400">Modo Entrenamiento</div>
-            <div className="text-[8px] sm:text-[10px] text-muted-foreground">Pistas en el mapa · aprende geografía</div>
-          </div>
-        </button>
-      </div>
-
       {/* ── Collapsible Ranking ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-400">
         <button
@@ -260,13 +264,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           aria-expanded={showRanking}
           aria-controls="ranking-panel"
         >
-          🏆 Ranking Top 5
+          🏆 Ranking Top 10
           <span className={`transition-transform duration-300 ${showRanking ? 'rotate-180' : ''}`}>▾</span>
         </button>
 
         <div
           id="ranking-panel"
-          className={`overflow-hidden transition-all duration-500 ease-out ${showRanking ? 'max-h-[400px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}
+          className={`overflow-hidden transition-all duration-500 ease-out ${showRanking ? 'max-h-[600px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}
         >
           <div className="grid grid-cols-6 gap-1 sm:gap-1.5 mb-2 sm:mb-3 w-full" role="tablist" aria-label="Filtrar ranking por modo">
             {[{ key: 'all', label: 'Todos' }, ...MODE_CONFIG].map(m => (

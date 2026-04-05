@@ -183,7 +183,7 @@ export default function FinalResultScreen({
         {qualifies && !saved && (
           <div className="mb-4 sm:mb-5 md:mb-6 text-center">
             <p className="text-xs sm:text-sm mb-2 sm:mb-3" style={{ color: 'hsl(var(--primary))' }}>
-              🏆 ¡Entraste al Top 5! Ingresa tus iniciales:
+              🏆 ¡Entraste al Top 10! Ingresa tus iniciales:
             </p>
             <div className="flex justify-center gap-2 mb-2 sm:mb-3">
               <input

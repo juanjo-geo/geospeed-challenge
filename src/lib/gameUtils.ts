@@ -57,7 +57,7 @@ export async function getLeaderboard(mode?: string): Promise<LeaderboardEntry[]>
       .from('leaderboard')
       .select('initials, score, difficulty, mode, created_at')
       .order('score', { ascending: false })
-      .limit(5);
+      .limit(10);
     if (mode) query = query.eq('mode', mode);
     const { data, error } = await query;
     if (error) throw error;
@@ -93,14 +93,14 @@ export async function addToLeaderboard(entry: LeaderboardEntry): Promise<boolean
     const board = getLeaderboardLocal();
     board.push(entry);
     board.sort((a, b) => b.score - a.score);
-    localStorage.setItem('geospeed_leaderboard', JSON.stringify(board.slice(0, 5)));
-    return board.slice(0, 5).some(e => e.initials === entry.initials && e.score === entry.score);
+    localStorage.setItem('geospeed_leaderboard', JSON.stringify(board.slice(0, 10)));
+    return board.slice(0, 10).some(e => e.initials === entry.initials && e.score === entry.score);
   }
 }
 
 export async function qualifiesForLeaderboard(score: number): Promise<boolean> {
   const board = await getLeaderboard();
-  return board.length < 5 || score > board[board.length - 1].score;
+  return board.length < 10 || score > board[board.length - 1].score;
 }
 
 function getLeaderboardLocal(): LeaderboardEntry[] {
