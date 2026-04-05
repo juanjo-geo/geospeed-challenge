@@ -59,28 +59,28 @@ export default function WorldMapCanvas({
   );
   const isLightMode = () => theme === 'light';
 
-  // Dark mode: vivid flat political map (inspired by colorful atlas reference)
+  // Dark mode: warm earth tones inspired by watercolor atlas reference
   const MAP_PALETTE_DARK = [
-    '#5ABFCC', // cyan blue  (Canada / large countries)
-    '#8B1A52', // dark maroon (Russia-tone)
-    '#E03888', // hot pink / magenta
-    '#F0C820', // bright yellow
-    '#F07030', // orange
-    '#3A7888', // dark teal
-    '#C040A0', // magenta-purple
-    '#68C8D8', // light cyan
-    '#F07858', // coral / salmon (Australia-tone)
-    '#4A5E6A', // dark slate blue-gray
-    '#A038A8', // purple
-    '#3870D0', // bright blue
-    '#C03030', // red
-    '#88B828', // yellow-green
-    '#28988A', // medium teal
-    '#F09030', // amber
-    '#7838A8', // violet
-    '#D05060', // deep rose
-    '#38A050', // medium green
-    '#D05898', // rose-pink
+    '#D4A060', // golden amber
+    '#C07848', // terracotta
+    '#B84030', // deep rust
+    '#E8C070', // warm gold
+    '#C86040', // burnt orange
+    '#A89060', // warm tan
+    '#A03028', // deep red-brown
+    '#DEB870', // amber wheat
+    '#C86048', // coral terracotta
+    '#D4B070', // light gold
+    '#B86838', // orange-brown
+    '#E0B868', // pale honey
+    '#C07840', // medium terracotta
+    '#983820', // dark sienna
+    '#D89860', // warm sand
+    '#B05038', // brick red
+    '#E0A850', // golden amber light
+    '#C88058', // caramel
+    '#905030', // deep sienna
+    '#D8B068', // honey gold
   ];
 
   // Light mode: soft pastel political map — inspired by classic atlas reference
@@ -126,10 +126,11 @@ export default function WorldMapCanvas({
       oceanGrad.addColorStop(1, '#84B8DC');
       ctx.fillStyle = oceanGrad;
     } else {
+      // Deep navy ocean — contrasts with warm earth-tone countries
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
-      oceanGrad.addColorStop(0, '#5CD0DC');
-      oceanGrad.addColorStop(0.5, '#48C0CC');
-      oceanGrad.addColorStop(1, '#38B0BC');
+      oceanGrad.addColorStop(0, '#0D1E30');
+      oceanGrad.addColorStop(0.5, '#0A1828');
+      oceanGrad.addColorStop(1, '#071220');
       ctx.fillStyle = oceanGrad;
     }
     ctx.fillRect(0, 0, w, h);
@@ -157,7 +158,7 @@ export default function WorldMapCanvas({
       }
     }
     // Pass 2: Stroke all borders on top of the fills.
-    ctx.strokeStyle = light ? '#8899AA' : '#1a2a34';
+    ctx.strokeStyle = light ? '#8899AA' : '#2A1408';
     ctx.lineWidth = 1.2;
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
@@ -180,7 +181,7 @@ export default function WorldMapCanvas({
     }
 
     // Graticule — extends across the ENTIRE canvas, not just geographic bounds
-    ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(0,20,30,0.35)';
+    ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(20,8,0,0.30)';
     ctx.lineWidth = 0.8;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;

@@ -227,44 +227,44 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* City to find */}
-          <div className="w-full shrink-0 mb-1.5 rounded-lg px-2 py-1.5 bg-primary/8 border border-primary/20 text-center">
+          <div className="w-full shrink-0 mb-2 rounded-lg px-2 py-2 bg-primary/8 border border-primary/20 text-center">
             {isTraining && (
-              <span className="inline-block mb-0.5 rounded-full bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[7px] font-bold text-primary uppercase tracking-wider">
+              <span className="inline-block mb-1 rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold text-primary">
                 🎓 Entrenamiento
               </span>
             )}
-            <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5" id="city-label">Encuentra</p>
-            <p className="text-sm font-black leading-tight break-words hyphens-auto" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-1" id="city-label">Encuentra</p>
+            <p className="text-base font-black leading-tight break-words hyphens-auto" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">
               {currentCity.name}
             </p>
             {isTraining && !isWaiting && (
-              <p className="mt-0.5 text-[9px] text-muted-foreground">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 🌍 Pista: <span className="font-bold text-foreground/80">{currentCity.country}</span>
               </p>
             )}
           </div>
 
           {/* Score */}
-          <div className="w-full text-center shrink-0 relative mb-1.5 pb-1.5 border-b border-border/50">
-            <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Puntos</p>
+          <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/50">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-none">Puntos</p>
             <p
-              className={`text-lg font-mono font-black ${scorePop ? 'animate-score-pop' : ''}`}
+              className={`text-xl font-mono font-black ${scorePop ? 'animate-score-pop' : ''}`}
               style={{ color: 'hsl(var(--primary))', textShadow: '0 0 16px hsl(var(--primary) / 0.4)' }}
               aria-live="polite"
             >
               {score.toLocaleString()}
             </p>
             {floatPoints !== null && (
-              <span className="absolute left-1/2 -top-1 -translate-x-1/2 text-[10px] font-bold text-green-400 animate-float-up pointer-events-none">
+              <span className="absolute left-1/2 -top-1 -translate-x-1/2 text-xs font-bold text-green-400 animate-float-up pointer-events-none">
                 +{floatPoints.toLocaleString()}
               </span>
             )}
           </div>
 
           {/* Progress */}
-          <div className="w-full text-center shrink-0 mb-1.5 pb-1.5 border-b border-border/50">
-            <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Ronda</p>
-            <p className="text-sm font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-xs">/{totalRounds}</span></p>
+          <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/50">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-none">Ronda</p>
+            <p className="text-base font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-sm">/{totalRounds}</span></p>
             <div className="mt-1.5 flex flex-wrap justify-center gap-1">
               {Array.from({ length: totalRounds }).map((_, i) => {
                 const round = rounds[i];
@@ -280,17 +280,17 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Streak + Multiplier */}
-          <div className="w-full flex flex-col gap-1 shrink-0 mb-1.5">
+          <div className="w-full flex flex-col gap-1.5 shrink-0 mb-2">
             {showStreak && (
               <div className="text-center animate-score-pop">
-                <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold text-orange-400">
-                  🔥×{streak}{streak >= 3 && <span className="ml-0.5 text-[9px] opacity-80">+{(streak - 2) * 15}%</span>}
+                <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
+                  🔥×{streak}{streak >= 3 && <span className="ml-0.5 text-[10px] opacity-80">+{(streak - 2) * 15}%</span>}
                 </span>
               </div>
             )}
             {mult && (
               <div className="text-center">
-                <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
                   mult.value >= 2
                     ? 'bg-green-500/15 border-green-500/30 text-green-400'
                     : mult.value >= 1
@@ -305,7 +305,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* Timer */}
           <div className="w-full mt-auto shrink-0">
-            <p className="text-center text-[8px] italic text-muted-foreground mb-1">Velocidad y precisión</p>
+            <p className="text-center text-[10px] italic text-muted-foreground mb-1">Velocidad y precisión</p>
             <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} />
           </div>
         </div>
@@ -390,7 +390,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
-            className="absolute inset-y-0 right-3 z-10 w-[clamp(24rem,38vw,34rem)] flex items-center animate-slide-in-right"
+            className="absolute inset-y-0 right-0 z-10 w-[clamp(24rem,38vw,34rem)] flex items-center animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
@@ -452,7 +452,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(17rem,70vw,26rem)]' : 'right-2 w-[clamp(22rem,45vw,30rem)]'}`}
+            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-0 w-[clamp(17rem,70vw,26rem)]' : 'right-0 w-[clamp(22rem,45vw,30rem)]'}`}
             role="dialog"
             aria-label="Resultado de la ronda"
           >
