@@ -381,18 +381,18 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
-            className="absolute inset-y-0 right-3 z-10 w-[clamp(14rem,22vw,18rem)] flex items-center animate-slide-in-right"
+            className="absolute inset-y-0 right-3 z-10 w-[clamp(18rem,32vw,26rem)] flex items-center animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex flex-col justify-center gap-2.5 rounded-2xl border border-border/80 bg-card/60 p-4 shadow-2xl backdrop-blur-md max-h-[90%] overflow-y-auto">
+            <div className="flex flex-col justify-center gap-3 rounded-2xl border border-border/80 bg-card/60 p-5 shadow-2xl backdrop-blur-md max-h-[90%] overflow-y-auto">
               {/* Feedback */}
               <div className="text-center">
                 <span
-                  className="text-5xl block animate-record-pop"
+                  className="text-6xl block animate-record-pop"
                   style={{ filter: 'drop-shadow(0 0 10px currentColor)' }}
                 >{feedback.emoji}</span>
-                <p className={`mt-1 text-lg font-black ${feedback.color}`}>{feedback.phrase}</p>
+                <p className={`mt-1.5 text-xl font-black ${feedback.color}`}>{feedback.phrase}</p>
                 {showStreak && (
                   <p className="mt-0.5 animate-score-pop text-sm font-bold text-orange-400">
                     🔥 Racha ×{streak}{streak >= 3 && ` (+${(streak - 2) * 15}%)`}
@@ -401,29 +401,29 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               </div>
 
               {/* City */}
-              <div className="text-center border-t border-border/50 pt-2">
-                <h3 className="text-lg font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
+              <div className="text-center border-t border-border/50 pt-2.5">
+                <h3 className="text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
                 <p className="text-sm font-semibold text-foreground/80">{lastResult.city.country}</p>
               </div>
 
               {/* Stats grid */}
-              <div className="grid grid-cols-2 gap-1.5">
-                <div className="rounded-lg bg-muted/50 p-2 text-center">
-                  <p className="text-[10px] uppercase text-muted-foreground">Distancia</p>
-                  <p className="font-mono text-sm font-bold">{formatDistance(lastResult.distance)}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-muted/50 p-2.5 text-center">
+                  <p className="text-[11px] uppercase text-muted-foreground">Distancia</p>
+                  <p className="font-mono text-base font-bold">{formatDistance(lastResult.distance)}</p>
                 </div>
-                <div className="rounded-lg bg-muted/50 p-2 text-center">
-                  <p className="text-[10px] uppercase text-muted-foreground">Tiempo</p>
-                  <p className="font-mono text-sm font-bold">{lastResult.timeUsed}s</p>
+                <div className="rounded-lg bg-muted/50 p-2.5 text-center">
+                  <p className="text-[11px] uppercase text-muted-foreground">Tiempo</p>
+                  <p className="font-mono text-base font-bold">{lastResult.timeUsed}s</p>
                 </div>
-                <div className="rounded-lg bg-muted/50 p-2 text-center">
-                  <p className="text-[10px] uppercase text-muted-foreground">Base</p>
-                  <p className="font-mono text-sm font-bold">{lastResult.basePoints}</p>
+                <div className="rounded-lg bg-muted/50 p-2.5 text-center">
+                  <p className="text-[11px] uppercase text-muted-foreground">Base</p>
+                  <p className="font-mono text-base font-bold">{lastResult.basePoints}</p>
                 </div>
                 {/* Total — highlighted */}
-                <div className="rounded-lg p-2 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
-                  <p className="text-[10px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
-                  <p className="font-mono text-sm font-black" style={{ color: 'hsl(var(--primary))', textShadow: '0 0 10px hsl(var(--primary) / 0.4)' }}>
+                <div className="rounded-lg p-2.5 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
+                  <p className="text-[11px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
+                  <p className="font-mono text-lg font-black" style={{ color: 'hsl(var(--primary))', textShadow: '0 0 10px hsl(var(--primary) / 0.4)' }}>
                     {lastResult.totalPoints.toLocaleString()}
                   </p>
                 </div>
@@ -431,7 +431,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
               <button
                 onClick={advanceRound}
-                className="w-full rounded-xl py-2.5 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-xl py-3 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
                 aria-label={`Siguiente ronda, avance automático en ${autoAdvanceTimer} segundos`}
               >
@@ -443,38 +443,38 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(10rem,38vw,14rem)]' : 'right-2 w-[clamp(11rem,40vw,16rem)]'}`}
+            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(13rem,55vw,20rem)]' : 'right-2 w-[clamp(15rem,50vw,22rem)]'}`}
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex max-h-[90%] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-2 shadow-2xl backdrop-blur-md">
+            <div className="flex max-h-[90%] flex-col justify-center gap-2 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-3 shadow-2xl backdrop-blur-md">
               <div className="text-center">
-                <span className="text-2xl block animate-record-pop">{feedback.emoji}</span>
-                <p className={`text-xs font-black ${feedback.color}`}>{feedback.phrase}</p>
+                <span className="text-3xl block animate-record-pop">{feedback.emoji}</span>
+                <p className={`text-sm font-black ${feedback.color}`}>{feedback.phrase}</p>
               </div>
 
-              <div className="text-center border-t border-border/40 pt-1">
-                <h3 className="text-sm font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
+              <div className="text-center border-t border-border/40 pt-1.5">
+                <h3 className="text-base font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
                 <p className="text-xs text-foreground/80">{lastResult.city.country}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-1">
-                <div className="bg-muted/50 rounded-lg p-1.5 text-center">
-                  <p className="text-[8px] text-muted-foreground uppercase">Distancia</p>
-                  <p className="font-mono font-bold text-[11px]">{formatDistance(lastResult.distance)}</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <p className="text-[9px] text-muted-foreground uppercase">Distancia</p>
+                  <p className="font-mono font-bold text-xs">{formatDistance(lastResult.distance)}</p>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-1.5 text-center">
-                  <p className="text-[8px] text-muted-foreground uppercase">Tiempo</p>
-                  <p className="font-mono font-bold text-[11px]">{lastResult.timeUsed}s</p>
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <p className="text-[9px] text-muted-foreground uppercase">Tiempo</p>
+                  <p className="font-mono font-bold text-xs">{lastResult.timeUsed}s</p>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-1.5 text-center">
-                  <p className="text-[8px] text-muted-foreground uppercase">Base</p>
-                  <p className="font-mono font-bold text-[11px]">{lastResult.basePoints}</p>
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <p className="text-[9px] text-muted-foreground uppercase">Base</p>
+                  <p className="font-mono font-bold text-xs">{lastResult.basePoints}</p>
                 </div>
                 {/* Total — highlighted */}
-                <div className="rounded-lg p-1.5 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
-                  <p className="text-[8px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
-                  <p className="font-mono font-black text-[11px]" style={{ color: 'hsl(var(--primary))' }}>
+                <div className="rounded-lg p-2 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
+                  <p className="text-[9px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
+                  <p className="font-mono font-black text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {lastResult.totalPoints.toLocaleString()}
                   </p>
                 </div>
@@ -482,7 +482,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
               <button
                 onClick={advanceRound}
-                className="w-full py-1.5 rounded-lg font-black text-xs transition-all active:scale-[0.97] btn-glow"
+                className="w-full py-2 rounded-lg font-black text-xs transition-all active:scale-[0.97] btn-glow"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
               >
                 SIGUIENTE ({autoAdvanceTimer}s) →

@@ -134,11 +134,10 @@ const Index = () => {
     setIsTraining(false);
     setDifficulty(diff);
     setGameMode(mode);
-    const seen = localStorage.getItem('geospeed_tutorial_seen');
-    if (!seen) {
-      pendingStartRef.current = { diff, mode };
-      setPhase('tutorial');
-    } else if (isMobile && window.innerHeight > window.innerWidth) {
+    // Onboarding is now embedded in HomeScreen ("¿Cómo se juega?"),
+    // so the old tutorial overlay is no longer needed.
+    localStorage.setItem('geospeed_tutorial_seen', '1');
+    if (isMobile && window.innerHeight > window.innerWidth) {
       setPhase('rotate');
     } else {
       gameKeyRef.current += 1;
