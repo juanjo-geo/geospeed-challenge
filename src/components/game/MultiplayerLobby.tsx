@@ -139,7 +139,7 @@ export default function MultiplayerLobby({ onRoomReady, onBack }: MultiplayerLob
             className="w-full py-3 rounded-lg font-bold text-base transition-all active:scale-[0.97] disabled:opacity-50"
             style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
-            {loading ? 'CREANDO...' : 'CREAR SALA 🎯'}
+            {loading ? 'CREANDO...' : '🎯 CONFIRMAR Y CREAR'}
           </button>
         </div>
       )}
@@ -165,7 +165,7 @@ export default function MultiplayerLobby({ onRoomReady, onBack }: MultiplayerLob
             className="w-full py-3 rounded-lg font-bold text-base transition-all active:scale-[0.97] disabled:opacity-50"
             style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
-            {loading ? 'BUSCANDO...' : 'UNIRSE 🚀'}
+            {loading ? 'BUSCANDO...' : '🚀 ENTRAR A LA SALA'}
           </button>
         </div>
       )}
