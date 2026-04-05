@@ -9,6 +9,7 @@ interface WorldMapCanvasProps {
   correctLocation?: { lat: number; lon: number } | null;
   distanceKm?: number | null;
   gameMode?: GameMode;
+  hintZone?: { lat: number; lon: number } | null;
 }
 
 export default function WorldMapCanvas({
@@ -18,6 +19,7 @@ export default function WorldMapCanvas({
   correctLocation,
   distanceKm,
   gameMode = 'world',
+  hintZone,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
@@ -371,6 +373,79 @@ export default function WorldMapCanvas({
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY]);
+
+  // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
+  const hintAnimFrameRef = useRef<number>(0);
+  useEffect(() => {
+    if (!hintZone || userClick) {
+      if (hintAnimFrameRef.current) cancelAnimationFrame(hintAnimFrameRef.current);
+      return;
+    }
+    if (!offscreenRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = dprRef.current;
+
+    const hx = lonToX(hintZone.lon);
+    const hy = latToY(hintZone.lat);
+    // Radius as a proportion of map width (~16° for world, ~9° for regional)
+    const radiusDeg = gameMode === 'world' ? 16 : 9;
+    const radiusPx = (radiusDeg / lonRange) * dimensions.w;
+
+    let startTime: number | null = null;
+
+    const animate = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const elapsed = (ts - startTime) % 3000;
+      const phase = elapsed / 3000;
+      const pulse = Math.sin(phase * Math.PI * 2);
+      const alpha = 0.13 + 0.07 * pulse;
+      const scale = 0.93 + 0.07 * pulse;
+
+      canvas.width = dimensions.w * dpr;
+      canvas.height = dimensions.h * dpr;
+      canvas.style.width = `${dimensions.w}px`;
+      canvas.style.height = `${dimensions.h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
+
+      // Radial gradient glow
+      const outerR = radiusPx * (scale + 0.15);
+      const grad = ctx.createRadialGradient(hx, hy, outerR * 0.3, hx, hy, outerR);
+      grad.addColorStop(0, `rgba(245, 200, 66, ${alpha * 1.4})`);
+      grad.addColorStop(0.6, `rgba(245, 200, 66, ${alpha})`);
+      grad.addColorStop(1, 'rgba(245, 200, 66, 0)');
+      ctx.beginPath();
+      ctx.arc(hx, hy, outerR, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Dashed border ring
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(hx, hy, radiusPx * scale, 0, Math.PI * 2);
+      ctx.setLineDash([10, 7]);
+      ctx.strokeStyle = `rgba(245, 200, 66, ${0.55 + 0.2 * pulse})`;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.restore();
+
+      // "?" label at center
+      const fontSize = Math.max(14, Math.round(dimensions.w / 40));
+      ctx.font = `bold ${fontSize}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(245, 200, 66, ${0.7 + 0.2 * pulse})`;
+      ctx.fillText('?', hx, hy);
+
+      hintAnimFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    hintAnimFrameRef.current = requestAnimationFrame(animate);
+    return () => { if (hintAnimFrameRef.current) cancelAnimationFrame(hintAnimFrameRef.current); };
+  }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (clickDisabled) return;

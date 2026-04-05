@@ -61,6 +61,7 @@ const Index = () => {
   const [taResult, setTaResult] = useState<TimeAttackResult | null>(null);
   const [countdown, setCountdown] = useState(3);
   const [showNoLives, setShowNoLives] = useState(false);
+  const [isTraining, setIsTraining] = useState(false);
   // Multiplayer state
   const [mpRoom, setMpRoom] = useState<GameRoom | null>(null);
   const [mpIsHost, setMpIsHost] = useState(false);
@@ -102,6 +103,7 @@ const Index = () => {
       setShowNoLives(true);
       return;
     }
+    setIsTraining(false);
     setDifficulty(diff);
     setGameMode(mode);
     const seen = localStorage.getItem('geospeed_tutorial_seen');
@@ -153,7 +155,7 @@ const Index = () => {
   }, [difficulty, gameMode]);
 
   const handlePlayAgain = useCallback(() => { gameKeyRef.current += 1; setPhase('countdown'); }, []);
-  const handleGoHome = useCallback(() => setPhase('home'), []);
+  const handleGoHome = useCallback(() => { setIsTraining(false); setPhase('home'); }, []);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
   const handleTimeAttack = useCallback(() => {
@@ -166,6 +168,18 @@ const Index = () => {
     setGameMode('world');
     setPhase('daily');
   }, []);
+
+  const handleStartTraining = useCallback(() => {
+    setIsTraining(true);
+    setDifficulty('easy');
+    setGameMode('world');
+    gameKeyRef.current += 1;
+    if (isMobile && window.innerHeight > window.innerWidth) {
+      setPhase('rotate');
+    } else {
+      setPhase('countdown');
+    }
+  }, [isMobile]);
 
   const handleRoomReady = useCallback((room: GameRoom, isHost: boolean) => {
     setMpRoom(room);
@@ -219,7 +233,7 @@ const Index = () => {
       return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg">
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
-            {modeLabel} — {difficultyLabels[difficulty]}
+            {isTraining ? '🎓 Modo Entrenamiento' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
           </p>
           <div
             key={countdown}
@@ -418,6 +432,7 @@ const Index = () => {
           gameMode={gameMode}
           onRoundComplete={() => {}}
           onGameOver={handleGameOver}
+          isTraining={isTraining}
         />
       );
     }
@@ -437,7 +452,7 @@ const Index = () => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} />
     );
   };
 

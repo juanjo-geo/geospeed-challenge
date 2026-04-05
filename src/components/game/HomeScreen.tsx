@@ -14,6 +14,7 @@ interface HomeScreenProps {
   onMultiplayer: () => void;
   onTimeAttack: () => void;
   onDailyChallenge: () => void;
+  onStartTraining: () => void;
 }
 
 const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string }[] = [
@@ -29,7 +30,7 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
   africa: { level: 3, label: 'Nv.3' },
 };
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
   const navigate = useNavigate();
   const stats = getPlayerStats();
@@ -216,7 +217,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </div>
 
       {/* ── Special modes ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-5 animate-fade-in-up animation-delay-400 grid grid-cols-2 gap-1.5 sm:gap-2">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-5 animate-fade-in-up animation-delay-400 grid grid-cols-2 gap-1.5 sm:gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
         <button
           onClick={onTimeAttack}
           className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
@@ -237,6 +238,17 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <div className="text-left min-w-0">
             <div className="font-bold text-[10px] sm:text-xs text-primary">Modo Duelo</div>
             <div className="text-[8px] sm:text-[10px] text-muted-foreground">1v1 en vivo</div>
+          </div>
+        </button>
+        <button
+          onClick={onStartTraining}
+          className="col-span-2 flex items-center justify-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 border-blue-500/40 hover:border-blue-500 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+          aria-label="Modo entrenamiento para novatos"
+        >
+          <span className="text-lg sm:text-xl shrink-0">🎓</span>
+          <div className="text-left min-w-0">
+            <div className="font-bold text-[10px] sm:text-xs text-blue-400">Modo Entrenamiento</div>
+            <div className="text-[8px] sm:text-[10px] text-muted-foreground">Pistas en el mapa · aprende geografía</div>
           </div>
         </button>
       </div>

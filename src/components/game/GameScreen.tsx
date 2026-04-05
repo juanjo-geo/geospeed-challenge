@@ -27,6 +27,7 @@ interface GameScreenProps {
   onRoundComplete: (result: RoundResult) => void;
   onGameOver: (rounds: RoundResult[], reason: 'timeout' | 'complete') => void;
   seed?: number;
+  isTraining?: boolean;
 }
 
 function getRoundFeedback(distance: number): { emoji: string; phrase: string; color: string } {
@@ -39,7 +40,7 @@ function getRoundFeedback(distance: number): { emoji: string; phrase: string; co
   return { emoji: '😬', phrase: 'Muy lejos', color: 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false }: GameScreenProps) {
   const layoutMode = useGameLayoutMode();
   const isCompact = layoutMode === 'compact';
   const isWide = layoutMode === 'wide';
@@ -217,10 +218,20 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* City to find */}
           <div className="shrink-0 mb-2 rounded-lg px-2 py-2 bg-primary/8 border border-primary/20 text-center">
+            {isTraining && (
+              <span className="inline-block mb-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[8px] font-bold text-blue-400 uppercase tracking-widest">
+                🎓 Entrenamiento
+              </span>
+            )}
             <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5" id="city-label">Encuentra</p>
             <p className="text-sm font-black leading-tight break-words" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">
               {currentCity.name}
             </p>
+            {isTraining && !isWaiting && (
+              <p className="mt-1 text-[9px] text-muted-foreground">
+                🌍 Pista: <span className="font-bold text-foreground/80">{currentCity.country}</span>
+              </p>
+            )}
           </div>
 
           {/* Score */}
@@ -298,10 +309,17 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             <div className="rounded-2xl border border-border bg-card/82 px-3 py-2.5 backdrop-blur-md shadow-[0_20px_40px_hsl(var(--background)/0.32)]">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
                 <div className="min-w-0 flex-1 text-left">
-                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">Encuentra</p>
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
+                    {isTraining ? '🎓 Entrenamiento' : 'Encuentra'}
+                  </p>
                   <p className="break-words font-bold leading-tight text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {currentCity.name}
                   </p>
+                  {isTraining && !isWaiting && (
+                    <p className="text-[9px] text-muted-foreground mt-0.5">
+                      🌍 <span className="font-semibold text-foreground/80">{currentCity.country}</span>
+                    </p>
+                  )}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-foreground/90">
                     <span className="rounded-full bg-muted/80 px-1.5 py-0.5">R{currentRound + 1}/{TOTAL_ROUNDS}</span>
                     {showStreak && (
@@ -347,6 +365,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           correctLocation={lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null}
           distanceKm={lastResult?.distance ?? null}
           gameMode={gameMode}
+          hintZone={isTraining && !isWaiting ? { lat: currentCity.lat, lon: currentCity.lon } : null}
         />
 
         {/* Round result — overlay on wide */}

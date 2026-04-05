@@ -13,23 +13,36 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
       onClick={toggleTheme}
       title={isLight ? 'Modo oscuro' : 'Modo claro'}
       aria-label={isLight ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-border transition-colors duration-300 ${isLight ? 'bg-primary/20' : 'bg-muted/80'} ${className}`}
+      className={`flex items-center gap-1.5 cursor-pointer select-none group ${className}`}
     >
+      {/* Label dinámico */}
       <span
-        className="absolute left-[5px] text-[10px] leading-none pointer-events-none select-none transition-opacity duration-200"
-        style={{ opacity: isLight ? 0 : 1 }}
-      >🌙</span>
+        className="text-[9px] font-bold uppercase tracking-widest transition-colors duration-300"
+        style={{ color: 'hsl(var(--muted-foreground))' }}
+      >
+        {isLight ? 'CLARO' : 'OSCURO'}
+      </span>
+
+      {/* Pill toggle */}
       <span
-        className="absolute right-[5px] text-[10px] leading-none pointer-events-none select-none transition-opacity duration-200"
-        style={{ opacity: isLight ? 1 : 0 }}
-      >☀️</span>
-      <span
-        className="inline-block h-4 w-4 rounded-full shadow-sm transition-transform duration-300"
-        style={{
-          background: 'hsl(var(--primary))',
-          transform: isLight ? 'translateX(26px)' : 'translateX(2px)',
-        }}
-      />
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-border transition-colors duration-300 ${isLight ? 'bg-primary/20' : 'bg-muted/80'}`}
+      >
+        <span
+          className="absolute left-[5px] text-[10px] leading-none pointer-events-none transition-opacity duration-200"
+          style={{ opacity: isLight ? 0 : 1 }}
+        >🌙</span>
+        <span
+          className="absolute right-[5px] text-[10px] leading-none pointer-events-none transition-opacity duration-200"
+          style={{ opacity: isLight ? 1 : 0 }}
+        >☀️</span>
+        <span
+          className="inline-block h-4 w-4 rounded-full shadow-sm transition-transform duration-300"
+          style={{
+            background: 'hsl(var(--primary))',
+            transform: isLight ? 'translateX(26px)' : 'translateX(2px)',
+          }}
+        />
+      </span>
     </button>
   );
 }
