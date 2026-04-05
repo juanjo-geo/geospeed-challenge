@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import { countries } from '@/data/countries';
 import { type GameMode, getMapBounds } from '@/data/cities';
 
@@ -37,29 +37,77 @@ export default function WorldMapCanvas({
   const xToLon = useCallback((x: number) => (x / dimensions.w) * lonRange + bounds.lonMin, [dimensions.w, bounds.lonMin, lonRange]);
   const yToLat = useCallback((y: number) => bounds.latMax - (y / dimensions.h) * latRange, [dimensions.h, bounds.latMax, latRange]);
 
-  // Political map palette inspired by reference
-  const MAP_PALETTE = [
+  // Reactively detect theme changes so the map redraws when toggled
+  const theme = useSyncExternalStore(
+    (cb) => {
+      const obs = new MutationObserver(cb);
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      return () => obs.disconnect();
+    },
+    () => document.documentElement.classList.contains('light') ? 'light' : 'dark',
+  );
+  const isLightMode = () => theme === 'light';
+
+  // Dark mode: vibrant saturated palette
+  const MAP_PALETTE_DARK = [
     '#F4A460', '#FF8C00', '#66CDAA', '#FFD700', '#32CD32',
     '#DA70D6', '#FF6347', '#C0C0C0', '#FFA500', '#8B4513',
     '#20B2AA', '#ADFF2F', '#FF4500', '#BA55D3', '#FFFF00',
     '#CD5C5C', '#4169E1', '#FF69B4', '#FFD700', '#90EE90',
   ];
 
+  // Light mode: soft pastel political map — inspired by classic atlas reference
+  const MAP_PALETTE_LIGHT = [
+    '#C8DFA0', // soft yellow-green
+    '#F2C882', // peach/orange
+    '#EBB8C4', // soft rose/pink
+    '#C8D8F0', // powder blue
+    '#F2E080', // soft yellow
+    '#B8D8C8', // sage green
+    '#EAC89A', // warm sand/tan
+    '#D2C0E8', // soft lavender
+    '#A8D8C4', // mint teal
+    '#F0D4A0', // golden beige
+    '#D4E8A8', // light lime
+    '#F2B8A4', // soft salmon
+    '#BCE4E8', // sky teal
+    '#E8D4B8', // cream
+    '#C4D898', // olive green
+    '#F4C4CC', // blush rose
+    '#D0E0A4', // yellow-green
+    '#DEC0D8', // mauve
+    '#B8D4A4', // muted green
+    '#F0DCAC', // warm ivory
+  ];
+
   const drawBaseMap = useCallback((ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    // Ocean — gradient from light to deeper blue
-    const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
-    oceanGrad.addColorStop(0, '#5BC0EB');
-    oceanGrad.addColorStop(0.35, '#3DA8D8');
-    oceanGrad.addColorStop(0.7, '#2B8BBE');
-    oceanGrad.addColorStop(1, '#1A6F9E');
-    ctx.fillStyle = oceanGrad;
+    const light = isLightMode();
+    const MAP_PALETTE = light ? MAP_PALETTE_LIGHT : MAP_PALETTE_DARK;
+
+    if (light) {
+      // Light mode ocean: classic atlas sky blue
+      const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
+      oceanGrad.addColorStop(0, '#C8E8F4');
+      oceanGrad.addColorStop(0.4, '#B0D8EC');
+      oceanGrad.addColorStop(0.8, '#98C8E4');
+      oceanGrad.addColorStop(1, '#84B8DC');
+      ctx.fillStyle = oceanGrad;
+    } else {
+      // Dark mode ocean: deep blue
+      const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
+      oceanGrad.addColorStop(0, '#5BC0EB');
+      oceanGrad.addColorStop(0.35, '#3DA8D8');
+      oceanGrad.addColorStop(0.7, '#2B8BBE');
+      oceanGrad.addColorStop(1, '#1A6F9E');
+      ctx.fillStyle = oceanGrad;
+    }
     ctx.fillRect(0, 0, w, h);
 
-    // Countries with vibrant rotating palette
+    // Countries with palette
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
       ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
-      ctx.strokeStyle = '#3a3a3a';
+      ctx.strokeStyle = light ? '#8899AA' : '#3a3a3a';
       ctx.lineWidth = 1;
       for (const polygon of country.polygons) {
         ctx.beginPath();
@@ -85,7 +133,7 @@ export default function WorldMapCanvas({
     }
 
     // Graticule
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = light ? 'rgba(60,90,110,0.12)' : 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 0.5;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;
@@ -111,7 +159,7 @@ export default function WorldMapCanvas({
     if (gameMode === 'world') {
       const fontSize = Math.max(9, Math.round(w / 100));
       ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
       const continents = [
         { name: 'AMÉRICA\nDEL NORTE', lat: 45, lon: -100 },
         { name: 'AMÉRICA\nDEL SUR', lat: -15, lon: -58 },
@@ -130,7 +178,7 @@ export default function WorldMapCanvas({
         });
       }
 
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
       ctx.font = `bold italic ${Math.max(8, Math.round(w / 120))}px system-ui`;
       const oceans = [
         { name: 'OCÉANO PACÍFICO', lat: 5, lon: -150 },
@@ -147,7 +195,7 @@ export default function WorldMapCanvas({
     } else if (gameMode === 'europe') {
       const fontSize = Math.max(10, Math.round(w / 70));
       ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
       const labels = [
         { name: 'OCÉANO\nATLÁNTICO', lat: 50, lon: -18 },
         { name: 'MAR\nMEDITERRÁNEO', lat: 36, lon: 15 },
@@ -166,7 +214,7 @@ export default function WorldMapCanvas({
     } else if (gameMode === 'asia') {
       const fontSize = Math.max(10, Math.round(w / 70));
       ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
       const labels = [
         { name: 'OCÉANO\nÍNDICO', lat: -5, lon: 75 },
         { name: 'OCÉANO\nPACÍFICO', lat: 25, lon: 140 },
@@ -186,7 +234,7 @@ export default function WorldMapCanvas({
     } else if (gameMode === 'africa') {
       const fontSize = Math.max(10, Math.round(w / 70));
       ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
       const labels = [
         { name: 'ÁFRICA\nDEL NORTE', lat: 30, lon: 10 },
         { name: 'ÁFRICA\nOCCIDENTAL', lat: 10, lon: -8 },
@@ -209,7 +257,7 @@ export default function WorldMapCanvas({
     } else if (gameMode === 'americas') {
       const fontSize = Math.max(10, Math.round(w / 70));
       ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
       const labels = [
         { name: 'AMÉRICA\nDEL NORTE', lat: 50, lon: -105 },
         { name: 'AMÉRICA\nCENTRAL', lat: 15, lon: -85 },
@@ -227,7 +275,7 @@ export default function WorldMapCanvas({
         });
       }
     }
-  }, [gameMode, bounds, lonRange, latRange]);
+  }, [gameMode, bounds, lonRange, latRange, theme]);
 
   // Resize handler
   useEffect(() => {
