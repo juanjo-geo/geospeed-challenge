@@ -189,8 +189,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const layoutClass = isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(11rem,15vw,14rem)_minmax(0,1fr)]'
-      : 'grid grid-cols-[clamp(10rem,14vw,12rem)_minmax(0,1fr)]'; // medium: sidebar + map
+      ? 'grid grid-cols-[clamp(12rem,16vw,15rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(12rem,22vw,15rem)_minmax(0,1fr)]'; // medium: sidebar + map
 
   return (
     <div
@@ -218,7 +218,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="flex min-h-0 flex-col items-center py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden scrollbar-hidden" style={{ paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sal))' }}>
+        <div className="flex min-h-0 flex-col items-center py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden scrollbar-hidden" style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))' }}>
           {/* Logo */}
           <div className="w-full text-center pb-1.5 mb-1.5 border-b border-border/50">
             <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
@@ -317,12 +317,14 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {isCompact && (
           <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
             <div className="rounded-2xl border border-border bg-card/82 px-3 py-2.5 backdrop-blur-md shadow-[0_20px_40px_hsl(var(--background)/0.32)]">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
-                <div className="min-w-0 flex-1 text-left">
+              {/* Top row: city info (centered) + score (right) */}
+              <div className="flex items-center gap-3">
+                {/* City info — centered within its space */}
+                <div className="min-w-0 flex-1 text-center">
                   <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
                     {isTraining ? '🎓 Entrenamiento' : 'Encuentra'}
                   </p>
-                  <p className="break-words font-bold leading-tight text-sm" style={{ color: 'hsl(var(--primary))' }}>
+                  <p className="break-words font-black leading-tight text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {currentCity.name}
                   </p>
                   {isTraining && !isWaiting && (
@@ -330,37 +332,44 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                       🌍 <span className="font-semibold text-foreground/80">{currentCity.country}</span>
                     </p>
                   )}
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-foreground/90">
-                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">R{currentRound + 1}/{totalRounds}</span>
-                    {showStreak && (
-                      <span className="rounded-full bg-orange-500/20 px-1.5 py-0.5 font-bold text-orange-400">
-                        🔥×{streak}{streak >= 3 && ` +${(streak - 2) * 15}%`}
-                      </span>
-                    )}
-                    {mult && (
-                      <span className={`rounded-full px-1.5 py-0.5 font-bold ${
-                        mult.value >= 2 ? 'bg-green-500/20 text-green-400' : mult.value >= 1 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
-                      }`}>
-                        {mult.emoji} {mult.label}
-                      </span>
-                    )}
-                  </div>
                 </div>
 
-                <div className="relative shrink-0 text-right">
+                {/* Divider */}
+                <div className="w-px self-stretch bg-border/60 shrink-0" />
+
+                {/* Score — right side */}
+                <div className="relative shrink-0 text-center min-w-[3.5rem]">
                   <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">Puntos</p>
-                  <p className={`text-lg font-mono font-bold leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
+                  <p className={`text-base font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
                     {score.toLocaleString()}
                   </p>
                   {floatPoints !== null && (
-                    <span className="absolute -top-2 right-0 text-[10px] font-bold text-green-400 animate-float-up whitespace-nowrap pointer-events-none">
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-green-400 animate-float-up whitespace-nowrap pointer-events-none">
                       +{floatPoints.toLocaleString()}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="col-span-2 mt-1">
+              {/* Badges row: round + streak + multiplier — centered */}
+              <div className="mt-1.5 flex flex-wrap justify-center items-center gap-1.5 text-[10px] font-mono text-foreground/90">
+                <span className="rounded-full bg-muted/80 px-1.5 py-0.5">R{currentRound + 1}/{totalRounds}</span>
+                {showStreak && (
+                  <span className="rounded-full bg-orange-500/20 px-1.5 py-0.5 font-bold text-orange-400">
+                    🔥×{streak}{streak >= 3 && ` +${(streak - 2) * 15}%`}
+                  </span>
+                )}
+                {mult && (
+                  <span className={`rounded-full px-1.5 py-0.5 font-bold ${
+                    mult.value >= 2 ? 'bg-green-500/20 text-green-400' : mult.value >= 1 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
+                  }`}>
+                    {mult.emoji} {mult.label}
+                  </span>
+                )}
+              </div>
+
+              {/* Timer */}
+              <div className="mt-1.5">
                 <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} compact />
               </div>
             </div>
@@ -381,7 +390,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
-            className="absolute inset-y-0 right-3 z-10 w-[clamp(22rem,42vw,32rem)] flex items-center animate-slide-in-right"
+            className="absolute inset-y-0 right-3 z-10 w-[clamp(24rem,38vw,34rem)] flex items-center animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
@@ -443,7 +452,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(16rem,65vw,24rem)]' : 'right-2 w-[clamp(18rem,55vw,28rem)]'}`}
+            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(17rem,70vw,26rem)]' : 'right-2 w-[clamp(22rem,45vw,30rem)]'}`}
             role="dialog"
             aria-label="Resultado de la ronda"
           >
