@@ -213,7 +213,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         <div className="flex min-h-0 flex-col px-3 py-3 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden">
           {/* Logo */}
           <div className="text-center pb-2 mb-2 border-b border-border/50">
-            <span className="text-base font-black tracking-widest text-glow" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+            <span className="text-xl font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
           </div>
