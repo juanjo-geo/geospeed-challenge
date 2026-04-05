@@ -216,7 +216,7 @@ export default function FinalResultScreen({
           onClick={handleShare}
           disabled={sharing}
           className="w-full py-2.5 sm:py-3 md:py-3.5 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3 md:mb-4 disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(150 60% 35%))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 20px hsla(var(--primary), 0.3)' }}
+          style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(332 47% 45%))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.35)' }}
           aria-label="Compartir tu resultado"
         >
           {sharing ? '⏳ PREPARANDO...' : '📸 COMPARTIR RESULTADO'}
