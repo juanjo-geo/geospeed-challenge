@@ -53,7 +53,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
   return (
     <main
-      className="min-h-[100dvh] flex flex-col items-center px-3 pt-6 pb-4 sm:px-4 sm:pt-8 sm:pb-6 md:px-6 md:pt-10 md:pb-6 overflow-y-auto game-bg"
+      className="min-h-[100dvh] flex flex-col items-center px-3 pb-4 sm:px-4 sm:pb-6 md:px-6 md:pb-6 overflow-y-auto game-bg home-safe-top"
       aria-label="Pantalla de inicio GeoSpeed"
     >
       {/* ── Top bar: energy + user + theme toggle ── */}
@@ -196,7 +196,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                     <div className="text-[9px] sm:text-[10px] text-muted-foreground">Mismas ciudades para todos · {new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}</div>
                   </div>
                 </button>
-                {/* Contrarreloj + Duelo */}
+                {/* Contrareloj + Duelo */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     onClick={onTimeAttack}
@@ -204,7 +204,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   >
                     <span className="text-lg sm:text-xl shrink-0">⚡</span>
                     <div className="text-left min-w-0">
-                      <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrarreloj</div>
+                      <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrareloj</div>
                       <div className="text-[8px] sm:text-[9px] text-muted-foreground">60s infinitas</div>
                     </div>
                   </button>
@@ -331,16 +331,16 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </button>
       </div>
 
-      {/* ── Contrarreloj + Duelo ── */}
+      {/* ── Contrareloj + Duelo ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-2 gap-1.5 sm:gap-2">
         <button
           onClick={onTimeAttack}
           className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
-          aria-label="Modo contrarreloj extremo"
+          aria-label="Modo contrareloj extremo"
         >
           <span className="text-lg sm:text-xl shrink-0">⚡</span>
           <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrarreloj</div>
+            <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrareloj</div>
             <div className="text-[8px] sm:text-[10px] text-muted-foreground">60s · infinitas</div>
           </div>
         </button>

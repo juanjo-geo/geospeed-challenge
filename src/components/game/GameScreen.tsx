@@ -210,7 +210,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="flex min-h-0 flex-col px-3 py-3 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden">
+        <div className="flex min-h-0 flex-col px-3 py-3 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden sidebar-safe-left">
           {/* Logo */}
           <div className="text-center pb-2 mb-2 border-b border-border/50">
             <span className="text-xl font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
@@ -307,7 +307,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       <div className="relative flex-1 min-h-0 min-w-0">
         {/* Floating HUD overlay (compact mode only) */}
         {isCompact && (
-          <div className="pointer-events-none absolute inset-x-2 top-2 z-20">
+          <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
             <div className="rounded-2xl border border-border bg-card/82 px-3 py-2.5 backdrop-blur-md shadow-[0_20px_40px_hsl(var(--background)/0.32)]">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
                 <div className="min-w-0 flex-1 text-left">

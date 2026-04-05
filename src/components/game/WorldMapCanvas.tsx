@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import { countries } from '@/data/countries';
 import { type GameMode, getMapBounds } from '@/data/cities';
+import { unlockAudio } from '@/lib/sounds';
 
 interface WorldMapCanvasProps {
   onMapClick: (lat: number, lon: number) => void;
@@ -517,6 +518,8 @@ export default function WorldMapCanvas({
   }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange, theme]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Unlock audio on first tap/click — required for iOS Safari Web Audio
+    unlockAudio();
     if (clickDisabled) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;

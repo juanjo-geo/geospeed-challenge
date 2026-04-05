@@ -123,7 +123,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const isLow = globalTime <= 10;
 
   return (
-    <div className={`h-[100dvh] flex overflow-hidden bg-background ${hasSidebar ? 'flex-row' : 'flex-col'}`} role="main" aria-label="Modo contrarreloj">
+    <div className={`h-[100dvh] flex overflow-hidden bg-background ${hasSidebar ? 'flex-row' : 'flex-col'}`} role="main" aria-label="Modo contrareloj">
       {/* Portrait blocker */}
       {isPortraitMobile && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 game-bg">
@@ -144,12 +144,12 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="w-[clamp(9rem,14vw,13rem)] shrink-0 flex flex-col p-3 gap-3 border-r border-border game-panel overflow-y-auto">
+        <div className="w-[clamp(9rem,14vw,13rem)] shrink-0 flex flex-col p-3 gap-3 border-r border-border game-panel overflow-y-auto sidebar-safe-left">
           <div className="text-center mb-1">
             <span className="text-xl font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
-            <p className="text-xs text-red-400 font-bold mt-1 uppercase tracking-wider">⚡ Contrarreloj</p>
+            <p className="text-xs text-red-400 font-bold mt-1 uppercase tracking-wider">⚡ Contrareloj</p>
           </div>
 
           <div className="text-center shrink-0">
@@ -199,7 +199,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       <div className="flex-1 relative min-h-0 min-w-0">
         {/* Floating HUD (compact only) */}
         {isCompact && (
-          <div className="pointer-events-none absolute inset-x-2 top-2 z-20">
+          <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
             <div className="rounded-2xl border border-border bg-card/82 px-3 py-2.5 backdrop-blur-md shadow-[0_20px_40px_hsl(var(--background)/0.32)]">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
                 <div className="min-w-0 text-left">
@@ -208,7 +208,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
                     {currentCity.name}
                   </p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-foreground/90">
-                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">⚡ Contrarreloj</span>
+                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">⚡ Contrareloj</span>
                     <span className="rounded-full bg-muted/80 px-1.5 py-0.5">{roundsRef.current.length} ciudades</span>
                     {lastPoints !== null && (
                       <span className={`rounded-full px-1.5 py-0.5 font-bold ${

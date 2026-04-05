@@ -353,7 +353,7 @@ const Index = () => {
           <div className="bg-card border rounded-xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl animate-fade-in-up text-center">
             <p className="text-3xl sm:text-4xl mb-2">⚡</p>
             <h2 className="text-xl sm:text-2xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>¡TIEMPO!</h2>
-            <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">Contrarreloj Extremo</p>
+            <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">Contrareloj Extremo</p>
 
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-4 sm:mb-6">
               <div className="bg-muted rounded-lg p-2 sm:p-3">

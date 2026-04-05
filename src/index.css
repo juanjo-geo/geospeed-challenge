@@ -115,8 +115,11 @@
     @apply border-border;
   }
   html {
-    /* Support safe areas for notch devices (iPhone X+, etc.) */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* Safe area insets exposed as custom properties for use in components */
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -138,6 +141,26 @@
 /* ── Game sidebar panel ── */
 .game-panel {
   background-color: hsl(var(--game-panel));
+}
+
+/* ── Safe-area inset utilities (notch / Dynamic Island support) ── */
+/* HomeScreen scrollable pages */
+.home-safe-top {
+  padding-top: max(1.5rem, var(--sat));
+}
+/* Game sidebar left edge (landscape notch) */
+.sidebar-safe-left {
+  padding-left: max(0.75rem, var(--sal));
+}
+/* Game floating HUD (compact mode) */
+.hud-safe-top {
+  top: max(0.5rem, var(--sat));
+}
+.hud-safe-left {
+  left: max(0.5rem, var(--sal));
+}
+.hud-safe-right {
+  right: max(0.5rem, var(--sar));
 }
 
 /* ── Glow utilities ── */
