@@ -48,6 +48,9 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const currentCity = cities[currentIdx % cities.length];
 
   const globalTimerRef = useRef<ReturnType<typeof setInterval>>();
+  // Keep a stable ref to onGameOver so the timer effect doesn't restart when the prop changes
+  const onGameOverRef = useRef(onGameOver);
+  useEffect(() => { onGameOverRef.current = onGameOver; }, [onGameOver]);
 
   // Global countdown timer
   useEffect(() => {
@@ -63,7 +66,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           if (!gameOverRef.current) {
             gameOverRef.current = true;
             playGameOver();
-            onGameOver({
+            onGameOverRef.current({
               cities: roundsRef.current.length,
               totalScore: roundsRef.current.reduce((s, r) => s + r.totalPoints, 0),
               rounds: roundsRef.current,
@@ -76,7 +79,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       });
     }, 1000);
     return () => clearInterval(globalTimerRef.current);
-  }, [onGameOver, isPortraitMobile]);
+  }, [isPortraitMobile]);
 
   useEffect(() => {
     roundStartRef.current = Date.now();
