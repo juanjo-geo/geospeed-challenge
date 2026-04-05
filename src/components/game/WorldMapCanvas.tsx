@@ -126,11 +126,11 @@ export default function WorldMapCanvas({
       oceanGrad.addColorStop(1, '#84B8DC');
       ctx.fillStyle = oceanGrad;
     } else {
-      // Deep navy ocean — contrasts with warm earth-tone countries
+      // Cream/bone ocean — matches warm earth-tone watercolor palette
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
-      oceanGrad.addColorStop(0, '#0D1E30');
-      oceanGrad.addColorStop(0.5, '#0A1828');
-      oceanGrad.addColorStop(1, '#071220');
+      oceanGrad.addColorStop(0, '#EDE0C8');
+      oceanGrad.addColorStop(0.5, '#E8D8BC');
+      oceanGrad.addColorStop(1, '#E0CEB0');
       ctx.fillStyle = oceanGrad;
     }
     ctx.fillRect(0, 0, w, h);
@@ -181,7 +181,7 @@ export default function WorldMapCanvas({
     }
 
     // Graticule — extends across the ENTIRE canvas, not just geographic bounds
-    ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(20,8,0,0.30)';
+    ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
     ctx.lineWidth = 0.8;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;
@@ -211,7 +211,7 @@ export default function WorldMapCanvas({
 
     const drawLabels = (labels: { name: string; lat: number; lon: number }[], fontSize: number, italic = false) => {
       ctx.font = `bold ${italic ? 'italic ' : ''}${fontSize}px system-ui`;
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(80,50,20,0.60)';
       for (const l of labels) {
         const { x, y } = geoToPixel(l.lon, l.lat);
         const lines = l.name.split('\n');
@@ -446,11 +446,8 @@ export default function WorldMapCanvas({
     const radiusDeg = gameMode === 'world' ? 16 : 9;
     const radiusPx = radiusDeg * scale;
 
-    // Theme-aware hint color:
-    // dark mode → vivid red  #e03030 (visible against dark ocean/land)
-    // light mode → vivid teal-green #00a08f (primary de la paleta tropical)
-    const isLight = theme === 'light';
-    const hintRGB = isLight ? '0, 160, 143' : '224, 48, 48';
+    // Vivid green — visible in BOTH dark (earth tones) and light (pastels) modes
+    const hintRGB = '0, 210, 87'; // #00D257 — bright green
 
     let startTime: number | null = null;
 
@@ -459,8 +456,7 @@ export default function WorldMapCanvas({
       const elapsed = (ts - startTime) % 3000;
       const phase = elapsed / 3000;
       const pulse = Math.sin(phase * Math.PI * 2);
-      const alpha = 0.13 + 0.07 * pulse;
-      const scale = 0.93 + 0.07 * pulse;
+      const pulsedScale = 0.93 + 0.07 * pulse;
 
       canvas.width = dimensions.w * dpr;
       canvas.height = dimensions.h * dpr;
@@ -469,33 +465,45 @@ export default function WorldMapCanvas({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
 
-      // Radial gradient glow
-      const outerR = radiusPx * (scale + 0.15);
-      const grad = ctx.createRadialGradient(hx, hy, outerR * 0.3, hx, hy, outerR);
-      grad.addColorStop(0, `rgba(${hintRGB}, ${alpha * 1.6})`);
-      grad.addColorStop(0.6, `rgba(${hintRGB}, ${alpha})`);
+      const outerR = radiusPx * (pulsedScale + 0.15);
+
+      // 1. White backdrop circle — prevents red/terracotta countries from bleeding through
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(hx, hy, outerR, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.fill();
+      ctx.restore();
+
+      // 2. Green radial gradient glow on top
+      const grad = ctx.createRadialGradient(hx, hy, outerR * 0.2, hx, hy, outerR);
+      grad.addColorStop(0, `rgba(${hintRGB}, 0.45)`);
+      grad.addColorStop(0.55, `rgba(${hintRGB}, 0.22)`);
       grad.addColorStop(1, `rgba(${hintRGB}, 0)`);
       ctx.beginPath();
       ctx.arc(hx, hy, outerR, 0, Math.PI * 2);
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Dashed border ring
+      // 3. Dashed border ring — clearly green
       ctx.save();
       ctx.beginPath();
-      ctx.arc(hx, hy, radiusPx * scale, 0, Math.PI * 2);
+      ctx.arc(hx, hy, radiusPx * pulsedScale, 0, Math.PI * 2);
       ctx.setLineDash([10, 7]);
-      ctx.strokeStyle = `rgba(${hintRGB}, ${0.65 + 0.25 * pulse})`;
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = `rgba(${hintRGB}, ${0.85 + 0.15 * pulse})`;
+      ctx.lineWidth = 3;
       ctx.stroke();
       ctx.restore();
 
-      // "?" label at center
-      const fontSize = Math.max(14, Math.round(dimensions.w / 40));
+      // 4. "?" label — white outline + green fill so it pops on any background
+      const fontSize = Math.max(16, Math.round(dimensions.w / 36));
       ctx.font = `bold ${fontSize}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = `rgba(${hintRGB}, ${0.8 + 0.2 * pulse})`;
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.strokeText('?', hx, hy);
+      ctx.fillStyle = `rgba(${hintRGB}, 1)`;
       ctx.fillText('?', hx, hy);
 
       hintAnimFrameRef.current = requestAnimationFrame(animate);
@@ -588,7 +596,7 @@ export default function WorldMapCanvas({
   // the "empty" space around the canvas looks like ocean instead of a black bar.
   const oceanBg = theme === 'light'
     ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
-    : 'linear-gradient(180deg, #5CD0DC 0%, #48C0CC 50%, #38B0BC 100%)';
+    : 'linear-gradient(180deg, #EDE0C8 0%, #E8D8BC 50%, #E0CEB0 100%)';
 
   return (
     <div
