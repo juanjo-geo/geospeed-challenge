@@ -190,8 +190,8 @@ export default function WorldMapCanvas({
     }
 
     // Graticule
-    ctx.strokeStyle = light ? 'rgba(60,90,110,0.12)' : 'rgba(10,30,40,0.25)';
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(0,20,30,0.35)';
+    ctx.lineWidth = 0.8;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;
     for (let lon = Math.ceil(bounds.lonMin / lonStep) * lonStep; lon <= bounds.lonMax; lon += lonStep) {
