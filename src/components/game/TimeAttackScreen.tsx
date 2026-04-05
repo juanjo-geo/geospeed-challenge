@@ -144,7 +144,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="w-[clamp(9rem,14vw,13rem)] shrink-0 flex flex-col p-3 gap-3 border-r border-border bg-card/50 overflow-y-auto">
+        <div className="w-[clamp(9rem,14vw,13rem)] shrink-0 flex flex-col p-3 gap-3 border-r border-border game-panel overflow-y-auto">
           <div className="text-center mb-1">
             <span className="text-xl font-bold tracking-widest" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED

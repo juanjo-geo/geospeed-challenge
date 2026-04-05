@@ -53,6 +53,9 @@
     /* Background gradient vars */
     --bg-from: 0 0% 1%;
     --bg-to: 240 2% 10%;
+
+    /* Game sidebar panel */
+    --game-panel: 240 2% 13%;
   }
 
   /* ── Light mode: paleta tropical ── */
@@ -101,6 +104,9 @@
 
     --bg-from: 174 30% 94%;
     --bg-to: 174 22% 88%;
+
+    /* Game sidebar panel — teal verde oscuro para separarlo del fondo */
+    --game-panel: 174 42% 68%;
   }
 }
 
@@ -127,6 +133,11 @@
 /* ── Background gradient utility ── */
 .game-bg {
   background: linear-gradient(180deg, hsl(var(--bg-from)) 0%, hsl(var(--bg-to)) 100%);
+}
+
+/* ── Game sidebar panel ── */
+.game-panel {
+  background-color: hsl(var(--game-panel));
 }
 
 /* ── Glow utilities ── */

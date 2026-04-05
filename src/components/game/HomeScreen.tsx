@@ -94,10 +94,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       <div className="animate-fade-in-up mb-1 sm:mb-2 text-center">
         <span
           className="text-3xl sm:text-4xl md:text-5xl block mb-0.5 sm:mb-1"
-          style={{ filter: 'drop-shadow(0 0 12px hsl(var(--primary) / 0.5))' }}
         >📍</span>
         <h1
-          className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-none text-glow"
+          className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-none"
           style={{ fontFamily: 'Impact, system-ui', color: 'hsl(var(--primary))' }}
         >
           GEOSPEED IQ CHALLENGE

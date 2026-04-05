@@ -15,6 +15,7 @@ interface FinalResultScreenProps {
   reason: 'timeout' | 'complete';
   onPlayAgain: () => void;
   onGoHome: () => void;
+  totalRounds?: number;
 }
 
 export default function FinalResultScreen({
@@ -25,6 +26,7 @@ export default function FinalResultScreen({
   reason,
   onPlayAgain,
   onGoHome,
+  totalRounds = 13,
 }: FinalResultScreenProps) {
   const { user, displayName: authName } = useAuth();
   const [initials, setInitials] = useState('');
@@ -81,7 +83,7 @@ export default function FinalResultScreen({
       difficulty,
       avgDistance: formatDistance(avgDistance),
       cities: rounds.length,
-      totalCities: 13,
+      totalCities: totalRounds,
     });
     setSharing(false);
   };
@@ -142,7 +144,7 @@ export default function FinalResultScreen({
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3 mb-4 sm:mb-5 md:mb-6" role="group" aria-label="Estadísticas de la partida">
           <div className="bg-muted rounded-lg p-1.5 sm:p-2 md:p-3 text-center">
             <p className="text-[8px] sm:text-[10px] md:text-xs text-muted-foreground">Ciudades</p>
-            <p className="font-mono font-bold text-xs sm:text-sm md:text-base">{rounds.length}/13</p>
+            <p className="font-mono font-bold text-xs sm:text-sm md:text-base">{rounds.length}/{totalRounds}</p>
           </div>
           <div className="bg-muted rounded-lg p-1.5 sm:p-2 md:p-3 text-center">
             <p className="text-[8px] sm:text-[10px] md:text-xs text-muted-foreground">Dist. prom.</p>

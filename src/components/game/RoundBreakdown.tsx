@@ -42,20 +42,22 @@ export default function RoundBreakdown({ rounds }: RoundBreakdownProps) {
       <div className={`overflow-hidden transition-all duration-500 ease-out ${expanded ? 'max-h-[600px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
         <div className="bg-muted/30 rounded-lg border border-border overflow-hidden divide-y divide-border/50 max-h-[400px] overflow-y-auto">
           {/* Header */}
-          <div className="grid grid-cols-[2rem_1fr_4.5rem_3.5rem_3.5rem] gap-1 px-3 py-1.5 text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+          <div className="grid grid-cols-[2rem_1fr_4rem_2.8rem_2.8rem_3.5rem] gap-1 px-3 py-1.5 text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
             <span>#</span>
             <span>Ciudad</span>
             <span className="text-right">Dist.</span>
-            <span className="text-right">Tiempo</span>
+            <span className="text-right">Seg.</span>
+            <span className="text-right">Mult.</span>
             <span className="text-right">Pts</span>
           </div>
           {rounds.map((r, i) => {
             const best = rounds.reduce((b, x) => x.totalPoints > b.totalPoints ? x : b, rounds[0]);
             const isBest = r === best;
+            const multColor = r.multiplier >= 2 ? 'text-green-400' : r.multiplier >= 1 ? 'text-yellow-400' : 'text-red-400';
             return (
               <div
                 key={i}
-                className={`grid grid-cols-[2rem_1fr_4.5rem_3.5rem_3.5rem] gap-1 px-3 py-2 items-center text-xs ${isBest ? 'bg-primary/5' : ''}`}
+                className={`grid grid-cols-[2rem_1fr_4rem_2.8rem_2.8rem_3.5rem] gap-1 px-3 py-2 items-center text-xs ${isBest ? 'bg-primary/5' : ''}`}
               >
                 <span className="text-muted-foreground font-mono">{getRoundEmoji(r.distance)}</span>
                 <span className={`font-medium truncate ${getRoundColor(r.distance)}`}>
@@ -64,6 +66,7 @@ export default function RoundBreakdown({ rounds }: RoundBreakdownProps) {
                 </span>
                 <span className="text-right font-mono text-muted-foreground">{formatDistance(r.distance)}</span>
                 <span className="text-right font-mono text-muted-foreground">{r.timeUsed}s</span>
+                <span className={`text-right font-mono font-bold ${multColor}`}>×{r.multiplier}</span>
                 <span className="text-right font-mono font-bold" style={{ color: 'hsl(var(--primary))' }}>
                   {r.totalPoints}
                 </span>
