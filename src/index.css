@@ -163,6 +163,15 @@
   right: max(0.5rem, var(--sar));
 }
 
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
 /* ── Glow utilities ── */
 .text-glow {
   text-shadow:

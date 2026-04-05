@@ -210,7 +210,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="flex min-h-0 flex-col items-center py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden" style={{ paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: '0.5rem' }}>
+        <div className="flex min-h-0 flex-col items-center py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden scrollbar-hidden" style={{ paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sal))' }}>
           {/* Logo */}
           <div className="w-full text-center pb-1.5 mb-1.5 border-b border-border/50">
             <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
