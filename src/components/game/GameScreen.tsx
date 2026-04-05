@@ -8,6 +8,7 @@ import TimerBar from './TimerBar';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
+const TRAINING_ROUNDS = 4;
 const AUTO_ADVANCE_SECONDS = 5;
 
 export interface RoundResult {
@@ -46,7 +47,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const isWide = layoutMode === 'wide';
   const hasSidebar = layoutMode !== 'compact'; // medium + wide
   const isPortraitMobile = useIsPortraitMobile();
-  const [cities] = useState(() => getRandomCities(difficulty, TOTAL_ROUNDS, gameMode, seed));
+  const totalRounds = isTraining ? TRAINING_ROUNDS : TOTAL_ROUNDS;
+  const [cities] = useState(() => getRandomCities(difficulty, totalRounds, gameMode, seed));
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(MAX_TIME);
@@ -116,7 +118,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   }, [showPopup, isPortraitMobile]);
 
   const advanceRound = useCallback(() => {
-    if (currentRound + 1 >= TOTAL_ROUNDS) {
+    if (currentRound + 1 >= totalRounds) {
       onGameOver([...rounds, lastResult!].filter(Boolean), 'complete');
     } else {
       setCurrentRound(r => r + 1);
@@ -254,9 +256,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           {/* Progress */}
           <div className="text-center shrink-0 mb-2 pb-2 border-b border-border/50">
             <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Ronda</p>
-            <p className="text-sm font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-xs">/{TOTAL_ROUNDS}</span></p>
+            <p className="text-sm font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-xs">/{totalRounds}</span></p>
             <div className="mt-1.5 flex flex-wrap justify-center gap-1">
-              {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => {
+              {Array.from({ length: totalRounds }).map((_, i) => {
                 const round = rounds[i];
                 let dotClass = 'bg-muted';
                 if (round) {
@@ -321,7 +323,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                     </p>
                   )}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-foreground/90">
-                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">R{currentRound + 1}/{TOTAL_ROUNDS}</span>
+                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">R{currentRound + 1}/{totalRounds}</span>
                     {showStreak && (
                       <span className="rounded-full bg-orange-500/20 px-1.5 py-0.5 font-bold text-orange-400">
                         🔥×{streak}{streak >= 3 && ` +${(streak - 2) * 15}%`}
