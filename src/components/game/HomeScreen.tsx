@@ -457,6 +457,14 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               </div>
             </div>
           </div>
+
+          {/* Botón entrenamiento */}
+          <button
+            onClick={onStartTraining}
+            className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 mt-1 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
+          >
+            🎓 MODO ENTRENAMIENTO
+          </button>
         </div>
       </div>
 
