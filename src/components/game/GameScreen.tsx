@@ -216,40 +216,53 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         </div>
       )}
 
-      {/* ──── Left sidebar (medium + wide) ──── */}
+      {/* ──── Left sidebar (medium + wide) — idéntico en dark/light y training/normal ──── */}
       {hasSidebar && (
-        <div className="flex min-h-0 flex-col items-center py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden scrollbar-hidden" style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))' }}>
-          {/* Logo */}
-          <div className="w-full text-center pb-1.5 mb-1.5 border-b border-border/50">
-            <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+        <div
+          className="flex min-h-0 flex-col gap-0 border-r border-border/60 bg-card overflow-y-auto overflow-x-hidden scrollbar-hidden"
+          style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+        >
+          {/* ── Logo ── */}
+          <div className="w-full text-center pb-2 mb-2 border-b border-border/50 shrink-0">
+            <span className="text-base font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
           </div>
 
-          {/* City to find */}
-          <div className="w-full shrink-0 mb-2 rounded-lg px-2 py-2 bg-primary/8 border border-primary/20 text-center">
-            {isTraining && (
-              <span className="inline-block mb-1 rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold text-primary">
+          {/* ── Training badge (mismo estilo dark y light) ── */}
+          {isTraining && (
+            <div className="w-full text-center mb-2 shrink-0">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-bold text-foreground/70">
                 🎓 Entrenamiento
               </span>
-            )}
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-1" id="city-label">Encuentra</p>
-            <p className="text-base font-black leading-tight break-words hyphens-auto" style={{ color: 'hsl(var(--primary))' }} aria-labelledby="city-label">
+            </div>
+          )}
+
+          {/* ── Ciudad a encontrar ── */}
+          <div className="w-full shrink-0 mb-2 rounded-xl px-2.5 py-2.5 border border-primary/25 bg-primary/10 text-center">
+            <p className="text-[10px] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
+              Encuentra
+            </p>
+            <p
+              className={`font-black leading-tight text-center ${currentCity.name.length > 12 ? 'text-sm' : 'text-base'}`}
+              style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
+              aria-labelledby="city-label"
+            >
               {currentCity.name}
             </p>
             {isTraining && !isWaiting && (
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                🌍 Pista: <span className="font-bold text-foreground/80">{currentCity.country}</span>
+              <p className="mt-1.5 text-[11px] text-foreground/50">
+                🌍 <span className="font-bold text-foreground/75">{currentCity.country}</span>
               </p>
             )}
           </div>
 
-          {/* Score */}
-          <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/50">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-none">Puntos</p>
+          {/* ── Puntuación ── */}
+          <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
+            <p className="text-[10px] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-0.5">Puntos</p>
             <p
-              className={`text-xl font-mono font-black ${scorePop ? 'animate-score-pop' : ''}`}
-              style={{ color: 'hsl(var(--primary))', textShadow: '0 0 16px hsl(var(--primary) / 0.4)' }}
+              className={`text-xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
+              style={{ color: 'hsl(var(--primary))' }}
               aria-live="polite"
             >
               {score.toLocaleString()}
@@ -261,14 +274,16 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             )}
           </div>
 
-          {/* Progress */}
-          <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/50">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-none">Ronda</p>
-            <p className="text-base font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-sm">/{totalRounds}</span></p>
-            <div className="mt-1.5 flex flex-wrap justify-center gap-1">
+          {/* ── Progreso de rondas ── */}
+          <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
+            <p className="text-[10px] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-0.5">Ronda</p>
+            <p className="text-base font-mono font-bold leading-none">
+              {currentRound + 1}<span className="text-foreground/40 text-sm">/{totalRounds}</span>
+            </p>
+            <div className="mt-2 flex flex-wrap justify-center gap-1">
               {Array.from({ length: totalRounds }).map((_, i) => {
                 const round = rounds[i];
-                let dotClass = 'bg-muted';
+                let dotClass = 'bg-border';
                 if (round) {
                   dotClass = round.distance < 500 ? 'bg-green-500' : round.distance < 2000 ? 'bg-yellow-400' : 'bg-red-500';
                 } else if (i === currentRound) {
@@ -279,33 +294,33 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </div>
           </div>
 
-          {/* Streak + Multiplier */}
-          <div className="w-full flex flex-col gap-1.5 shrink-0 mb-2">
-            {showStreak && (
-              <div className="text-center animate-score-pop">
-                <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
-                  🔥×{streak}{streak >= 3 && <span className="ml-0.5 text-[10px] opacity-80">+{(streak - 2) * 15}%</span>}
-                </span>
-              </div>
-            )}
-            {mult && (
-              <div className="text-center">
-                <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
-                  mult.value >= 2
-                    ? 'bg-green-500/15 border-green-500/30 text-green-400'
-                    : mult.value >= 1
-                    ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400'
+          {/* ── Racha y multiplicador ── */}
+          {(showStreak || mult) && (
+            <div className="w-full flex flex-col gap-1.5 shrink-0 mb-2">
+              {showStreak && (
+                <div className="text-center animate-score-pop">
+                  <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
+                    🔥×{streak}{streak >= 3 && <span className="ml-0.5 text-[10px] opacity-80">+{(streak - 2) * 15}%</span>}
+                  </span>
+                </div>
+              )}
+              {mult && (
+                <div className="text-center">
+                  <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
+                    mult.value >= 2 ? 'bg-green-500/15 border-green-500/30 text-green-400'
+                    : mult.value >= 1 ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400'
                     : 'bg-red-500/15 border-red-500/30 text-red-400'
-                }`}>
-                  {mult.emoji} {mult.label}
-                </span>
-              </div>
-            )}
-          </div>
+                  }`}>
+                    {mult.emoji} {mult.label}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Timer */}
+          {/* ── Timer ── */}
           <div className="w-full mt-auto shrink-0">
-            <p className="text-center text-[10px] italic text-muted-foreground mb-1">Velocidad y precisión</p>
+            <p className="text-center text-[10px] italic text-foreground/40 mb-1">Velocidad y precisión</p>
             <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} />
           </div>
         </div>
