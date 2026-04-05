@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { syncOnLogin } from '@/lib/cloudSync';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -46,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         if (session?.user) {
           setTimeout(() => fetchProfile(session.user.id), 0);
+          // Sync cloud data on login
+          syncOnLogin().catch(() => {});
         } else {
           setDisplayName('');
         }

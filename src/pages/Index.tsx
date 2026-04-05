@@ -12,10 +12,14 @@ import TimeAttackScreen, { type TimeAttackResult } from '@/components/game/TimeA
 import TutorialOverlay from '@/components/game/TutorialOverlay';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
+import StoreScreen from '@/components/game/StoreScreen';
 import { type GameRoom, updateRoomScore, subscribeToRoom } from '@/lib/multiplayerUtils';
 import { consumeLife, getEnergy } from '@/lib/energySystem';
+import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
+import { showInterstitial, initAds } from '@/lib/adSystem';
+import { syncAfterGame } from '@/lib/cloudSync';
 
-type Phase = 'splash' | 'home' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
+type Phase = 'splash' | 'home' | 'store' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -68,6 +72,9 @@ const Index = () => {
   const mpRoomRef = useRef<GameRoom | null>(null);
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
+
+  // Initialize ads on mount
+  useEffect(() => { initAds(); }, []);
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
@@ -156,11 +163,21 @@ const Index = () => {
       avgDistance: Math.round(avgDist),
       type: 'classic',
     });
-    setPhase('final');
+    // Track game for ad cadence and sync to cloud
+    incrementGameCounter();
+    syncAfterGame();
+
+    // Show interstitial ad between games (every 3 games for free users)
+    if (shouldShowInterstitial()) {
+      showInterstitial().finally(() => setPhase('final'));
+    } else {
+      setPhase('final');
+    }
   }, [difficulty, gameMode]);
 
   const handlePlayAgain = useCallback(() => { gameKeyRef.current += 1; setPhase('countdown'); }, []);
   const handleGoHome = useCallback(() => { setIsTraining(false); setPhase('home'); }, []);
+  const handleOpenStore = useCallback(() => setPhase('store'), []);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
   const handleTimeAttack = useCallback(() => {
@@ -231,6 +248,10 @@ const Index = () => {
   const renderPhase = () => {
     if (phase === 'splash') {
       return <SplashScreen onComplete={() => setPhase('home')} />;
+    }
+
+    if (phase === 'store') {
+      return <StoreScreen onClose={handleGoHome} />;
     }
 
     if (phase === 'tutorial') {
@@ -472,7 +493,7 @@ const Index = () => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onOpenStore={handleOpenStore} />
     );
   };
 
@@ -486,7 +507,7 @@ const Index = () => {
           {renderPhase()}
         </PhaseTransition>
       )}
-      {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} />}
+      {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
     </>
   );
 };

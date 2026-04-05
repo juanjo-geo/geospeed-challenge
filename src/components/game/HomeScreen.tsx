@@ -15,6 +15,7 @@ interface HomeScreenProps {
   onTimeAttack: () => void;
   onDailyChallenge: () => void;
   onStartTraining: () => void;
+  onOpenStore?: () => void;
 }
 
 const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string }[] = [
@@ -30,7 +31,7 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
   africa: { level: 3, label: 'Nv.3' },
 };
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onOpenStore }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
   const navigate = useNavigate();
   const stats = getPlayerStats();
@@ -61,6 +62,15 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up flex items-center justify-between gap-2">
         <EnergyBar />
         <div className="flex items-center gap-2">
+          {onOpenStore && (
+            <button
+              onClick={onOpenStore}
+              className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-all active:scale-[0.97]"
+              aria-label="Abrir tienda"
+            >
+              ⭐ Tienda
+            </button>
+          )}
           <ThemeToggle />
           {user ? (
             <div className="flex items-center gap-1.5 sm:gap-2">
