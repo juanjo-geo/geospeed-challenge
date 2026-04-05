@@ -210,16 +210,16 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
       {/* ──── Left sidebar (medium + wide) ──── */}
       {hasSidebar && (
-        <div className="flex min-h-0 flex-col px-2 py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden sidebar-safe-left">
+        <div className="flex min-h-0 flex-col items-center px-2 py-2 gap-0 border-r border-border game-panel overflow-y-auto overflow-x-hidden sidebar-safe-left">
           {/* Logo */}
-          <div className="text-center pb-1.5 mb-1.5 border-b border-border/50">
+          <div className="w-full text-center pb-1.5 mb-1.5 border-b border-border/50">
             <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
           </div>
 
           {/* City to find */}
-          <div className="shrink-0 mb-1.5 rounded-lg px-2 py-1.5 bg-primary/8 border border-primary/20 text-center">
+          <div className="w-full shrink-0 mb-1.5 rounded-lg px-2 py-1.5 bg-primary/8 border border-primary/20 text-center">
             {isTraining && (
               <span className="inline-block mb-0.5 rounded-full bg-primary/15 border border-primary/30 px-1.5 py-0.5 text-[7px] font-bold text-primary uppercase tracking-wider">
                 🎓 Entrenamiento
@@ -237,7 +237,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Score */}
-          <div className="text-center shrink-0 relative mb-1.5 pb-1.5 border-b border-border/50">
+          <div className="w-full text-center shrink-0 relative mb-1.5 pb-1.5 border-b border-border/50">
             <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Puntos</p>
             <p
               className={`text-lg font-mono font-black ${scorePop ? 'animate-score-pop' : ''}`}
@@ -254,7 +254,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Progress */}
-          <div className="text-center shrink-0 mb-1.5 pb-1.5 border-b border-border/50">
+          <div className="w-full text-center shrink-0 mb-1.5 pb-1.5 border-b border-border/50">
             <p className="text-[8px] text-muted-foreground uppercase tracking-wider leading-none">Ronda</p>
             <p className="text-sm font-mono font-bold">{currentRound + 1}<span className="text-muted-foreground text-xs">/{totalRounds}</span></p>
             <div className="mt-1.5 flex flex-wrap justify-center gap-1">
@@ -272,7 +272,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Streak + Multiplier */}
-          <div className="flex flex-col gap-1 shrink-0 mb-1.5">
+          <div className="w-full flex flex-col gap-1 shrink-0 mb-1.5">
             {showStreak && (
               <div className="text-center animate-score-pop">
                 <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold text-orange-400">
@@ -296,7 +296,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Timer */}
-          <div className="mt-auto shrink-0">
+          <div className="w-full mt-auto shrink-0">
             <p className="text-center text-[8px] italic text-muted-foreground mb-1">Velocidad y precisión</p>
             <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} />
           </div>

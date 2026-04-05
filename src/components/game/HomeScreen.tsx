@@ -109,144 +109,74 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </p>
 
       {/* ══════════════════════════════════════════
-          NUEVO JUGADOR — layout simplificado
+          NUEVO JUGADOR — Onboarding con 3 pasos
       ══════════════════════════════════════════ */}
       {isNewPlayer && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl flex flex-col gap-3 sm:gap-4 md:gap-5">
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl flex flex-col gap-3 sm:gap-4 animate-fade-in-up">
 
-          {/* Guía de inicio */}
-          <p className="text-center text-[11px] sm:text-xs text-muted-foreground uppercase tracking-widest animate-fade-in">
-            ¿Por dónde quieres empezar?
+          {/* Subtítulo */}
+          <p className="text-center text-[11px] sm:text-xs text-muted-foreground uppercase tracking-widest">
+            Así se juega
           </p>
 
-          {/* ── Hero card: Entrenamiento ── */}
-          <div
-            className="relative rounded-2xl border-2 border-primary/60 overflow-hidden animate-fade-in-up"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--primary) / 0.10) 100%)' }}
-          >
-            {/* Línea top accent */}
-            <div className="absolute inset-x-0 top-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, hsl(var(--primary)), transparent)' }} />
-            {/* Badge recomendado */}
-            <div className="absolute top-3 right-3 bg-primary text-primary-foreground text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg">
-              ✨ Recomendado
-            </div>
-            <div className="p-4 sm:p-5 md:p-6">
-              <div className="flex items-start gap-3 md:gap-4 mb-3 sm:mb-4">
-                <span className="text-4xl sm:text-5xl md:text-6xl leading-none">🎓</span>
-                <div>
-                  <h2 className="font-black text-base sm:text-lg md:text-xl text-primary leading-tight">Modo Entrenamiento</h2>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-0.5">Pistas visuales en el mapa · 6 ciudades · sin presión de tiempo</p>
-                </div>
+          {/* ── 3 pasos explicativos ── */}
+          <div className="flex flex-col gap-2 sm:gap-3">
+            {/* Paso 1: Precisión */}
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
+              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎯</span>
+              <div className="min-w-0">
+                <h3 className="font-black text-xs sm:text-sm text-foreground">La precisión importa</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Haz click en el mapa lo más cerca posible de la ciudad indicada.
+                  Menos de 50km = <span className="font-bold text-primary">1,000 pts</span>, menos de 200km = 800 pts, y así hasta 8,000km+ = 0 pts.
+                </p>
               </div>
-              <ul className="text-[10px] sm:text-xs md:text-sm text-muted-foreground space-y-1.5 mb-4 md:mb-5 pl-1">
-                <li className="flex items-center gap-1.5"><span className="text-primary font-bold">✓</span> El mapa te muestra la zona donde está la ciudad</li>
-                <li className="flex items-center gap-1.5"><span className="text-primary font-bold">✓</span> Aprende las ubicaciones sin frustrarte</li>
-                <li className="flex items-center gap-1.5"><span className="text-primary font-bold">✓</span> Ideal si nunca has jugado antes</li>
-              </ul>
-              <button
-                onClick={onStartTraining}
-                className="w-full py-3 sm:py-3.5 md:py-4 rounded-xl font-black text-sm sm:text-base md:text-lg tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
-              >
-                COMENZAR ENTRENAMIENTO →
-              </button>
+            </div>
+
+            {/* Paso 2: Velocidad */}
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3 animate-fade-in-up animation-delay-100">
+              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚡</span>
+              <div className="min-w-0">
+                <h3 className="font-black text-xs sm:text-sm text-foreground">La velocidad multiplica</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Responde en menos de 4s y tus puntos se multiplican <span className="font-bold text-green-400">×2</span>.
+                  Entre 4-9s mantienes <span className="font-bold text-yellow-400">×1</span>.
+                  Más de 9s reduce a <span className="font-bold text-red-400">×0.5</span>.
+                </p>
+              </div>
+            </div>
+
+            {/* Paso 3: Aceleradores */}
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3 animate-fade-in-up animation-delay-200">
+              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🔥</span>
+              <div className="min-w-0">
+                <h3 className="font-black text-xs sm:text-sm text-foreground">Rachas y aceleradores</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Aciertos consecutivos activan rachas que dan bonificaciones extra.
+                  3 seguidos = <span className="font-bold text-orange-400">+15%</span>, 4 = +30%, y sigue subiendo.
+                  Tienes <span className="font-bold text-foreground">15 segundos</span> por ronda. Si se agota el tiempo, la partida termina.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Divisor */}
-          <div className="flex items-center gap-2 animate-fade-in animation-delay-150">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest shrink-0">o si prefieres saltar directo</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          {/* ── Jugar ahora (fácil + mundo) ── */}
-          <button
-            onClick={() => onStartGame('easy', 'world')}
-            className="w-full flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 md:p-5 rounded-xl border-2 border-green-500/40 hover:border-green-500 bg-card transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(142_71%_45%/0.2)] animate-fade-in animation-delay-200"
-          >
-            <span className="text-3xl sm:text-4xl md:text-5xl leading-none">🟢</span>
-            <div className="text-left flex-1 min-w-0">
-              <div className="font-black text-sm sm:text-base md:text-lg text-green-400">Jugar ahora</div>
-              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">Modo Fácil · Mapamundi · 13 ciudades · 15s por ronda</div>
-            </div>
-            <span className="text-muted-foreground text-lg md:text-xl shrink-0">▶</span>
-          </button>
-
-          {/* ── Ver más modos (acordeón) ── */}
-          <div className="animate-fade-in animation-delay-300">
+          {/* ── 2 botones sutiles ── */}
+          <div className="flex flex-col gap-2 sm:gap-2.5 mt-1 animate-fade-in-up animation-delay-300">
             <button
-              onClick={() => setShowMoreModes(p => !p)}
-              className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl border border-border bg-card/50 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.97]"
+              onClick={onStartTraining}
+              className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-sm sm:text-base tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
             >
-              🗂 Ver todos los modos
-              <span className={`transition-transform duration-300 ${showMoreModes ? 'rotate-180' : ''}`}>▾</span>
+              🎓 MODO ENTRENAMIENTO
             </button>
-
-            <div className={`overflow-hidden transition-all duration-500 ease-out ${showMoreModes ? 'max-h-[600px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
-              <div className="flex flex-col gap-2">
-                {/* Desafío Diario */}
-                <button
-                  onClick={onDailyChallenge}
-                  className="w-full flex items-center gap-2 sm:gap-3 p-3 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 active:scale-[0.97]"
-                >
-                  <span className="text-xl sm:text-2xl shrink-0">📅</span>
-                  <div className="text-left flex-1 min-w-0">
-                    <div className="font-black text-xs sm:text-sm text-amber-400">Desafío Diario</div>
-                    <div className="text-[9px] sm:text-[10px] text-muted-foreground">Mismas ciudades para todos · {new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}</div>
-                  </div>
-                </button>
-                {/* Contrareloj + Duelo */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <button
-                    onClick={onTimeAttack}
-                    className="flex items-center gap-2 p-2.5 sm:p-3 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97]"
-                  >
-                    <span className="text-lg sm:text-xl shrink-0">⚡</span>
-                    <div className="text-left min-w-0">
-                      <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrareloj</div>
-                      <div className="text-[8px] sm:text-[9px] text-muted-foreground">60s infinitas</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={onMultiplayer}
-                    className="flex items-center gap-2 p-2.5 sm:p-3 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97]"
-                  >
-                    <span className="text-lg sm:text-xl shrink-0">🎮</span>
-                    <div className="text-left min-w-0">
-                      <div className="font-bold text-[10px] sm:text-xs text-primary">Modo Duelo</div>
-                      <div className="text-[8px] sm:text-[9px] text-muted-foreground">1v1 en vivo</div>
-                    </div>
-                  </button>
-                </div>
-                {/* Modalidad + Dificultad compactas */}
-                <div className="bg-card border border-border rounded-xl p-3">
-                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest mb-2 text-center">Elegir modalidad y dificultad</p>
-                  <div className="grid grid-cols-5 gap-1 mb-2" role="radiogroup">
-                    {MODE_CONFIG.map(m => {
-                      const lock = MODE_UNLOCK[m.key];
-                      const isLocked = !!(lock && playerLevel.level < lock.level);
-                      const isSelected = selectedMode === m.key;
-                      return (
-                        <button key={m.key} onClick={() => !isLocked && setSelectedMode(m.key)} disabled={isLocked}
-                          className={`flex flex-col items-center gap-0.5 p-1 rounded-lg border transition-all ${isLocked ? 'border-border opacity-40 cursor-not-allowed' : isSelected ? 'border-primary bg-primary/10' : 'border-border bg-muted/50 hover:border-primary/50'}`}>
-                          <span className="text-base">{isLocked ? '🔒' : m.emoji}</span>
-                          <span className={`text-[8px] font-bold ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>{m.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    {DIFF_CONFIG.map(d => (
-                      <button key={d.key} onClick={() => onStartGame(d.key, selectedMode)}
-                        className={`flex items-center justify-center gap-1 p-2 rounded-lg border-2 bg-card transition-all active:scale-[0.97] ${d.borderClass}`}>
-                        <span className="text-sm">{d.emoji}</span>
-                        <span className="font-bold text-[10px] sm:text-xs text-foreground">{d.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <button
+              onClick={() => onStartGame('easy', 'world')}
+              className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
+            >
+              🌍 INICIAR JUEGO
+            </button>
+            <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground">
+              Mapamundi · Dificultad Fácil · 13 ciudades
+            </p>
           </div>
 
           {/* Bottom spacer */}
@@ -296,21 +226,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <StatCard label="Dist. prom." value={`${avgDist.toLocaleString()} km`} />
         </div>
       )}
-
-      {/* ── Modo Entrenamiento ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-250">
-        <button
-          onClick={onStartTraining}
-          className="w-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-primary/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
-          aria-label="Modo entrenamiento para novatos"
-        >
-          <span className="text-xl sm:text-2xl shrink-0">🎓</span>
-          <div className="text-left flex-1 min-w-0">
-            <div className="font-bold text-xs sm:text-sm text-primary">Modo Entrenamiento</div>
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground">Pistas en el mapa · 6 ciudades · aprende geografía</div>
-          </div>
-        </button>
-      </div>
 
       {/* ── Desafío Diario ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
