@@ -62,10 +62,24 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [scorePop, setScorePop] = useState(false);
   const [floatPoints, setFloatPoints] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
+  const [showHint, setShowHint] = useState(false);
   const roundStartRef = useRef(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const currentCity = cities[currentRound];
+
+  // Hint circle: reset on each new round, reveal after 5 s of no click (training only)
+  useEffect(() => {
+    setShowHint(false);
+    if (!isTraining || !currentCity) return;
+    const hintTimer = setTimeout(() => setShowHint(true), 5000);
+    return () => clearTimeout(hintTimer);
+  }, [currentRound, isTraining, currentCity]);
+
+  // Hide hint as soon as the player clicks (isWaiting becomes true)
+  useEffect(() => {
+    if (isWaiting) setShowHint(false);
+  }, [isWaiting]);
 
   // Reset timeLeft and roundStart when a new round begins
   useEffect(() => {
@@ -399,7 +413,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           correctLocation={lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null}
           distanceKm={lastResult?.distance ?? null}
           gameMode={gameMode}
-          hintZone={isTraining && !isWaiting ? { lat: currentCity.lat, lon: currentCity.lon } : null}
+          hintZone={isTraining && !isWaiting && showHint ? { lat: currentCity.lat, lon: currentCity.lon } : null}
         />
 
         {/* Round result — overlay on wide */}
