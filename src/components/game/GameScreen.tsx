@@ -373,11 +373,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
-            className="absolute top-1/2 -translate-y-1/2 right-3 z-10 w-[clamp(14rem,22vw,18rem)] max-h-[90%] animate-slide-in-right"
+            className="absolute inset-y-0 right-3 z-10 w-[clamp(14rem,22vw,18rem)] flex items-center animate-slide-in-right"
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex flex-col justify-center gap-2.5 rounded-2xl border border-border/80 bg-card/60 p-4 shadow-2xl backdrop-blur-md max-h-[85dvh] overflow-y-auto">
+            <div className="flex flex-col justify-center gap-2.5 rounded-2xl border border-border/80 bg-card/60 p-4 shadow-2xl backdrop-blur-md max-h-[90%] overflow-y-auto">
               {/* Feedback */}
               <div className="text-center">
                 <span
@@ -435,11 +435,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className={`absolute z-10 animate-slide-in-right ${isCompact ? 'top-1/2 -translate-y-1/2 right-2 w-[clamp(10rem,38vw,14rem)]' : 'top-1/2 -translate-y-1/2 right-2 w-[clamp(11rem,40vw,16rem)]'}`}
+            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-2 w-[clamp(10rem,38vw,14rem)]' : 'right-2 w-[clamp(11rem,40vw,16rem)]'}`}
             role="dialog"
             aria-label="Resultado de la ronda"
           >
-            <div className="flex max-h-[min(75dvh,22rem)] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-2 shadow-2xl backdrop-blur-md">
+            <div className="flex max-h-[90%] flex-col justify-center gap-1.5 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-2 shadow-2xl backdrop-blur-md">
               <div className="text-center">
                 <span className="text-2xl block animate-record-pop">{feedback.emoji}</span>
                 <p className={`text-xs font-black ${feedback.color}`}>{feedback.phrase}</p>
