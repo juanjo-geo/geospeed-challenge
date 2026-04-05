@@ -25,13 +25,27 @@ export default function WorldMapCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ w: 800, h: 450 });
+  // Raw container size tracked by ResizeObserver
+  const [containerSize, setContainerSize] = useState({ w: 800, h: 450 });
   const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 2));
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
 
   const bounds = getMapBounds(gameMode);
   const lonRange = bounds.lonMax - bounds.lonMin;
   const latRange = bounds.latMax - bounds.latMin;
+
+  // Derive canvas pixel dimensions that PRESERVE the geographic aspect ratio.
+  // The canvas is sized to fit inside the container without any distortion:
+  // if container is wider than the geo ratio → constrain by height (letterbox sides)
+  // if container is taller than the geo ratio → constrain by width (letterbox top/bottom)
+  const geoRatio = lonRange / latRange;
+  const dimensions = (() => {
+    const { w, h } = containerSize;
+    if (w / h > geoRatio) {
+      return { w: Math.floor(h * geoRatio), h: Math.floor(h) };
+    }
+    return { w: Math.floor(w), h: Math.floor(w / geoRatio) };
+  })();
 
   const lonToX = useCallback((lon: number) => ((lon - bounds.lonMin) / lonRange) * dimensions.w, [dimensions.w, bounds.lonMin, lonRange]);
   const latToY = useCallback((lat: number) => ((bounds.latMax - lat) / latRange) * dimensions.h, [dimensions.h, bounds.latMax, latRange]);
@@ -119,12 +133,12 @@ export default function WorldMapCanvas({
     }
     ctx.fillRect(0, 0, w, h);
 
-    // Countries with palette
+    // ── Two-pass rendering to eliminate sub-pixel gaps at country borders ──
+    // Pass 1: Fill all polygons. Drawing fills first ensures no "ocean" gaps
+    //         appear at shared borders between adjacent countries.
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
       ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
-      ctx.strokeStyle = light ? '#8899AA' : '#1a2a34';
-      ctx.lineWidth = 1;
       for (const polygon of country.polygons) {
         ctx.beginPath();
         let hasVisiblePoint = false;
@@ -143,6 +157,33 @@ export default function WorldMapCanvas({
         if (hasVisiblePoint) {
           ctx.closePath();
           ctx.fill();
+        }
+      }
+    }
+    // Pass 2: Stroke all borders on top of the fills.
+    // lineWidth 1.2 ensures the stroke slightly overlaps adjacent fills,
+    // closing any floating-point sub-pixel gaps (especially visible when zoomed).
+    ctx.strokeStyle = light ? '#8899AA' : '#1a2a34';
+    ctx.lineWidth = 1.2;
+    for (let ci = 0; ci < countries.length; ci++) {
+      const country = countries[ci];
+      for (const polygon of country.polygons) {
+        ctx.beginPath();
+        let hasVisiblePoint = false;
+        for (let i = 0; i < polygon.length; i++) {
+          const pLon = polygon[i][0];
+          const pLat = polygon[i][1];
+          const x = ((pLon - bounds.lonMin) / lonRange) * w;
+          const y = ((bounds.latMax - pLat) / latRange) * h;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+          if (pLon >= bounds.lonMin - 20 && pLon <= bounds.lonMax + 20 &&
+              pLat >= bounds.latMin - 20 && pLat <= bounds.latMax + 20) {
+            hasVisiblePoint = true;
+          }
+        }
+        if (hasVisiblePoint) {
+          ctx.closePath();
           ctx.stroke();
         }
       }
@@ -293,14 +334,15 @@ export default function WorldMapCanvas({
     }
   }, [gameMode, bounds, lonRange, latRange, theme]);
 
-  // Resize handler
+  // Resize handler — observes the outer container and tracks its raw size.
+  // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
   useEffect(() => {
-    const container = canvasRef.current?.parentElement;
+    const container = containerRef.current;
     if (!container) return;
     const ro = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect;
       if (width > 0 && height > 0) {
-        setDimensions({ w: Math.floor(width), h: Math.floor(height) });
+        setContainerSize({ w: Math.floor(width), h: Math.floor(height) });
       }
     });
     ro.observe(container);
@@ -598,18 +640,27 @@ export default function WorldMapCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden"
-      style={{ minHeight: '50dvh', aspectRatio: '16 / 9' }}
+      className="relative w-full h-full overflow-hidden flex items-center justify-center"
+      style={{ minHeight: '50dvh' }}
     >
+      {/* Canvas is sized to preserve the geographic aspect ratio.
+          It may not fill the full container if the container's ratio differs from
+          the region's geo ratio — this is intentional (no distortion). */}
       <canvas
         ref={canvasRef}
         onClick={handleClick}
-        onTouchEnd={(e) => {
-          // Prevent double-fire on touch devices; onClick handles it
-          // but we need touch-action CSS to prevent browser gestures
+        onTouchEnd={() => {
+          // touch-action: none (set in style) prevents browser pan/zoom gestures
         }}
-        className={`w-full h-full ${clickDisabled ? 'cursor-default' : 'cursor-crosshair'}`}
-        style={{ display: 'block', touchAction: 'none', ...zoomStyle }}
+        style={{
+          display: 'block',
+          width: `${dimensions.w}px`,
+          height: `${dimensions.h}px`,
+          flexShrink: 0,
+          touchAction: 'none',
+          cursor: clickDisabled ? 'default' : 'crosshair',
+          ...zoomStyle,
+        }}
       />
     </div>
   );
