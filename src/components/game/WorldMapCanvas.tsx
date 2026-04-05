@@ -34,23 +34,19 @@ export default function WorldMapCanvas({
   const lonRange = bounds.lonMax - bounds.lonMin;
   const latRange = bounds.latMax - bounds.latMin;
 
-  // Derive canvas pixel dimensions that PRESERVE the geographic aspect ratio.
-  // The canvas is sized to fit inside the container without any distortion:
-  // if container is wider than the geo ratio → constrain by height (letterbox sides)
-  // if container is taller than the geo ratio → constrain by width (letterbox top/bottom)
-  const geoRatio = lonRange / latRange;
-  const dimensions = (() => {
-    const { w, h } = containerSize;
-    if (w / h > geoRatio) {
-      return { w: Math.floor(h * geoRatio), h: Math.floor(h) };
-    }
-    return { w: Math.floor(w), h: Math.floor(w / geoRatio) };
-  })();
+  // Canvas fills the entire container. Geographic content is centered within it
+  // using a uniform scale (equirectangular). Extra space shows ocean + grid.
+  const dimensions = containerSize;
 
-  const lonToX = useCallback((lon: number) => ((lon - bounds.lonMin) / lonRange) * dimensions.w, [dimensions.w, bounds.lonMin, lonRange]);
-  const latToY = useCallback((lat: number) => ((bounds.latMax - lat) / latRange) * dimensions.h, [dimensions.h, bounds.latMax, latRange]);
-  const xToLon = useCallback((x: number) => (x / dimensions.w) * lonRange + bounds.lonMin, [dimensions.w, bounds.lonMin, lonRange]);
-  const yToLat = useCallback((y: number) => bounds.latMax - (y / dimensions.h) * latRange, [dimensions.h, bounds.latMax, latRange]);
+  // Uniform scale: fit the geographic bounds inside the container, then center.
+  const scale = Math.min(dimensions.w / lonRange, dimensions.h / latRange);
+  const offsetX = (dimensions.w - lonRange * scale) / 2;
+  const offsetY = (dimensions.h - latRange * scale) / 2;
+
+  const lonToX = useCallback((lon: number) => offsetX + (lon - bounds.lonMin) * scale, [offsetX, bounds.lonMin, scale]);
+  const latToY = useCallback((lat: number) => offsetY + (bounds.latMax - lat) * scale, [offsetY, bounds.latMax, scale]);
+  const xToLon = useCallback((x: number) => (x - offsetX) / scale + bounds.lonMin, [offsetX, bounds.lonMin, scale]);
+  const yToLat = useCallback((y: number) => bounds.latMax - (y - offsetY) / scale, [offsetY, bounds.latMax, scale]);
 
   // Reactively detect theme changes so the map redraws when toggled
   const theme = useSyncExternalStore(
@@ -111,12 +107,18 @@ export default function WorldMapCanvas({
     '#F0DCAC', // warm ivory
   ];
 
+  // Helper: convert geo coords to pixel coords for drawBaseMap (uses closure over scale/offset)
+  const geoToPixel = useCallback((lon: number, lat: number) => ({
+    x: offsetX + (lon - bounds.lonMin) * scale,
+    y: offsetY + (bounds.latMax - lat) * scale,
+  }), [offsetX, offsetY, bounds.lonMin, bounds.latMax, scale]);
+
   const drawBaseMap = useCallback((ctx: CanvasRenderingContext2D, w: number, h: number) => {
     const light = isLightMode();
     const MAP_PALETTE = light ? MAP_PALETTE_LIGHT : MAP_PALETTE_DARK;
 
+    // Ocean fills the ENTIRE canvas (no letterbox gaps)
     if (light) {
-      // Light mode ocean: classic atlas sky blue
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
       oceanGrad.addColorStop(0, '#C8E8F4');
       oceanGrad.addColorStop(0.4, '#B0D8EC');
@@ -124,7 +126,6 @@ export default function WorldMapCanvas({
       oceanGrad.addColorStop(1, '#84B8DC');
       ctx.fillStyle = oceanGrad;
     } else {
-      // Dark mode ocean: bright turquoise flat (like vivid atlas reference)
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
       oceanGrad.addColorStop(0, '#5CD0DC');
       oceanGrad.addColorStop(0.5, '#48C0CC');
@@ -134,8 +135,7 @@ export default function WorldMapCanvas({
     ctx.fillRect(0, 0, w, h);
 
     // ── Two-pass rendering to eliminate sub-pixel gaps at country borders ──
-    // Pass 1: Fill all polygons. Drawing fills first ensures no "ocean" gaps
-    //         appear at shared borders between adjacent countries.
+    // Pass 1: Fill all polygons.
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
       ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
@@ -143,14 +143,10 @@ export default function WorldMapCanvas({
         ctx.beginPath();
         let hasVisiblePoint = false;
         for (let i = 0; i < polygon.length; i++) {
-          const pLon = polygon[i][0];
-          const pLat = polygon[i][1];
-          const x = ((pLon - bounds.lonMin) / lonRange) * w;
-          const y = ((bounds.latMax - pLat) / latRange) * h;
+          const { x, y } = geoToPixel(polygon[i][0], polygon[i][1]);
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
-          if (pLon >= bounds.lonMin - 20 && pLon <= bounds.lonMax + 20 &&
-              pLat >= bounds.latMin - 20 && pLat <= bounds.latMax + 20) {
+          if (x >= -50 && x <= w + 50 && y >= -50 && y <= h + 50) {
             hasVisiblePoint = true;
           }
         }
@@ -161,8 +157,6 @@ export default function WorldMapCanvas({
       }
     }
     // Pass 2: Stroke all borders on top of the fills.
-    // lineWidth 1.2 ensures the stroke slightly overlaps adjacent fills,
-    // closing any floating-point sub-pixel gaps (especially visible when zoomed).
     ctx.strokeStyle = light ? '#8899AA' : '#1a2a34';
     ctx.lineWidth = 1.2;
     for (let ci = 0; ci < countries.length; ci++) {
@@ -171,14 +165,10 @@ export default function WorldMapCanvas({
         ctx.beginPath();
         let hasVisiblePoint = false;
         for (let i = 0; i < polygon.length; i++) {
-          const pLon = polygon[i][0];
-          const pLat = polygon[i][1];
-          const x = ((pLon - bounds.lonMin) / lonRange) * w;
-          const y = ((bounds.latMax - pLat) / latRange) * h;
+          const { x, y } = geoToPixel(polygon[i][0], polygon[i][1]);
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
-          if (pLon >= bounds.lonMin - 20 && pLon <= bounds.lonMax + 20 &&
-              pLat >= bounds.latMin - 20 && pLat <= bounds.latMax + 20) {
+          if (x >= -50 && x <= w + 50 && y >= -50 && y <= h + 50) {
             hasVisiblePoint = true;
           }
         }
@@ -189,35 +179,50 @@ export default function WorldMapCanvas({
       }
     }
 
-    // Graticule
+    // Graticule — extends across the ENTIRE canvas, not just geographic bounds
     ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(0,20,30,0.35)';
     ctx.lineWidth = 0.8;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;
-    for (let lon = Math.ceil(bounds.lonMin / lonStep) * lonStep; lon <= bounds.lonMax; lon += lonStep) {
-      const x = ((lon - bounds.lonMin) / lonRange) * w;
+    // Calculate visible lon/lat range from canvas edges
+    const visLonMin = bounds.lonMin - offsetX / scale;
+    const visLonMax = bounds.lonMin + (w - offsetX) / scale;
+    const visLatMax = bounds.latMax + offsetY / scale;
+    const visLatMin = bounds.latMax - (h - offsetY) / scale;
+    for (let lon = Math.floor(visLonMin / lonStep) * lonStep; lon <= visLonMax; lon += lonStep) {
+      const x = offsetX + (lon - bounds.lonMin) * scale;
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, h);
       ctx.stroke();
     }
-    for (let lat = Math.ceil(bounds.latMin / latStep) * latStep; lat <= bounds.latMax; lat += latStep) {
-      const y = ((bounds.latMax - lat) / latRange) * h;
+    for (let lat = Math.floor(visLatMin / latStep) * latStep; lat <= visLatMax; lat += latStep) {
+      const y = offsetY + (bounds.latMax - lat) * scale;
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(w, y);
       ctx.stroke();
     }
 
-    // Labels based on mode
+    // Labels based on mode — use geoToPixel for positioning
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
+    const drawLabels = (labels: { name: string; lat: number; lon: number }[], fontSize: number, italic = false) => {
+      ctx.font = `bold ${italic ? 'italic ' : ''}${fontSize}px system-ui`;
+      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
+      for (const l of labels) {
+        const { x, y } = geoToPixel(l.lon, l.lat);
+        const lines = l.name.split('\n');
+        lines.forEach((line, i) => {
+          ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
+        });
+      }
+    };
+
     if (gameMode === 'world') {
       const fontSize = Math.max(9, Math.round(w / 100));
-      ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
-      const continents = [
+      drawLabels([
         { name: 'AMÉRICA\nDEL NORTE', lat: 45, lon: -100 },
         { name: 'AMÉRICA\nDEL SUR', lat: -15, lon: -58 },
         { name: 'EUROPA', lat: 54, lon: 15 },
@@ -225,74 +230,33 @@ export default function WorldMapCanvas({
         { name: 'ASIA', lat: 45, lon: 85 },
         { name: 'OCEANÍA', lat: -25, lon: 135 },
         { name: 'ANTÁRTIDA', lat: -82, lon: 0 },
-      ];
-      for (const c of continents) {
-        const x = ((c.lon - bounds.lonMin) / lonRange) * w;
-        const y = ((bounds.latMax - c.lat) / latRange) * h;
-        const lines = c.name.split('\n');
-        lines.forEach((line, i) => {
-          ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
-        });
-      }
-
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
-      ctx.font = `bold italic ${Math.max(8, Math.round(w / 120))}px system-ui`;
-      const oceans = [
+      ], fontSize);
+      drawLabels([
         { name: 'OCÉANO PACÍFICO', lat: 5, lon: -150 },
         { name: 'OCÉANO ATLÁNTICO', lat: 15, lon: -35 },
         { name: 'OCÉANO ÍNDICO', lat: -20, lon: 75 },
         { name: 'OCÉANO PACÍFICO', lat: 5, lon: 170 },
         { name: 'OCÉANO ÁRTICO', lat: 80, lon: 0 },
-      ];
-      for (const o of oceans) {
-        const x = ((o.lon - bounds.lonMin) / lonRange) * w;
-        const y = ((bounds.latMax - o.lat) / latRange) * h;
-        ctx.fillText(o.name, x, y);
-      }
+      ], Math.max(8, Math.round(w / 120)), true);
     } else if (gameMode === 'europe') {
-      const fontSize = Math.max(10, Math.round(w / 70));
-      ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
-      const labels = [
+      drawLabels([
         { name: 'OCÉANO\nATLÁNTICO', lat: 50, lon: -18 },
         { name: 'MAR\nMEDITERRÁNEO', lat: 36, lon: 15 },
         { name: 'MAR DEL\nNORTE', lat: 58, lon: 3 },
         { name: 'MAR\nBÁLTICO', lat: 58, lon: 20 },
         { name: 'MAR\nNEGRO', lat: 43, lon: 35 },
-      ];
-      for (const l of labels) {
-        const x = ((l.lon - bounds.lonMin) / lonRange) * w;
-        const y = ((bounds.latMax - l.lat) / latRange) * h;
-        const lines = l.name.split('\n');
-        lines.forEach((line, i) => {
-          ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
-        });
-      }
+      ], Math.max(10, Math.round(w / 70)));
     } else if (gameMode === 'asia') {
-      const fontSize = Math.max(10, Math.round(w / 70));
-      ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
-      const labels = [
+      drawLabels([
         { name: 'OCÉANO\nÍNDICO', lat: -5, lon: 75 },
         { name: 'OCÉANO\nPACÍFICO', lat: 25, lon: 140 },
         { name: 'MAR\nARÁBIGO', lat: 15, lon: 62 },
         { name: 'MAR DE\nCHINA', lat: 15, lon: 115 },
         { name: 'MAR DE\nJAPÓN', lat: 40, lon: 135 },
         { name: 'GOLFO\nPÉRSICO', lat: 27, lon: 51 },
-      ];
-      for (const l of labels) {
-        const x = ((l.lon - bounds.lonMin) / lonRange) * w;
-        const y = ((bounds.latMax - l.lat) / latRange) * h;
-        const lines = l.name.split('\n');
-        lines.forEach((line, i) => {
-          ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
-        });
-      }
+      ], Math.max(10, Math.round(w / 70)));
     } else if (gameMode === 'africa') {
-      const fontSize = Math.max(10, Math.round(w / 70));
-      ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
-      const labels = [
+      drawLabels([
         { name: 'ÁFRICA\nDEL NORTE', lat: 30, lon: 10 },
         { name: 'ÁFRICA\nOCCIDENTAL', lat: 10, lon: -8 },
         { name: 'ÁFRICA\nORIENTAL', lat: 0, lon: 38 },
@@ -302,37 +266,18 @@ export default function WorldMapCanvas({
         { name: 'OCÉANO\nÍNDICO', lat: -15, lon: 52 },
         { name: 'MAR\nMEDITERRÁNEO', lat: 37, lon: 18 },
         { name: 'MAR\nROJO', lat: 20, lon: 40 },
-      ];
-      for (const l of labels) {
-        const x = ((l.lon - bounds.lonMin) / lonRange) * w;
-        const y = ((bounds.latMax - l.lat) / latRange) * h;
-        const lines = l.name.split('\n');
-        lines.forEach((line, i) => {
-          ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
-        });
-      }
+      ], Math.max(10, Math.round(w / 70)));
     } else if (gameMode === 'americas') {
-      const fontSize = Math.max(10, Math.round(w / 70));
-      ctx.font = `bold ${fontSize}px system-ui`;
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(255,255,255,0.75)';
-      const labels = [
+      drawLabels([
         { name: 'AMÉRICA\nDEL NORTE', lat: 50, lon: -105 },
         { name: 'AMÉRICA\nCENTRAL', lat: 15, lon: -85 },
         { name: 'AMÉRICA\nDEL SUR', lat: -20, lon: -58 },
         { name: 'OCÉANO\nPACÍFICO', lat: 10, lon: -155 },
         { name: 'OCÉANO\nATLÁNTICO', lat: 20, lon: -38 },
         { name: 'MAR\nCARIBE', lat: 18, lon: -72 },
-      ];
-      for (const l of labels) {
-        const x = ((l.lon - bounds.lonMin) / lonRange) * w;
-        const y = ((bounds.latMax - l.lat) / latRange) * h;
-        const lines = l.name.split('\n');
-        lines.forEach((line, i) => {
-          ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
-        });
-      }
+      ], Math.max(10, Math.round(w / 70)));
     }
-  }, [gameMode, bounds, lonRange, latRange, theme]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
@@ -498,7 +443,7 @@ export default function WorldMapCanvas({
     const hy = latToY(hintZone.lat);
     // Radius as a proportion of map width (~16° for world, ~9° for regional)
     const radiusDeg = gameMode === 'world' ? 16 : 9;
-    const radiusPx = (radiusDeg / lonRange) * dimensions.w;
+    const radiusPx = radiusDeg * scale;
 
     // Theme-aware hint color:
     // dark mode → vivid red  #e03030 (visible against dark ocean/land)
@@ -557,7 +502,7 @@ export default function WorldMapCanvas({
 
     hintAnimFrameRef.current = requestAnimationFrame(animate);
     return () => { if (hintAnimFrameRef.current) cancelAnimationFrame(hintAnimFrameRef.current); };
-  }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange, theme]);
+  }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange, theme, scale]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     // Unlock audio on first tap/click — required for iOS Safari Web Audio
@@ -581,8 +526,8 @@ export default function WorldMapCanvas({
 
     const midLon = (userClick.lon + correctLocation.lon) / 2;
     const midLat = (userClick.lat + correctLocation.lat) / 2;
-    const xPercent = ((midLon - bounds.lonMin) / lonRange) * 100;
-    const yPercent = ((bounds.latMax - midLat) / latRange) * 100;
+    const xPercent = (lonToX(midLon) / dimensions.w) * 100;
+    const yPercent = (latToY(midLat) / dimensions.h) * 100;
 
     // Adaptive zoom: scale based on viewport width and distance between points
     const vw = window.innerWidth;
@@ -625,7 +570,7 @@ export default function WorldMapCanvas({
       clearTimeout(zoomInTimer);
       clearTimeout(zoomOutTimer);
     };
-  }, [userClick, correctLocation, bounds, lonRange, latRange]);
+  }, [userClick, correctLocation, bounds, lonRange, latRange, lonToX, latToY, dimensions]);
 
   // Reset zoom when markers clear
   useEffect(() => {
@@ -650,8 +595,7 @@ export default function WorldMapCanvas({
       className="relative w-full h-full overflow-hidden flex items-center justify-center"
       style={{ minHeight: '50dvh', background: oceanBg }}
     >
-      {/* Canvas preserves geographic aspect ratio — may not fill the container
-          in one dimension, but letterbox areas blend with ocean background above. */}
+      {/* Canvas fills entire container — ocean + grid extend to all edges */}
       <canvas
         ref={canvasRef}
         onClick={handleClick}
@@ -660,9 +604,8 @@ export default function WorldMapCanvas({
         }}
         style={{
           display: 'block',
-          width: `${dimensions.w}px`,
-          height: `${dimensions.h}px`,
-          flexShrink: 0,
+          width: '100%',
+          height: '100%',
           touchAction: 'none',
           cursor: clickDisabled ? 'default' : 'crosshair',
           ...zoomStyle,
