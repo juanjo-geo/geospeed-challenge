@@ -466,7 +466,7 @@ const Index = () => {
           reason={endReason}
           onPlayAgain={handlePlayAgain}
           onGoHome={handleGoHome}
-          totalRounds={isTraining ? 4 : 13}
+          totalRounds={isTraining ? 6 : 13}
         />
       );
     }

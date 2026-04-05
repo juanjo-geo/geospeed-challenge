@@ -457,6 +457,12 @@ export default function WorldMapCanvas({
     const radiusDeg = gameMode === 'world' ? 16 : 9;
     const radiusPx = (radiusDeg / lonRange) * dimensions.w;
 
+    // Theme-aware hint color:
+    // dark mode → vivid red  #e03030 (visible against dark ocean/land)
+    // light mode → vivid teal-green #00a08f (primary de la paleta tropical)
+    const isLight = theme === 'light';
+    const hintRGB = isLight ? '0, 160, 143' : '224, 48, 48';
+
     let startTime: number | null = null;
 
     const animate = (ts: number) => {
@@ -477,9 +483,9 @@ export default function WorldMapCanvas({
       // Radial gradient glow
       const outerR = radiusPx * (scale + 0.15);
       const grad = ctx.createRadialGradient(hx, hy, outerR * 0.3, hx, hy, outerR);
-      grad.addColorStop(0, `rgba(245, 200, 66, ${alpha * 1.4})`);
-      grad.addColorStop(0.6, `rgba(245, 200, 66, ${alpha})`);
-      grad.addColorStop(1, 'rgba(245, 200, 66, 0)');
+      grad.addColorStop(0, `rgba(${hintRGB}, ${alpha * 1.6})`);
+      grad.addColorStop(0.6, `rgba(${hintRGB}, ${alpha})`);
+      grad.addColorStop(1, `rgba(${hintRGB}, 0)`);
       ctx.beginPath();
       ctx.arc(hx, hy, outerR, 0, Math.PI * 2);
       ctx.fillStyle = grad;
@@ -490,7 +496,7 @@ export default function WorldMapCanvas({
       ctx.beginPath();
       ctx.arc(hx, hy, radiusPx * scale, 0, Math.PI * 2);
       ctx.setLineDash([10, 7]);
-      ctx.strokeStyle = `rgba(245, 200, 66, ${0.55 + 0.2 * pulse})`;
+      ctx.strokeStyle = `rgba(${hintRGB}, ${0.65 + 0.25 * pulse})`;
       ctx.lineWidth = 2.5;
       ctx.stroke();
       ctx.restore();
@@ -500,7 +506,7 @@ export default function WorldMapCanvas({
       ctx.font = `bold ${fontSize}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = `rgba(245, 200, 66, ${0.7 + 0.2 * pulse})`;
+      ctx.fillStyle = `rgba(${hintRGB}, ${0.8 + 0.2 * pulse})`;
       ctx.fillText('?', hx, hy);
 
       hintAnimFrameRef.current = requestAnimationFrame(animate);
@@ -508,7 +514,7 @@ export default function WorldMapCanvas({
 
     hintAnimFrameRef.current = requestAnimationFrame(animate);
     return () => { if (hintAnimFrameRef.current) cancelAnimationFrame(hintAnimFrameRef.current); };
-  }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange]);
+  }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange, theme]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (clickDisabled) return;

@@ -8,7 +8,7 @@ import TimerBar from './TimerBar';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
-const TRAINING_ROUNDS = 4;
+const TRAINING_ROUNDS = 6;
 const AUTO_ADVANCE_SECONDS = 5;
 
 export interface RoundResult {
