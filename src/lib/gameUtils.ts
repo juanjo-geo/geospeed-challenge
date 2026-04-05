@@ -51,7 +51,9 @@ export interface PlayerStats {
 
 // --- Leaderboard (Supabase Cloud) ---
 
-export async function getLeaderboard(mode?: string): Promise<LeaderboardEntry[]> {
+export type LeaderboardPeriod = 'all' | 'week' | 'month';
+
+export async function getLeaderboard(mode?: string, period: LeaderboardPeriod = 'all'): Promise<LeaderboardEntry[]> {
   try {
     let query = supabase
       .from('leaderboard')
@@ -59,6 +61,18 @@ export async function getLeaderboard(mode?: string): Promise<LeaderboardEntry[]>
       .order('score', { ascending: false })
       .limit(10);
     if (mode) query = query.eq('mode', mode);
+
+    // Time-period filter
+    if (period === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      query = query.gte('created_at', weekAgo.toISOString());
+    } else if (period === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      query = query.gte('created_at', monthAgo.toISOString());
+    }
+
     const { data, error } = await query;
     if (error) throw error;
     return (data || []).map(row => ({

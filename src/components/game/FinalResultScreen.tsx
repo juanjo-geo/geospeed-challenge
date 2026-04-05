@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { type RoundResult } from './GameScreen';
-import { formatDistance, qualifiesForLeaderboard, addToLeaderboard, updatePlayerStats, getPlayerStats } from '@/lib/gameUtils';
+import { formatDistance, qualifiesForLeaderboard, addToLeaderboard, updatePlayerStats, getPlayerStats, getLeaderboard } from '@/lib/gameUtils';
 import { playVictory } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import { shareResult } from '@/lib/shareCard';
 import { getPlayerLevel } from '@/lib/levelSystem';
+import { fireCelebration } from '@/lib/confetti';
+import { hapticCelebration } from '@/lib/haptics';
 import RoundBreakdown from './RoundBreakdown';
 
 interface FinalResultScreenProps {
@@ -35,6 +37,9 @@ export default function FinalResultScreen({
   const [saving, setSaving] = useState(false);
   const [previousBest, setPreviousBest] = useState(0);
   const [sharing, setSharing] = useState(false);
+  const [rankPosition, setRankPosition] = useState<number | null>(null);
+  const [rankTotal, setRankTotal] = useState<number>(0);
+  const [xpAnimProgress, setXpAnimProgress] = useState<number>(0);
 
   useEffect(() => {
     if (authName && authName.length >= 3) {
@@ -68,11 +73,31 @@ export default function FinalResultScreen({
     updatePlayerStats(totalScore, distances);
     qualifiesForLeaderboard(totalScore).then(setQualifies);
     if (reason === 'complete') playVictory();
+
+    // Fire confetti for new records (check after setting previousBest)
+    if (totalScore > stats.bestScore && stats.bestScore > 0) {
+      setTimeout(() => { fireCelebration(); hapticCelebration(); }, 400);
+    }
+
+    // Fetch ranking position for social comparison
+    getLeaderboard(mode).then(board => {
+      setRankTotal(board.length);
+      const pos = board.findIndex(e => totalScore >= e.score);
+      setRankPosition(pos === -1 ? board.length + 1 : pos + 1);
+    });
   }, []);
 
   const isNewRecord = totalScore > previousBest && previousBest > 0;
   const scoreDelta = previousBest > 0 ? totalScore - previousBest : 0;
   const level = getPlayerLevel();
+
+  // Animate XP bar from previous progress to current progress
+  useEffect(() => {
+    // Start at 0 (or a lower value) and animate to the actual progress
+    setXpAnimProgress(0);
+    const timer = setTimeout(() => setXpAnimProgress(level.progress), 300);
+    return () => clearTimeout(timer);
+  }, [level.progress]);
 
   const handleShare = async () => {
     setSharing(true);
@@ -156,16 +181,52 @@ export default function FinalResultScreen({
           </div>
         </div>
 
-        {/* Level progress */}
-        <div className="bg-muted/50 rounded-lg p-2.5 sm:p-3 mb-4 sm:mb-5 flex items-center gap-2 sm:gap-3">
-          <span className="text-lg sm:text-xl">{level.emoji}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {level.title}</p>
-            <div className="w-full h-1 sm:h-1.5 bg-background rounded-full mt-1 overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${level.progress}%`, background: 'hsl(var(--primary))' }} />
+        {/* Social comparison */}
+        {rankPosition !== null && rankTotal > 0 && (
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-2.5 sm:p-3 mb-3 sm:mb-4 text-center">
+            {rankPosition <= 3 ? (
+              <p className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>
+                {rankPosition === 1 ? '👑' : rankPosition === 2 ? '🥈' : '🥉'} ¡Estás en el Top {rankPosition} del ranking!
+              </p>
+            ) : rankPosition <= rankTotal ? (
+              <p className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>
+                📊 Superaste al {Math.round(((rankTotal - rankPosition + 1) / rankTotal) * 100)}% de los jugadores
+              </p>
+            ) : (
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                📈 ¡Sigue practicando para subir en el ranking!
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Level progress — animated XP bar */}
+        <div className="bg-muted/50 rounded-lg p-2.5 sm:p-3 mb-4 sm:mb-5">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-lg sm:text-xl">{level.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between">
+                <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {level.title}</p>
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground">{level.xp.toLocaleString()} XP</span>
+              </div>
+              <div className="w-full h-1.5 sm:h-2 bg-background rounded-full mt-1 overflow-hidden relative">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${xpAnimProgress}%`,
+                    background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))',
+                    transition: 'width 1.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                    boxShadow: '0 0 8px hsl(var(--primary) / 0.5)',
+                  }}
+                />
+              </div>
             </div>
           </div>
-          <span className="text-[9px] sm:text-[10px] text-muted-foreground">{level.xp.toLocaleString()} XP</span>
+          {totalScore > 0 && (
+            <p className="text-center text-[9px] sm:text-[10px] font-bold mt-1.5 animate-fade-in" style={{ color: 'hsl(var(--primary))' }}>
+              +{totalScore.toLocaleString()} XP ganados
+            </p>
+          )}
         </div>
 
         {/* Best round highlight */}

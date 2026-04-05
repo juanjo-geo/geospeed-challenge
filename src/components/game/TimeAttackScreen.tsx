@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, type Difficulty, type GameMode } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/sounds';
+import { hapticTap, hapticSuccess, hapticError, hapticTick } from '@/lib/haptics';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 
@@ -66,6 +67,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           if (!gameOverRef.current) {
             gameOverRef.current = true;
             playGameOver();
+            hapticError();
             onGameOverRef.current({
               cities: roundsRef.current.length,
               totalScore: roundsRef.current.reduce((s, r) => s + r.totalPoints, 0),
@@ -74,7 +76,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           }
           return 0;
         }
-        if (prev <= 6) playTick();
+        if (prev <= 6) { playTick(); hapticTick(); }
         return prev - 1;
       });
     }, 1000);
@@ -88,6 +90,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const handleMapClick = useCallback((lat: number, lon: number) => {
     if (isAnimating || !currentCity || gameOverRef.current) return;
     playClick();
+    hapticTap();
     const timeUsed = Math.round((Date.now() - roundStartRef.current) / 1000);
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     const basePoints = calculateBasePoints(distance);
@@ -95,7 +98,10 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     const totalPoints = Math.round(basePoints * mult.value);
 
     roundsRef.current.push({ city: currentCity, distance, totalPoints, timeUsed });
-    setTimeout(() => totalPoints >= 500 ? playGood() : playBad(), 150);
+    setTimeout(() => {
+      if (totalPoints >= 500) { playGood(); hapticSuccess(); }
+      else { playBad(); hapticError(); }
+    }, 150);
     setScore(s => s + totalPoints);
     setScorePop(true);
     setTimeout(() => setScorePop(false), 500);

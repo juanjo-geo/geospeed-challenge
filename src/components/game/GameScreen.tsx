@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/sounds';
+import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
+import { fireStarBurst } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 import TimerBar from './TimerBar';
@@ -84,10 +86,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         if (prev <= 1) {
           clearInterval(timerRef.current);
           playGameOver();
+          hapticError();
           onGameOver(rounds, 'timeout');
           return 0;
         }
-        if (prev <= 6) playTick();
+        if (prev <= 6) { playTick(); hapticTick(); }
         return prev - 1;
       });
     }, 1000);
@@ -132,6 +135,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     if (isWaiting || !currentCity) return;
     clearInterval(timerRef.current);
     playClick();
+    hapticTap();
 
     const timeUsed = Math.round((Date.now() - roundStartRef.current) / 1000);
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
@@ -157,7 +161,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       timeUsed,
     };
 
-    setTimeout(() => totalPoints >= 500 ? playGood() : playBad(), 200);
+    setTimeout(() => {
+      if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(); }
+      else if (totalPoints >= 500) { playGood(); hapticSuccess(); }
+      else { playBad(); hapticError(); }
+    }, 200);
     setScore(s => s + totalPoints);
     setScorePop(true);
     setFloatPoints(totalPoints);

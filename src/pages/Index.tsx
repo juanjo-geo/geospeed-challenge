@@ -13,11 +13,15 @@ import TutorialOverlay from '@/components/game/TutorialOverlay';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
 import StoreScreen from '@/components/game/StoreScreen';
-import { type GameRoom, updateRoomScore, subscribeToRoom } from '@/lib/multiplayerUtils';
+import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { syncAfterGame } from '@/lib/cloudSync';
+import { addLives } from '@/lib/energySystem';
+import { playCountdown, playGo } from '@/lib/sounds';
+import { hapticTap, hapticCelebration } from '@/lib/haptics';
 
 type Phase = 'splash' | 'home' | 'store' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
@@ -87,20 +91,32 @@ const Index = () => {
     const channel = subscribeToRoom(mpRoom.id, (updated) => {
       setMpRoom(updated);
     });
-    return () => { channel.unsubscribe(); };
+    // Use removeChannel for proper cleanup — unsubscribe() alone leaves the
+    // channel in Supabase's internal registry, blocking future resubscriptions.
+    return () => { supabase.removeChannel(channel); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mpRoom?.id, mpPhaseActive]);
 
-  // Countdown logic
+  // Countdown logic — goes 3 → 2 → 1 → 0 (GO!) → start playing
   useEffect(() => {
     if (phase !== 'countdown') return;
     setCountdown(3);
+    playCountdown();
+    hapticTap();
     const interval = setInterval(() => {
       setCountdown(prev => {
-        if (prev <= 1) {
+        if (prev <= 0) {
           clearInterval(interval);
           setPhase('playing');
           return 0;
+        }
+        if (prev === 1) {
+          // Next tick will be GO!
+          playGo();
+          hapticCelebration();
+        } else {
+          playCountdown();
+          hapticTap();
         }
         return prev - 1;
       });
@@ -154,6 +170,11 @@ const Index = () => {
     setFinalRounds(rounds);
     setFinalScore(total);
     setEndReason(reason);
+    // Determine if this was a daily challenge
+    const today = new Date().toISOString().split('T')[0];
+    const isDailyGame = phase === 'daily' || (difficulty === 'medium' && gameMode === 'world');
+    const dailyKey = `geospeed_daily_${today}`;
+
     addGameHistory({
       date: new Date().toISOString(),
       score: total,
@@ -161,8 +182,15 @@ const Index = () => {
       difficulty,
       mode: gameMode,
       avgDistance: Math.round(avgDist),
-      type: 'classic',
+      type: isDailyGame && !localStorage.getItem(dailyKey) ? 'daily' : 'classic',
     });
+
+    // Grant daily challenge bonus: +1 life (first completion only)
+    if (isDailyGame && !localStorage.getItem(dailyKey)) {
+      localStorage.setItem(dailyKey, String(total));
+      addLives(1);
+    }
+
     // Track game for ad cadence and sync to cloud
     incrementGameCounter();
     syncAfterGame();
@@ -270,20 +298,36 @@ const Index = () => {
     }
 
     if (phase === 'countdown') {
+      const isGo = countdown === 0;
       return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
             {isTraining ? '🎓 Modo Entrenamiento' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
           </p>
-          <div
-            key={countdown}
-            className="text-7xl sm:text-8xl md:text-9xl font-black font-mono animate-score-pop"
-            style={{ color: 'hsl(var(--primary))' }}
-          >
-            {countdown}
+
+          <div className="relative flex items-center justify-center">
+            {/* Expanding ring on GO */}
+            {isGo && (
+              <div
+                className="absolute w-24 h-24 rounded-full border-4 animate-ring-expand"
+                style={{ borderColor: 'hsl(var(--primary))' }}
+              />
+            )}
+
+            <div
+              key={countdown}
+              className={`font-black font-mono ${isGo
+                ? 'text-8xl sm:text-9xl md:text-[10rem] animate-go-impact'
+                : 'text-7xl sm:text-8xl md:text-9xl animate-countdown-zoom'
+              }`}
+              style={{ color: 'hsl(var(--primary))' }}
+            >
+              {isGo ? 'GO!' : countdown}
+            </div>
           </div>
+
           <p className="text-muted-foreground mt-4 sm:mt-6 text-xs sm:text-sm animate-fade-in">
-            Localiza las ciudades lo más rápido posible
+            {isGo ? '¡A jugar!' : 'Localiza las ciudades lo más rápido posible'}
           </p>
         </div>
       );
@@ -426,7 +470,7 @@ const Index = () => {
     }
 
     if (phase === 'mp-final' && mpRoom) {
-      return <MultiplayerResultScreen room={mpRoom} isHost={mpIsHost} onPlayAgain={handleMpPlayAgain} onGoHome={handleGoHome} />;
+      return <MultiplayerResultScreen room={mpRoom} isHost={mpIsHost} onPlayAgain={handleMpPlayAgain} onGoHome={handleGoHome} onRoomUpdate={setMpRoom} />;
     }
 
     if (phase === 'daily') {

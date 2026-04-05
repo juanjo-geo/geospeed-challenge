@@ -1,4 +1,5 @@
-import { type GameRoom } from '@/lib/multiplayerUtils';
+import { useState, useEffect } from 'react';
+import { type GameRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { MODE_CONFIG } from '@/data/cities';
 
 interface MultiplayerResultScreenProps {
@@ -6,11 +7,15 @@ interface MultiplayerResultScreenProps {
   isHost: boolean;
   onPlayAgain: () => void;
   onGoHome: () => void;
+  onRoomUpdate?: (room: GameRoom) => void;
 }
 
 const diffLabels: Record<string, string> = { easy: '🟢 Fácil', medium: '🟡 Medio', hard: '🔴 Experto' };
 
-export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onGoHome }: MultiplayerResultScreenProps) {
+const POLL_INTERVAL = 3000; // 3 seconds
+const POLL_MAX_DURATION = 5 * 60 * 1000; // 5 minutes timeout
+
+export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onGoHome, onRoomUpdate }: MultiplayerResultScreenProps) {
   const myScore = isHost ? room.host_score : room.guest_score;
   const opponentScore = isHost ? room.guest_score : room.host_score;
   const myName = isHost ? room.host_name : (room.guest_name || '???');
@@ -23,6 +28,31 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
   const iWon = opponentFinished && myScore > opponentScore;
   const tie = opponentFinished && myScore === opponentScore;
   const modeLabel = MODE_CONFIG.find(m => m.key === room.mode)?.label || room.mode;
+  const [pollTimedOut, setPollTimedOut] = useState(false);
+
+  // Polling fallback — if Realtime subscription misses the opponent's finish event,
+  // periodically check the room state directly from the database.
+  useEffect(() => {
+    if (opponentFinished) return; // already done
+
+    const startTime = Date.now();
+    const interval = setInterval(async () => {
+      if (Date.now() - startTime > POLL_MAX_DURATION) {
+        clearInterval(interval);
+        setPollTimedOut(true);
+        return;
+      }
+      const freshRoom = await fetchRoom(room.id);
+      if (freshRoom) {
+        const oppDone = isHost ? freshRoom.guest_finished : freshRoom.host_finished;
+        if (oppDone && onRoomUpdate) {
+          onRoomUpdate(freshRoom);
+        }
+      }
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [room.id, isHost, opponentFinished, onRoomUpdate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 game-bg">
@@ -31,12 +61,18 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
         <div className="text-center mb-8">
           {!opponentFinished ? (
             <>
-              <p className="text-5xl mb-3 animate-pulse">⏳</p>
-              <h1 className="text-2xl font-black text-foreground">Esperando al rival…</h1>
+              <p className="text-5xl mb-3 animate-pulse">{pollTimedOut ? '⚠️' : '⏳'}</p>
+              <h1 className="text-2xl font-black text-foreground">
+                {pollTimedOut ? 'El rival no respondió' : 'Esperando al rival…'}
+              </h1>
               <p className="text-muted-foreground text-sm mt-2">
                 Tu puntuación: <span className="font-bold" style={{ color: 'hsl(var(--primary))' }}>{myScore.toLocaleString()}</span>
               </p>
-              <p className="text-muted-foreground text-xs mt-1 animate-pulse">El rival sigue jugando…</p>
+              {pollTimedOut ? (
+                <p className="text-muted-foreground text-xs mt-1">Parece que el rival abandonó la partida</p>
+              ) : (
+                <p className="text-muted-foreground text-xs mt-1 animate-pulse">El rival sigue jugando…</p>
+              )}
             </>
           ) : (
             <>
@@ -81,8 +117,8 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
           </div>
         </div>
 
-        {/* Actions — only show full actions when both finished */}
-        {opponentFinished ? (
+        {/* Actions — show full actions when both finished OR poll timed out */}
+        {opponentFinished || pollTimedOut ? (
           <div className="flex gap-3">
             <button
               onClick={onGoHome}
@@ -95,7 +131,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
               className="flex-1 py-3 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
               style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
             >
-              REVANCHA 🔄
+              {opponentFinished ? 'REVANCHA 🔄' : 'NUEVA PARTIDA 🔄'}
             </button>
           </div>
         ) : (

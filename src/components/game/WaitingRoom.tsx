@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type GameRoom, subscribeToRoom, setPlayerReady } from '@/lib/multiplayerUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { MODE_CONFIG } from '@/data/cities';
 
 interface WaitingRoomProps {
@@ -23,7 +24,7 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
         onGameStart(updated);
       }
     });
-    return () => { channel.unsubscribe(); };
+    return () => { supabase.removeChannel(channel); };
   }, [initialRoom.id, onGameStart]);
 
   const handleReady = async () => {

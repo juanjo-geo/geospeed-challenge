@@ -1,4 +1,5 @@
 import { getPlayerStats, getGameHistory } from './gameUtils';
+import { addLives } from './energySystem';
 
 export interface PlayerLevel {
   level: number;
@@ -7,6 +8,12 @@ export interface PlayerLevel {
   xp: number;
   xpForNext: number;
   progress: number; // 0-100
+}
+
+export interface LevelReward {
+  lives: number;
+  description: string;
+  unlock?: string;
 }
 
 const LEVELS: { minXp: number; title: string; emoji: string }[] = [
@@ -21,6 +28,19 @@ const LEVELS: { minXp: number; title: string; emoji: string }[] = [
   { minXp: 60000, title: 'Oráculo', emoji: '🔮' },
   { minXp: 100000, title: 'Deidad Geo', emoji: '⚡' },
 ];
+
+const LEVEL_REWARDS: Record<number, LevelReward> = {
+  1: { lives: 0, description: 'Nivel inicial' },
+  2: { lives: 2, description: 'Explorador desbloqueado', unlock: 'Europe mode' },
+  3: { lives: 3, description: 'Viajero desbloqueado', unlock: 'Asia mode' },
+  4: { lives: 3, description: 'Navegante desbloqueado' },
+  5: { lives: 5, description: 'Geógrafo desbloqueado', unlock: 'Expert difficulty' },
+  6: { lives: 5, description: 'Cartógrafo desbloqueado' },
+  7: { lives: 5, description: 'Maestro desbloqueado' },
+  8: { lives: 10, description: 'Leyenda desbloqueado' },
+  9: { lives: 10, description: 'Oráculo desbloqueado' },
+  10: { lives: 20, description: 'Deidad Geo desbloqueado' },
+};
 
 export function calculateXP(): number {
   const stats = getPlayerStats();
@@ -56,6 +76,71 @@ export function getPlayerLevel(): PlayerLevel {
     xpForNext,
     progress,
   };
+}
+
+export function checkLevelUp(previousXp: number, currentXp: number): { leveled: boolean; newLevel?: PlayerLevel; reward?: LevelReward } {
+  const previousLevel = calculateLevel(previousXp);
+  const currentLevel = calculateLevel(currentXp);
+
+  if (currentLevel > previousLevel) {
+    const newPlayerLevel = getPlayerLevelByNumber(currentLevel);
+    const reward = LEVEL_REWARDS[currentLevel];
+    return {
+      leveled: true,
+      newLevel: newPlayerLevel,
+      reward,
+    };
+  }
+
+  return { leveled: false };
+}
+
+function calculateLevel(xp: number): number {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= LEVELS[i].minXp) {
+      return i + 1;
+    }
+  }
+  return 1;
+}
+
+function getPlayerLevelByNumber(levelNumber: number): PlayerLevel {
+  const xp = calculateXP();
+  const currentLevel = LEVELS[levelNumber - 1] || LEVELS[0];
+  const nextLevel = LEVELS[levelNumber] || null;
+
+  const xpForNext = nextLevel ? nextLevel.minXp : currentLevel.minXp;
+  const xpInLevel = xp - currentLevel.minXp;
+  const xpNeeded = nextLevel ? nextLevel.minXp - currentLevel.minXp : 1;
+  const progress = nextLevel ? Math.min(100, Math.round((xpInLevel / xpNeeded) * 100)) : 100;
+
+  return {
+    level: levelNumber,
+    title: currentLevel.title,
+    emoji: currentLevel.emoji,
+    xp,
+    xpForNext,
+    progress,
+  };
+}
+
+export function claimLevelReward(level: number): boolean {
+  const claimedLevelsJson = localStorage.getItem('geospeed_claimed_levels');
+  const claimedLevels: number[] = claimedLevelsJson ? JSON.parse(claimedLevelsJson) : [];
+
+  if (claimedLevels.includes(level)) {
+    return false;
+  }
+
+  const reward = LEVEL_REWARDS[level];
+  if (reward && reward.lives > 0) {
+    addLives(reward.lives);
+  }
+
+  claimedLevels.push(level);
+  localStorage.setItem('geospeed_claimed_levels', JSON.stringify(claimedLevels));
+
+  return true;
 }
 
 // --- Badges ---

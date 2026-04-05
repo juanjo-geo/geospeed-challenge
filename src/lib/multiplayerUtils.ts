@@ -118,9 +118,14 @@ export async function updateRoomScore(roomId: string, isHost: boolean, score: nu
   return invokeRoomUpdate(roomId, 'update_score', { score, round });
 }
 
+let channelCounter = 0;
+
 export function subscribeToRoom(roomId: string, callback: (room: GameRoom) => void) {
+  // Use unique channel name to avoid Supabase channel reuse issues
+  // when WaitingRoom and Index.tsx subscribe to the same room sequentially
+  const channelName = `room-${roomId}-${++channelCounter}-${Date.now()}`;
   return supabase
-    .channel(`room-${roomId}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'game_rooms', filter: `id=eq.${roomId}` },
@@ -129,4 +134,18 @@ export function subscribeToRoom(roomId: string, callback: (room: GameRoom) => vo
       }
     )
     .subscribe();
+}
+
+/**
+ * Fetch room state directly from the public view (polling fallback).
+ * Used when Realtime subscription might miss updates.
+ */
+export async function fetchRoom(roomId: string): Promise<GameRoom | null> {
+  const { data, error } = await (supabase
+    .from('game_rooms_public' as any)
+    .select('*')
+    .eq('id', roomId)
+    .single() as any);
+  if (error || !data) return null;
+  return data as GameRoom;
 }

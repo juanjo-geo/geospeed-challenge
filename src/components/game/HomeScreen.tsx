@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
-import { getPlayerStats, getLeaderboard, getGameHistory, type LeaderboardEntry, type GameHistoryEntry } from '@/lib/gameUtils';
+import { getPlayerStats, getLeaderboard, getGameHistory, type LeaderboardEntry, type GameHistoryEntry, type LeaderboardPeriod } from '@/lib/gameUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistance } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
 import { getEnergy } from '@/lib/energySystem';
+import { checkStreak, claimDailyReward, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
 import ThemeToggle from './ThemeToggle';
 
@@ -39,19 +40,33 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedMode, setSelectedMode] = useState<GameMode>('world');
   const [rankingMode, setRankingMode] = useState<string>('all');
+  const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
   const [showRanking, setShowRanking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMoreModes, setShowMoreModes] = useState(false);
   const history = getGameHistory();
   const playerLevel = getPlayerLevel();
+  const badges = getPlayerBadges();
   const isNewPlayer = stats.gamesPlayed === 0;
   const [showHowToPlay, setShowHowToPlay] = useState(isNewPlayer);
+  const [showBadges, setShowBadges] = useState(false);
+  const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
+  const [streakDismissed, setStreakDismissed] = useState(false);
+
+  // Check daily streak on mount
+  useEffect(() => {
+    if (isNewPlayer) return;
+    const result = checkStreak();
+    if (result.isNewDay && result.reward && result.reward.lives > 0) {
+      setStreakReward(result.reward);
+    }
+  }, [isNewPlayer]);
 
   useEffect(() => {
     if (showRanking) {
-      getLeaderboard(rankingMode === 'all' ? undefined : rankingMode).then(setLeaderboard);
+      getLeaderboard(rankingMode === 'all' ? undefined : rankingMode, rankingPeriod).then(setLeaderboard);
     }
-  }, [rankingMode, showRanking]);
+  }, [rankingMode, rankingPeriod, showRanking]);
 
   return (
     <main
@@ -211,26 +226,88 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       ══════════════════════════════════════════ */}
       {!isNewPlayer && (
         <>
-      {/* ── Level badge ── */}
+      {/* ── Daily streak reward popup ── */}
+      {streakReward && !streakDismissed && (
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up">
+          <div className="bg-gradient-to-r from-orange-500/15 to-amber-500/10 border-2 border-orange-500/40 rounded-xl p-3 sm:p-4 text-center relative overflow-hidden">
+            <button
+              onClick={() => {
+                claimDailyReward();
+                setStreakDismissed(true);
+              }}
+              className="absolute top-2 right-2 text-[10px] text-muted-foreground hover:text-foreground"
+            >✕</button>
+            <span className="text-2xl sm:text-3xl block mb-1">🔥</span>
+            <p className="font-black text-sm sm:text-base text-orange-400">
+              ¡Racha de {streakReward.day} {streakReward.day === 1 ? 'día' : 'días'}!
+            </p>
+            {streakReward.lives > 0 && (
+              <p className="text-xs sm:text-sm text-foreground mt-1">
+                +{streakReward.lives} {streakReward.lives === 1 ? 'vida' : 'vidas'} de recompensa
+              </p>
+            )}
+            {streakReward.badge && (
+              <p className="text-[10px] sm:text-xs text-amber-400 mt-0.5 font-bold">
+                🏅 Badge "{streakReward.badge}" desbloqueado
+              </p>
+            )}
+            <button
+              onClick={() => {
+                claimDailyReward();
+                setStreakDismissed(true);
+              }}
+              className="mt-2 px-4 py-1.5 rounded-lg font-bold text-xs bg-orange-500 text-white active:scale-[0.97] transition-all"
+            >
+              {streakReward.lives > 0 ? '¡RECLAMAR!' : '¡GENIAL!'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Level badge + Badges ── */}
       {stats.gamesPlayed > 0 && (() => {
-        const level = getPlayerLevel();
-        const badges = getPlayerBadges();
         const unlockedCount = badges.filter(b => b.unlocked).length;
         return (
           <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
+            {/* Level bar */}
             <div className="bg-card border border-border rounded-xl p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl" style={{ background: 'linear-gradient(90deg, hsl(var(--primary)/0) 0%, hsl(var(--primary)) 50%, hsl(var(--primary)/0) 100%)' }} />
-              <span className="text-xl sm:text-2xl">{level.emoji}</span>
+              <span className="text-xl sm:text-2xl">{playerLevel.emoji}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-1.5 sm:gap-2">
-                  <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {level.title}</span>
-                  <span className="text-[9px] sm:text-[10px] text-muted-foreground">{level.xp.toLocaleString()} XP</span>
+                  <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>Nv.{playerLevel.level} {playerLevel.title}</span>
+                  <span className="text-[9px] sm:text-[10px] text-muted-foreground">{playerLevel.xp.toLocaleString()} XP</span>
                 </div>
                 <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${level.progress}%`, background: 'hsl(var(--primary))' }} />
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${playerLevel.progress}%`, background: 'hsl(var(--primary))' }} />
                 </div>
               </div>
-              <span className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap">🏅 {unlockedCount}/{badges.length}</span>
+              <button
+                onClick={() => setShowBadges(prev => !prev)}
+                className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap hover:text-primary transition-colors"
+              >
+                🏅 {unlockedCount}/{badges.length} {showBadges ? '▴' : '▾'}
+              </button>
+            </div>
+
+            {/* Expandable badges grid */}
+            <div className={`overflow-hidden transition-all duration-500 ease-out ${showBadges ? 'max-h-[400px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2">
+                {badges.map(badge => (
+                  <div
+                    key={badge.id}
+                    className={`flex flex-col items-center gap-0.5 p-2 sm:p-2.5 rounded-xl border text-center transition-all ${
+                      badge.unlocked
+                        ? 'border-primary/30 bg-primary/8'
+                        : 'border-border bg-card/50 opacity-40 grayscale'
+                    }`}
+                  >
+                    <span className="text-lg sm:text-xl">{badge.emoji}</span>
+                    <p className="text-[8px] sm:text-[9px] font-bold text-foreground leading-tight">{badge.name}</p>
+                    <p className="text-[7px] sm:text-[8px] text-muted-foreground leading-tight">{badge.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         );
@@ -362,6 +439,29 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           id="ranking-panel"
           className={`overflow-hidden transition-all duration-500 ease-out ${showRanking ? 'max-h-[600px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}
         >
+          {/* Period filter */}
+          <div className="grid grid-cols-3 gap-1 sm:gap-1.5 mb-1.5 sm:mb-2 w-full" role="tablist" aria-label="Filtrar ranking por período">
+            {([
+              { key: 'all', label: '🏛️ Histórico' },
+              { key: 'month', label: '📅 Este mes' },
+              { key: 'week', label: '🔥 Semana' },
+            ] as { key: LeaderboardPeriod; label: string }[]).map(p => (
+              <button
+                key={p.key}
+                onClick={() => setRankingPeriod(p.key)}
+                role="tab"
+                aria-selected={rankingPeriod === p.key}
+                className={`px-1 sm:px-2 py-1 sm:py-1.5 rounded-md text-[9px] sm:text-[11px] font-bold whitespace-nowrap transition-all active:scale-[0.97] ${
+                  rankingPeriod === p.key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {/* Mode filter */}
           <div className="grid grid-cols-6 gap-1 sm:gap-1.5 mb-2 sm:mb-3 w-full" role="tablist" aria-label="Filtrar ranking por modo">
             {[{ key: 'all', label: 'Todos' }, ...MODE_CONFIG].map(m => (
               <button
@@ -381,7 +481,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
           <div className="bg-card rounded-xl border overflow-hidden" role="table" aria-label="Tabla de ranking">
             {leaderboard.length === 0 ? (
-              <p className="text-center text-muted-foreground text-xs sm:text-sm py-4 sm:py-6">🌍 ¡Sé el primero en conquistar el ranking!</p>
+              <p className="text-center text-muted-foreground text-xs sm:text-sm py-4 sm:py-6">
+                {rankingPeriod === 'week' ? '🔥 Aún no hay puntuaciones esta semana. ¡Sé el primero!'
+                  : rankingPeriod === 'month' ? '📅 Aún no hay puntuaciones este mes. ¡Sé el primero!'
+                  : '🌍 ¡Sé el primero en conquistar el ranking!'}
+              </p>
             ) : (
               leaderboard.map((entry: LeaderboardEntry, i: number) => (
                 <div key={i} className="flex items-center px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border-b border-border last:border-0" role="row">
