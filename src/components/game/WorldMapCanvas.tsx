@@ -48,12 +48,28 @@ export default function WorldMapCanvas({
   );
   const isLightMode = () => theme === 'light';
 
-  // Dark mode: vibrant saturated palette
+  // Dark mode: vivid flat political map (inspired by colorful atlas reference)
   const MAP_PALETTE_DARK = [
-    '#F4A460', '#FF8C00', '#66CDAA', '#FFD700', '#32CD32',
-    '#DA70D6', '#FF6347', '#C0C0C0', '#FFA500', '#8B4513',
-    '#20B2AA', '#ADFF2F', '#FF4500', '#BA55D3', '#FFFF00',
-    '#CD5C5C', '#4169E1', '#FF69B4', '#FFD700', '#90EE90',
+    '#5ABFCC', // cyan blue  (Canada / large countries)
+    '#8B1A52', // dark maroon (Russia-tone)
+    '#E03888', // hot pink / magenta
+    '#F0C820', // bright yellow
+    '#F07030', // orange
+    '#3A7888', // dark teal
+    '#C040A0', // magenta-purple
+    '#68C8D8', // light cyan
+    '#F07858', // coral / salmon (Australia-tone)
+    '#4A5E6A', // dark slate blue-gray
+    '#A038A8', // purple
+    '#3870D0', // bright blue
+    '#C03030', // red
+    '#88B828', // yellow-green
+    '#28988A', // medium teal
+    '#F09030', // amber
+    '#7838A8', // violet
+    '#D05060', // deep rose
+    '#38A050', // medium green
+    '#D05898', // rose-pink
   ];
 
   // Light mode: soft pastel political map — inspired by classic atlas reference
@@ -93,12 +109,11 @@ export default function WorldMapCanvas({
       oceanGrad.addColorStop(1, '#84B8DC');
       ctx.fillStyle = oceanGrad;
     } else {
-      // Dark mode ocean: deep blue
+      // Dark mode ocean: bright turquoise flat (like vivid atlas reference)
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
-      oceanGrad.addColorStop(0, '#5BC0EB');
-      oceanGrad.addColorStop(0.35, '#3DA8D8');
-      oceanGrad.addColorStop(0.7, '#2B8BBE');
-      oceanGrad.addColorStop(1, '#1A6F9E');
+      oceanGrad.addColorStop(0, '#5CD0DC');
+      oceanGrad.addColorStop(0.5, '#48C0CC');
+      oceanGrad.addColorStop(1, '#38B0BC');
       ctx.fillStyle = oceanGrad;
     }
     ctx.fillRect(0, 0, w, h);
@@ -107,7 +122,7 @@ export default function WorldMapCanvas({
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
       ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
-      ctx.strokeStyle = light ? '#8899AA' : '#3a3a3a';
+      ctx.strokeStyle = light ? '#8899AA' : '#1a2a34';
       ctx.lineWidth = 1;
       for (const polygon of country.polygons) {
         ctx.beginPath();
@@ -133,7 +148,7 @@ export default function WorldMapCanvas({
     }
 
     // Graticule
-    ctx.strokeStyle = light ? 'rgba(60,90,110,0.12)' : 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = light ? 'rgba(60,90,110,0.12)' : 'rgba(10,30,40,0.25)';
     ctx.lineWidth = 0.5;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;

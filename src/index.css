@@ -4,48 +4,55 @@
 
 @layer base {
   :root {
-    --background: 150 25% 10%;
-    --foreground: 45 80% 92%;
+    /* ── Dark mode: paleta sunset / crepúsculo ──────────────────────────
+       #f0b191 → 20  76% 76%  (peach claro    — foreground / texto)
+       #f07290 → 346 81% 69%  (coral-pink     — primary)
+       #c05084 → 332 47% 53%  (rose profundo  — accent / ring)
+       #8c5878 → 323 23% 45%  (mauve          — secondary)
+       #355c70 → 200 36% 32%  (steel blue     — base para fondo)
+    ──────────────────────────────────────────────────────────────────── */
+    --background: 200 40% 11%;
+    --foreground: 20 60% 88%;
 
-    --card: 150 20% 14%;
-    --card-foreground: 45 80% 92%;
+    --card: 200 32% 16%;
+    --card-foreground: 20 60% 88%;
 
-    --popover: 150 20% 14%;
-    --popover-foreground: 45 80% 92%;
+    --popover: 200 32% 16%;
+    --popover-foreground: 20 60% 88%;
 
-    --primary: 44 91% 61%;
-    --primary-foreground: 150 40% 4%;
+    --primary: 346 78% 65%;
+    --primary-foreground: 200 40% 11%;
 
-    --secondary: 150 15% 20%;
-    --secondary-foreground: 45 80% 92%;
+    --secondary: 323 20% 22%;
+    --secondary-foreground: 20 60% 88%;
 
-    --muted: 150 12% 18%;
-    --muted-foreground: 150 10% 60%;
+    --muted: 200 24% 20%;
+    --muted-foreground: 320 16% 56%;
 
-    --accent: 44 91% 61%;
-    --accent-foreground: 150 40% 4%;
+    --accent: 20 72% 72%;
+    --accent-foreground: 200 40% 11%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 80% 58%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 150 12% 24%;
-    --input: 150 12% 24%;
-    --ring: 44 91% 61%;
+    --border: 200 24% 25%;
+    --input: 200 24% 25%;
+    --ring: 346 78% 65%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 150 20% 12%;
-    --sidebar-foreground: 45 80% 92%;
-    --sidebar-primary: 44 91% 61%;
-    --sidebar-primary-foreground: 150 40% 4%;
-    --sidebar-accent: 150 15% 20%;
-    --sidebar-accent-foreground: 45 80% 92%;
-    --sidebar-border: 150 12% 24%;
-    --sidebar-ring: 44 91% 61%;
+    --sidebar-background: 200 36% 13%;
+    --sidebar-foreground: 20 60% 88%;
+    --sidebar-primary: 346 78% 65%;
+    --sidebar-primary-foreground: 200 40% 11%;
+    --sidebar-accent: 200 26% 20%;
+    --sidebar-accent-foreground: 20 60% 88%;
+    --sidebar-border: 200 24% 25%;
+    --sidebar-ring: 346 78% 65%;
 
     /* Background gradient vars */
-    --bg-from: 150 40% 4%;
-    --bg-to: 150 30% 7%;
+    --bg-from: 200 44% 8%;
+    --bg-to: 200 36% 13%;
   }
 
   /* ── Light mode: paleta tropical ── */
