@@ -637,15 +637,21 @@ export default function WorldMapCanvas({
       });
     }
   }, [userClick, correctLocation]);
+  // Ocean background colors — must match exactly what drawBaseMap paints as ocean.
+  // This makes letterbox areas (when geo ratio ≠ container ratio) visually seamless:
+  // the "empty" space around the canvas looks like ocean instead of a black bar.
+  const oceanBg = theme === 'light'
+    ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
+    : 'linear-gradient(180deg, #5CD0DC 0%, #48C0CC 50%, #38B0BC 100%)';
+
   return (
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden flex items-center justify-center"
-      style={{ minHeight: '50dvh' }}
+      style={{ minHeight: '50dvh', background: oceanBg }}
     >
-      {/* Canvas is sized to preserve the geographic aspect ratio.
-          It may not fill the full container if the container's ratio differs from
-          the region's geo ratio — this is intentional (no distortion). */}
+      {/* Canvas preserves geographic aspect ratio — may not fill the container
+          in one dimension, but letterbox areas blend with ocean background above. */}
       <canvas
         ref={canvasRef}
         onClick={handleClick}

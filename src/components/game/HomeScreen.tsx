@@ -112,22 +112,22 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           NUEVO JUGADOR — layout simplificado
       ══════════════════════════════════════════ */}
       {isNewPlayer && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl flex flex-col gap-3 sm:gap-4 md:gap-5 animate-fade-in-up animation-delay-150">
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl flex flex-col gap-3 sm:gap-4 md:gap-5">
 
           {/* Guía de inicio */}
-          <p className="text-center text-[11px] sm:text-xs text-muted-foreground uppercase tracking-widest">
+          <p className="text-center text-[11px] sm:text-xs text-muted-foreground uppercase tracking-widest animate-fade-in">
             ¿Por dónde quieres empezar?
           </p>
 
           {/* ── Hero card: Entrenamiento ── */}
           <div
-            className="relative rounded-2xl border-2 border-blue-500/60 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--card)) 0%, rgba(59,130,246,0.08) 100%)' }}
+            className="relative rounded-2xl border-2 border-blue-500/60 overflow-hidden animate-fade-in-up"
+            style={{ background: 'linear-gradient(135deg, hsl(var(--card)) 0%, rgba(59,130,246,0.10) 100%)' }}
           >
             {/* Línea top accent */}
-            <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,179,237,0.8), transparent)' }} />
+            <div className="absolute inset-x-0 top-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,179,237,1), transparent)' }} />
             {/* Badge recomendado */}
-            <div className="absolute top-3 right-3 bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+            <div className="absolute top-3 right-3 bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg">
               ✨ Recomendado
             </div>
             <div className="p-4 sm:p-5 md:p-6">
@@ -139,13 +139,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 </div>
               </div>
               <ul className="text-[10px] sm:text-xs md:text-sm text-muted-foreground space-y-1.5 mb-4 md:mb-5 pl-1">
-                <li className="flex items-center gap-1.5"><span className="text-blue-400">✓</span> El mapa te muestra la zona donde está la ciudad</li>
-                <li className="flex items-center gap-1.5"><span className="text-blue-400">✓</span> Aprende las ubicaciones sin frustrarte</li>
-                <li className="flex items-center gap-1.5"><span className="text-blue-400">✓</span> Ideal si nunca has jugado antes</li>
+                <li className="flex items-center gap-1.5"><span className="text-blue-400 font-bold">✓</span> El mapa te muestra la zona donde está la ciudad</li>
+                <li className="flex items-center gap-1.5"><span className="text-blue-400 font-bold">✓</span> Aprende las ubicaciones sin frustrarte</li>
+                <li className="flex items-center gap-1.5"><span className="text-blue-400 font-bold">✓</span> Ideal si nunca has jugado antes</li>
               </ul>
               <button
                 onClick={onStartTraining}
-                className="w-full py-3 sm:py-3.5 md:py-4 rounded-xl font-black text-sm sm:text-base md:text-lg tracking-wide transition-all active:scale-[0.97] hover:opacity-90"
+                className="w-full py-3 sm:py-3.5 md:py-4 rounded-xl font-black text-sm sm:text-base md:text-lg tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg"
                 style={{ background: 'linear-gradient(135deg, rgb(59,130,246), rgb(99,102,241))', color: '#fff' }}
               >
                 COMENZAR ENTRENAMIENTO →
@@ -154,7 +154,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
 
           {/* Divisor */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 animate-fade-in animation-delay-150">
             <div className="flex-1 h-px bg-border" />
             <span className="text-[10px] text-muted-foreground uppercase tracking-widest shrink-0">o si prefieres saltar directo</span>
             <div className="flex-1 h-px bg-border" />
@@ -163,7 +163,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           {/* ── Jugar ahora (fácil + mundo) ── */}
           <button
             onClick={() => onStartGame('easy', 'world')}
-            className="w-full flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 md:p-5 rounded-xl border-2 border-green-500/40 hover:border-green-500 bg-card transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(142_71%_45%/0.2)]"
+            className="w-full flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 md:p-5 rounded-xl border-2 border-green-500/40 hover:border-green-500 bg-card transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(142_71%_45%/0.2)] animate-fade-in animation-delay-200"
           >
             <span className="text-3xl sm:text-4xl md:text-5xl leading-none">🟢</span>
             <div className="text-left flex-1 min-w-0">
@@ -174,7 +174,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </button>
 
           {/* ── Ver más modos (acordeón) ── */}
-          <div>
+          <div className="animate-fade-in animation-delay-300">
             <button
               onClick={() => setShowMoreModes(p => !p)}
               className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl border border-border bg-card/50 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.97]"
