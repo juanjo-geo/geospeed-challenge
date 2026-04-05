@@ -532,7 +532,7 @@ export function getMapBounds(mode: GameMode): MapBounds {
 
 export const MODE_CONFIG: { key: GameMode; label: string; emoji: string }[] = [
   { key: 'world', label: 'World', emoji: '🌍' },
-  { key: 'europe', label: 'Europa', emoji: '🇪🇺' },
+  { key: 'europe', label: 'Europa', emoji: '🌍' },
   { key: 'asia', label: 'Asia', emoji: '🌏' },
   { key: 'americas', label: 'América', emoji: '🌎' },
   { key: 'africa', label: 'África', emoji: '🌍' },

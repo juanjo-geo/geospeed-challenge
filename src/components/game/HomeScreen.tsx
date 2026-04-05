@@ -41,10 +41,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [showRanking, setShowRanking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMoreModes, setShowMoreModes] = useState(false);
-  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const history = getGameHistory();
   const playerLevel = getPlayerLevel();
   const isNewPlayer = stats.gamesPlayed === 0;
+  const [showHowToPlay, setShowHowToPlay] = useState(isNewPlayer);
 
   useEffect(() => {
     if (showRanking) {
@@ -105,22 +105,20 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           GEOSPEED IQ CHALLENGE
         </h1>
       </div>
-      <p className="text-muted-foreground text-sm sm:text-base md:text-lg mb-3 sm:mb-5 md:mb-6 animate-fade-in-up animation-delay-100 italic">
+      <p className="text-muted-foreground text-sm sm:text-base md:text-lg mb-2 sm:mb-3 animate-fade-in-up animation-delay-100 italic">
         ¿Cuánto conoces el mundo?
       </p>
 
-      {/* ══════════════════════════════════════════
-          NUEVO JUGADOR — Onboarding con 3 pasos
-      ══════════════════════════════════════════ */}
-      {isNewPlayer && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl flex flex-col gap-3 sm:gap-4 animate-fade-in-up">
+      {/* ── Cómo se juega (toggle + collapsible onboarding) ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
+        <button
+          onClick={() => setShowHowToPlay(prev => !prev)}
+          className="w-full text-center text-[11px] sm:text-xs text-muted-foreground hover:text-primary transition-colors py-1"
+        >
+          {showHowToPlay ? '▴ Ocultar instrucciones' : '¿Cómo se juega?'}
+        </button>
 
-          {/* Subtítulo */}
-          <p className="text-center text-[11px] sm:text-xs text-muted-foreground uppercase tracking-widest">
-            Así se juega
-          </p>
-
-          {/* ── 3 pasos explicativos ── */}
+        <div className={`overflow-hidden transition-all duration-500 ease-out ${showHowToPlay ? 'max-h-[1200px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}>
           <div className="flex flex-col gap-2 sm:gap-3">
             {/* Paso 1: Precisión */}
             <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
@@ -135,7 +133,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             </div>
 
             {/* Paso 2: Velocidad */}
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3 animate-fade-in-up animation-delay-100">
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
               <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚡</span>
               <div className="min-w-0">
                 <h3 className="font-black text-xs sm:text-sm text-foreground">La velocidad multiplica</h3>
@@ -148,7 +146,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             </div>
 
             {/* Paso 3: Aceleradores */}
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3 animate-fade-in-up animation-delay-200">
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
               <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🔥</span>
               <div className="min-w-0">
                 <h3 className="font-black text-xs sm:text-sm text-foreground">Rachas y aceleradores</h3>
@@ -159,31 +157,44 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 </p>
               </div>
             </div>
+
+            {/* Paso 4: Modalidad y dificultad */}
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
+              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🗺️</span>
+              <div className="min-w-0">
+                <h3 className="font-black text-xs sm:text-sm text-foreground">Elige tu aventura</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Selecciona la <span className="font-bold text-foreground">modalidad</span> (World, Europa, Asia, América o África)
+                  y la <span className="font-bold text-foreground">dificultad</span> (Fácil, Medio o Experto). ¡Inicia tu partida!
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* ── 2 botones sutiles ── */}
-          <div className="flex flex-col gap-2 sm:gap-2.5 mt-1 animate-fade-in-up animation-delay-300">
-            <button
-              onClick={onStartTraining}
-              className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-sm sm:text-base tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
-            >
-              🎓 MODO ENTRENAMIENTO
-            </button>
-            <button
-              onClick={() => onStartGame('easy', 'world')}
-              className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
-            >
-              🌍 INICIAR JUEGO
-            </button>
-            <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground">
-              Mapamundi · Dificultad Fácil · 13 ciudades
-            </p>
-          </div>
+          {/* Botón entrenamiento */}
+          <button
+            onClick={onStartTraining}
+            className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 mt-2 sm:mt-3 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
+          >
+            🎓 MODO ENTRENAMIENTO
+          </button>
 
-          {/* Bottom spacer */}
-          <div className="h-4 sm:h-6 shrink-0" />
+          {/* Botón iniciar rápido solo para nuevos jugadores */}
+          {isNewPlayer && (
+            <div className="mt-2 sm:mt-2.5">
+              <button
+                onClick={() => onStartGame('easy', 'world')}
+                className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
+              >
+                🌍 INICIAR JUEGO
+              </button>
+              <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground mt-1">
+                Mapamundi · Dificultad Fácil · 13 ciudades
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* ══════════════════════════════════════════
           JUGADOR RECURRENTE — layout completo
@@ -413,60 +424,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
         </div>
       )}
-
-      {/* ── Cómo jugar (link + collapsible onboarding) ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mt-2 sm:mt-3 animate-fade-in-up animation-delay-450">
-        <button
-          onClick={() => setShowHowToPlay(prev => !prev)}
-          className="w-full text-center text-[10px] sm:text-xs text-muted-foreground hover:text-primary transition-colors py-1.5"
-        >
-          {showHowToPlay ? '▴ Ocultar' : '¿Cómo se juega?'}
-        </button>
-
-        <div className={`overflow-hidden transition-all duration-500 ease-out ${showHowToPlay ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
-          <div className="flex flex-col gap-2 sm:gap-3">
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
-              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎯</span>
-              <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">La precisión importa</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Haz click en el mapa lo más cerca posible de la ciudad indicada.
-                  Menos de 50km = <span className="font-bold text-primary">1,000 pts</span>, menos de 200km = 800 pts, y así hasta 8,000km+ = 0 pts.
-                </p>
-              </div>
-            </div>
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
-              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚡</span>
-              <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">La velocidad multiplica</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Responde en menos de 4s y tus puntos se multiplican <span className="font-bold text-green-400">×2</span>.
-                  Entre 4-9s mantienes <span className="font-bold text-yellow-400">×1</span>.
-                  Más de 9s reduce a <span className="font-bold text-red-400">×0.5</span>.
-                </p>
-              </div>
-            </div>
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
-              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🔥</span>
-              <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">Rachas y aceleradores</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Aciertos consecutivos activan rachas que dan bonificaciones extra.
-                  3 seguidos = <span className="font-bold text-orange-400">+15%</span>, 4 = +30%, y sigue subiendo.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Botón entrenamiento */}
-          <button
-            onClick={onStartTraining}
-            className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 mt-1 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
-          >
-            🎓 MODO ENTRENAMIENTO
-          </button>
-        </div>
-      </div>
 
       {/* Bottom spacer */}
       <div className="h-4 sm:h-6 shrink-0" />
