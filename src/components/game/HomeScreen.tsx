@@ -41,6 +41,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [showRanking, setShowRanking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMoreModes, setShowMoreModes] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const history = getGameHistory();
   const playerLevel = getPlayerLevel();
   const isNewPlayer = stats.gamesPlayed === 0;
@@ -412,6 +413,52 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
         </div>
       )}
+
+      {/* ── Cómo jugar (link + collapsible onboarding) ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mt-2 sm:mt-3 animate-fade-in-up animation-delay-450">
+        <button
+          onClick={() => setShowHowToPlay(prev => !prev)}
+          className="w-full text-center text-[10px] sm:text-xs text-muted-foreground hover:text-primary transition-colors py-1.5"
+        >
+          {showHowToPlay ? '▴ Ocultar' : '¿Cómo se juega?'}
+        </button>
+
+        <div className={`overflow-hidden transition-all duration-500 ease-out ${showHowToPlay ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+          <div className="flex flex-col gap-2 sm:gap-3">
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
+              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎯</span>
+              <div className="min-w-0">
+                <h3 className="font-black text-xs sm:text-sm text-foreground">La precisión importa</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Haz click en el mapa lo más cerca posible de la ciudad indicada.
+                  Menos de 50km = <span className="font-bold text-primary">1,000 pts</span>, menos de 200km = 800 pts, y así hasta 8,000km+ = 0 pts.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
+              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚡</span>
+              <div className="min-w-0">
+                <h3 className="font-black text-xs sm:text-sm text-foreground">La velocidad multiplica</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Responde en menos de 4s y tus puntos se multiplican <span className="font-bold text-green-400">×2</span>.
+                  Entre 4-9s mantienes <span className="font-bold text-yellow-400">×1</span>.
+                  Más de 9s reduce a <span className="font-bold text-red-400">×0.5</span>.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
+              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🔥</span>
+              <div className="min-w-0">
+                <h3 className="font-black text-xs sm:text-sm text-foreground">Rachas y aceleradores</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Aciertos consecutivos activan rachas que dan bonificaciones extra.
+                  3 seguidos = <span className="font-bold text-orange-400">+15%</span>, 4 = +30%, y sigue subiendo.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Bottom spacer */}
       <div className="h-4 sm:h-6 shrink-0" />
