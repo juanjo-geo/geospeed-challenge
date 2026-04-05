@@ -127,9 +127,17 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
   const timePercent = (globalTime / GLOBAL_TIME) * 100;
   const isLow = globalTime <= 10;
+  const isWide = layoutMode === 'wide';
+
+  // Same grid layout as GameScreen — guarantees canvas gets defined height
+  const layoutClass = isCompact
+    ? 'flex flex-col'
+    : isWide
+      ? 'grid grid-cols-[clamp(13rem,18vw,16rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(13rem,25vw,16rem)_minmax(0,1fr)]';
 
   return (
-    <div className={`h-[100dvh] flex overflow-hidden bg-background ${hasSidebar ? 'flex-row' : 'flex-col'}`} role="main" aria-label="Modo contrareloj">
+    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass}`} role="main" aria-label="Modo contrareloj">
       {/* Portrait blocker */}
       {isPortraitMobile && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 game-bg">
@@ -148,47 +156,69 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
         </div>
       )}
 
-      {/* ──── Left sidebar (medium + wide) ──── */}
+      {/* ──── Left sidebar (medium + wide) — estandarizado con GameScreen ──── */}
       {hasSidebar && (
-        <div className="w-[clamp(9rem,14vw,13rem)] shrink-0 flex flex-col p-3 gap-3 border-r border-border bg-card overflow-y-auto sidebar-safe-left">
-          <div className="text-center mb-1">
-            <span className="text-xl font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+        <div
+          className="flex min-h-0 flex-col gap-0 border-r border-border/60 bg-card overflow-y-auto overflow-x-hidden scrollbar-hidden"
+          style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+        >
+          {/* ── Logo ── */}
+          <div className="w-full text-center pb-2 mb-2 border-b border-border/50 shrink-0">
+            <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
-            <p className="text-xs text-red-400 font-bold mt-1 uppercase tracking-wider">⚡ Contrareloj</p>
           </div>
 
-          <div className="text-center shrink-0">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Encuentra</p>
-            <p className="text-sm font-bold leading-tight" style={{ color: 'hsl(var(--primary))' }}>{currentCity.name}</p>
+          {/* ── Mode badge ── */}
+          <div className="w-full flex justify-center mb-2 shrink-0">
+            <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-400">
+              ⚡ Contrareloj
+            </span>
           </div>
 
-          <div className="text-center shrink-0 relative">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Puntos</p>
-            <p className={`text-lg font-mono font-bold ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
+          {/* ── Ciudad a encontrar ── */}
+          <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
+              Encuentra
+            </p>
+            <p
+              className="text-base font-black leading-tight text-center"
+              style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
+            >
+              {currentCity.name}
+            </p>
+          </div>
+
+          {/* ── Puntuación ── */}
+          <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Puntos</p>
+            <p className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
               {score.toLocaleString()}
             </p>
           </div>
 
-          <div className="text-center shrink-0">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Ciudades</p>
-            <p className="text-lg font-mono font-bold">{roundsRef.current.length}</p>
+          {/* ── Ciudades completadas ── */}
+          <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Ciudades</p>
+            <p className="text-lg font-mono font-bold leading-none">{roundsRef.current.length}</p>
           </div>
 
+          {/* ── Last round feedback ── */}
           {lastPoints !== null && (
-            <div className={`text-center py-1 px-2 rounded-lg font-bold text-xs shrink-0 transition-all ${
+            <div className={`w-full text-center py-1.5 px-2 rounded-lg font-bold text-sm shrink-0 transition-all mb-2 ${
               lastPoints >= 500 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
             }`}>
               {lastPoints >= 500 ? '🎯' : '😬'} +{lastPoints.toLocaleString()}
             </div>
           )}
 
-          <div className="mt-auto shrink-0">
-            <p className="text-[9px] text-center text-muted-foreground mb-1 uppercase tracking-wider">Tiempo</p>
-            <div className={`text-center text-2xl font-mono font-black mb-1 ${isLow ? 'text-red-400 animate-pulse' : 'text-foreground'}`} aria-live="polite" aria-label={`${globalTime} segundos restantes`}>
+          {/* ── Timer ── */}
+          <div className="w-full mt-auto shrink-0">
+            <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">Tiempo</p>
+            <div className={`text-center text-3xl font-mono font-black mb-1.5 ${isLow ? 'text-red-400 animate-pulse' : 'text-foreground'}`} aria-live="polite" aria-label={`${globalTime} segundos restantes`}>
               {globalTime}s
             </div>
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-1000 ${isLow ? 'bg-red-500' : 'bg-primary'}`}
                 style={{ width: `${timePercent}%` }}
@@ -202,19 +232,18 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       )}
 
       {/* ──── Map area ──── */}
-      <div className="flex-1 relative min-h-0 min-w-0">
+      <div className="relative flex-1 min-h-0 min-w-0">
         {/* Floating HUD (compact only) */}
         {isCompact && (
           <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
             <div className="rounded-2xl border border-border bg-card/82 px-3 py-2.5 backdrop-blur-md shadow-[0_20px_40px_hsl(var(--background)/0.32)]">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
-                <div className="min-w-0 text-left">
-                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">Encuentra</p>
-                  <p className="break-words font-bold leading-tight text-sm" style={{ color: 'hsl(var(--primary))' }}>
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1 text-center">
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">⚡ Contrareloj</p>
+                  <p className="break-words font-black leading-tight text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {currentCity.name}
                   </p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-foreground/90">
-                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">⚡ Contrareloj</span>
+                  <div className="mt-1.5 flex flex-wrap justify-center items-center gap-1.5 text-[10px] font-mono text-foreground/90">
                     <span className="rounded-full bg-muted/80 px-1.5 py-0.5">{roundsRef.current.length} ciudades</span>
                     {lastPoints !== null && (
                       <span className={`rounded-full px-1.5 py-0.5 font-bold ${
@@ -226,29 +255,31 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
                   </div>
                 </div>
 
-                <div className="relative shrink-0 text-right">
+                <div className="w-px self-stretch bg-border/60 shrink-0" />
+
+                <div className="relative shrink-0 text-center min-w-[3.5rem]">
                   <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">Puntos</p>
                   <p className={`text-lg font-mono font-bold leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
                     {score.toLocaleString()}
                   </p>
                 </div>
+              </div>
 
-                <div className="col-span-2">
-                  <div className="mb-1 flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-muted-foreground">⏱ TIEMPO</span>
-                    <span className={isLow ? 'font-bold text-destructive animate-pulse' : 'font-bold text-foreground'} aria-live="polite" aria-label={`${globalTime} segundos restantes`}>
-                      {globalTime}s
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ${isLow ? 'bg-destructive' : 'bg-primary'}`}
-                      style={{ width: `${timePercent}%` }}
-                      role="progressbar"
-                      aria-valuenow={globalTime}
-                      aria-valuemax={GLOBAL_TIME}
-                    />
-                  </div>
+              <div className="mt-1.5">
+                <div className="mb-1 flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-muted-foreground">⏱ TIEMPO</span>
+                  <span className={isLow ? 'font-bold text-destructive animate-pulse' : 'font-bold text-foreground'} aria-live="polite">
+                    {globalTime}s
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all duration-1000 ${isLow ? 'bg-destructive' : 'bg-primary'}`}
+                    style={{ width: `${timePercent}%` }}
+                    role="progressbar"
+                    aria-valuenow={globalTime}
+                    aria-valuemax={GLOBAL_TIME}
+                  />
                 </div>
               </div>
             </div>

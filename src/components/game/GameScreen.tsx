@@ -203,8 +203,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const layoutClass = isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(12rem,16vw,15rem)_minmax(0,1fr)]'
-      : 'grid grid-cols-[clamp(12rem,22vw,15rem)_minmax(0,1fr)]'; // medium: sidebar + map
+      ? 'grid grid-cols-[clamp(13rem,18vw,16rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(13rem,25vw,16rem)_minmax(0,1fr)]'; // medium: sidebar + map
 
   return (
     <div
@@ -238,34 +238,34 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         >
           {/* ── Logo ── */}
           <div className="w-full text-center pb-2 mb-2 border-b border-border/50 shrink-0">
-            <span className="text-base font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
+            <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
               📍 GEOSPEED
             </span>
           </div>
 
           {/* ── Training badge (mismo estilo dark y light) ── */}
           {isTraining && (
-            <div className="w-full text-center mb-2 shrink-0">
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-bold text-foreground/70">
+            <div className="w-full flex justify-center mb-2 shrink-0">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-bold text-foreground/70">
                 🎓 Entrenamiento
               </span>
             </div>
           )}
 
           {/* ── Ciudad a encontrar ── */}
-          <div className="w-full shrink-0 mb-2 rounded-xl px-2.5 py-2.5 border border-primary/25 bg-primary/10 text-center">
-            <p className="text-[10px] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
+          <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
               Encuentra
             </p>
             <p
-              className={`font-black leading-tight text-center ${currentCity.name.length > 12 ? 'text-sm' : 'text-base'}`}
+              className="text-base font-black leading-tight text-center"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
               aria-labelledby="city-label"
             >
               {currentCity.name}
             </p>
             {isTraining && !isWaiting && (
-              <p className="mt-1.5 text-[11px] text-foreground/50">
+              <p className="mt-1.5 text-xs text-foreground/50">
                 🌍 <span className="font-bold text-foreground/75">{currentCity.country}</span>
               </p>
             )}
@@ -273,9 +273,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Puntuación ── */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-[10px] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-0.5">Puntos</p>
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Puntos</p>
             <p
-              className={`text-xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
+              className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
               style={{ color: 'hsl(var(--primary))' }}
               aria-live="polite"
             >
@@ -290,9 +290,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Progreso de rondas ── */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-[10px] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-0.5">Ronda</p>
-            <p className="text-base font-mono font-bold leading-none">
-              {currentRound + 1}<span className="text-foreground/40 text-sm">/{totalRounds}</span>
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Ronda</p>
+            <p className="text-lg font-mono font-bold leading-none">
+              {currentRound + 1}<span className="text-foreground/40 text-base">/{totalRounds}</span>
             </p>
             <div className="mt-2 flex flex-wrap justify-center gap-1">
               {Array.from({ length: totalRounds }).map((_, i) => {

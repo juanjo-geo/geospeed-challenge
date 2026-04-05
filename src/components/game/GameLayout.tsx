@@ -34,8 +34,8 @@ export default function GameLayout({
   const layoutClass = isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(10rem,15vw,13rem)_minmax(0,1fr)_clamp(14rem,22vw,18rem)]'
-      : 'grid grid-cols-[clamp(9rem,14vw,11rem)_minmax(0,1fr)]';
+      ? 'grid grid-cols-[clamp(13rem,18vw,16rem)_minmax(0,1fr)_clamp(14rem,22vw,18rem)]'
+      : 'grid grid-cols-[clamp(13rem,25vw,16rem)_minmax(0,1fr)]';
 
   return (
     <div
