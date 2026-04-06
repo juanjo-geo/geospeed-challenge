@@ -99,7 +99,23 @@ const Index = () => {
   useEffect(() => {
     if (!mpPhaseActive || !mpRoom) return;
     const channel = subscribeToRoom(mpRoom.id, (updated) => {
-      setMpRoom(updated);
+      // Merge DB update with local state — preserve MY score/finished if I already
+      // finished (optimistic update), so a race with the opponent's DB write
+      // doesn't reset my score to 0.
+      setMpRoom(prev => {
+        if (!prev) return updated;
+        const myScoreKey = mpIsHost ? 'host_score' : 'guest_score';
+        const myFinishedKey = mpIsHost ? 'host_finished' : 'guest_finished';
+        const iAlreadyFinished = prev[myFinishedKey];
+        return {
+          ...updated,
+          // Keep my local score/finished if I already finished
+          ...(iAlreadyFinished ? {
+            [myScoreKey]: prev[myScoreKey],
+            [myFinishedKey]: true,
+          } : {}),
+        };
+      });
     });
     // Use removeChannel for proper cleanup — unsubscribe() alone leaves the
     // channel in Supabase's internal registry, blocking future resubscriptions.

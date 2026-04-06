@@ -32,7 +32,6 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
     ? broadcastScore
     : (isHost ? room.guest_score : room.host_score);
 
-  const myFinished = true; // We're on the result screen, so WE already finished
   const iWon = opponentFinished && myScore > opponentScore;
   const tie = opponentFinished && myScore === opponentScore;
   const modeLabel = MODE_CONFIG.find(m => m.key === room.mode)?.label || room.mode;
@@ -57,9 +56,6 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
   useEffect(() => {
     if (opponentFinished) return;
 
-    // Capture opponent score at mount — any change means they submitted
-    const initialOppScore = isHost ? room.guest_score : room.host_score;
-
     const checkRoom = async () => {
       try {
         const freshRoom = await fetchRoom(room.id);
@@ -77,9 +73,12 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
           return;
         }
 
-        // Signal 2: opponent score changed from initial value
+        // Signal 2: opponent score is > 0 in the DB (they must have submitted)
+        // This is more reliable than checking "changed from initial" because
+        // the initial value may already reflect the opponent's score if they
+        // finished while we were still playing.
         const freshOppScore = isHost ? freshRoom.guest_score : freshRoom.host_score;
-        if (freshOppScore !== initialOppScore) {
+        if (freshOppScore > 0) {
           if (!broadcastReceivedRef.current) {
             broadcastReceivedRef.current = true;
             setBroadcastScore(freshOppScore);
@@ -147,7 +146,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
             <span className="text-3xl">{opponentFinished && (iWon || tie) ? '👑' : '⚔️'}</span>
             <div className="flex-1">
               <p className="font-bold text-foreground text-lg">{myName} <span className="text-xs text-muted-foreground">(Tú)</span></p>
-              {myFinished && <p className="text-[10px] text-green-400">✓ Terminaste</p>}
+              <p className="text-[10px] text-green-400">✓ Terminaste</p>
             </div>
             <p className="text-3xl font-mono font-black" style={{ color: 'hsl(var(--primary))' }}>{myScore.toLocaleString()}</p>
           </div>

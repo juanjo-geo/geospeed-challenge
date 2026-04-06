@@ -201,10 +201,10 @@ export function setupFinishedBroadcast(
       };
       send(); // immediate
       sendInterval = setInterval(send, 2000); // repeat every 2 s
-      // Stop after 60 s to avoid infinite sends
+      // Stop after 3 minutes — covers games where opponent finishes much later
       setTimeout(() => {
         if (sendInterval) clearInterval(sendInterval);
-      }, 60_000);
+      }, 180_000);
     }
   });
 
