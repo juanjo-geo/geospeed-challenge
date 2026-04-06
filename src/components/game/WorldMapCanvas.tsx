@@ -11,6 +11,24 @@ interface WorldMapCanvasProps {
   distanceKm?: number | null;
   gameMode?: GameMode;
   hintZone?: { lat: number; lon: number } | null;
+  /** Continent name to subtly highlight as a visual hint (e.g. 'Europe', 'Asia') */
+  highlightContinent?: string | null;
+}
+
+// ── Continent → country mapping (ISO-style names matching countries.ts) ──
+const CONTINENT_COUNTRIES: Record<string, Set<string>> = {
+  Europe: new Set(['Albania','Andorra','Austria','Belarus','Belgium','Bosnia and Herz.','Bulgaria','Croatia','Cyprus','Czechia','Denmark','Estonia','Finland','France','Germany','Greece','Hungary','Iceland','Ireland','Italy','Kosovo','Latvia','Liechtenstein','Lithuania','Luxembourg','Malta','Moldova','Monaco','Montenegro','Netherlands','North Macedonia','Norway','Poland','Portugal','Romania','Russia','San Marino','Serbia','Slovakia','Slovenia','Spain','Sweden','Switzerland','Ukraine','United Kingdom','Vatican']),
+  Asia: new Set(['Afghanistan','Armenia','Azerbaijan','Bahrain','Bangladesh','Bhutan','Brunei','Cambodia','China','Georgia','India','Indonesia','Iran','Iraq','Israel','Japan','Jordan','Kazakhstan','Kuwait','Kyrgyzstan','Laos','Lebanon','Malaysia','Maldives','Mongolia','Myanmar','Nepal','North Korea','Oman','Pakistan','Palestine','Philippines','Qatar','Saudi Arabia','Singapore','South Korea','Sri Lanka','Syria','Taiwan','Tajikistan','Thailand','Timor-Leste','Turkey','Turkmenistan','United Arab Emirates','Uzbekistan','Vietnam','Yemen']),
+  Africa: new Set(['Algeria','Angola','Benin','Botswana','Burkina Faso','Burundi','Cameroon','Cape Verde','Central African Rep.','Chad','Comoros','Congo','Côte d\'Ivoire','Dem. Rep. Congo','Djibouti','Egypt','Eq. Guinea','Eritrea','eSwatini','Ethiopia','Gabon','Gambia','Ghana','Guinea','Guinea-Bissau','Kenya','Lesotho','Liberia','Libya','Madagascar','Malawi','Mali','Mauritania','Mauritius','Morocco','Mozambique','Namibia','Niger','Nigeria','Rwanda','São Tomé and Príncipe','Senegal','Seychelles','Sierra Leone','Somalia','Somaliland','South Africa','South Sudan','Sudan','Tanzania','Togo','Tunisia','Uganda','W. Sahara','Zambia','Zimbabwe']),
+  Americas: new Set(['Antigua and Barb.','Argentina','Bahamas','Barbados','Belize','Bolivia','Brazil','Canada','Chile','Colombia','Costa Rica','Cuba','Dominica','Dominican Rep.','Ecuador','El Salvador','Grenada','Guatemala','Guyana','Haiti','Honduras','Jamaica','Mexico','Nicaragua','Panama','Paraguay','Peru','Puerto Rico','St. Kitts and Nevis','St. Lucia','St. Vin. and Gren.','Suriname','Trinidad and Tobago','United States of America','Uruguay','Venezuela','Falkland Is.']),
+  Oceania: new Set(['Australia','Fiji','Kiribati','Marshall Is.','Micronesia','Nauru','New Caledonia','New Zealand','Palau','Papua New Guinea','Samoa','Solomon Is.','Tonga','Tuvalu','Vanuatu']),
+};
+
+function getCountryContinent(name: string): string | null {
+  for (const [continent, set] of Object.entries(CONTINENT_COUNTRIES)) {
+    if (set.has(name)) return continent;
+  }
+  return null;
 }
 
 export default function WorldMapCanvas({
@@ -21,6 +39,7 @@ export default function WorldMapCanvas({
   distanceKm,
   gameMode = 'world',
   hintZone,
+  highlightContinent,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
@@ -29,6 +48,13 @@ export default function WorldMapCanvas({
   const [containerSize, setContainerSize] = useState({ w: 800, h: 450 });
   const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 2));
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
+
+  // ── Pinch-to-zoom state ──
+  const [pinchZoom, setPinchZoom] = useState(1);
+  const [pinchOrigin, setPinchOrigin] = useState({ x: 50, y: 50 });
+  const pinchStartDist = useRef(0);
+  const pinchStartZoom = useRef(1);
+  const pinchResetTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const bounds = getMapBounds(gameMode);
   const lonRange = bounds.lonMax - bounds.lonMin;
@@ -180,6 +206,44 @@ export default function WorldMapCanvas({
       }
     }
 
+    // ── Continent highlight overlay (#20) ──
+    if (highlightContinent) {
+      const continentCountries = CONTINENT_COUNTRIES[highlightContinent];
+      if (continentCountries) {
+        for (let ci = 0; ci < countries.length; ci++) {
+          const country = countries[ci];
+          const inContinent = continentCountries.has(country.name);
+          if (inContinent) {
+            // Bright subtle highlight
+            ctx.fillStyle = light ? 'rgba(0,150,255,0.12)' : 'rgba(245,200,66,0.15)';
+            for (const polygon of country.polygons) {
+              ctx.beginPath();
+              let vis = false;
+              for (let i = 0; i < polygon.length; i++) {
+                const { x, y } = geoToPixel(polygon[i][0], polygon[i][1]);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                if (x >= -50 && x <= w + 50 && y >= -50 && y <= h + 50) vis = true;
+              }
+              if (vis) { ctx.closePath(); ctx.fill(); }
+            }
+          } else {
+            // Dim non-continent countries
+            ctx.fillStyle = light ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
+            for (const polygon of country.polygons) {
+              ctx.beginPath();
+              let vis = false;
+              for (let i = 0; i < polygon.length; i++) {
+                const { x, y } = geoToPixel(polygon[i][0], polygon[i][1]);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                if (x >= -50 && x <= w + 50 && y >= -50 && y <= h + 50) vis = true;
+              }
+              if (vis) { ctx.closePath(); ctx.fill(); }
+            }
+          }
+        }
+      }
+    }
+
     // Graticule — extends across the ENTIRE canvas, not just geographic bounds
     ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
     ctx.lineWidth = 0.8;
@@ -278,7 +342,7 @@ export default function WorldMapCanvas({
         { name: 'MAR\nCARIBE', lat: 18, lon: -72 },
       ], Math.max(10, Math.round(w / 70)));
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
@@ -357,8 +421,66 @@ export default function WorldMapCanvas({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
 
-      // User pin (always visible)
+      // ── Curved arc control point (offset perpendicular to midpoint) ──
+      const mx = (ux + cx) / 2;
+      const my = (uy + cy) / 2;
+      const dx = cx - ux;
+      const dy = cy - uy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const bulge = Math.min(dist * 0.2, 60); // arc curvature
+      // perpendicular offset
+      const cpx = mx - (dy / (dist || 1)) * bulge;
+      const cpy = my + (dx / (dist || 1)) * bulge;
+
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+
+      // Helper: get point on quadratic bezier at t
+      const bezierPt = (t: number) => {
+        const u = 1 - t;
+        return {
+          x: u * u * ux + 2 * u * t * cpx + t * t * cx,
+          y: u * u * uy + 2 * u * t * cpy + t * t * cy,
+        };
+      };
+
+      // ── Gradient trail line (drawn portion) ──
+      const steps = Math.max(Math.floor(eased * 80), 2);
+      for (let i = 0; i < steps - 1; i++) {
+        const t0 = (i / steps) * eased;
+        const t1 = ((i + 1) / steps) * eased;
+        const p0 = bezierPt(t0);
+        const p1 = bezierPt(t1);
+        const alpha = 0.3 + 0.7 * (i / steps); // fade in along trail
+        ctx.strokeStyle = `rgba(245,200,66,${alpha})`;
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+
+      // ── Thin dashed guide from tip to destination (preview) ──
+      if (progress < 1) {
+        const tip = bezierPt(eased);
+        ctx.setLineDash([4, 6]);
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(tip.x, tip.y);
+        ctx.quadraticCurveTo(cpx, cpy, cx, cy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // ── User pin (always visible, pulsing ring) ──
+      const pulse = 1 + 0.15 * Math.sin(elapsed * 0.004);
       ctx.fillStyle = '#4fc3f7';
+      ctx.strokeStyle = 'rgba(79,195,247,0.3)';
+      ctx.lineWidth = 3 * pulse;
+      ctx.beginPath();
+      ctx.arc(ux, uy, 8 * pulse, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -366,53 +488,49 @@ export default function WorldMapCanvas({
       ctx.fill();
       ctx.stroke();
 
-      // Animated line
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-      const currentX = ux + (cx - ux) * eased;
-      const currentY = uy + (cy - uy) * eased;
-
-      ctx.setLineDash([6, 4]);
-      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(ux, uy);
-      ctx.lineTo(currentX, currentY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
       // Show correct pin and distance label only when line is complete
       if (progress >= 1) {
-        // Draw the complete line
-        ctx.setLineDash([6, 4]);
-        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(ux, uy);
-        ctx.lineTo(cx, cy);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Correct pin
+        // Correct pin (gold star)
         drawStar(ctx, cx, cy, 5, 10, 5);
 
+        // ── Distance label on arc midpoint ──
         if (distanceKm != null) {
-          const mx = (ux + cx) / 2;
-          const my = (uy + cy) / 2;
+          const labelPt = bezierPt(0.5);
           const text = `${Math.round(distanceKm).toLocaleString()} km`;
           ctx.font = 'bold 13px system-ui';
           const tw = ctx.measureText(text).width;
-          ctx.fillStyle = 'rgba(0,0,0,0.7)';
-          ctx.fillRect(mx - tw / 2 - 6, my - 10, tw + 12, 20);
+          ctx.fillStyle = 'rgba(0,0,0,0.75)';
+          const bx = labelPt.x - tw / 2 - 8;
+          const by = labelPt.y - 12;
+          const bw = tw + 16;
+          const bh = 24;
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(bx, by, bw, bh, 6);
+          } else {
+            ctx.rect(bx, by, bw, bh);
+          }
+          ctx.fill();
           ctx.fillStyle = '#fff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(text, mx, my);
+          ctx.fillText(text, labelPt.x, labelPt.y);
         }
       } else {
-        // Growing dot at line tip
+        // ── Glowing dot at line tip ──
+        const tip = bezierPt(eased);
+        const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 12);
+        glow.addColorStop(0, 'rgba(245,200,66,0.9)');
+        glow.addColorStop(0.5, 'rgba(245,200,66,0.3)');
+        glow.addColorStop(1, 'rgba(245,200,66,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        // solid core
         ctx.fillStyle = '#f5c842';
         ctx.beginPath();
-        ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
+        ctx.arc(tip.x, tip.y, 4.5, 0, Math.PI * 2);
         ctx.fill();
 
         animFrameRef.current = requestAnimationFrame(animate);
@@ -513,6 +631,84 @@ export default function WorldMapCanvas({
     return () => { if (hintAnimFrameRef.current) cancelAnimationFrame(hintAnimFrameRef.current); };
   }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange, theme, scale]);
 
+  // ── Pinch-to-zoom touch handlers ──
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchStartDist.current = Math.sqrt(dx * dx + dy * dy);
+      pinchStartZoom.current = pinchZoom;
+      // Set origin as midpoint of the two fingers
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const mx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) / rect.width * 100;
+        const my = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top) / rect.height * 100;
+        setPinchOrigin({ x: mx, y: my });
+      }
+      if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
+    }
+  }, [pinchZoom]);
+
+  const handleTouchMoveRef = useRef((_e: TouchEvent) => {});
+  handleTouchMoveRef.current = (e: TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDist.current > 0) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const newZoom = Math.min(4, Math.max(1, pinchStartZoom.current * (dist / pinchStartDist.current)));
+      setPinchZoom(newZoom);
+    }
+  };
+
+  // Attach touchmove as non-passive so preventDefault works
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: TouchEvent) => handleTouchMoveRef.current(e);
+    el.addEventListener('touchmove', handler, { passive: false });
+    return () => el.removeEventListener('touchmove', handler);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    pinchStartDist.current = 0;
+    // Auto-reset zoom after 5s of no interaction
+    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
+    pinchResetTimer.current = setTimeout(() => {
+      setPinchZoom(1);
+      setPinchOrigin({ x: 50, y: 50 });
+    }, 5000);
+  }, []);
+
+  // ── Mouse wheel zoom (desktop) — non-passive native listener ──
+  const wheelHandlerRef = useRef((_e: WheelEvent) => {});
+  wheelHandlerRef.current = (e: WheelEvent) => {
+    e.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const mx = (e.clientX - rect.left) / rect.width * 100;
+      const my = (e.clientY - rect.top) / rect.height * 100;
+      setPinchOrigin({ x: mx, y: my });
+    }
+    setPinchZoom(prev => {
+      const newZoom = Math.min(4, Math.max(1, prev - e.deltaY * 0.002));
+      return newZoom;
+    });
+    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
+    pinchResetTimer.current = setTimeout(() => {
+      setPinchZoom(1);
+      setPinchOrigin({ x: 50, y: 50 });
+    }, 5000);
+  };
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => wheelHandlerRef.current(e);
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
+
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     // Unlock audio on first tap/click — required for iOS Safari Web Audio
     unlockAudio();
@@ -520,8 +716,11 @@ export default function WorldMapCanvas({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    onMapClick(yToLat(y), xToLon(x));
-  }, [clickDisabled, onMapClick, xToLon, yToLat]);
+    // Adjust for pinch zoom
+    const adjustedX = (x - rect.width * pinchOrigin.x / 100) / pinchZoom + rect.width * pinchOrigin.x / 100;
+    const adjustedY = (y - rect.height * pinchOrigin.y / 100) / pinchZoom + rect.height * pinchOrigin.y / 100;
+    onMapClick(yToLat(adjustedY), xToLon(adjustedX));
+  }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin]);
 
   // Auto-zoom to midpoint — adaptive based on viewport size and point distance
   useEffect(() => {
@@ -603,24 +802,116 @@ export default function WorldMapCanvas({
       ref={containerRef}
       className="relative w-full h-full overflow-hidden flex items-center justify-center"
       style={{ minHeight: '50dvh', background: oceanBg }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Canvas fills entire container — ocean + grid extend to all edges */}
       <canvas
         ref={canvasRef}
         onClick={handleClick}
-        onTouchEnd={() => {
-          // touch-action: none (set in style) prevents browser pan/zoom gestures
-        }}
+        role="img"
+        aria-label="Mapa mundial interactivo. Haz clic para colocar tu respuesta."
+        tabIndex={0}
         style={{
           display: 'block',
           width: '100%',
           height: '100%',
           touchAction: 'none',
           cursor: clickDisabled ? 'default' : 'crosshair',
-          ...zoomStyle,
+          // Combine auto-zoom (result) and pinch zoom (user)
+          transform: pinchZoom > 1
+            ? `scale(${pinchZoom})`
+            : zoomStyle.transform || 'scale(1)',
+          transformOrigin: pinchZoom > 1
+            ? `${pinchOrigin.x}% ${pinchOrigin.y}%`
+            : (zoomStyle.transformOrigin as string) || '50% 50%',
+          transition: pinchZoom > 1
+            ? 'transform 0.1s ease-out'
+            : (zoomStyle.transition as string) || 'transform 2s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       />
+      {/* Zoom indicator */}
+      {pinchZoom > 1.05 && (
+        <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-1 rounded-full pointer-events-none">
+          {pinchZoom.toFixed(1)}x
+        </div>
+      )}
+      {/* Mini-map for regional modes */}
+      {gameMode !== 'world' && !userClick && (
+        <MiniMap gameMode={gameMode} />
+      )}
     </div>
+  );
+}
+
+/** Mini-map inset for regional modes — shows where the region is on the globe */
+function MiniMap({ gameMode }: { gameMode: GameMode }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const regionBounds = getMapBounds(gameMode);
+  const worldBounds = getMapBounds('world');
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    // World background
+    ctx.fillStyle = 'rgba(30,60,80,0.9)';
+    ctx.fillRect(0, 0, w, h);
+
+    const wLonRange = worldBounds.lonMax - worldBounds.lonMin;
+    const wLatRange = worldBounds.latMax - worldBounds.latMin;
+    const sx = w / wLonRange;
+    const sy = h / wLatRange;
+    const toX = (lon: number) => (lon - worldBounds.lonMin) * sx;
+    const toY = (lat: number) => (worldBounds.latMax - lat) * sy;
+
+    // Simplified continents outline
+    ctx.fillStyle = 'rgba(120,150,120,0.5)';
+    for (const country of countries) {
+      for (const polygon of country.polygons) {
+        if (polygon.length < 4) continue; // skip tiny islands
+        ctx.beginPath();
+        for (let i = 0; i < polygon.length; i++) {
+          const x = toX(polygon[i][0]);
+          const y = toY(polygon[i][1]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // Region highlight box
+    const rx = toX(regionBounds.lonMin);
+    const ry = toY(regionBounds.latMax);
+    const rw = (regionBounds.lonMax - regionBounds.lonMin) * sx;
+    const rh = (regionBounds.latMax - regionBounds.latMin) * sy;
+
+    ctx.strokeStyle = '#f5c842';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 2]);
+    ctx.strokeRect(rx, ry, rw, rh);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(245,200,66,0.12)';
+    ctx.fillRect(rx, ry, rw, rh);
+  }, [gameMode, regionBounds, worldBounds]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={120}
+      height={65}
+      className="absolute bottom-2 left-2 rounded-lg border border-white/20 shadow-lg pointer-events-none"
+      style={{ opacity: 0.85, width: 120, height: 65 }}
+    />
   );
 }
 

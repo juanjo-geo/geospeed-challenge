@@ -5,13 +5,27 @@ import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/soun
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import WorldMapCanvas from './WorldMapCanvas';
 import TimerBar from './TimerBar';
+import { useA11y } from '@/contexts/AccessibilityContext';
+import { announce } from './ScreenReaderAnnouncer';
+import { useI18n } from '@/i18n';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const TRAINING_ROUNDS = 6;
 const AUTO_ADVANCE_SECONDS = 5;
+
+/** Quick continent guess from lat/lon — used for map highlight hint */
+function getContinentFromCoords(lat: number, lon: number): string | null {
+  if (lat > 34 && lon >= -25 && lon <= 50) return 'Europe';
+  if (lat >= -38 && lat <= 40 && lon >= -25 && lon <= 60 && !(lat > 34 && lon < 50)) return 'Africa';
+  if (lon >= -170 && lon <= -30) return 'Americas';
+  if (lon > 25 && lon <= 150 && lat > -12) return 'Asia';
+  if (lat < -10 && lon > 100) return 'Oceania';
+  return null;
+}
 
 export interface RoundResult {
   city: City;
@@ -33,18 +47,21 @@ interface GameScreenProps {
   isTraining?: boolean;
 }
 
-function getRoundFeedback(distance: number): { emoji: string; phrase: string; color: string } {
-  if (distance < 50) return { emoji: '🎯', phrase: '¡PERFECTO!', color: 'text-green-400' };
-  if (distance < 200) return { emoji: '🔥', phrase: '¡Increíble!', color: 'text-green-400' };
-  if (distance < 500) return { emoji: '👏', phrase: '¡Muy bien!', color: 'text-emerald-400' };
-  if (distance < 1000) return { emoji: '👍', phrase: 'Bien hecho', color: 'text-yellow-400' };
-  if (distance < 2000) return { emoji: '👀', phrase: 'Casi...', color: 'text-orange-400' };
-  if (distance < 5000) return { emoji: '🌍', phrase: 'Lejos...', color: 'text-red-400' };
-  return { emoji: '😬', phrase: 'Muy lejos', color: 'text-red-500' };
+function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
+  const p = palette;
+  if (distance < 50) return { emoji: '🎯', phrase: t?.('game_perfect') ?? '¡PERFECTO!', color: p?.good.tw ?? 'text-green-400' };
+  if (distance < 200) return { emoji: '🔥', phrase: t?.('game_incredible') ?? '¡Increíble!', color: p?.good.tw ?? 'text-green-400' };
+  if (distance < 500) return { emoji: '👏', phrase: t?.('game_veryGood') ?? '¡Muy bien!', color: p?.fair.tw ?? 'text-emerald-400' };
+  if (distance < 1000) return { emoji: '👍', phrase: t?.('game_good') ?? 'Bien hecho', color: p?.medium.tw ?? 'text-yellow-400' };
+  if (distance < 2000) return { emoji: '👀', phrase: t?.('game_almost') ?? 'Casi...', color: p?.warn.tw ?? 'text-orange-400' };
+  if (distance < 5000) return { emoji: '🌍', phrase: t?.('game_far') ?? 'Lejos...', color: p?.bad.tw ?? 'text-red-400' };
+  return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
 export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false }: GameScreenProps) {
+  const { t } = useI18n();
   const layoutMode = useGameLayoutMode();
+  const { palette } = useA11y();
   const isCompact = layoutMode === 'compact';
   const isWide = layoutMode === 'wide';
   const hasSidebar = layoutMode !== 'compact'; // medium + wide
@@ -86,11 +103,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     if (!currentCity) return;
     roundStartRef.current = Date.now();
     setTimeLeft(MAX_TIME);
-  }, [currentRound, currentCity]);
+    announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: MAX_TIME }), 'assertive');
+  }, [currentRound, currentCity, t]);
 
   // Single timer effect — pauses when waiting, portrait, or no city
   useEffect(() => {
-    if (isWaiting || !currentCity || isPortraitMobile) {
+    if (isWaiting || !currentCity) {
       clearInterval(timerRef.current);
       return;
     }
@@ -113,13 +131,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   }, [currentRound, isWaiting, currentCity, isPortraitMobile]);
 
   useEffect(() => {
-    if (!isWaiting || !lastResult || isPortraitMobile) return;
+    if (!isWaiting || !lastResult) return;
     const timeout = setTimeout(() => setShowPopup(true), 2000);
     return () => clearTimeout(timeout);
   }, [isWaiting, lastResult, isPortraitMobile]);
 
   useEffect(() => {
-    if (!showPopup || isPortraitMobile) return;
+    if (!showPopup) return;
     setAutoAdvanceTimer(AUTO_ADVANCE_SECONDS);
     const interval = setInterval(() => {
       setAutoAdvanceTimer(prev => {
@@ -144,6 +162,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       setLastResult(null);
     }
   }, [currentRound, rounds, lastResult, onGameOver]);
+
+  // Keyboard shortcuts (desktop)
+  useKeyboardShortcuts({
+    'Space': () => { if (isWaiting && showPopup) advanceRound(); },
+    'Enter': () => { if (isWaiting && showPopup) advanceRound(); },
+  }, true);
 
   const handleMapClick = useCallback((lat: number, lon: number) => {
     if (isWaiting || !currentCity) return;
@@ -188,23 +212,28 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     setRounds(r => [...r, result]);
     setIsWaiting(true);
     onRoundComplete(result);
-  }, [isWaiting, currentCity, onRoundComplete]);
+    // Screen reader announcement
+    const fb = getRoundFeedback(distance, palette, t);
+    announce(t('sr_announceResult', { feedback: fb.phrase, city: currentCity.name, country: currentCity.country, distance: Math.round(distance), points: totalPoints, round: currentRound + 1, total: totalRounds }));
+  }, [isWaiting, currentCity, onRoundComplete, t]);
 
   if (!currentCity) return null;
 
   const mult = lastResult ? getMultiplier(lastResult.timeUsed) : null;
-  const feedback = lastResult ? getRoundFeedback(lastResult.distance) : null;
+  const feedback = lastResult ? getRoundFeedback(lastResult.distance, palette, t) : null;
   const showStreak = streak >= 2;
 
   // Right panel visible only after click result (as overlay)
   const showRightPanel = isWide && showPopup && lastResult && feedback;
 
   // Layout classes based on mode — always 2 columns in wide (panel is overlay)
-  const layoutClass = isCompact
+  const layoutClass = isPortraitMobile
+    ? 'flex flex-col' // Portrait: stacked vertically (top bar + map)
+    : isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(13rem,18vw,16rem)_minmax(0,1fr)]'
-      : 'grid grid-cols-[clamp(13rem,25vw,16rem)_minmax(0,1fr)]'; // medium: sidebar + map
+      ? 'grid grid-cols-[clamp(22rem,28vw,28rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(22rem,30vw,28rem)_minmax(0,1fr)]'; // medium: sidebar + map
 
   return (
     <div
@@ -212,21 +241,28 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       role="main"
       aria-label="Pantalla de juego"
     >
-      {/* Portrait blocker — covers gameplay when phone is rotated to portrait */}
+      {/* Portrait top bar — stacked vertical layout for mobile portrait */}
       {isPortraitMobile && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 game-bg">
-          <div className="animate-bounce" style={{ animationDuration: '2s' }}>
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="4" y="2" width="16" height="20" rx="2" />
-              <line x1="12" y1="18" x2="12" y2="18.01" />
-            </svg>
+        <div className="bg-card/95 backdrop-blur-md border-b border-border px-3 py-2 flex flex-col gap-1.5 shrink-0 z-20">
+          {/* Row 1: City + Score */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>
+                {currentRound + 1}/{totalRounds}
+              </span>
+              <p className="text-sm font-black truncate">📍 {currentCity.name}</p>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
+                {score.toLocaleString()}
+              </span>
+            </div>
           </div>
-          <p className="text-lg font-black" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-            📱 GIRA TU TELÉFONO
-          </p>
-          <p className="text-sm text-muted-foreground text-center px-8">
-            Gira tu teléfono a horizontal para seguir jugando
-          </p>
+          {/* Row 2: Country + Timer */}
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-muted-foreground">🌍 {currentCity.country}</p>
+            <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} compact />
+          </div>
         </div>
       )}
 
@@ -247,7 +283,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           {isTraining && (
             <div className="w-full flex justify-center mb-2 shrink-0">
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-bold text-foreground/70">
-                🎓 Entrenamiento
+                {t('game_trainingPrefix')}
               </span>
             </div>
           )}
@@ -255,7 +291,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           {/* ── Ciudad a encontrar ── */}
           <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
             <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
-              Encuentra
+              {t('game_find')}
             </p>
             <p
               className="text-base font-black leading-tight text-center"
@@ -273,7 +309,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Puntuación ── */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Puntos</p>
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
             <p
               className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
               style={{ color: 'hsl(var(--primary))' }}
@@ -290,7 +326,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Progreso de rondas ── */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Ronda</p>
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_round')}</p>
             <p className="text-lg font-mono font-bold leading-none">
               {currentRound + 1}<span className="text-foreground/40 text-base">/{totalRounds}</span>
             </p>
@@ -299,7 +335,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 const round = rounds[i];
                 let dotClass = 'bg-border';
                 if (round) {
-                  dotClass = round.distance < 500 ? 'bg-green-500' : round.distance < 2000 ? 'bg-yellow-400' : 'bg-red-500';
+                  dotClass = round.distance < 500 ? palette.good.twBg : round.distance < 2000 ? palette.medium.twBg : palette.bad.twBg;
                 } else if (i === currentRound) {
                   dotClass = 'bg-primary animate-pulse';
                 }
@@ -321,9 +357,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               {mult && (
                 <div className="text-center">
                   <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
-                    mult.value >= 2 ? 'bg-green-500/15 border-green-500/30 text-green-400'
-                    : mult.value >= 1 ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400'
-                    : 'bg-red-500/15 border-red-500/30 text-red-400'
+                    mult.value >= 2 ? `${palette.good.twBgSoft} ${palette.good.twBorder} ${palette.good.tw}`
+                    : mult.value >= 1 ? `${palette.medium.twBgSoft} ${palette.medium.twBorder} ${palette.medium.tw}`
+                    : `${palette.bad.twBgSoft} ${palette.bad.twBorder} ${palette.bad.tw}`
                   }`}>
                     {mult.emoji} {mult.label}
                   </span>
@@ -351,7 +387,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 {/* City info — centered within its space */}
                 <div className="min-w-0 flex-1 text-center">
                   <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
-                    {isTraining ? '🎓 Entrenamiento' : 'Encuentra'}
+                    {isTraining ? t('game_trainingPrefix') : t('game_find')}
                   </p>
                   <p className="break-words font-black leading-tight text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {currentCity.name}
@@ -368,7 +404,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
                 {/* Score — right side */}
                 <div className="relative shrink-0 text-center min-w-[3.5rem]">
-                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">Puntos</p>
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">{t('game_score')}</p>
                   <p className={`text-base font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
                     {score.toLocaleString()}
                   </p>
@@ -390,7 +426,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 )}
                 {mult && (
                   <span className={`rounded-full px-1.5 py-0.5 font-bold ${
-                    mult.value >= 2 ? 'bg-green-500/20 text-green-400' : mult.value >= 1 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
+                    mult.value >= 2 ? `${palette.good.twBgSoft} ${palette.good.tw}` : mult.value >= 1 ? `${palette.medium.twBgSoft} ${palette.medium.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
                   }`}>
                     {mult.emoji} {mult.label}
                   </span>
@@ -414,6 +450,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           distanceKm={lastResult?.distance ?? null}
           gameMode={gameMode}
           hintZone={isTraining && !isWaiting && showHint ? { lat: currentCity.lat, lon: currentCity.lon } : null}
+          highlightContinent={gameMode === 'world' && !isWaiting ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
         />
 
         {/* Round result — overlay on wide */}
@@ -421,7 +458,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           <div
             className="absolute inset-y-0 right-0 z-10 w-[clamp(24rem,38vw,34rem)] flex items-center animate-slide-in-right"
             role="dialog"
-            aria-label="Resultado de la ronda"
+            aria-label={t('game_resultLabel')}
           >
             <div className="flex flex-col justify-center gap-3 rounded-2xl border border-border/80 bg-card/60 p-5 shadow-2xl backdrop-blur-md max-h-[90%] overflow-y-auto">
               {/* Feedback */}
@@ -432,7 +469,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 >{feedback.emoji}</span>
                 <p className={`mt-1.5 text-xl font-black ${feedback.color}`}>{feedback.phrase}</p>
                 {showStreak && (
-                  <p className="mt-0.5 animate-score-pop text-sm font-bold text-orange-400">
+                  <p className={`mt-0.5 animate-score-pop text-sm font-bold ${palette.warn.tw}`}>
                     🔥 Racha ×{streak}{streak >= 3 && ` (+${(streak - 2) * 15}%)`}
                   </p>
                 )}
@@ -447,20 +484,20 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               {/* Stats grid */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Distancia</p>
+                  <p className="text-[11px] uppercase text-muted-foreground">{t('game_distance')}</p>
                   <p className="font-mono text-base font-bold">{formatDistance(lastResult.distance)}</p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Tiempo</p>
+                  <p className="text-[11px] uppercase text-muted-foreground">{t('game_time')}</p>
                   <p className="font-mono text-base font-bold">{lastResult.timeUsed}s</p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">Base</p>
+                  <p className="text-[11px] uppercase text-muted-foreground">{t('game_base')}</p>
                   <p className="font-mono text-base font-bold">{lastResult.basePoints}</p>
                 </div>
                 {/* Total — highlighted */}
                 <div className="rounded-lg p-2.5 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
-                  <p className="text-[11px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
+                  <p className="text-[11px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>{t('game_total')}</p>
                   <p className="font-mono text-lg font-black" style={{ color: 'hsl(var(--primary))', textShadow: '0 0 10px hsl(var(--primary) / 0.4)' }}>
                     {lastResult.totalPoints.toLocaleString()}
                   </p>
@@ -471,21 +508,30 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 onClick={advanceRound}
                 className="w-full rounded-xl py-3 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-                aria-label={`Siguiente ronda, avance automático en ${autoAdvanceTimer} segundos`}
+                aria-label={t('game_next') + ', ' + t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               >
-                SIGUIENTE ({autoAdvanceTimer}s) →
+                {t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               </button>
+              {!isPortraitMobile && (
+                <p className="text-[8px] text-muted-foreground text-center mt-1 opacity-60">{t('game_keyboardHint')}</p>
+              )}
             </div>
           </div>
         )}
 
         {!isWide && showPopup && lastResult && feedback && (
           <div
-            className={`absolute inset-y-0 z-10 flex items-center animate-slide-in-right ${isCompact ? 'right-0 w-[clamp(17rem,70vw,26rem)]' : 'right-0 w-[clamp(22rem,45vw,30rem)]'}`}
+            className={`absolute z-10 flex animate-slide-in-right ${
+              isPortraitMobile
+                ? 'inset-x-0 bottom-0 justify-center pb-2 px-2'
+                : `inset-y-0 items-center ${isCompact ? 'right-0 w-[clamp(17rem,70vw,26rem)]' : 'right-0 w-[clamp(22rem,45vw,30rem)]'}`
+            }`}
             role="dialog"
-            aria-label="Resultado de la ronda"
+            aria-label={t('game_resultLabel')}
           >
-            <div className="flex max-h-[90%] flex-col justify-center gap-2 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-3 shadow-2xl backdrop-blur-md">
+            <div className={`flex flex-col justify-center gap-2 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-3 shadow-2xl backdrop-blur-md ${
+              isPortraitMobile ? 'w-full max-h-[50vh]' : 'max-h-[90%]'
+            }`}>
               <div className="text-center">
                 <span className="text-3xl block animate-record-pop">{feedback.emoji}</span>
                 <p className={`text-sm font-black ${feedback.color}`}>{feedback.phrase}</p>
@@ -498,20 +544,20 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
               <div className="grid grid-cols-2 gap-1.5">
                 <div className="bg-muted/50 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Distancia</p>
+                  <p className="text-[9px] text-muted-foreground uppercase">{t('game_distance')}</p>
                   <p className="font-mono font-bold text-xs">{formatDistance(lastResult.distance)}</p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Tiempo</p>
+                  <p className="text-[9px] text-muted-foreground uppercase">{t('game_time')}</p>
                   <p className="font-mono font-bold text-xs">{lastResult.timeUsed}s</p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Base</p>
+                  <p className="text-[9px] text-muted-foreground uppercase">{t('game_base')}</p>
                   <p className="font-mono font-bold text-xs">{lastResult.basePoints}</p>
                 </div>
                 {/* Total — highlighted */}
                 <div className="rounded-lg p-2 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
-                  <p className="text-[9px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>Total</p>
+                  <p className="text-[9px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>{t('game_total')}</p>
                   <p className="font-mono font-black text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {lastResult.totalPoints.toLocaleString()}
                   </p>
@@ -523,8 +569,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 className="w-full py-2 rounded-lg font-black text-xs transition-all active:scale-[0.97] btn-glow"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
               >
-                SIGUIENTE ({autoAdvanceTimer}s) →
+                {t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               </button>
+              {!isPortraitMobile && (
+                <p className="text-[8px] text-muted-foreground text-center mt-1 opacity-60">{t('game_keyboardHint')}</p>
+              )}
             </div>
           </div>
         )}

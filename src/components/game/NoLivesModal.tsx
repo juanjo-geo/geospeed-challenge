@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getEnergy, formatRegenTime } from '@/lib/energySystem';
 import { showRewardedAd } from '@/lib/adSystem';
 import { rewardAdWatched, isPro, STORE_PRODUCTS } from '@/lib/premiumSystem';
+import { useI18n } from '@/i18n';
 
 interface NoLivesModalProps {
   onClose: () => void;
@@ -9,6 +10,7 @@ interface NoLivesModalProps {
 }
 
 export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps) {
+  const { t } = useI18n();
   const [energy, setEnergy] = useState(getEnergy());
   const [watchingAd, setWatchingAd] = useState(false);
   const [lifeRestored, setLifeRestored] = useState(false);
@@ -58,12 +60,12 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
       <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
         <span className="text-4xl sm:text-5xl block mb-3 sm:mb-4">{lifeRestored ? '💚' : '💔'}</span>
         <h2 className="text-lg sm:text-xl font-black mb-1.5 sm:mb-2" style={{ color: 'hsl(var(--primary))' }}>
-          {lifeRestored ? '¡Vida restaurada!' : '¡Sin vidas!'}
+          {lifeRestored ? '¡Vida restaurada!' : t('lives_noLives')}
         </h2>
         <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4">
           {lifeRestored
             ? '¡Ya puedes jugar de nuevo!'
-            : 'Tus vidas se regeneran con el tiempo. La próxima vida llega en:'}
+            : t('lives_regenDesc')}
         </p>
 
         {/* Timer — hidden when life just restored */}
@@ -107,7 +109,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
                   <span className="animate-spin">⏳</span> Cargando anuncio...
                 </>
               ) : (
-                <>🎬 VER ANUNCIO = +1 VIDA</>
+                <>{t('lives_watchAd')}</>
               )}
             </button>
           )}
@@ -118,7 +120,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
               onClick={onOpenStore}
               className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-[0.97] border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary"
             >
-              ❤️ COMPRAR VIDAS
+              ❤️ {t('lives_goToStore')}
             </button>
           )}
 
@@ -139,7 +141,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
             onClick={onClose}
             className="w-full py-2 sm:py-2.5 rounded-lg font-bold text-[10px] sm:text-xs border border-border text-muted-foreground hover:bg-muted transition-all active:scale-[0.97]"
           >
-            VOLVER AL MENÚ
+            {t('lives_wait')}
           </button>
         </div>
       </div>

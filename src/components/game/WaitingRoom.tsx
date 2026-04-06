@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { type GameRoom, subscribeToRoom, setPlayerReady } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { MODE_CONFIG } from '@/data/cities';
+import { useI18n } from '@/i18n';
+import EmojiChat from './EmojiChat';
 
 interface WaitingRoomProps {
   room: GameRoom;
@@ -13,6 +15,7 @@ interface WaitingRoomProps {
 const diffLabels: Record<string, string> = { easy: '🟢 Fácil', medium: '🟡 Medio', hard: '🔴 Experto' };
 
 export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, onBack }: WaitingRoomProps) {
+  const { t } = useI18n();
   const [room, setRoom] = useState<GameRoom>(initialRoom);
   const [ready, setReady] = useState(false);
 
@@ -42,11 +45,11 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
       <div className="w-full max-w-md">
         {/* Room code */}
         <div className="text-center mb-8 animate-fade-in-up">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Código de sala</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">{t('mp_roomCode')}</p>
           <p className="text-5xl font-mono font-black tracking-[0.4em] select-all" style={{ color: 'hsl(var(--primary))' }}>
             {room.code}
           </p>
-          <p className="text-xs text-muted-foreground mt-2">Comparte este código con tu oponente</p>
+          <p className="text-xs text-muted-foreground mt-2">{t('mp_shareCode')}</p>
         </div>
 
         {/* Config */}
@@ -63,7 +66,7 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
 
         {/* Players */}
         <div className="space-y-3 mb-8 animate-fade-in-up animation-delay-200">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest text-center">Jugadores</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest text-center">{t('mp_players')}</p>
 
           {/* Host */}
           <div className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${
@@ -72,9 +75,9 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
             <span className="text-2xl">👑</span>
             <div className="flex-1">
               <p className="font-bold text-foreground">{room.host_name}</p>
-              <p className="text-xs text-muted-foreground">Anfitrión</p>
+              <p className="text-xs text-muted-foreground">{t('mp_host')}</p>
             </div>
-            {room.host_ready && <span className="text-green-400 font-bold text-sm">LISTO ✓</span>}
+            {room.host_ready && <span className="text-green-400 font-bold text-sm">{t('mp_ready')}</span>}
           </div>
 
           {/* Guest */}
@@ -88,13 +91,13 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
               {hasGuest ? (
                 <>
                   <p className="font-bold text-foreground">{room.guest_name}</p>
-                  <p className="text-xs text-muted-foreground">Retador</p>
+                  <p className="text-xs text-muted-foreground">{t('mp_guest')}</p>
                 </>
               ) : (
-                <p className="text-muted-foreground italic text-sm">Esperando oponente...</p>
+                <p className="text-muted-foreground italic text-sm">{t('mp_waiting')}</p>
               )}
             </div>
-            {hasGuest && room.guest_ready && <span className="text-green-400 font-bold text-sm">LISTO ✓</span>}
+            {hasGuest && room.guest_ready && <span className="text-green-400 font-bold text-sm">{t('mp_ready')}</span>}
           </div>
         </div>
 
@@ -106,7 +109,7 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
             className="w-full py-3.5 rounded-xl font-bold text-lg transition-all active:scale-[0.97] disabled:opacity-50 animate-fade-in"
             style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
-            {ready ? 'ESPERANDO AL RIVAL...' : '¡ESTOY LISTO! 🎯'}
+            {ready ? 'ESPERANDO AL RIVAL...' : `${t('mp_markReady')} 🎯`}
           </button>
         )}
 
@@ -122,6 +125,13 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
               <span className="animate-spin inline-block w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full" />
               Esperando que alguien se una...
             </div>
+          </div>
+        )}
+
+        {/* Emoji chat — visible when opponent is present */}
+        {hasGuest && (
+          <div className="flex justify-center mt-4 animate-fade-in">
+            <EmojiChat roomId={room.id} isHost={isHost} />
           </div>
         )}
 

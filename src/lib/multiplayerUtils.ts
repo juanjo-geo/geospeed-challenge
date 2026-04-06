@@ -86,6 +86,40 @@ export async function joinRoom(code: string, guestName: string): Promise<GameRoo
   return updatedRoom as GameRoom;
 }
 
+/**
+ * Quick Match — finds an open room to join, or creates a new one.
+ * Returns { room, isHost } so the caller knows which role the player takes.
+ */
+export async function quickMatch(
+  playerName: string,
+  difficulty: Difficulty = 'easy',
+  mode: GameMode = 'world',
+): Promise<{ room: GameRoom; isHost: boolean } | null> {
+  // Try to find an open room with same difficulty+mode
+  const { data: openRooms } = await (supabase
+    .from('game_rooms_public' as any)
+    .select('*')
+    .eq('status', 'waiting')
+    .eq('difficulty', difficulty)
+    .eq('mode', mode)
+    .is('guest_name', null)
+    .order('created_at', { ascending: true })
+    .limit(5) as any);
+
+  if (openRooms && openRooms.length > 0) {
+    // Join the oldest open room
+    for (const candidate of openRooms) {
+      const joined = await joinRoom(candidate.code, playerName);
+      if (joined) return { room: joined, isHost: false };
+    }
+  }
+
+  // No open rooms found — create one and wait
+  const created = await createRoom(playerName, difficulty, mode);
+  if (!created) return null;
+  return { room: created, isHost: true };
+}
+
 function getRoomSecret(roomId: string): string {
   return sessionStorage.getItem(`room_secret_${roomId}`) || '';
 }
@@ -232,5 +266,40 @@ export function setupFinishedBroadcast(
     if (sendInterval) clearInterval(sendInterval);
     supabase.removeChannel(sendChannel);
     supabase.removeChannel(listenChannel);
+  };
+}
+
+/**
+ * Emoji quick-chat via Supabase Realtime broadcast.
+ * Each player sends on their own channel and listens on the opponent's.
+ */
+export function setupEmojiChat(
+  roomId: string,
+  isHost: boolean,
+  onReceive: (emoji: string) => void,
+): { send: (emoji: string) => void; cleanup: () => void } {
+  const myRole = isHost ? 'host' : 'guest';
+  const oppRole = isHost ? 'guest' : 'host';
+
+  const sendChannel = supabase.channel(`emoji-${roomId}-${myRole}`);
+  sendChannel.subscribe();
+
+  const listenChannel = supabase
+    .channel(`emoji-${roomId}-${oppRole}`)
+    .on('broadcast', { event: 'emoji' }, (payload) => {
+      if (payload.payload?.emoji) {
+        onReceive(payload.payload.emoji);
+      }
+    })
+    .subscribe();
+
+  return {
+    send: (emoji: string) => {
+      sendChannel.send({ type: 'broadcast', event: 'emoji', payload: { emoji } });
+    },
+    cleanup: () => {
+      supabase.removeChannel(sendChannel);
+      supabase.removeChannel(listenChannel);
+    },
   };
 }

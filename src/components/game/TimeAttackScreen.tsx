@@ -5,9 +5,21 @@ import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/soun
 import { hapticTap, hapticSuccess, hapticError, hapticTick } from '@/lib/haptics';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
+import { useA11y } from '@/contexts/AccessibilityContext';
+import { announce } from './ScreenReaderAnnouncer';
+import { useI18n } from '@/i18n';
 
 const GLOBAL_TIME = 60;
 const POOL_SIZE = 40;
+
+function getContinentFromCoords(lat: number, lon: number): string | null {
+  if (lat > 34 && lon >= -25 && lon <= 50) return 'Europe';
+  if (lat >= -38 && lat <= 40 && lon >= -25 && lon <= 60 && !(lat > 34 && lon < 50)) return 'Africa';
+  if (lon >= -170 && lon <= -30) return 'Americas';
+  if (lon > 25 && lon <= 150 && lat > -12) return 'Asia';
+  if (lat < -10 && lon > 100) return 'Oceania';
+  return null;
+}
 
 export interface TimeAttackResult {
   cities: number;
@@ -27,7 +39,9 @@ interface TimeAttackScreenProps {
 }
 
 export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: TimeAttackScreenProps) {
+  const { t } = useI18n();
   const layoutMode = useGameLayoutMode();
+  const { palette } = useA11y();
   const isCompact = layoutMode === 'compact';
   const hasSidebar = layoutMode !== 'compact';
   const isPortraitMobile = useIsPortraitMobile();
@@ -55,11 +69,6 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
   // Global countdown timer
   useEffect(() => {
-    if (isPortraitMobile) {
-      clearInterval(globalTimerRef.current);
-      return;
-    }
-
     globalTimerRef.current = setInterval(() => {
       setGlobalTime(prev => {
         if (prev <= 1) {
@@ -81,7 +90,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       });
     }, 1000);
     return () => clearInterval(globalTimerRef.current);
-  }, [isPortraitMobile]);
+  }, []);
 
   useEffect(() => {
     roundStartRef.current = Date.now();
@@ -111,6 +120,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     setLastPoints(totalPoints);
     setFlash(totalPoints >= 500 ? 'good' : 'bad');
     setIsAnimating(true);
+    announce(t('sr_timeAttackResult', { city: currentCity.name, distance: Math.round(distance), points: totalPoints, time: globalTime }));
 
     setTimeout(() => {
       setIsAnimating(false);
@@ -130,29 +140,37 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const isWide = layoutMode === 'wide';
 
   // Same grid layout as GameScreen — guarantees canvas gets defined height
-  const layoutClass = isCompact
+  const layoutClass = isPortraitMobile
+    ? 'flex flex-col'
+    : isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(13rem,18vw,16rem)_minmax(0,1fr)]'
-      : 'grid grid-cols-[clamp(13rem,25vw,16rem)_minmax(0,1fr)]';
+      ? 'grid grid-cols-[clamp(22rem,28vw,28rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(22rem,30vw,28rem)_minmax(0,1fr)]';
 
   return (
     <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass}`} role="main" aria-label="Modo contrareloj">
-      {/* Portrait blocker */}
+      {/* Portrait top bar — stacked vertical layout */}
       {isPortraitMobile && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 game-bg">
-          <div className="animate-bounce" style={{ animationDuration: '2s' }}>
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="4" y="2" width="16" height="20" rx="2" />
-              <line x1="12" y1="18" x2="12" y2="18.01" />
-            </svg>
+        <div className="bg-card/95 backdrop-blur-md border-b border-border px-3 py-2 flex flex-col gap-1 shrink-0 z-20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-red-400">{t('ta_timeAttack')}</span>
+              <span className="text-sm font-black truncate">📍 {currentCity.name}</span>
+            </div>
+            <span className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
+              {score.toLocaleString()}
+            </span>
           </div>
-          <p className="text-lg font-black" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-            📱 GIRA TU TELÉFONO
-          </p>
-          <p className="text-sm text-muted-foreground text-center px-8">
-            Gira tu teléfono a horizontal para seguir jugando
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-muted-foreground">🌍 {currentCity.country}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground">{roundsRef.current.length} {t('ta_cities')}</span>
+              <span className={`font-mono font-bold text-sm ${globalTime <= 10 ? 'text-red-400 animate-pulse' : ''}`}>
+                ⏱ {globalTime}s
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -172,14 +190,14 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           {/* ── Mode badge ── */}
           <div className="w-full flex justify-center mb-2 shrink-0">
             <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-400">
-              ⚡ Contrareloj
+              {t('ta_timeAttack')}
             </span>
           </div>
 
           {/* ── Ciudad a encontrar ── */}
           <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
             <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
-              Encuentra
+              {t('game_find')}
             </p>
             <p
               className="text-base font-black leading-tight text-center"
@@ -191,7 +209,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
           {/* ── Puntuación ── */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Puntos</p>
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
             <p className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
               {score.toLocaleString()}
             </p>
@@ -199,14 +217,14 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
           {/* ── Ciudades completadas ── */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">Ciudades</p>
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('ta_cities')}</p>
             <p className="text-lg font-mono font-bold leading-none">{roundsRef.current.length}</p>
           </div>
 
           {/* ── Last round feedback ── */}
           {lastPoints !== null && (
             <div className={`w-full text-center py-1.5 px-2 rounded-lg font-bold text-sm shrink-0 transition-all mb-2 ${
-              lastPoints >= 500 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+              lastPoints >= 500 ? `${palette.good.twBgSoft} ${palette.good.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
             }`}>
               {lastPoints >= 500 ? '🎯' : '😬'} +{lastPoints.toLocaleString()}
             </div>
@@ -214,8 +232,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
           {/* ── Timer ── */}
           <div className="w-full mt-auto shrink-0">
-            <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">Tiempo</p>
-            <div className={`text-center text-3xl font-mono font-black mb-1.5 ${isLow ? 'text-red-400 animate-pulse' : 'text-foreground'}`} aria-live="polite" aria-label={`${globalTime} segundos restantes`}>
+            <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">{t('game_timeLeft')}</p>
+            <div className={`text-center text-3xl font-mono font-black mb-1.5 ${isLow ? 'text-red-400 animate-pulse' : 'text-foreground'}`} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
               {globalTime}s
             </div>
             <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
@@ -239,15 +257,15 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             <div className="rounded-2xl border border-border bg-card/82 px-3 py-2.5 backdrop-blur-md shadow-[0_20px_40px_hsl(var(--background)/0.32)]">
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1 text-center">
-                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">⚡ Contrareloj</p>
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">{t('ta_timeAttack')}</p>
                   <p className="break-words font-black leading-tight text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {currentCity.name}
                   </p>
                   <div className="mt-1.5 flex flex-wrap justify-center items-center gap-1.5 text-[10px] font-mono text-foreground/90">
-                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">{roundsRef.current.length} ciudades</span>
+                    <span className="rounded-full bg-muted/80 px-1.5 py-0.5">{roundsRef.current.length} {t('ta_cities')}</span>
                     {lastPoints !== null && (
                       <span className={`rounded-full px-1.5 py-0.5 font-bold ${
-                        lastPoints >= 500 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                        lastPoints >= 500 ? `${palette.good.twBgSoft} ${palette.good.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
                       }`}>
                         {lastPoints >= 500 ? '🎯' : '😬'} +{lastPoints.toLocaleString()}
                       </span>
@@ -258,7 +276,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
                 <div className="w-px self-stretch bg-border/60 shrink-0" />
 
                 <div className="relative shrink-0 text-center min-w-[3.5rem]">
-                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">Puntos</p>
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">{t('game_score')}</p>
                   <p className={`text-lg font-mono font-bold leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
                     {score.toLocaleString()}
                   </p>
@@ -293,11 +311,12 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           correctLocation={lastCorrect}
           distanceKm={lastDistance}
           gameMode={gameMode}
+          highlightContinent={gameMode === 'world' && !isAnimating ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
         />
 
         {flash && (
           <div className={`absolute left-1/2 z-10 -translate-x-1/2 px-4 py-2 text-sm font-bold shadow-lg animate-fade-in rounded-xl ${isCompact ? 'top-[6rem]' : 'top-3'} ${
-            flash === 'good' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+            flash === 'good' ? `${palette.good.twBg}/90 text-white` : `${palette.bad.twBg}/90 text-white`
           }`} role="status">
             {flash === 'good' ? `🎯 +${lastPoints?.toLocaleString()}` : `😬 +${lastPoints?.toLocaleString()}`}
             {lastDistance !== null && (

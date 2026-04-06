@@ -3,12 +3,26 @@
  *
  * Strategy: Network-first for ALL requests (ensures fresh deploys are picked up).
  * Falls back to cache only when offline.
+ * Pre-caches the app shell for instant offline startup.
  */
 
-const CACHE_NAME = 'geospeed-v3';
+const CACHE_NAME = 'geospeed-v4';
 
-// Install: skip waiting to activate immediately
+// Critical app shell files to pre-cache for offline support
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.ico',
+  '/icon-192.png',
+  '/icon-512.png',
+];
+
+// Install: pre-cache app shell, then skip waiting
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+  );
   self.skipWaiting();
 });
 

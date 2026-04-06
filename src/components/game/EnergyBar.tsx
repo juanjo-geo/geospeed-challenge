@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getEnergy, formatRegenTime } from '@/lib/energySystem';
+import { useI18n } from '@/i18n';
 
 export default function EnergyBar() {
+  const { t } = useI18n();
   const [energy, setEnergy] = useState(getEnergy());
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export default function EnergyBar() {
       </div>
       {energy.lives < energy.maxLives && (
         <span className="text-[10px] font-mono text-muted-foreground ml-1">
-          +1 en {formatRegenTime(energy.nextRegenMs)}
+          {t('energy_nextRegenIn', { time: formatRegenTime(energy.nextRegenMs) })}
         </span>
       )}
     </div>

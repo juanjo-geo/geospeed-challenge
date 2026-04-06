@@ -58,8 +58,8 @@
     --game-panel: 240 2% 13%;
   }
 
-  /* ── Light mode: paleta tropical ── */
-  /* #00a08f → 174 100% 31%  (teal brillante — primary)   */
+  /* ── Light mode: paleta tropical (WCAG AA compliant) ── */
+  /* #007a6e → 174 100% 24%  (teal profundo — primary)    */
   /* #124653 → 192 64%  20%  (teal oscuro   — foreground) */
   /* #fee074 → 47  99%  73%  (amarillo      — acento/ring)*/
   /* #ff9469 → 17  100% 71%  (coral         — destructive)*/
@@ -74,14 +74,14 @@
     --popover: 174 25% 98%;
     --popover-foreground: 192 64% 20%;
 
-    --primary: 174 100% 31%;
+    --primary: 174 100% 24%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 174 18% 86%;
     --secondary-foreground: 192 64% 20%;
 
     --muted: 174 14% 88%;
-    --muted-foreground: 192 35% 38%;
+    --muted-foreground: 192 40% 34%;
 
     --accent: 47 80% 88%;
     --accent-foreground: 192 64% 20%;
@@ -95,7 +95,7 @@
 
     --sidebar-background: 174 25% 90%;
     --sidebar-foreground: 192 64% 20%;
-    --sidebar-primary: 174 100% 31%;
+    --sidebar-primary: 174 100% 24%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 174 18% 86%;
     --sidebar-accent-foreground: 192 64% 20%;
@@ -105,8 +105,8 @@
     --bg-from: 174 30% 94%;
     --bg-to: 174 22% 88%;
 
-    /* Game sidebar panel — teal verde oscuro para separarlo del fondo */
-    --game-panel: 174 42% 68%;
+    /* Game sidebar panel — teal medio (contraste ≥4.5 con foreground) */
+    --game-panel: 174 35% 68%;
   }
 }
 
@@ -250,6 +250,16 @@
 .animation-delay-400 { animation-delay: 400ms; }
 .animation-delay-450 { animation-delay: 450ms; }
 .animation-delay-500 { animation-delay: 500ms; }
+
+/* Emoji float animation — used in multiplayer chat */
+@keyframes emoji-float {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  50%  { opacity: 1; transform: translateY(-60px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-120px) scale(0.8); }
+}
+.animate-emoji-float {
+  animation: emoji-float 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
 /* Score pop animation */
 @keyframes score-pop {

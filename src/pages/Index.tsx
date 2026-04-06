@@ -1,18 +1,26 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistance, addGameHistory } from '@/lib/gameUtils';
 import { type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { type RoundResult } from '@/components/game/GameScreen';
+import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
+
+// ── Eager loads (critical path — always needed) ──
 import HomeScreen from '@/components/game/HomeScreen';
-import GameScreen, { type RoundResult } from '@/components/game/GameScreen';
-import FinalResultScreen from '@/components/game/FinalResultScreen';
-import MultiplayerLobby from '@/components/game/MultiplayerLobby';
-import WaitingRoom from '@/components/game/WaitingRoom';
-import MultiplayerResultScreen from '@/components/game/MultiplayerResultScreen';
-import TimeAttackScreen, { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
-import TutorialOverlay from '@/components/game/TutorialOverlay';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
-import StoreScreen from '@/components/game/StoreScreen';
+
+// ── Lazy loads (loaded on demand per phase) ──
+const GameScreen = lazy(() => import('@/components/game/GameScreen'));
+const ProfileScreen = lazy(() => import('@/components/game/ProfileScreen'));
+const FinalResultScreen = lazy(() => import('@/components/game/FinalResultScreen'));
+const MultiplayerLobby = lazy(() => import('@/components/game/MultiplayerLobby'));
+const WaitingRoom = lazy(() => import('@/components/game/WaitingRoom'));
+const MultiplayerResultScreen = lazy(() => import('@/components/game/MultiplayerResultScreen'));
+const TimeAttackScreen = lazy(() => import('@/components/game/TimeAttackScreen'));
+const TutorialOverlay = lazy(() => import('@/components/game/TutorialOverlay'));
+const StoreScreen = lazy(() => import('@/components/game/StoreScreen'));
+const SpectatorScreen = lazy(() => import('@/components/game/SpectatorScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy } from '@/lib/energySystem';
@@ -22,8 +30,9 @@ import { syncAfterGame } from '@/lib/cloudSync';
 import { addLives } from '@/lib/energySystem';
 import { playCountdown, playGo } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
+import { useI18n } from '@/i18n';
 
-type Phase = 'splash' | 'home' | 'store' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
+type Phase = 'splash' | 'home' | 'profile' | 'store' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -69,6 +78,7 @@ const difficultyLabels: Record<Difficulty, string> = {
 };
 
 const Index = () => {
+  const { t } = useI18n();
   const isMobile = useIsMobile();
   const [phase, setPhase] = useState<Phase>('splash');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -84,6 +94,7 @@ const Index = () => {
   const [mpRoom, setMpRoom] = useState<GameRoom | null>(null);
   const [mpIsHost, setMpIsHost] = useState(false);
   const mpRoomRef = useRef<GameRoom | null>(null);
+  const [spectateRoomId, setSpectateRoomId] = useState<string>('');
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
 
@@ -163,12 +174,9 @@ const Index = () => {
     // Onboarding is now embedded in HomeScreen ("¿Cómo se juega?"),
     // so the old tutorial overlay is no longer needed.
     localStorage.setItem('geospeed_tutorial_seen', '1');
-    if (isMobile && window.innerHeight > window.innerWidth) {
-      setPhase('rotate');
-    } else {
-      gameKeyRef.current += 1;
-      setPhase('countdown');
-    }
+    // Portrait is now supported — skip rotate phase, go straight to countdown
+    gameKeyRef.current += 1;
+    setPhase('countdown');
   }, [isMobile]);
 
   // Auto-detect landscape while on rotate screen
@@ -231,8 +239,21 @@ const Index = () => {
   const handlePlayAgain = useCallback(() => { gameKeyRef.current += 1; setPhase('countdown'); }, []);
   const handleGoHome = useCallback(() => { setIsTraining(false); setPhase('home'); }, []);
   const handleOpenStore = useCallback(() => setPhase('store'), []);
+  const handleOpenProfile = useCallback(() => setPhase('profile'), []);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
+  const handleSpectate = useCallback(async (code: string) => {
+    // Find room by code to get the ID
+    const { data } = await (supabase
+      .from('game_rooms_public' as any)
+      .select('id')
+      .eq('code', code.toUpperCase())
+      .single() as any);
+    if (data?.id) {
+      setSpectateRoomId(data.id);
+      setPhase('mp-spectate');
+    }
+  }, []);
   const handleTimeAttack = useCallback(() => {
     if (!consumeLife()) { setShowNoLives(true); return; }
     setPhase('ta-select');
@@ -249,11 +270,7 @@ const Index = () => {
     setDifficulty('easy');
     setGameMode('world');
     gameKeyRef.current += 1;
-    if (isMobile && window.innerHeight > window.innerWidth) {
-      setPhase('rotate');
-    } else {
-      setPhase('countdown');
-    }
+    setPhase('countdown');
   }, [isMobile]);
 
   const handleRoomReady = useCallback((room: GameRoom, isHost: boolean) => {
@@ -306,14 +323,14 @@ const Index = () => {
       return <StoreScreen onClose={handleGoHome} />;
     }
 
+    if (phase === 'profile') {
+      return <ProfileScreen onBack={handleGoHome} />;
+    }
+
     if (phase === 'tutorial') {
       return <TutorialOverlay onComplete={() => {
-        if (isMobile && window.innerHeight > window.innerWidth) {
-          setPhase('rotate');
-        } else {
-          gameKeyRef.current += 1;
-          setPhase('countdown');
-        }
+        gameKeyRef.current += 1;
+        setPhase('countdown');
       }} />;
     }
 
@@ -326,7 +343,7 @@ const Index = () => {
       return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
-            {isTraining ? '🎓 Modo Entrenamiento' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
+            {isTraining ? t('game_training') : `${modeLabel} — ${difficultyLabels[difficulty]}`}
           </p>
 
           <div className="relative flex items-center justify-center">
@@ -351,7 +368,7 @@ const Index = () => {
           </div>
 
           <p className="text-muted-foreground mt-4 sm:mt-6 text-xs sm:text-sm animate-fade-in">
-            {isGo ? '¡A jugar!' : 'Localiza las ciudades lo más rápido posible'}
+            {isGo ? t('countdown_go') : t('countdown_ready')}
           </p>
         </div>
       );
@@ -362,9 +379,9 @@ const Index = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 overflow-y-auto game-bg">
           <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl text-center animate-fade-in-up my-4">
             <p className="text-3xl sm:text-4xl mb-2 sm:mb-3">⚡</p>
-            <h2 className="text-xl sm:text-2xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>CONTRARRELOJ EXTREMO</h2>
-            <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">60 segundos · ciudades infinitas · ¿cuántas puedes acertar?</p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 uppercase tracking-widest">Elige modalidad y dificultad</p>
+            <h2 className="text-xl sm:text-2xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>{t('ta_title').toUpperCase()}</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">{t('ta_subtitle')}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 uppercase tracking-widest">{t('ta_selectDifficulty')}</p>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
               {MODE_CONFIG.map(m => (
                 <button
@@ -394,14 +411,14 @@ const Index = () => {
             </div>
             <div className="flex gap-2 sm:gap-3">
               <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]">
-                VOLVER
+                {t('back').toUpperCase()}
               </button>
               <button
                 onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
               >
-                ¡EMPEZAR! ⚡
+                {t('ta_start')} ⚡
               </button>
             </div>
           </div>
@@ -473,7 +490,11 @@ const Index = () => {
     }
 
     if (phase === 'mp-lobby') {
-      return <MultiplayerLobby onRoomReady={handleRoomReady} onBack={handleGoHome} />;
+      return <MultiplayerLobby onRoomReady={handleRoomReady} onBack={handleGoHome} onSpectate={handleSpectate} />;
+    }
+
+    if (phase === 'mp-spectate' && spectateRoomId) {
+      return <SpectatorScreen roomId={spectateRoomId} onBack={handleGoHome} />;
     }
 
     if (phase === 'mp-waiting' && mpRoom) {
@@ -565,20 +586,41 @@ const Index = () => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onOpenStore={handleOpenStore} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} />
     );
   };
+
+  // Preload game-critical chunks when user is on home screen
+  useEffect(() => {
+    if (phase === 'home') {
+      // Warm up the GameScreen and WorldMapCanvas chunks so play start is instant
+      import('@/components/game/GameScreen').catch(() => {});
+      import('@/components/game/TimeAttackScreen').catch(() => {});
+    }
+  }, [phase]);
 
   // Phases with their own full-screen animations skip PhaseTransition
   const skipTransition = ['splash', 'countdown', 'rotate', 'tutorial'].includes(phase);
 
+  // Minimal loading fallback for lazy components
+  const lazyFallback = (
+    <div className="fixed inset-0 flex items-center justify-center game-bg">
+      <div className="text-center animate-pulse">
+        <span className="text-4xl block mb-2">📍</span>
+        <p className="text-sm text-muted-foreground">{t('loading')}</p>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      {skipTransition ? renderPhase() : (
-        <PhaseTransition phaseKey={phase}>
-          {renderPhase()}
-        </PhaseTransition>
-      )}
+      <Suspense fallback={lazyFallback}>
+        {skipTransition ? renderPhase() : (
+          <PhaseTransition phaseKey={phase}>
+            {renderPhase()}
+          </PhaseTransition>
+        )}
+      </Suspense>
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
     </>
   );

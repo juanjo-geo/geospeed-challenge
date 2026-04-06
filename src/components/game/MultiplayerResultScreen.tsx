@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { type GameRoom, fetchRoom, setupFinishedBroadcast } from '@/lib/multiplayerUtils';
 import { MODE_CONFIG } from '@/data/cities';
+import { useI18n } from '@/i18n';
 
 interface MultiplayerResultScreenProps {
   room: GameRoom;
@@ -16,6 +17,7 @@ const POLL_INTERVAL = 2000;
 const POLL_MAX_DURATION = 5 * 60 * 1000;
 
 export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onGoHome, onRoomUpdate }: MultiplayerResultScreenProps) {
+  const { t } = useI18n();
   const myScore = isHost ? room.host_score : room.guest_score;
   const myName = isHost ? room.host_name : (room.guest_name || '???');
   const opponentName = isHost ? (room.guest_name || '???') : room.host_name;
@@ -115,7 +117,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
             <>
               <p className="text-5xl mb-3 animate-pulse">{pollTimedOut ? '⚠️' : '⏳'}</p>
               <h1 className="text-2xl font-black text-foreground">
-                {pollTimedOut ? 'El rival no respondió' : 'Esperando al rival…'}
+                {pollTimedOut ? 'El rival no respondió' : t('mp_result_waiting')}
               </h1>
               <p className="text-muted-foreground text-sm mt-2">
                 Tu puntuación: <span className="font-bold" style={{ color: 'hsl(var(--primary))' }}>{myScore.toLocaleString()}</span>
@@ -130,7 +132,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
             <>
               <p className="text-6xl mb-3">{tie ? '🤝' : iWon ? '🏆' : '😔'}</p>
               <h1 className="text-3xl font-black" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-                {tie ? '¡EMPATE!' : iWon ? '¡VICTORIA!' : 'DERROTA'}
+                {tie ? t('mp_result_draw') : iWon ? t('mp_result_victory') : t('mp_result_defeat')}
               </h1>
             </>
           )}
@@ -145,8 +147,8 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
           }`}>
             <span className="text-3xl">{opponentFinished && (iWon || tie) ? '👑' : '⚔️'}</span>
             <div className="flex-1">
-              <p className="font-bold text-foreground text-lg">{myName} <span className="text-xs text-muted-foreground">(Tú)</span></p>
-              <p className="text-[10px] text-green-400">✓ Terminaste</p>
+              <p className="font-bold text-foreground text-lg">{myName} <span className="text-xs text-muted-foreground">({t('mp_result_you')})</span></p>
+              <p className="text-[10px] text-green-400">✓ {t('mp_result_finished')}</p>
             </div>
             <p className="text-3xl font-mono font-black" style={{ color: 'hsl(var(--primary))' }}>{myScore.toLocaleString()}</p>
           </div>
@@ -159,7 +161,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
             <div className="flex-1">
               <p className="font-bold text-foreground text-lg">{opponentName}</p>
               {opponentFinished
-                ? <p className="text-[10px] text-green-400">✓ Terminó</p>
+                ? <p className="text-[10px] text-green-400">✓ {t('mp_result_finished')}</p>
                 : <p className="text-[10px] text-muted-foreground animate-pulse">Jugando…</p>
               }
             </div>

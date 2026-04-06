@@ -149,7 +149,7 @@ export interface GameHistoryEntry {
   difficulty: string;
   mode: string;
   avgDistance: number;
-  type: 'classic' | 'timeattack';
+  type: 'classic' | 'timeattack' | 'daily';
 }
 
 const MAX_HISTORY = 20;

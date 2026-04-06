@@ -7,12 +7,14 @@ import {
   type StoreProduct,
 } from '@/lib/premiumSystem';
 import { getEnergy } from '@/lib/energySystem';
+import { useI18n } from '@/i18n';
 
 interface StoreScreenProps {
   onClose: () => void;
 }
 
 export default function StoreScreen({ onClose }: StoreScreenProps) {
+  const { t, locale } = useI18n();
   const [proStatus, setProStatus] = useState(getProStatus());
   const [energy, setEnergy] = useState(getEnergy());
   const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null);
@@ -32,22 +34,22 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       if (product.type === 'lives') {
         purchaseLives(product.id);
         setEnergy(getEnergy());
-        setPurchaseMessage(`+${product.lives} vidas agregadas`);
+        setPurchaseMessage(t('store_livesAdded', { count: String(product.lives) }));
       } else if (product.type === 'pro_monthly') {
         activatePro('subscription', 30);
         setProStatus(getProStatus());
-        setPurchaseMessage('GeoSpeed Pro activado');
+        setPurchaseMessage(t('store_proActivated'));
       } else if (product.type === 'pro_yearly') {
         activatePro('subscription', 365);
         setProStatus(getProStatus());
-        setPurchaseMessage('GeoSpeed Pro Anual activado');
+        setPurchaseMessage(t('store_proYearlyActivated'));
       } else if (product.type === 'pro_lifetime') {
         activatePro('lifetime');
         setProStatus(getProStatus());
-        setPurchaseMessage('GeoSpeed Pro para siempre activado');
+        setPurchaseMessage(t('store_proLifetimeActivated'));
       }
     } catch {
-      setPurchaseMessage('Error al procesar la compra');
+      setPurchaseMessage(t('store_purchaseError'));
     } finally {
       setPurchasing(null);
     }
@@ -61,7 +63,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           onClick={onClose}
           className="text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-lg active:scale-[0.97]"
         >
-          ← Volver
+          ← {t('back')}
         </button>
         <div className="flex items-center gap-1.5">
           {Array.from({ length: energy.maxLives }).map((_, i) => (
@@ -102,16 +104,16 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 GEOSPEED PRO
               </h2>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                La experiencia completa sin límites
+                {t('store_proDesc')}
               </p>
             </div>
 
             {/* Pro benefits */}
             <div className="grid grid-cols-3 gap-2 mb-3 sm:mb-4">
               {[
-                { emoji: '♾️', label: 'Vidas infinitas' },
-                { emoji: '🚫', label: 'Sin anuncios' },
-                { emoji: '🏆', label: 'Badge exclusivo' },
+                { emoji: '♾️', label: t('store_infiniteLives') },
+                { emoji: '🚫', label: t('store_noAds') },
+                { emoji: '🏆', label: t('store_exclusiveBadge') },
               ].map(b => (
                 <div key={b.label} className="text-center p-2 sm:p-2.5 rounded-xl border border-border bg-card/80">
                   <span className="text-lg sm:text-xl block">{b.emoji}</span>
@@ -161,13 +163,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           /* Pro active badge */
           <div className="mb-6 sm:mb-8 text-center p-4 sm:p-5 rounded-2xl border-2 border-primary bg-primary/10">
             <span className="text-3xl block mb-1">👑</span>
-            <h2 className="text-lg sm:text-xl font-black text-primary">ERES PRO</h2>
+            <h2 className="text-lg sm:text-xl font-black text-primary">{t('store_youArePro')}</h2>
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
               {proStatus.source === 'lifetime'
-                ? 'Acceso de por vida'
+                ? t('store_lifetimeAccess')
                 : proStatus.expiresAt
-                ? `Activo hasta ${new Date(proStatus.expiresAt).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                : 'Suscripción activa'}
+                ? t('store_activeUntil', { date: new Date(proStatus.expiresAt).toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'long', year: 'numeric' }) })
+                : t('store_activeSubscription')}
             </p>
           </div>
         )}
@@ -176,9 +178,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         <div className="mb-6">
           <div className="text-center mb-3 sm:mb-4">
             <h3 className="text-sm sm:text-base font-black text-foreground uppercase tracking-wider">
-              Paquetes de vidas
+              {t('store_livesPacks')}
             </h3>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Recarga instantánea</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">{t('store_instantRecharge')}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -216,7 +218,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
         {/* Footer note */}
         <p className="text-center text-[8px] sm:text-[9px] text-muted-foreground/60 pb-4">
-          Los pagos se procesan de forma segura. Puedes cancelar tu suscripción en cualquier momento.
+          {t('store_paymentNote')}
         </p>
       </div>
     </div>

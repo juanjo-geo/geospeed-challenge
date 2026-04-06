@@ -9,6 +9,9 @@ import { getEnergy } from '@/lib/energySystem';
 import { checkStreak, claimDailyReward, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
 import ThemeToggle from './ThemeToggle';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useA11y } from '@/contexts/AccessibilityContext';
+import { useI18n, LOCALES } from '@/i18n';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode) => void;
@@ -17,6 +20,7 @@ interface HomeScreenProps {
   onDailyChallenge: () => void;
   onStartTraining: () => void;
   onOpenStore?: () => void;
+  onOpenProfile?: () => void;
 }
 
 const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string }[] = [
@@ -32,8 +36,10 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
   africa: { level: 3, label: 'Nv.3' },
 };
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onOpenStore }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onOpenStore, onOpenProfile }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
+  const { colorblind, toggleColorblind } = useA11y();
+  const { t, locale, setLocale } = useI18n();
   const navigate = useNavigate();
   const stats = getPlayerStats();
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
@@ -47,6 +53,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const history = getGameHistory();
   const playerLevel = getPlayerLevel();
   const badges = getPlayerBadges();
+  const isOnline = useOnlineStatus();
   const isNewPlayer = stats.gamesPlayed === 0;
   const [showHowToPlay, setShowHowToPlay] = useState(isNewPlayer);
   const [showBadges, setShowBadges] = useState(false);
@@ -73,20 +80,59 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       className="min-h-[100dvh] flex flex-col items-center px-3 pb-4 sm:px-4 sm:pb-6 md:px-6 md:pb-6 overflow-y-auto game-bg home-safe-top"
       aria-label="Pantalla de inicio GeoSpeed"
     >
+      {/* Skip to content link for keyboard/screen reader users */}
+      <a
+        href="#game-modes"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-bold"
+      >
+        {t('home_skipToContent')}
+      </a>
       {/* ── Top bar: energy + user + theme toggle ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up flex items-center justify-between gap-2">
         <EnergyBar />
         <div className="flex items-center gap-2">
+          {onOpenProfile && stats.gamesPlayed > 0 && (
+            <button
+              onClick={onOpenProfile}
+              className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-all active:scale-[0.97]"
+              aria-label="Mi perfil"
+            >
+              {t('home_profile')}
+            </button>
+          )}
           {onOpenStore && (
             <button
               onClick={onOpenStore}
               className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-all active:scale-[0.97]"
               aria-label="Abrir tienda"
             >
-              ⭐ Tienda
+              {t('home_store')}
             </button>
           )}
           <ThemeToggle />
+          <button
+            onClick={toggleColorblind}
+            className={`p-1.5 sm:p-2 rounded-lg border transition-all active:scale-[0.95] text-sm ${
+              colorblind
+                ? 'border-primary bg-primary/15 text-primary'
+                : 'border-border text-muted-foreground hover:text-foreground'
+            }`}
+            title={colorblind ? t('home_colorblindOn') : t('home_colorblindOff')}
+            aria-label={colorblind ? 'Modo daltónico activado' : 'Activar modo daltónico'}
+          >
+            👁
+          </button>
+          <button
+            onClick={() => {
+              const idx = LOCALES.findIndex(l => l.key === locale);
+              setLocale(LOCALES[(idx + 1) % LOCALES.length].key);
+            }}
+            className="p-1.5 sm:p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-all active:scale-[0.95] text-sm"
+            title={LOCALES.find(l => l.key === locale)?.label}
+            aria-label={`Language: ${LOCALES.find(l => l.key === locale)?.label}`}
+          >
+            {LOCALES.find(l => l.key === locale)?.flag}
+          </button>
           {user ? (
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="text-xs sm:text-sm text-muted-foreground truncate max-w-[100px]">
@@ -97,7 +143,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 className="text-[10px] sm:text-xs text-muted-foreground hover:text-red-400 transition-colors px-1.5 sm:px-2 py-1 rounded border border-border active:scale-[0.97]"
                 aria-label="Cerrar sesión"
               >
-                Salir
+                {t('home_signOut')}
               </button>
             </div>
           ) : (
@@ -108,15 +154,26 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
                 aria-label="Iniciar sesión"
               >
-                INICIAR SESIÓN
+                {t('home_signIn').toUpperCase()}
               </button>
               <p className="text-[8px] sm:text-[9px] text-muted-foreground max-w-[130px] sm:max-w-[160px] text-right leading-tight">
-                Guarda tu historial y puntuaciones
+                {t('home_saveProgress')}
               </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* ── Offline banner ── */}
+      {!isOnline && (
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 animate-fade-in">
+          <div className="bg-yellow-500/15 border border-yellow-500/30 rounded-lg px-3 py-2 flex items-center gap-2 text-xs">
+            <span>📡</span>
+            <span className="text-yellow-400 font-bold">{t('home_offline')}</span>
+            <span className="text-muted-foreground">— {t('home_offlineDesc')}</span>
+          </div>
+        </div>
+      )}
 
       {/* ── Logo ── */}
       <div className="animate-fade-in-up mb-1 sm:mb-2 text-center">
@@ -131,7 +188,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </h1>
       </div>
       <p className="text-muted-foreground text-sm sm:text-base md:text-lg mb-2 sm:mb-3 animate-fade-in-up animation-delay-100 italic">
-        ¿Cuánto conoces el mundo?
+        {t('home_tagline')}
       </p>
 
       {/* ── Cómo se juega (toggle + collapsible onboarding) ── */}
@@ -140,7 +197,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           onClick={() => setShowHowToPlay(prev => !prev)}
           className="w-full text-center text-[11px] sm:text-xs text-muted-foreground hover:text-primary transition-colors py-1"
         >
-          {showHowToPlay ? '▴ Ocultar instrucciones' : '¿Cómo se juega?'}
+          {showHowToPlay ? `▴ ${t('home_hideInstructions')}` : t('home_howToPlay')}
         </button>
 
         <div className={`overflow-hidden transition-all duration-500 ease-out ${showHowToPlay ? 'max-h-[1200px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}>
@@ -149,10 +206,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
               <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎯</span>
               <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">La precisión importa</h3>
+                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_precisionMatters')}</h3>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Haz click en el mapa lo más cerca posible de la ciudad indicada.
-                  Menos de 50km = <span className="font-bold text-primary">1,000 pts</span>, menos de 200km = 800 pts, y así hasta 8,000km+ = 0 pts.
+                  {t('home_precisionDesc', { perfect: '1,000' })}
                 </p>
               </div>
             </div>
@@ -161,11 +217,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
               <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚡</span>
               <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">La velocidad multiplica</h3>
+                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_speedMultiplies')}</h3>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Responde en menos de 4s y tus puntos se multiplican <span className="font-bold text-green-400">×2</span>.
-                  Entre 4-9s mantienes <span className="font-bold text-yellow-400">×1</span>.
-                  Más de 9s reduce a <span className="font-bold text-red-400">×0.5</span>.
+                  {t('home_speedDesc1')} <span className="font-bold text-green-400">×2</span>.
+                  {' '}{t('home_speedDesc2')} <span className="font-bold text-yellow-400">×1</span>.
+                  {' '}{t('home_speedDesc3')} <span className="font-bold text-red-400">×0.5</span>.
                 </p>
               </div>
             </div>
@@ -174,11 +230,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
               <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🔥</span>
               <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">Rachas y aceleradores</h3>
+                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_streaksAndBoosters')}</h3>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Aciertos consecutivos activan rachas que dan bonificaciones extra.
-                  3 seguidos = <span className="font-bold text-orange-400">+15%</span>, 4 = +30%, y sigue subiendo.
-                  Tienes <span className="font-bold text-foreground">15 segundos</span> por ronda. Si se agota el tiempo, la partida termina.
+                  {t('home_streaksFullDesc')}
                 </p>
               </div>
             </div>
@@ -187,10 +241,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
               <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🗺️</span>
               <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">Elige tu aventura</h3>
+                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_chooseAdventure')}</h3>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Selecciona la <span className="font-bold text-foreground">modalidad</span> (World, Europa, Asia, América o África)
-                  y la <span className="font-bold text-foreground">dificultad</span> (Fácil, Medio o Experto). ¡Inicia tu partida!
+                  {t('home_chooseAdventureDesc')}
                 </p>
               </div>
             </div>
@@ -201,7 +254,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             onClick={onStartTraining}
             className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 mt-2 sm:mt-3 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
           >
-            🎓 MODO ENTRENAMIENTO
+            {t('home_training').toUpperCase()}
           </button>
 
           {/* Botón iniciar rápido solo para nuevos jugadores */}
@@ -211,10 +264,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 onClick={() => onStartGame('easy', 'world')}
                 className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
               >
-                🌍 INICIAR JUEGO
+                🌍 {t('home_startGame')}
               </button>
               <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground mt-1">
-                Mapamundi · Dificultad Fácil · 13 ciudades
+                {t('home_startGameDesc')}
               </p>
             </div>
           )}
@@ -239,16 +292,16 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             >✕</button>
             <span className="text-2xl sm:text-3xl block mb-1">🔥</span>
             <p className="font-black text-sm sm:text-base text-orange-400">
-              ¡Racha de {streakReward.day} {streakReward.day === 1 ? 'día' : 'días'}!
+              {streakReward.day === 1 ? t('home_streakDaysSingular', { count: String(streakReward.day) }) : t('home_streakDaysPlural', { count: String(streakReward.day) })}
             </p>
             {streakReward.lives > 0 && (
               <p className="text-xs sm:text-sm text-foreground mt-1">
-                +{streakReward.lives} {streakReward.lives === 1 ? 'vida' : 'vidas'} de recompensa
+                {streakReward.lives === 1 ? t('home_streakBonusLives', { lives: String(streakReward.lives) }) : t('home_streakBonusLivesPlural', { lives: String(streakReward.lives) })}
               </p>
             )}
             {streakReward.badge && (
               <p className="text-[10px] sm:text-xs text-amber-400 mt-0.5 font-bold">
-                🏅 Badge "{streakReward.badge}" desbloqueado
+                🏅 Badge "{streakReward.badge}"
               </p>
             )}
             <button
@@ -258,7 +311,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               }}
               className="mt-2 px-4 py-1.5 rounded-lg font-bold text-xs bg-orange-500 text-white active:scale-[0.97] transition-all"
             >
-              {streakReward.lives > 0 ? '¡RECLAMAR!' : '¡GENIAL!'}
+              {t('home_claimReward')}
             </button>
           </div>
         </div>
@@ -275,8 +328,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               <span className="text-xl sm:text-2xl">{playerLevel.emoji}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-1.5 sm:gap-2">
-                  <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>Nv.{playerLevel.level} {playerLevel.title}</span>
-                  <span className="text-[9px] sm:text-[10px] text-muted-foreground">{playerLevel.xp.toLocaleString()} XP</span>
+                  <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{t('home_level')} {playerLevel.level} {playerLevel.title}</span>
+                  <span className="text-[9px] sm:text-[10px] text-muted-foreground">{playerLevel.xp.toLocaleString()} {t('home_xp')}</span>
                 </div>
                 <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${playerLevel.progress}%`, background: 'hsl(var(--primary))' }} />
@@ -320,9 +373,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           role="group"
           aria-label="Estadísticas del jugador"
         >
-          <StatCard label="Partidas"   value={stats.gamesPlayed.toString()} />
-          <StatCard label="Récord"     value={stats.bestScore.toLocaleString()} />
-          <StatCard label="Dist. prom." value={`${avgDist.toLocaleString()} km`} />
+          <StatCard label={t('home_statsGames')}   value={stats.gamesPlayed.toString()} />
+          <StatCard label={t('home_statsRecord')}     value={stats.bestScore.toLocaleString()} />
+          <StatCard label={t('home_statsAvgDist')} value={`${avgDist.toLocaleString()} km`} />
         </div>
       )}
 
@@ -335,11 +388,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         >
           <span className="text-xl sm:text-2xl shrink-0">📅</span>
           <div className="text-left flex-1 min-w-0">
-            <div className="font-black text-xs sm:text-sm text-amber-400">DESAFÍO DIARIO</div>
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">Mismas ciudades para todos · ¿Quién hace más puntos?</div>
+            <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t('home_dailyChallengeDesc')}</div>
           </div>
           <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
-            {new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+            {new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' })}
           </span>
         </button>
       </div>
@@ -353,8 +406,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         >
           <span className="text-lg sm:text-xl shrink-0">⚡</span>
           <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-red-400">Contrareloj</div>
-            <div className="text-[8px] sm:text-[10px] text-muted-foreground">60s · infinitas</div>
+            <div className="font-bold text-[10px] sm:text-xs text-red-400">{t('home_timeAttack')}</div>
+            <div className="text-[8px] sm:text-[10px] text-muted-foreground">{t('home_timeAttackDesc')}</div>
           </div>
         </button>
         <button
@@ -364,15 +417,15 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         >
           <span className="text-lg sm:text-xl shrink-0">🎮</span>
           <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-primary">Modo Duelo</div>
-            <div className="text-[8px] sm:text-[10px] text-muted-foreground">1v1 en vivo</div>
+            <div className="font-bold text-[10px] sm:text-xs text-primary">{t('home_duel')}</div>
+            <div className="text-[8px] sm:text-[10px] text-muted-foreground">{t('home_duelDesc')}</div>
           </div>
         </button>
       </div>
 
       {/* ── Modalidad ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-400">
-        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest" id="mode-label">Modalidad</p>
+      <div id="game-modes" className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-400">
+        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest" id="mode-label">{t('home_mode')}</p>
         <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2" role="radiogroup" aria-labelledby="mode-label">
           {MODE_CONFIG.map(m => {
             const lock = MODE_UNLOCK[m.key];
@@ -406,20 +459,24 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* ── Dificultad ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-5 animate-fade-in-up animation-delay-450" role="group" aria-label="Seleccionar dificultad">
-        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">Elige dificultad</p>
+        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">{t('home_difficulty')}</p>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-          {DIFF_CONFIG.map(d => (
-            <button
-              key={d.key}
-              onClick={() => onStartGame(d.key, selectedMode)}
-              className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-xl border-2 bg-card transition-all duration-200 active:scale-[0.97] ${d.borderClass} ${d.glowClass}`}
-              aria-label={`Dificultad ${d.label}: ${d.desc}`}
-            >
-              <span className="text-base sm:text-lg">{d.emoji}</span>
-              <div className="font-bold text-xs sm:text-sm text-foreground">{d.label}</div>
-              <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center leading-tight">{d.desc}</div>
-            </button>
-          ))}
+          {DIFF_CONFIG.map(d => {
+            const labelKey = d.key === 'easy' ? 'home_diffEasy' : d.key === 'medium' ? 'home_diffMedium' : 'home_diffHard';
+            const descKey = d.key === 'easy' ? 'home_diffEasyDesc' : d.key === 'medium' ? 'home_diffMediumDesc' : 'home_diffHardDesc';
+            return (
+              <button
+                key={d.key}
+                onClick={() => onStartGame(d.key, selectedMode)}
+                className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-xl border-2 bg-card transition-all duration-200 active:scale-[0.97] ${d.borderClass} ${d.glowClass}`}
+                aria-label={`Dificultad ${t(labelKey)}: ${t(descKey)}`}
+              >
+                <span className="text-base sm:text-lg">{d.emoji}</span>
+                <div className="font-bold text-xs sm:text-sm text-foreground">{t(labelKey)}</div>
+                <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center leading-tight">{t(descKey)}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -431,7 +488,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           aria-expanded={showRanking}
           aria-controls="ranking-panel"
         >
-          🏆 Ranking Top 10
+          🏆 {t('home_ranking')} Top 10
           <span className={`transition-transform duration-300 ${showRanking ? 'rotate-180' : ''}`}>▾</span>
         </button>
 
@@ -442,9 +499,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           {/* Period filter */}
           <div className="grid grid-cols-3 gap-1 sm:gap-1.5 mb-1.5 sm:mb-2 w-full" role="tablist" aria-label="Filtrar ranking por período">
             {([
-              { key: 'all', label: '🏛️ Histórico' },
-              { key: 'month', label: '📅 Este mes' },
-              { key: 'week', label: '🔥 Semana' },
+              { key: 'all', label: `🏛️ ${t('home_rankingAllTime')}` },
+              { key: 'month', label: `📅 ${t('home_rankingMonth')}` },
+              { key: 'week', label: `🔥 ${t('home_rankingWeek')}` },
             ] as { key: LeaderboardPeriod; label: string }[]).map(p => (
               <button
                 key={p.key}
@@ -463,7 +520,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
           {/* Mode filter */}
           <div className="grid grid-cols-6 gap-1 sm:gap-1.5 mb-2 sm:mb-3 w-full" role="tablist" aria-label="Filtrar ranking por modo">
-            {[{ key: 'all', label: 'Todos' }, ...MODE_CONFIG].map(m => (
+            {[{ key: 'all', label: t('home_rankingAll') }, ...MODE_CONFIG].map(m => (
               <button
                 key={m.key}
                 onClick={() => setRankingMode(m.key)}
@@ -482,9 +539,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <div className="bg-card rounded-xl border overflow-hidden" role="table" aria-label="Tabla de ranking">
             {leaderboard.length === 0 ? (
               <p className="text-center text-muted-foreground text-xs sm:text-sm py-4 sm:py-6">
-                {rankingPeriod === 'week' ? '🔥 Aún no hay puntuaciones esta semana. ¡Sé el primero!'
-                  : rankingPeriod === 'month' ? '📅 Aún no hay puntuaciones este mes. ¡Sé el primero!'
-                  : '🌍 ¡Sé el primero en conquistar el ranking!'}
+                {t('home_noGamesYet')}
               </p>
             ) : (
               leaderboard.map((entry: LeaderboardEntry, i: number) => (
@@ -510,7 +565,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             aria-expanded={showHistory}
             aria-controls="history-panel"
           >
-            📋 Historial de partidas
+            📋 {t('profile_history')}
             <span className={`transition-transform duration-300 ${showHistory ? 'rotate-180' : ''}`}>▾</span>
           </button>
 
@@ -520,7 +575,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           >
             <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border max-h-[300px] sm:max-h-[350px] overflow-y-auto">
               {history.map((entry: GameHistoryEntry, i: number) => {
-                const dateStr = new Date(entry.date).toLocaleDateString('es', { day: 'numeric', month: 'short' });
+                const dateStr = new Date(entry.date).toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
                 const modeLabel = MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode;
                 return (
                   <div key={i} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs">
