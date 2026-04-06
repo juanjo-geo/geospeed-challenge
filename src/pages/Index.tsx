@@ -171,10 +171,12 @@ const Index = () => {
     setIsTraining(false);
     setDifficulty(diff);
     setGameMode(mode);
-    // Onboarding is now embedded in HomeScreen ("¿Cómo se juega?"),
-    // so the old tutorial overlay is no longer needed.
-    localStorage.setItem('geospeed_tutorial_seen', '1');
-    // Portrait is now supported — skip rotate phase, go straight to countdown
+    // Show tutorial overlay for first-time players
+    const tutorialSeen = localStorage.getItem('geospeed_tutorial_seen');
+    if (!tutorialSeen) {
+      setPhase('tutorial');
+      return;
+    }
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, [isMobile]);
