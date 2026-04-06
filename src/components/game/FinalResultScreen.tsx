@@ -299,6 +299,22 @@ export default function FinalResultScreen({
             MENÚ
           </button>
         </div>
+
+        {/* Registration nudge — show after first game if not logged in */}
+        {!user && (
+          <div className="mt-3 sm:mt-4 rounded-xl border border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in animation-delay-500">
+            <p className="text-xs sm:text-sm text-foreground font-bold mb-1">🔒 ¿Quieres guardar tu progreso?</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2.5">
+              Regístrate para conservar tus puntuaciones, nivel y badges en todos tus dispositivos.
+            </p>
+            <a
+              href="/auth"
+              className="inline-block px-5 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97] border border-primary/40 text-primary hover:bg-primary/10"
+            >
+              CREAR CUENTA GRATIS
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

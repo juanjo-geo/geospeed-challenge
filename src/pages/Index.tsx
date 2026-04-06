@@ -519,11 +519,15 @@ const Index = () => {
               difficulty: 'medium',
               mode: 'world',
               avgDistance: Math.round(avgDist),
-              type: 'classic',
+              type: 'daily',
             });
-            // Save daily best to localStorage
+            // Save daily best to localStorage + grant +1 life on first daily completion
             const todayKey = `geospeed_daily_${new Date().toISOString().split('T')[0]}`;
             const prevBest = parseInt(localStorage.getItem(todayKey) || '0', 10);
+            if (!prevBest) {
+              // First completion today — reward +1 life
+              addLives(1);
+            }
             if (total > prevBest) localStorage.setItem(todayKey, total.toString());
             setPhase('final');
           }}
