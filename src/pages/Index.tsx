@@ -39,13 +39,23 @@ function getDailySeed(): number {
 function PhaseTransition({ children, phaseKey }: { children: React.ReactNode; phaseKey: string }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(raf);
+    // Reset for new phase
+    setVisible(false);
+    // Double-rAF guarantees at least one paint at opacity 0 before transitioning
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setVisible(true));
+    });
+    // Failsafe: if rAF doesn't fire (tab hidden, throttled), force visible after 100ms
+    const timer = setTimeout(() => setVisible(true), 100);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
   }, [phaseKey]);
   return (
     <div
-      className="transition-all duration-500 ease-out"
-      style={{ opacity: visible ? 1 : 0, transform: visible ? 'scale(1)' : 'scale(0.97)' }}
+      className="transition-opacity duration-500 ease-out"
+      style={{ opacity: visible ? 1 : 0 }}
     >
       {children}
     </div>
