@@ -279,6 +279,34 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       ══════════════════════════════════════════ */}
       {!isNewPlayer && (
         <>
+      {/* ── JUGAR AHORA — Quick-launch for returning players ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
+        <button
+          onClick={() => onStartGame('medium', 'world')}
+          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.97] shadow-xl hover:shadow-2xl"
+          style={{
+            background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)',
+            color: 'hsl(var(--primary-foreground))',
+            boxShadow: '0 4px 24px hsl(var(--primary) / 0.35), 0 0 0 1px hsl(var(--primary) / 0.2)',
+          }}
+          aria-label="Jugar ahora — Modo clásico, dificultad media, mundo"
+        >
+          {/* Shimmer effect on hover */}
+          <span
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            style={{
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
+            }}
+          />
+          <span className="relative text-xl">🌍</span>
+          <span className="relative">{t('home_playNow') || 'JUGAR AHORA'}</span>
+          <span className="relative text-xl">▶</span>
+        </button>
+        <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground mt-1.5 opacity-70">
+          {t('home_playNowDesc') || 'Clásico · Medio · Mundial — sin configurar nada'}
+        </p>
+      </div>
+
       {/* ── Daily streak reward popup ── */}
       {streakReward && !streakDismissed && (
         <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up">

@@ -1,0 +1,19 @@
+ 1. Guía de Estilo Visual "Neon-Velocity" (Detalle Técnico)
+El objetivo es pasar de una estética funcional a una experiencia inmersiva y satisfactoria
+.
+Paleta de Colores de Alto Impacto:
+Fondo (Contraste Máximo): Usa un azul medianoche profundo o negro carbón (#0B0E14). Esto no solo reduce la fatiga visual, sino que hace que los colores neón "exploten", lo cual es vital para captar la atención en miniaturas de redes sociales y pantallas pequeñas
+.
+Acción y Peligro (Speed): Naranja eléctrico o amarillo neón (#FF8C00). Utilizado para el rastro del jugador y elementos que indican velocidad extrema. El naranja evoca adrenalina y urgencia
+.
+Precisión y Éxito (Geo): Cian brillante o verde menta (#00F5FF). Este color "frío" debe aparecer solo cuando el jugador logra un acierto perfecto, creando un contraste visual satisfactorio con el naranja de la velocidad
+.
+Interfaz (UI) para un Mundo Multi-dispositivo:
+Escalabilidad: El texto y los marcadores de puntos deben ser legibles en pantallas de 7 pulgadas (consolas portátiles/handhelds)
+.
+Navegación: Los menús deben ser 100% navegables con mando o pantalla táctil, eliminando la fricción para jugadores de Xbox o dispositivos móviles
+.
+Implementación del "Juice" (Jugosidad):
+Feedback Visual: Cuando el jugador acierte, no solo debe aparecer un número. Añade partículas blancas brillantes, un ligero desenfoque de movimiento en los bordes de la pantalla y un pequeño "sacudida de cámara" (screen shake)
+.
+Variación de Sonido: Utiliza herramientas como bfxr para crear sonidos de impacto que tengan ligeras variaciones en el tono y volumen (pitch/volume randomization). Esto evita la monotonía y hace que cada acierto se sienta fresco

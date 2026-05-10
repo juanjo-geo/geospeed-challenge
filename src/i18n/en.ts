@@ -75,6 +75,8 @@ const en: Translations = {
   home_chooseAdventureDesc: 'Select the mode (World, Europe, Asia, Americas, or Africa) and difficulty (Easy, Medium, or Expert). Start your game!',
   home_startGame: 'START GAME',
   home_startGameDesc: 'World Map · Easy · 13 cities',
+  home_playNow: 'PLAY NOW',
+  home_playNowDesc: 'Classic · Medium · World — no setup needed',
   home_streakDaysSingular: '{count} day streak!',
   home_streakDaysPlural: '{count} day streak!',
   home_streakBonusLives: '+{lives} bonus life',

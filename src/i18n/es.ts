@@ -73,6 +73,8 @@ const es = {
   home_chooseAdventureDesc: 'Selecciona la modalidad (World, Europa, Asia, América o África) y la dificultad (Fácil, Medio o Experto). ¡Inicia tu partida!',
   home_startGame: 'INICIAR JUEGO',
   home_startGameDesc: 'Mapamundi · Dificultad Fácil · 13 ciudades',
+  home_playNow: 'JUGAR AHORA',
+  home_playNowDesc: 'Clásico · Medio · Mundial — sin configurar nada',
   home_streakDaysSingular: '¡Racha de {count} día!',
   home_streakDaysPlural: '¡Racha de {count} días!',
   home_streakBonusLives: '+{lives} vida de bonus',

@@ -1,0 +1,14 @@
+Estrategia de Viralidad y Lanzamiento (Método MrBeast)
+La viralidad no es suerte, es una habilidad que se entrena enfocándose en la psicología de la audiencia
+.
+La Regla de los 60 Segundos: Tu "Core Gameplay Loop" (velocidad → precisión → recompensa) debe enganchar al jugador en menos de un minuto. Si el loop no es adictivo en ese tiempo, el juego morirá
+.
+Cumplir y Superar Expectativas:
+Inicio Inmediato: El juego debe empezar confirmando la promesa del título. Evita introducciones largas.
+El Factor Extremo: Para que alguien comparta un clip en TikTok, el juego necesita algo "que nunca se haya visto". Por ejemplo, un modo de "Velocidad Sónica" donde los colores del mapa cambian dinámicamente según el ritmo del jugador
+.
+Construcción de Comunidad (LiveOps):
+Wishlist Velocity: Antes de lanzar, publica clips de gameplay extremo en Discord y TikTok para generar una base de usuarios interesados ("Wishlists")
+.
+Telemetría desde el Día 1: Implementa PlayFab (gratuito para juegos en el ecosistema Xbox) para medir exactamente dónde abandonan los jugadores (ej. si el nivel 4 es muy difícil y causa rage quits) e iterar con datos reales, no solo intuición
+.

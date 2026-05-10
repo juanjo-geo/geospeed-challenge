@@ -335,11 +335,125 @@
   animation: ring-expand 800ms ease-out both;
 }
 
+/* ── JUICE: Screen shake — subtle vibration when timer is critical ── */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10%  { transform: translate(-2px, 1px); }
+  20%  { transform: translate(2px, -1px); }
+  30%  { transform: translate(-1px, 2px); }
+  40%  { transform: translate(1px, -2px); }
+  50%  { transform: translate(-2px, 0px); }
+  60%  { transform: translate(2px, 1px); }
+  70%  { transform: translate(-1px, -1px); }
+  80%  { transform: translate(1px, 2px); }
+  90%  { transform: translate(0px, -1px); }
+}
+.animate-screen-shake {
+  animation: screen-shake 0.4s ease-in-out;
+}
+
+/* ── JUICE: Vignette — darkened edges when timer < 5s (tunnel vision effect) ── */
+.vignette-urgent {
+  position: relative;
+}
+.vignette-urgent::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    hsl(0 0% 0% / 0.35) 100%
+  );
+  animation: vignette-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes vignette-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+/* ── JUICE: Heartbeat pulse for timer bar last 3 seconds ── */
+@keyframes heartbeat {
+  0%   { transform: scale(1); }
+  14%  { transform: scale(1.08); }
+  28%  { transform: scale(1); }
+  42%  { transform: scale(1.05); }
+  56%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+.animate-heartbeat {
+  animation: heartbeat 0.8s ease-in-out infinite;
+}
+
+/* ── JUICE: Glow pulse for score on big hits ── */
+@keyframes score-glow {
+  0%   { text-shadow: 0 0 0 transparent; }
+  50%  { text-shadow: 0 0 20px hsl(var(--primary) / 0.7), 0 0 40px hsl(var(--primary) / 0.3); }
+  100% { text-shadow: 0 0 0 transparent; }
+}
+.animate-score-glow {
+  animation: score-glow 600ms ease-out;
+}
+
+/* ── JUICE: Float up with scale for big point gains ── */
+@keyframes float-up-big {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  30%  { opacity: 1; transform: translateY(-12px) scale(1.3); }
+  100% { opacity: 0; transform: translateY(-48px) scale(0.8); }
+}
+.animate-float-up-big {
+  animation: float-up-big 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Neon-Velocity theme (optional high-contrast mode per Guía de Estilo) ── */
+:root.neon {
+  --background: 220 20% 5%;      /* #0B0E14 — midnight blue-black */
+  --foreground: 0 0% 93%;        /* near-white text */
+
+  --card: 220 15% 10%;
+  --card-foreground: 0 0% 93%;
+
+  --popover: 220 15% 10%;
+  --popover-foreground: 0 0% 93%;
+
+  --primary: 30 100% 50%;        /* #FF8C00 — electric orange (speed) */
+  --primary-foreground: 0 0% 5%;
+
+  --secondary: 220 15% 15%;
+  --secondary-foreground: 0 0% 93%;
+
+  --muted: 220 10% 14%;
+  --muted-foreground: 220 10% 50%;
+
+  --accent: 185 100% 50%;        /* #00F5FF — cyan (precision/success) */
+  --accent-foreground: 0 0% 5%;
+
+  --destructive: 0 85% 55%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 220 10% 20%;
+  --input: 220 10% 20%;
+  --ring: 30 100% 50%;
+
+  --bg-from: 220 20% 3%;
+  --bg-to: 220 20% 7%;
+  --game-panel: 220 15% 8%;
+}
+/* In neon mode, success feedback uses cyan instead of green */
+:root.neon .text-green-400 { color: hsl(185 100% 50%) !important; }
+:root.neon .bg-green-500\/20 { background-color: hsl(185 100% 50% / 0.2) !important; }
+
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .vignette-urgent::after {
+    display: none;
   }
 }

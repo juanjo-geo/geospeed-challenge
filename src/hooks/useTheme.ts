@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 
-export type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light' | 'neon';
 
 const STORAGE_KEY = 'geospeed_theme';
+const ALL_THEME_CLASSES = ['light', 'neon'] as const;
 
 function applyTheme(theme: Theme): void {
-  if (theme === 'light') {
-    document.documentElement.classList.add('light');
-  } else {
-    document.documentElement.classList.remove('light');
+  // Remove all theme classes first
+  ALL_THEME_CLASSES.forEach(cls => document.documentElement.classList.remove(cls));
+  // Apply the new theme class (dark = no class, light/neon = add class)
+  if (theme !== 'dark') {
+    document.documentElement.classList.add(theme);
   }
 }
 
@@ -16,7 +18,8 @@ export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-      return stored === 'light' ? 'light' : 'dark';
+      if (stored === 'light' || stored === 'neon') return stored;
+      return 'dark';
     } catch {
       return 'dark';
     }
@@ -27,7 +30,11 @@ export function useTheme() {
     try { localStorage.setItem(STORAGE_KEY, theme); } catch {}
   }, [theme]);
 
-  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = () => setTheme(t => {
+    if (t === 'dark') return 'light';
+    if (t === 'light') return 'neon';
+    return 'dark'; // neon → dark
+  });
 
   return { theme, toggleTheme };
 }

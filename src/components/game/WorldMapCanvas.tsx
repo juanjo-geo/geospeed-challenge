@@ -722,7 +722,12 @@ export default function WorldMapCanvas({
     onMapClick(yToLat(adjustedY), xToLon(adjustedX));
   }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin]);
 
-  // Auto-zoom to midpoint — adaptive based on viewport size and point distance
+  // ── ZOOM BOMB — Cinematic camera flight to result ──
+  // Phase 1: Quick punch-zoom to user click (0-400ms)
+  // Phase 2: Dramatic pan-zoom to midpoint (400-1200ms)
+  // Phase 3: Hold at peak (1200-2800ms)
+  // Phase 4: Smooth pull-back to overview (2800-4200ms)
+  const zoomBombRafRef = useRef<number>(0);
   useEffect(() => {
     if (!userClick || !correctLocation || !containerRef.current) {
       return;
@@ -732,61 +737,120 @@ export default function WorldMapCanvas({
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
+    // Cancel any previous zoom bomb
+    if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
+
+    const vw = window.innerWidth;
+    const uxPct = (lonToX(userClick.lon) / dimensions.w) * 100;
+    const uyPct = (latToY(userClick.lat) / dimensions.h) * 100;
     const midLon = (userClick.lon + correctLocation.lon) / 2;
     const midLat = (userClick.lat + correctLocation.lat) / 2;
-    const xPercent = (lonToX(midLon) / dimensions.w) * 100;
-    const yPercent = (latToY(midLat) / dimensions.h) * 100;
+    const mxPct = (lonToX(midLon) / dimensions.w) * 100;
+    const myPct = (latToY(midLat) / dimensions.h) * 100;
 
-    // Adaptive zoom: scale based on viewport width and distance between points
-    const vw = window.innerWidth;
+    // Adaptive peak zoom — bigger on desktop, reduced for distant points
     const pointSpreadX = Math.abs(userClick.lon - correctLocation.lon) / lonRange;
     const pointSpreadY = Math.abs(userClick.lat - correctLocation.lat) / latRange;
     const pointSpread = Math.max(pointSpreadX, pointSpreadY);
 
-    // Base zoom by viewport: smaller screens get less zoom
-    let baseZoom: number;
-    if (vw < 640) baseZoom = 1.15;       // compact/mobile
-    else if (vw < 1025) baseZoom = 1.35;  // medium/tablet
-    else baseZoom = 1.6;                   // wide/desktop
+    let peakZoom: number;
+    if (vw < 640) peakZoom = 1.4;
+    else if (vw < 1025) peakZoom = 1.8;
+    else peakZoom = 2.2;
 
-    // Reduce zoom if points are far apart (so both stay visible)
-    // If points span > 30% of the map, reduce zoom proportionally
-    const spreadPenalty = pointSpread > 0.3 ? Math.max(0.6, 1 - (pointSpread - 0.3)) : 1;
-    const zoomLevel = Math.max(1.05, baseZoom * spreadPenalty);
+    // Reduce zoom if points are far apart so both remain visible
+    const spreadPenalty = pointSpread > 0.25 ? Math.max(0.5, 1 - (pointSpread - 0.25) * 1.2) : 1;
+    peakZoom = Math.max(1.15, peakZoom * spreadPenalty);
 
-    // Shorter animation on mobile
-    const zoomInDuration = vw < 640 ? 3000 : 6000;
-    const zoomOutDelay = vw < 640 ? 3500 : 6500;
+    // Punch zoom is slightly higher, focused on user click
+    const punchZoom = Math.min(peakZoom * 1.15, peakZoom + 0.3);
 
-    const zoomInTimer = setTimeout(() => {
+    // Timing (ms)
+    const T_PUNCH = 350;       // quick snap to user click
+    const T_PAN = 800;         // pan to midpoint
+    const T_HOLD = 1600;       // hold at peak
+    const T_PULL = 1400;       // pull back
+    const T_TOTAL = T_PUNCH + T_PAN + T_HOLD + T_PULL;
+
+    // Easing helpers
+    const easeOutExpo = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+    let startTime: number | null = null;
+
+    const animateZoom = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const elapsed = ts - startTime;
+
+      let currentZoom: number;
+      let originX: number;
+      let originY: number;
+
+      if (elapsed < T_PUNCH) {
+        // Phase 1: Punch zoom to user click
+        const t = easeOutExpo(elapsed / T_PUNCH);
+        currentZoom = lerp(1, punchZoom, t);
+        originX = uxPct;
+        originY = uyPct;
+      } else if (elapsed < T_PUNCH + T_PAN) {
+        // Phase 2: Pan to midpoint + settle to peak zoom
+        const t = easeInOutCubic((elapsed - T_PUNCH) / T_PAN);
+        currentZoom = lerp(punchZoom, peakZoom, t);
+        originX = lerp(uxPct, mxPct, t);
+        originY = lerp(uyPct, myPct, t);
+      } else if (elapsed < T_PUNCH + T_PAN + T_HOLD) {
+        // Phase 3: Hold with subtle breath
+        const holdT = (elapsed - T_PUNCH - T_PAN) / T_HOLD;
+        const breath = Math.sin(holdT * Math.PI) * 0.03;
+        currentZoom = peakZoom + breath;
+        originX = mxPct;
+        originY = myPct;
+      } else if (elapsed < T_TOTAL) {
+        // Phase 4: Pull back to overview
+        const t = easeOutCubic((elapsed - T_PUNCH - T_PAN - T_HOLD) / T_PULL);
+        currentZoom = lerp(peakZoom, 1, t);
+        originX = lerp(mxPct, 50, t);
+        originY = lerp(myPct, 50, t);
+      } else {
+        // Done
+        setZoomStyle({
+          transform: 'scale(1)',
+          transformOrigin: '50% 50%',
+          transition: 'none',
+        });
+        return;
+      }
+
       setZoomStyle({
-        transform: `scale(${zoomLevel})`,
-        transformOrigin: `${xPercent}% ${yPercent}%`,
-        transition: `transform ${zoomInDuration}ms cubic-bezier(0.16, 1, 0.3, 1), transform-origin ${zoomInDuration}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+        transform: `scale(${currentZoom.toFixed(4)})`,
+        transformOrigin: `${originX.toFixed(2)}% ${originY.toFixed(2)}%`,
+        transition: 'none', // rAF drives it, no CSS transition
       });
-    }, 300);
 
-    const zoomOutTimer = setTimeout(() => {
-      setZoomStyle({
-        transform: 'scale(1)',
-        transformOrigin: `${xPercent}% ${yPercent}%`,
-        transition: 'transform 2000ms cubic-bezier(0.16, 1, 0.3, 1), transform-origin 2000ms cubic-bezier(0.16, 1, 0.3, 1)',
-      });
-    }, zoomOutDelay);
+      zoomBombRafRef.current = requestAnimationFrame(animateZoom);
+    };
+
+    // Small delay so the click registers visually first
+    const kickoff = setTimeout(() => {
+      zoomBombRafRef.current = requestAnimationFrame(animateZoom);
+    }, 100);
 
     return () => {
-      clearTimeout(zoomInTimer);
-      clearTimeout(zoomOutTimer);
+      clearTimeout(kickoff);
+      if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
     };
   }, [userClick, correctLocation, bounds, lonRange, latRange, lonToX, latToY, dimensions]);
 
   // Reset zoom when markers clear
   useEffect(() => {
     if (!userClick && !correctLocation) {
+      if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
       setZoomStyle({
         transform: 'scale(1)',
         transformOrigin: '50% 50%',
-        transition: 'transform 4000ms cubic-bezier(0.16, 1, 0.3, 1), transform-origin 4000ms cubic-bezier(0.16, 1, 0.3, 1)',
+        transition: 'transform 600ms cubic-bezier(0.16, 1, 0.3, 1)',
       });
     }
   }, [userClick, correctLocation]);

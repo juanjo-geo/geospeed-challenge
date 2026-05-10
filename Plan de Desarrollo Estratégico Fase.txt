@@ -1,0 +1,122 @@
+Plan de Desarrollo Estratégico: Fase de Montaje Profesional 'Geospeed' (7 Días)
+
+1. Visión General del Proyecto y Objetivos de Fase
+
+Este plan estratégico tiene como propósito transformar el prototipo inicial de Geospeed en una versión de "montaje profesional" de alto impacto. Como Director de Producción, el objetivo es transicionar de una validación mecánica básica hacia un producto optimizado para el ecosistema multiplataforma moderno (PC, Consola, Handheld), priorizando la escalabilidad técnica y una experiencia de usuario (UX) pulida mediante el diseño de "Juice".
+
+Nos basaremos en cuatro pilares estratégicos:
+
+* Implementación de Juice: Maximizar el feedback sensorial para convertir una mecánica simple en una experiencia adictiva.
+* Estilo Neon-Velocity: Evolucionar hacia una identidad visual de alto contraste y bajo consumo de recursos.
+* Escalabilidad Multi-dispositivo: Optimización basada en las directrices GDC 2026 para un rendimiento fluido en cualquier pantalla.
+* Estrategia de Viralidad: Aplicar psicología de audiencia para garantizar la retención desde el segundo cero.
+
+
+--------------------------------------------------------------------------------
+
+
+2. Día 1: Arquitectura Técnica y "High-Speed Onboarding"
+
+Directriz Técnica y Onboarding: Implementaremos un flujo de Onboarding Modular. Siguiendo los estándares de Xbox 2026, reduciremos el tiempo de configuración de meses a solo 30 minutos. Utilizaremos el Xbox Onboarding Hub para empezar a construir antes de la aprobación final, desbloqueando sandboxes y servicios en paralelo.
+
+El motor principal será Unity (C#), configurando el proyecto como un estándar x64. Se elimina la necesidad de targets de plataforma específicos, tratando la build de Xbox como un proyecto x64 convencional. Integraremos PlayFab de inmediato para el backend (saves, matchmaking y analíticas). Nota Estratégica: Gracias al acuerdo de publicación de Xbox, el uso de PlayFab es totalmente gratuito, lo que optimiza nuestro presupuesto de LiveOps significativamente.
+
+Core Gameplay Loop: Debemos refinar el ciclo (Localizar -> Puntuar -> Recompensar -> Repetir) para que sea adictivo en 30-60 segundos. La transición entre la recompensa de una ciudad y la siguiente localización debe ser instantánea para mantener el estado de "flow".
+
+
+--------------------------------------------------------------------------------
+
+
+3. Día 2: Identidad Visual 'Neon-Velocity' y Gestión de Assets
+
+Sustituiremos los mapas color tierra por el estilo Neon-Velocity. Este enfoque no solo es estético, sino técnico: reduce la carga de texturas y mejora la legibilidad en pantallas pequeñas. Utilizaremos el sistema de Addressables de Unity para gestionar estos assets de forma eficiente, permitiendo actualizaciones rápidas sin parches masivos.
+
+Guía de Estilo Neon-Velocity
+
+Elemento	Estado Actual (Prototipo)	Nueva Dirección (Profesional)
+Fondo	Colores crema/tierra (estilo papel antiguo).	Fondos oscuros (negro profundo o gris carboncillo).
+Mapas	Divisiones políticas en marrones y ocres.	Siluetas de continentes delineadas en neón vibrante.
+Contraste	Medio (poca diferenciación visual).	Alto contraste (Líneas brillantes sobre vacío).
+Interfaz (UI)	Botones sólidos opacos.	Elementos translúcidos, tipografía técnica y acentos neón.
+
+
+--------------------------------------------------------------------------------
+
+
+4. Día 3: Implementación de 'Juice' (Feedback Sensorial)
+
+El "Juice" es lo que separa un software de un videojuego. Utilizaremos bfxr para sonidos sintéticos y freesound.org para texturas ambientales.
+
+* Audio Variation: Es imperativo implementar una variación aleatoria de pitch (tono) y volumen en cada efecto de sonido. Esto evita la fatiga auditiva tras 13 ciudades seguidas, un error común en producciones amateur.
+* Feedback Visual:
+  * Screen Shake: Vibración sutil al acertar ciudades en dificultad "Experto".
+  * Temporizador Dinámico: El reloj de 10 segundos debe pulsar y cambiar de naranja a rojo cuando queden 3 segundos.
+  * Transiciones: Uso de "Ease-out" en los menús de "Detalle por ronda" para una sensación de fluidez orgánica.
+
+
+--------------------------------------------------------------------------------
+
+
+5. Día 4: Escalabilidad y "Xbox Mode" en Handhelds
+
+Aplicaremos el concepto de Device Awareness para adaptar el juego al hardware en tiempo real.
+
+* Optimización de Energía: El juego detectará estados de batería en dispositivos handheld. Al activarse, se ajustará el Adaptive Performance de Unity para reducir el consumo, liberando memoria y extendiendo la sesión de juego del usuario.
+* Handheld Usability: Todo el texto y la UI deben escalarse para pantallas de 7 pulgadas. Se implementará el soporte para teclado virtual y navegación por mando nativa.
+* Xbox PC Toolbox: Utilizaremos esta suite para la iteración remota desde Visual Studio 2026, permitiendo depurar en múltiples dispositivos Windows simultáneamente sin salir del entorno de desarrollo.
+
+
+--------------------------------------------------------------------------------
+
+
+6. Día 5: Ingeniería de Viralidad y Psicología de Audiencia
+
+Adoptaremos la filosofía "Algorithm = Audience". No intentamos engañar al sistema, sino satisfacer la psicología humana de curiosidad y reto extremo.
+
+* El Gancho (Hook): La partida debe iniciar con un "GO!" (como se observa en los assets de diseño) en menos de 3 segundos tras el clic inicial. El desafío debe ser claro: opiniones extremas o retos de alta tensión (ej. "¡Nadie puede localizar 13 ciudades de África en 60 segundos!").
+* Recompensas: Al finalizar la ronda de 13 ciudades, el usuario debe ver un progreso claro de XP (ej. "Nv. 9 Oráculo") y una invitación a compartir su récord de 18,740 pts.
+* Marketing Assets:
+  * Títulos: Máximo 50 caracteres para evitar recortes en la interfaz (ej. "Geospeed: ¿Eres un genio de los mapas?").
+  * Miniaturas: Logo de Geospeed siempre en el lado izquierdo para consolidar el reconocimiento de marca.
+
+
+--------------------------------------------------------------------------------
+
+
+7. Día 6: Telemetría de Alta Precisión, Monetización y LiveOps
+
+El desarrollo profesional se basa en datos. Usaremos PlayFab y Firebase para medir el embudo de conversión.
+
+* Métrica Crítica - "Rage Quit": Configuraremos telemetría específica para detectar en qué ciudades o niveles de dificultad exacta los jugadores abandonan el juego frustrados. Esto nos permitirá balancear la curva de dificultad en menos de 24 horas.
+* Modelo de Monetización (Geospeed Pro):
+  * Suscripción Mensual (2.99) / Anual (17.99): Vidas infinitas y sin anuncios.
+  * Pago Único ($29.99): "Pro para siempre".
+  * Paquetes de Vidas: $0.99 (5 vidas) hasta $4.99 (50 vidas).
+  * Ética: El progreso debe ser justo; las microtransacciones solo eliminan la fricción de tiempo, no compran el ranking.
+
+
+--------------------------------------------------------------------------------
+
+
+8. Día 7: Validación, Comunidad y Publicación de la "Vertical Slice"
+
+El objetivo final es una pieza funcional lista para ser probada por la comunidad.
+
+* Comunidad: Lanzamiento de clips en TikTok y apertura de Discord para fomentar la Wishlist Velocity.
+* Validación con GPM: Utilizaremos el Xbox Game Package Manager (GPM) para empaquetar en formato MSIXVC. El GPM realizará una validación automática de criterios de certificación antes de subir el archivo, ahorrando semanas de feedback con Microsoft.
+* Despliegue: La carga mediante GPM es hasta 13 veces más rápida, permitiendo que nuestra "Vertical Slice" esté disponible en sandboxes de prueba e itch.io de forma casi instantánea para obtener feedback real de jugadores.
+
+
+--------------------------------------------------------------------------------
+
+
+9. Stack Tecnológico y Recursos Sugeridos
+
+Área	Herramienta Clave
+Motor de Juego	Unity (C#) con Addressables y Adaptive Performance.
+IDE & IA	Visual Studio 2026 + GitHub Copilot.
+Backend / Nube	PlayFab (Gratis para Xbox) - Saves, Matchmaking, Telemetría.
+Audio	bfxr / Freesound.org (Con variación de Pitch/Volumen).
+Optimización	Xbox PC Toolbox / PIX en Windows.
+Empaquetado	Xbox Game Package Manager (Formato MSIXVC).
+Gestión Agile	Trello / Notion.

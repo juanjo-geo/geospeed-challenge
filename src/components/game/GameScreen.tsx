@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
-import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/sounds';
+import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playStreak, playGameOver } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
@@ -122,7 +122,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           onGameOver(rounds, 'timeout');
           return 0;
         }
-        if (prev <= 6) { playTick(); hapticTick(); }
+        if (prev <= 4) { playHeartbeat(); hapticTick(); } // Last 3s: heartbeat
+        else if (prev <= 6) { playTick(prev); hapticTick(); } // 5-6s: ticks with rising pitch
         return prev - 1;
       });
     }, 1000);
@@ -200,9 +201,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     };
 
     setTimeout(() => {
-      if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(); }
+      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(); } // Perfect: rich chord + shimmer
+      else if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(); }
       else if (totalPoints >= 500) { playGood(); hapticSuccess(); }
       else { playBad(); hapticError(); }
+      // Streak sound: pitch rises with each consecutive good round
+      if (newStreak >= 3) { setTimeout(() => playStreak(newStreak), 300); }
     }, 200);
     setScore(s => s + totalPoints);
     setScorePop(true);
@@ -222,6 +226,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const mult = lastResult ? getMultiplier(lastResult.timeUsed) : null;
   const feedback = lastResult ? getRoundFeedback(lastResult.distance, palette, t) : null;
   const showStreak = streak >= 2;
+  const isTimerCritical = timeLeft <= 3 && !isWaiting;
+  const isTimerUrgent = timeLeft <= 5 && !isWaiting;
 
   // Right panel visible only after click result (as overlay)
   const showRightPanel = isWide && showPopup && lastResult && feedback;
@@ -237,7 +243,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   return (
     <div
-      className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass}`}
+      className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${isTimerUrgent ? 'vignette-urgent' : ''} ${isTimerCritical ? 'animate-screen-shake' : ''}`}
       role="main"
       aria-label="Pantalla de juego"
     >
@@ -318,8 +324,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               {score.toLocaleString()}
             </p>
             {floatPoints !== null && (
-              <span className="absolute left-1/2 -top-1 -translate-x-1/2 text-xs font-bold text-green-400 animate-float-up pointer-events-none">
-                +{floatPoints.toLocaleString()}
+              <span className={`absolute left-1/2 -top-1 -translate-x-1/2 font-bold pointer-events-none ${
+                floatPoints >= 1000 ? 'text-sm text-green-400 animate-float-up-big' : 'text-xs text-green-400 animate-float-up'
+              }`}>
+                +{floatPoints.toLocaleString()}{floatPoints >= 1000 ? ' 🔥' : ''}
               </span>
             )}
           </div>

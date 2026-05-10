@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, type Difficulty, type GameMode } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
-import { playClick, playGood, playBad, playTick, playGameOver } from '@/lib/sounds';
+import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playGameOver } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick } from '@/lib/haptics';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -85,7 +85,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           }
           return 0;
         }
-        if (prev <= 6) { playTick(); hapticTick(); }
+        if (prev <= 4) { playHeartbeat(); hapticTick(); }
+        else if (prev <= 6) { playTick(prev); hapticTick(); }
         return prev - 1;
       });
     }, 1000);
@@ -108,7 +109,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
     roundsRef.current.push({ city: currentCity, distance, totalPoints, timeUsed });
     setTimeout(() => {
-      if (totalPoints >= 500) { playGood(); hapticSuccess(); }
+      if (distance < 50) { playPerfect(); hapticSuccess(); }
+      else if (totalPoints >= 500) { playGood(); hapticSuccess(); }
       else { playBad(); hapticError(); }
     }, 150);
     setScore(s => s + totalPoints);
@@ -149,7 +151,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       : 'grid grid-cols-[clamp(22rem,30vw,28rem)_minmax(0,1fr)]';
 
   return (
-    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass}`} role="main" aria-label="Modo contrareloj">
+    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${globalTime <= 5 && !isAnimating ? 'vignette-urgent' : ''} ${globalTime <= 3 && !isAnimating ? 'animate-screen-shake' : ''}`} role="main" aria-label="Modo contrareloj">
       {/* Portrait top bar — stacked vertical layout */}
       {isPortraitMobile && (
         <div className="bg-card/95 backdrop-blur-md border-b border-border px-3 py-2 flex flex-col gap-1 shrink-0 z-20">

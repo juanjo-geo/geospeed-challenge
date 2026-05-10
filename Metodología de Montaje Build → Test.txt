@@ -1,0 +1,8 @@
+Metodología de Montaje: "Build → Test → Measure → Iterate"
+En lugar de planear durante meses, las fuentes recomiendan lanzar prototipos rápidos
+:
+Vertical Slice: No hagas 100 niveles. Haz un solo nivel con el arte final, todos los sonidos y la monetización básica para validar si es divertido
+.
+Feedback Crítico: Busca a las 10 personas más críticas que conozcas, pídeles que jueguen y observa en qué momento se aburren o dejan de mirar la pantalla
+.
+Uso de IA: Utiliza GitHub Copilot para acelerar el desarrollo técnico, permitiéndote dedicar el 80% de tu tiempo al diseño y al pulido sensorial
