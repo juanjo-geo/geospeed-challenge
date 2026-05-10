@@ -169,6 +169,7 @@ const Index = () => {
       return;
     }
     setIsTraining(false);
+    setIsSpeedDemon(false);
     setDifficulty(diff);
     setGameMode(mode);
     // Show tutorial overlay for first-time players
@@ -267,13 +268,26 @@ const Index = () => {
     setPhase('daily');
   }, []);
 
+  const [isSpeedDemon, setIsSpeedDemon] = useState(false);
+
   const handleStartTraining = useCallback(() => {
     setIsTraining(true);
+    setIsSpeedDemon(false);
     setDifficulty('easy');
     setGameMode('world');
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, [isMobile]);
+
+  const handleSpeedDemon = useCallback(() => {
+    if (!consumeLife()) { setShowNoLives(true); return; }
+    setIsTraining(false);
+    setIsSpeedDemon(true);
+    setDifficulty('medium');
+    setGameMode('world');
+    gameKeyRef.current += 1;
+    setPhase('countdown');
+  }, []);
 
   const handleRoomReady = useCallback((room: GameRoom, isHost: boolean) => {
     setMpRoom(room);
@@ -345,7 +359,7 @@ const Index = () => {
       return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
-            {isTraining ? t('game_training') : `${modeLabel} — ${difficultyLabels[difficulty]}`}
+            {isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 3s/ciudad' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
           </p>
 
           <div className="relative flex items-center justify-center">
@@ -568,6 +582,7 @@ const Index = () => {
           onRoundComplete={() => {}}
           onGameOver={handleGameOver}
           isTraining={isTraining}
+          {...(isSpeedDemon ? { maxTimeOverride: 3, totalRoundsOverride: 30 } : {})}
         />
       );
     }
@@ -582,13 +597,13 @@ const Index = () => {
           reason={endReason}
           onPlayAgain={handlePlayAgain}
           onGoHome={handleGoHome}
-          totalRounds={isTraining ? 6 : 13}
+          totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
         />
       );
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} />
     );
   };
 

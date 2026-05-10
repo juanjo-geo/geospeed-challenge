@@ -15,7 +15,7 @@ import { useI18n } from '@/i18n';
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const TRAINING_ROUNDS = 6;
-const AUTO_ADVANCE_SECONDS = 5;
+const AUTO_ADVANCE_SECONDS = 2;
 
 /** Quick continent guess from lat/lon — used for map highlight hint */
 function getContinentFromCoords(lat: number, lon: number): string | null {
@@ -45,6 +45,10 @@ interface GameScreenProps {
   onGameOver: (rounds: RoundResult[], reason: 'timeout' | 'complete') => void;
   seed?: number;
   isTraining?: boolean;
+  /** Override seconds per round (default 15) */
+  maxTimeOverride?: number;
+  /** Override number of rounds (default 13, training 6) */
+  totalRoundsOverride?: number;
 }
 
 function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
@@ -58,7 +62,7 @@ function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride }: GameScreenProps) {
   const { t } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -66,11 +70,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const isWide = layoutMode === 'wide';
   const hasSidebar = layoutMode !== 'compact'; // medium + wide
   const isPortraitMobile = useIsPortraitMobile();
-  const totalRounds = isTraining ? TRAINING_ROUNDS : TOTAL_ROUNDS;
+  const effectiveMaxTime = maxTimeOverride ?? MAX_TIME;
+  const totalRounds = totalRoundsOverride ?? (isTraining ? TRAINING_ROUNDS : TOTAL_ROUNDS);
   const [cities] = useState(() => getRandomCities(difficulty, totalRounds, gameMode, seed));
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(MAX_TIME);
+  const [timeLeft, setTimeLeft] = useState(effectiveMaxTime);
   const [isWaiting, setIsWaiting] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
@@ -102,8 +107,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   useEffect(() => {
     if (!currentCity) return;
     roundStartRef.current = Date.now();
-    setTimeLeft(MAX_TIME);
-    announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: MAX_TIME }), 'assertive');
+    setTimeLeft(effectiveMaxTime);
+    announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
 
   // Single timer effect — pauses when waiting, portrait, or no city
@@ -133,7 +138,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
-    const timeout = setTimeout(() => setShowPopup(true), 2000);
+    const timeout = setTimeout(() => setShowPopup(true), 1200);
     return () => clearTimeout(timeout);
   }, [isWaiting, lastResult, isPortraitMobile]);
 
@@ -267,7 +272,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           {/* Row 2: Country + Timer */}
           <div className="flex items-center justify-between">
             <p className="text-[10px] text-muted-foreground">🌍 {currentCity.country}</p>
-            <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} compact />
+            <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} compact />
           </div>
         </div>
       )}
@@ -379,7 +384,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           {/* ── Timer ── */}
           <div className="w-full mt-auto shrink-0">
             <p className="text-center text-[10px] italic text-foreground/40 mb-1">Velocidad y precisión</p>
-            <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} />
+            <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} />
           </div>
         </div>
       )}
@@ -443,7 +448,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
               {/* Timer */}
               <div className="mt-1.5">
-                <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isWaiting} compact />
+                <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} compact />
               </div>
             </div>
           </div>

@@ -1,5 +1,14 @@
-import { MODE_CONFIG } from '@/data/cities';
+import { MODE_CONFIG, getMapBounds } from '@/data/cities';
+import { countries } from '@/data/countries';
 import { getPlayerLevel } from './levelSystem';
+
+interface RoundData {
+  clickLat: number;
+  clickLon: number;
+  cityLat: number;
+  cityLon: number;
+  distance: number;
+}
 
 interface ShareCardData {
   playerName: string;
@@ -9,6 +18,7 @@ interface ShareCardData {
   avgDistance: string;
   cities: number;
   totalCities: number;
+  rounds?: RoundData[];
 }
 
 const DIFF_LABELS: Record<string, string> = {
@@ -58,7 +68,9 @@ function getScoreTier(score: number): ScoreTier {
 
 export async function generateShareCard(data: ShareCardData): Promise<Blob> {
   const W = 600;
-  const H = 380;
+  const hasMap = data.rounds && data.rounds.length > 0;
+  const MAP_H = 160;
+  const H = hasMap ? 380 + MAP_H + 20 : 380;
   const canvas = document.createElement('canvas');
   canvas.width = W * 2;
   canvas.height = H * 2;
@@ -175,6 +187,127 @@ export async function generateShareCard(data: ShareCardData): Promise<Blob> {
   ctx.font = '9px system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(`${level.emoji} Nv.${level.level} ${level.title} — ${level.xp.toLocaleString()} XP`, W / 2, barY + 24);
+
+  // ── Mini-map with round results ──
+  if (hasMap && data.rounds) {
+    const mapX = 30;
+    const mapY = 320;
+    const mapW = W - 60;
+    const mapH = MAP_H;
+
+    // Map label
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '9px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('📍 TU PARTIDA EN EL MAPA', W / 2, mapY - 6);
+
+    // Map background (ocean)
+    ctx.fillStyle = `rgba(${tier.accentRgb}, 0.06)`;
+    ctx.beginPath();
+    ctx.roundRect(mapX, mapY, mapW, mapH, 8);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${tier.accentRgb}, 0.2)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Clip to map area
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(mapX, mapY, mapW, mapH, 8);
+    ctx.clip();
+
+    // Ocean fill
+    ctx.fillStyle = tier.bgTop === '#0a0a2e' ? '#0d0d35' : tier.bgTop === '#1a1400' ? '#1a1800' : tier.bgTop === '#0f1318' ? '#0f151c' : '#1a1210';
+    ctx.fillRect(mapX, mapY, mapW, mapH);
+
+    // Simplified country outlines
+    const bounds = getMapBounds((data.mode as any) || 'world');
+    const lonRange = bounds.lonMax - bounds.lonMin;
+    const latRange = bounds.latMax - bounds.latMin;
+    const mScale = Math.min(mapW / lonRange, mapH / latRange);
+    const mOffX = mapX + (mapW - lonRange * mScale) / 2;
+    const mOffY = mapY + (mapH - latRange * mScale) / 2;
+    const toMX = (lon: number) => mOffX + (lon - bounds.lonMin) * mScale;
+    const toMY = (lat: number) => mOffY + (bounds.latMax - lat) * mScale;
+
+    ctx.fillStyle = `rgba(${tier.accentRgb}, 0.12)`;
+    ctx.strokeStyle = `rgba(${tier.accentRgb}, 0.08)`;
+    ctx.lineWidth = 0.5;
+    for (const country of countries) {
+      for (const polygon of country.polygons) {
+        if (polygon.length < 3) continue;
+        ctx.beginPath();
+        let vis = false;
+        for (let i = 0; i < polygon.length; i++) {
+          const x = toMX(polygon[i][0]);
+          const y = toMY(polygon[i][1]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          if (x >= mapX - 10 && x <= mapX + mapW + 10 && y >= mapY - 10 && y <= mapY + mapH + 10) vis = true;
+        }
+        if (vis) { ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      }
+    }
+
+    // Draw round connections
+    const getColor = (dist: number) => {
+      if (dist < 200) return '#22c55e';
+      if (dist < 500) return '#eab308';
+      if (dist < 1000) return '#f97316';
+      return '#ef4444';
+    };
+
+    for (let i = 0; i < data.rounds.length; i++) {
+      const r = data.rounds[i];
+      const ux = toMX(r.clickLon);
+      const uy = toMY(r.clickLat);
+      const cx = toMX(r.cityLon);
+      const cy = toMY(r.cityLat);
+      const color = getColor(r.distance);
+
+      // Arc
+      const mx2 = (ux + cx) / 2;
+      const my2 = (uy + cy) / 2;
+      const dx = cx - ux;
+      const dy = cy - uy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const bulge = Math.min(dist * 0.15, 20);
+      const cpx = mx2 - (dy / (dist || 1)) * bulge;
+      const cpy = my2 + (dx / (dist || 1)) * bulge;
+
+      ctx.strokeStyle = color + '88';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.moveTo(ux, uy);
+      ctx.quadraticCurveTo(cpx, cpy, cx, cy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Click dot
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(ux, uy, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // City dot (gold star)
+      ctx.fillStyle = '#f5c842';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+
+      // Round number
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 7px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${i + 1}`, cx, cy);
+    }
+
+    ctx.restore(); // unclip
+  }
 
   // Bottom accent line — tier colored
   ctx.strokeStyle = accent;

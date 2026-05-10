@@ -18,10 +18,10 @@ export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-      if (stored === 'light' || stored === 'neon') return stored;
-      return 'dark';
+      if (stored === 'light' || stored === 'dark') return stored;
+      return 'neon';
     } catch {
-      return 'dark';
+      return 'neon';
     }
   });
 
@@ -31,9 +31,9 @@ export function useTheme() {
   }, [theme]);
 
   const toggleTheme = () => setTheme(t => {
+    if (t === 'neon') return 'dark';
     if (t === 'dark') return 'light';
-    if (t === 'light') return 'neon';
-    return 'dark'; // neon → dark
+    return 'neon'; // light → neon
   });
 
   return { theme, toggleTheme };

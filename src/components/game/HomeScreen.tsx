@@ -9,6 +9,7 @@ import { getEnergy } from '@/lib/energySystem';
 import { checkStreak, claimDailyReward, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
 import ThemeToggle from './ThemeToggle';
+import AutoDemo from './AutoDemo';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { useI18n, LOCALES } from '@/i18n';
@@ -19,6 +20,7 @@ interface HomeScreenProps {
   onTimeAttack: () => void;
   onDailyChallenge: () => void;
   onStartTraining: () => void;
+  onSpeedDemon?: () => void;
   onOpenStore?: () => void;
   onOpenProfile?: () => void;
 }
@@ -36,7 +38,7 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
   africa: { level: 3, label: 'Nv.3' },
 };
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onOpenStore, onOpenProfile }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
   const { colorblind, toggleColorblind } = useA11y();
   const { t, locale, setLocale } = useI18n();
@@ -190,6 +192,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       <p className="text-muted-foreground text-sm sm:text-base md:text-lg mb-2 sm:mb-3 animate-fade-in-up animation-delay-100 italic">
         {t('home_tagline')}
       </p>
+
+      {/* ── Auto-playing demo — visual tutorial ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
+        <AutoDemo />
+      </div>
 
       {/* ── Cómo se juega (toggle + collapsible onboarding) ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
@@ -425,28 +432,49 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </button>
       </div>
 
-      {/* ── Contrareloj + Duelo ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-2 gap-1.5 sm:gap-2">
+      {/* ── Contrareloj + Speed Demon + Duelo ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-3 gap-1.5 sm:gap-2">
         <button
           onClick={onTimeAttack}
-          className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
-          aria-label="Modo contrareloj extremo"
+          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
+          aria-label="Modo Blitz"
         >
-          <span className="text-lg sm:text-xl shrink-0">⚡</span>
+          <span className="text-base sm:text-lg shrink-0">⚡</span>
           <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-red-400">{t('home_timeAttack')}</div>
-            <div className="text-[8px] sm:text-[10px] text-muted-foreground">{t('home_timeAttackDesc')}</div>
+            <div className="font-bold text-[9px] sm:text-[11px] text-red-400">{t('home_timeAttack')}</div>
+            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_timeAttackDesc')}</div>
           </div>
         </button>
+        {(() => {
+          const speedLocked = playerLevel.level < 5;
+          return (
+            <button
+              onClick={() => !speedLocked && onSpeedDemon?.()}
+              disabled={speedLocked}
+              className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                speedLocked
+                  ? 'border-border bg-card/50 opacity-50 cursor-not-allowed'
+                  : 'border-fuchsia-500/40 hover:border-fuchsia-500 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 hover:shadow-[0_0_20px_hsl(292_84%_60%/0.2)]'
+              }`}
+              aria-label="Speed Demon Mode"
+            >
+              <span className="text-base sm:text-lg shrink-0">{speedLocked ? '🔒' : '👹'}</span>
+              <div className="text-left min-w-0">
+                <div className={`font-bold text-[9px] sm:text-[11px] ${speedLocked ? 'text-muted-foreground' : 'text-fuchsia-400'}`}>{t('home_speedDemon') || 'SPEED DEMON'}</div>
+                <div className="text-[7px] sm:text-[9px] text-muted-foreground">{speedLocked ? 'Nv.5' : (t('home_speedDemonDesc') || '3s · 30 ciudades')}</div>
+              </div>
+            </button>
+          );
+        })()}
         <button
           onClick={onMultiplayer}
-          className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
+          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
           aria-label="Modo duelo 1 contra 1"
         >
-          <span className="text-lg sm:text-xl shrink-0">🎮</span>
+          <span className="text-base sm:text-lg shrink-0">🎮</span>
           <div className="text-left min-w-0">
-            <div className="font-bold text-[10px] sm:text-xs text-primary">{t('home_duel')}</div>
-            <div className="text-[8px] sm:text-[10px] text-muted-foreground">{t('home_duelDesc')}</div>
+            <div className="font-bold text-[9px] sm:text-[11px] text-primary">{t('home_duel')}</div>
+            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_duelDesc')}</div>
           </div>
         </button>
       </div>

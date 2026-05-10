@@ -132,6 +132,13 @@ export default function FinalResultScreen({
       avgDistance: formatDistance(avgDistance),
       cities: rounds.length,
       totalCities: totalRounds,
+      rounds: rounds.map(r => ({
+        clickLat: r.clickLat,
+        clickLon: r.clickLon,
+        cityLat: r.city.lat,
+        cityLon: r.city.lon,
+        distance: r.distance,
+      })),
     });
     setSharing(false);
   };
