@@ -91,28 +91,30 @@ export default function WorldMapCanvas({
   const isLightMode = () => theme === 'light';
   const isNeonMode = () => theme === 'neon';
 
-  // ── NEON-VELOCITY: Tech greys on deep blue-black — viral-ready contrast ──
+  // ── NEON-VELOCITY: Wide-range tech tones on deep blue-black ──
+  // Colors alternate between cool (blue-grey, slate) and warm (steel, graphite)
+  // with a ~40-point brightness spread so adjacent countries pop.
   const MAP_PALETTE_NEON = [
-    '#2A3040', // steel grey dark
-    '#354050', // slate
-    '#303848', // blue-grey
-    '#3A4555', // medium slate
-    '#28323E', // dark steel
-    '#3E4A58', // warm grey
-    '#333D4D', // navy grey
-    '#2C3644', // deep slate
-    '#3B4656', // light steel
-    '#2F3A48', // medium steel
-    '#364252', // slate blue
-    '#2D3744', // charcoal
-    '#3C4858', // silver grey
-    '#31404E', // deep blue-grey
-    '#384454', // medium blue-grey
-    '#2E3A46', // dark blue-grey
-    '#3A4858', // light slate
-    '#334050', // cool grey
-    '#2C3848', // shadow steel
-    '#364454', // mist grey
+    '#1E2836', // deep navy
+    '#4A5568', // warm silver
+    '#2D3A4A', // ocean steel
+    '#5C6B7A', // light graphite
+    '#1A2530', // midnight
+    '#3D4E5E', // blue-steel
+    '#4E5D6B', // silver slate
+    '#253340', // dark teal-grey
+    '#5A6878', // pale steel
+    '#344455', // medium navy
+    '#627282', // lightest — almost silver
+    '#2A3848', // deep steel
+    '#48586A', // blue graphite
+    '#1F2D3A', // charcoal navy
+    '#556575', // silver blue
+    '#384858', // medium slate
+    '#3A4C5C', // teal-steel
+    '#4C5C6C', // warm slate
+    '#223040', // shadow navy
+    '#506070', // pale graphite
   ];
 
   // Dark mode: warm earth tones — watercolor atlas feel
