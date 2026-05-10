@@ -90,7 +90,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         {t('home_skipToContent')}
       </a>
       {/* ── Top bar: energy + user + theme toggle ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up flex items-center justify-between gap-2">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-1.5 sm:mb-3 animate-fade-in-up flex items-center justify-between gap-2">
         <EnergyBar />
         <div className="flex items-center gap-2">
           {onOpenProfile && stats.gamesPlayed > 0 && (
@@ -177,29 +177,31 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       )}
 
-      {/* ── Logo ── */}
-      <div className="animate-fade-in-up mb-1 sm:mb-2 text-center">
+      {/* ── Logo — compact for returning players ── */}
+      <div className={`animate-fade-in-up text-center ${isNewPlayer ? 'mb-1 sm:mb-2' : 'mb-0.5'}`}>
         <span
-          className="text-3xl sm:text-4xl md:text-5xl block mb-0.5 sm:mb-1"
+          className={`block ${isNewPlayer ? 'text-3xl sm:text-4xl md:text-5xl mb-0.5 sm:mb-1' : 'text-2xl sm:text-3xl mb-0'}`}
         >📍</span>
         <h1
-          className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-none"
+          className={`font-black tracking-tight leading-none ${isNewPlayer ? 'text-2xl sm:text-3xl md:text-5xl' : 'text-xl sm:text-2xl md:text-4xl'}`}
           style={{ fontFamily: 'Impact, system-ui', color: 'hsl(var(--primary))' }}
         >
           GEOSPEED IQ CHALLENGE
         </h1>
       </div>
-      <p className="text-muted-foreground text-sm sm:text-base md:text-lg mb-2 sm:mb-3 animate-fade-in-up animation-delay-100 italic">
+      <p className={`text-muted-foreground italic animate-fade-in-up animation-delay-100 ${isNewPlayer ? 'text-sm sm:text-base md:text-lg mb-2 sm:mb-3' : 'text-xs sm:text-sm mb-1 sm:mb-1.5'}`}>
         {t('home_tagline')}
       </p>
 
-      {/* ── Auto-playing demo — visual tutorial ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
-        <AutoDemo />
-      </div>
+      {/* ── Auto-playing demo — visual tutorial (only for new players above the fold) ── */}
+      {isNewPlayer && (
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
+          <AutoDemo />
+        </div>
+      )}
 
       {/* ── Cómo se juega (toggle + collapsible onboarding) ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
+      <div className={`w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-150 ${isNewPlayer ? 'mb-3 sm:mb-4' : 'mb-1.5 sm:mb-2'}`}>
         <button
           onClick={() => setShowHowToPlay(prev => !prev)}
           className="w-full text-center text-[11px] sm:text-xs text-muted-foreground hover:text-primary transition-colors py-1"
@@ -287,10 +289,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       {!isNewPlayer && (
         <>
       {/* ── JUGAR AHORA — Quick-launch for returning players ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-150">
         <button
           onClick={() => onStartGame('medium', 'world')}
-          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.97] shadow-xl hover:shadow-2xl"
+          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3 sm:py-3.5 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.97] shadow-xl hover:shadow-2xl"
           style={{
             background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)',
             color: 'hsl(var(--primary-foreground))',
@@ -309,9 +311,14 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <span className="relative">{t('home_playNow') || 'JUGAR AHORA'}</span>
           <span className="relative text-xl">▶</span>
         </button>
-        <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground mt-1.5 opacity-70">
+        <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground mt-1 opacity-70">
           {t('home_playNowDesc') || 'Clásico · Medio · Mundial — sin configurar nada'}
         </p>
+      </div>
+
+      {/* ── Auto-demo for returning players — below the fold, compact ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-200">
+        <AutoDemo />
       </div>
 
       {/* ── Daily streak reward popup ── */}
@@ -461,7 +468,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               <span className="text-base sm:text-lg shrink-0">{speedLocked ? '🔒' : '👹'}</span>
               <div className="text-left min-w-0">
                 <div className={`font-bold text-[9px] sm:text-[11px] ${speedLocked ? 'text-muted-foreground' : 'text-fuchsia-400'}`}>{t('home_speedDemon') || 'SPEED DEMON'}</div>
-                <div className="text-[7px] sm:text-[9px] text-muted-foreground">{speedLocked ? 'Nv.5' : (t('home_speedDemonDesc') || '3s · 30 ciudades')}</div>
+                <div className="text-[7px] sm:text-[9px] text-muted-foreground">{speedLocked ? 'Nv.5' : (t('home_speedDemonDesc') || '5s · 30 ciudades')}</div>
               </div>
             </button>
           );

@@ -28,7 +28,7 @@ import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSyste
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { addLives } from '@/lib/energySystem';
-import { playCountdown, playGo } from '@/lib/sounds';
+import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
 import { useI18n } from '@/i18n';
 
@@ -164,6 +164,7 @@ const Index = () => {
   const pendingStartRef = useRef<{ diff: Difficulty; mode: GameMode } | null>(null);
 
   const handleSelectDifficulty = useCallback((diff: Difficulty, mode: GameMode) => {
+    unlockAudio(); // Pre-unlock audio on user gesture so sounds work on mobile
     if (!consumeLife()) {
       setShowNoLives(true);
       return;
@@ -258,10 +259,12 @@ const Index = () => {
     }
   }, []);
   const handleTimeAttack = useCallback(() => {
+    unlockAudio();
     if (!consumeLife()) { setShowNoLives(true); return; }
     setPhase('ta-select');
   }, []);
   const handleDailyChallenge = useCallback(() => {
+    unlockAudio();
     if (!consumeLife()) { setShowNoLives(true); return; }
     setDifficulty('medium');
     setGameMode('world');
@@ -271,6 +274,7 @@ const Index = () => {
   const [isSpeedDemon, setIsSpeedDemon] = useState(false);
 
   const handleStartTraining = useCallback(() => {
+    unlockAudio();
     setIsTraining(true);
     setIsSpeedDemon(false);
     setDifficulty('easy');
@@ -280,10 +284,11 @@ const Index = () => {
   }, [isMobile]);
 
   const handleSpeedDemon = useCallback(() => {
+    unlockAudio();
     if (!consumeLife()) { setShowNoLives(true); return; }
     setIsTraining(false);
     setIsSpeedDemon(true);
-    setDifficulty('medium');
+    setDifficulty('easy');
     setGameMode('world');
     gameKeyRef.current += 1;
     setPhase('countdown');
@@ -359,7 +364,7 @@ const Index = () => {
       return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
-            {isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 3s/ciudad' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
+            {isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 5s/ciudad' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
           </p>
 
           <div className="relative flex items-center justify-center">
@@ -582,7 +587,7 @@ const Index = () => {
           onRoundComplete={() => {}}
           onGameOver={handleGameOver}
           isTraining={isTraining}
-          {...(isSpeedDemon ? { maxTimeOverride: 3, totalRoundsOverride: 30 } : {})}
+          {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
         />
       );
     }

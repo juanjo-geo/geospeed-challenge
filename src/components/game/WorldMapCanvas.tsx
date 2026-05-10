@@ -4,7 +4,7 @@ import { type GameMode, getMapBounds } from '@/data/cities';
 import { unlockAudio } from '@/lib/sounds';
 
 interface WorldMapCanvasProps {
-  onMapClick: (lat: number, lon: number) => void;
+  onMapClick: (lat: number, lon: number, viewportX?: number, viewportY?: number) => void;
   clickDisabled?: boolean;
   userClick?: { lat: number; lon: number } | null;
   correctLocation?: { lat: number; lon: number } | null;
@@ -81,56 +81,54 @@ export default function WorldMapCanvas({
       obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
       return () => obs.disconnect();
     },
-    () => document.documentElement.classList.contains('light') ? 'light' : 'dark',
+    () => {
+      const el = document.documentElement.classList;
+      if (el.contains('light')) return 'light' as const;
+      if (el.contains('neon')) return 'neon' as const;
+      return 'dark' as const;
+    },
   );
   const isLightMode = () => theme === 'light';
+  const isNeonMode = () => theme === 'neon';
 
-  // Dark mode: warm earth tones inspired by watercolor atlas reference
-  const MAP_PALETTE_DARK = [
-    '#D4A060', // golden amber
-    '#C07848', // terracotta
-    '#B84030', // deep rust
-    '#E8C070', // warm gold
-    '#C86040', // burnt orange
-    '#A89060', // warm tan
-    '#A03028', // deep red-brown
-    '#DEB870', // amber wheat
-    '#C86048', // coral terracotta
-    '#D4B070', // light gold
-    '#B86838', // orange-brown
-    '#E0B868', // pale honey
-    '#C07840', // medium terracotta
-    '#983820', // dark sienna
-    '#D89860', // warm sand
-    '#B05038', // brick red
-    '#E0A850', // golden amber light
-    '#C88058', // caramel
-    '#905030', // deep sienna
-    '#D8B068', // honey gold
+  // ── NEON-VELOCITY: Tech greys on deep blue-black — viral-ready contrast ──
+  const MAP_PALETTE_NEON = [
+    '#2A3040', // steel grey dark
+    '#354050', // slate
+    '#303848', // blue-grey
+    '#3A4555', // medium slate
+    '#28323E', // dark steel
+    '#3E4A58', // warm grey
+    '#333D4D', // navy grey
+    '#2C3644', // deep slate
+    '#3B4656', // light steel
+    '#2F3A48', // medium steel
+    '#364252', // slate blue
+    '#2D3744', // charcoal
+    '#3C4858', // silver grey
+    '#31404E', // deep blue-grey
+    '#384454', // medium blue-grey
+    '#2E3A46', // dark blue-grey
+    '#3A4858', // light slate
+    '#334050', // cool grey
+    '#2C3848', // shadow steel
+    '#364454', // mist grey
   ];
 
-  // Light mode: soft pastel political map — inspired by classic atlas reference
+  // Dark mode: warm earth tones — watercolor atlas feel
+  const MAP_PALETTE_DARK = [
+    '#D4A060', '#C07848', '#B84030', '#E8C070', '#C86040',
+    '#A89060', '#A03028', '#DEB870', '#C86048', '#D4B070',
+    '#B86838', '#E0B868', '#C07840', '#983820', '#D89860',
+    '#B05038', '#E0A850', '#C88058', '#905030', '#D8B068',
+  ];
+
+  // Light mode: soft pastel political map
   const MAP_PALETTE_LIGHT = [
-    '#C8DFA0', // soft yellow-green
-    '#F2C882', // peach/orange
-    '#EBB8C4', // soft rose/pink
-    '#C8D8F0', // powder blue
-    '#F2E080', // soft yellow
-    '#B8D8C8', // sage green
-    '#EAC89A', // warm sand/tan
-    '#D2C0E8', // soft lavender
-    '#A8D8C4', // mint teal
-    '#F0D4A0', // golden beige
-    '#D4E8A8', // light lime
-    '#F2B8A4', // soft salmon
-    '#BCE4E8', // sky teal
-    '#E8D4B8', // cream
-    '#C4D898', // olive green
-    '#F4C4CC', // blush rose
-    '#D0E0A4', // yellow-green
-    '#DEC0D8', // mauve
-    '#B8D4A4', // muted green
-    '#F0DCAC', // warm ivory
+    '#C8DFA0', '#F2C882', '#EBB8C4', '#C8D8F0', '#F2E080',
+    '#B8D8C8', '#EAC89A', '#D2C0E8', '#A8D8C4', '#F0D4A0',
+    '#D4E8A8', '#F2B8A4', '#BCE4E8', '#E8D4B8', '#C4D898',
+    '#F4C4CC', '#D0E0A4', '#DEC0D8', '#B8D4A4', '#F0DCAC',
   ];
 
   // Helper: convert geo coords to pixel coords for drawBaseMap (uses closure over scale/offset)
@@ -141,7 +139,8 @@ export default function WorldMapCanvas({
 
   const drawBaseMap = useCallback((ctx: CanvasRenderingContext2D, w: number, h: number) => {
     const light = isLightMode();
-    const MAP_PALETTE = light ? MAP_PALETTE_LIGHT : MAP_PALETTE_DARK;
+    const neon = isNeonMode();
+    const MAP_PALETTE = neon ? MAP_PALETTE_NEON : light ? MAP_PALETTE_LIGHT : MAP_PALETTE_DARK;
 
     // Ocean fills the ENTIRE canvas (no letterbox gaps)
     if (light) {
@@ -151,8 +150,15 @@ export default function WorldMapCanvas({
       oceanGrad.addColorStop(0.8, '#98C8E4');
       oceanGrad.addColorStop(1, '#84B8DC');
       ctx.fillStyle = oceanGrad;
+    } else if (neon) {
+      // Neon-Velocity: deep blue-black ocean — maximizes contrast
+      const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
+      oceanGrad.addColorStop(0, '#080C14');
+      oceanGrad.addColorStop(0.5, '#0B0E14');
+      oceanGrad.addColorStop(1, '#060A10');
+      ctx.fillStyle = oceanGrad;
     } else {
-      // Cream/bone ocean — matches warm earth-tone watercolor palette
+      // Dark: cream/bone ocean — matches warm earth-tone watercolor palette
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
       oceanGrad.addColorStop(0, '#EDE0C8');
       oceanGrad.addColorStop(0.5, '#E8D8BC');
@@ -184,8 +190,8 @@ export default function WorldMapCanvas({
       }
     }
     // Pass 2: Stroke all borders on top of the fills.
-    ctx.strokeStyle = light ? '#8899AA' : '#2A1408';
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = neon ? 'rgba(255,255,255,0.45)' : light ? '#8899AA' : '#2A1408';
+    ctx.lineWidth = neon ? 0.8 : 1.2;
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
       for (const polygon of country.polygons) {
@@ -215,7 +221,7 @@ export default function WorldMapCanvas({
           const inContinent = continentCountries.has(country.name);
           if (inContinent) {
             // Bright subtle highlight
-            ctx.fillStyle = light ? 'rgba(0,150,255,0.12)' : 'rgba(245,200,66,0.15)';
+            ctx.fillStyle = neon ? 'rgba(0,245,255,0.15)' : light ? 'rgba(0,150,255,0.12)' : 'rgba(245,200,66,0.15)';
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;
@@ -228,7 +234,7 @@ export default function WorldMapCanvas({
             }
           } else {
             // Dim non-continent countries
-            ctx.fillStyle = light ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
+            ctx.fillStyle = neon ? 'rgba(0,0,0,0.4)' : light ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;
@@ -245,7 +251,7 @@ export default function WorldMapCanvas({
     }
 
     // Graticule — extends across the ENTIRE canvas, not just geographic bounds
-    ctx.strokeStyle = light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
+    ctx.strokeStyle = neon ? 'rgba(0,245,255,0.08)' : light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
     ctx.lineWidth = 0.8;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;
@@ -275,7 +281,7 @@ export default function WorldMapCanvas({
 
     const drawLabels = (labels: { name: string; lat: number; lon: number }[], fontSize: number, italic = false) => {
       ctx.font = `bold ${italic ? 'italic ' : ''}${fontSize}px system-ui`;
-      ctx.fillStyle = light ? '#1a3a4a' : 'rgba(80,50,20,0.60)';
+      ctx.fillStyle = neon ? 'rgba(200,210,220,0.22)' : light ? '#1a3a4a' : 'rgba(80,50,20,0.60)';
       for (const l of labels) {
         const { x, y } = geoToPixel(l.lon, l.lat);
         const lines = l.name.split('\n');
@@ -379,6 +385,7 @@ export default function WorldMapCanvas({
 
   // Render with animated line
   useEffect(() => {
+    const neon = isNeonMode();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -444,6 +451,8 @@ export default function WorldMapCanvas({
       };
 
       // ── Gradient trail line (drawn portion) ──
+      // Neon: orange trail for speed feel; others: gold
+      const trailR = neon ? '255,140,0' : '245,200,66';
       const steps = Math.max(Math.floor(eased * 80), 2);
       for (let i = 0; i < steps - 1; i++) {
         const t0 = (i / steps) * eased;
@@ -451,8 +460,8 @@ export default function WorldMapCanvas({
         const p0 = bezierPt(t0);
         const p1 = bezierPt(t1);
         const alpha = 0.3 + 0.7 * (i / steps); // fade in along trail
-        ctx.strokeStyle = `rgba(245,200,66,${alpha})`;
-        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = `rgba(${trailR},${alpha})`;
+        ctx.lineWidth = neon ? 2 : 2.5;
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
@@ -475,8 +484,8 @@ export default function WorldMapCanvas({
 
       // ── User pin (always visible, pulsing ring) ──
       const pulse = 1 + 0.15 * Math.sin(elapsed * 0.004);
-      ctx.fillStyle = '#4fc3f7';
-      ctx.strokeStyle = 'rgba(79,195,247,0.3)';
+      ctx.fillStyle = neon ? '#00F5FF' : '#4fc3f7';
+      ctx.strokeStyle = neon ? 'rgba(0,245,255,0.35)' : 'rgba(79,195,247,0.3)';
       ctx.lineWidth = 3 * pulse;
       ctx.beginPath();
       ctx.arc(ux, uy, 8 * pulse, 0, Math.PI * 2);
@@ -519,16 +528,17 @@ export default function WorldMapCanvas({
       } else {
         // ── Glowing dot at line tip ──
         const tip = bezierPt(eased);
+        const glowR = neon ? '255,140,0' : '245,200,66';
         const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 12);
-        glow.addColorStop(0, 'rgba(245,200,66,0.9)');
-        glow.addColorStop(0.5, 'rgba(245,200,66,0.3)');
-        glow.addColorStop(1, 'rgba(245,200,66,0)');
+        glow.addColorStop(0, `rgba(${glowR},0.9)`);
+        glow.addColorStop(0.5, `rgba(${glowR},0.3)`);
+        glow.addColorStop(1, `rgba(${glowR},0)`);
         ctx.fillStyle = glow;
         ctx.beginPath();
         ctx.arc(tip.x, tip.y, 12, 0, Math.PI * 2);
         ctx.fill();
         // solid core
-        ctx.fillStyle = '#f5c842';
+        ctx.fillStyle = neon ? '#FF8C00' : '#f5c842';
         ctx.beginPath();
         ctx.arc(tip.x, tip.y, 4.5, 0, Math.PI * 2);
         ctx.fill();
@@ -542,11 +552,12 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY]);
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme]);
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);
   useEffect(() => {
+    const neon = isNeonMode();
     if (!hintZone || userClick) {
       if (hintAnimFrameRef.current) cancelAnimationFrame(hintAnimFrameRef.current);
       return;
@@ -585,11 +596,11 @@ export default function WorldMapCanvas({
 
       const outerR = radiusPx * (pulsedScale + 0.15);
 
-      // 1. White backdrop circle — prevents red/terracotta countries from bleeding through
+      // 1. Backdrop circle — prevents country colors from bleeding through
       ctx.save();
       ctx.beginPath();
       ctx.arc(hx, hy, outerR, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.fillStyle = neon ? 'rgba(0, 210, 87, 0.08)' : 'rgba(255, 255, 255, 0.28)';
       ctx.fill();
       ctx.restore();
 
@@ -719,14 +730,14 @@ export default function WorldMapCanvas({
     // Adjust for pinch zoom
     const adjustedX = (x - rect.width * pinchOrigin.x / 100) / pinchZoom + rect.width * pinchOrigin.x / 100;
     const adjustedY = (y - rect.height * pinchOrigin.y / 100) / pinchZoom + rect.height * pinchOrigin.y / 100;
-    onMapClick(yToLat(adjustedY), xToLon(adjustedX));
+    onMapClick(yToLat(adjustedY), xToLon(adjustedX), e.clientX, e.clientY);
   }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin]);
 
-  // ── ZOOM BOMB — Cinematic camera flight to result ──
-  // Phase 1: Quick punch-zoom to user click (0-400ms)
-  // Phase 2: Dramatic pan-zoom to midpoint (400-1200ms)
-  // Phase 3: Hold at peak (1200-2800ms)
-  // Phase 4: Smooth pull-back to overview (2800-4200ms)
+  // ── ZOOM BOMB — Smooth cinematic camera flight to result ──
+  // Phase 1: Gentle zoom to user click (0-600ms)
+  // Phase 2: Smooth pan to midpoint (600-1600ms)
+  // Phase 3: Hold with breathing (1600-3000ms)
+  // Phase 4: Graceful pull-back to overview (3000-4800ms)
   const zoomBombRafRef = useRef<number>(0);
   const zoomBombActiveRef = useRef<boolean>(false);
   useEffect(() => {
@@ -749,34 +760,33 @@ export default function WorldMapCanvas({
     const mxPct = (lonToX(midLon) / dimensions.w) * 100;
     const myPct = (latToY(midLat) / dimensions.h) * 100;
 
-    // Adaptive peak zoom — bigger on desktop, reduced for distant points
+    // Adaptive peak zoom — subtle and cinematic, not jarring
     const pointSpreadX = Math.abs(userClick.lon - correctLocation.lon) / lonRange;
     const pointSpreadY = Math.abs(userClick.lat - correctLocation.lat) / latRange;
     const pointSpread = Math.max(pointSpreadX, pointSpreadY);
 
     let peakZoom: number;
-    if (vw < 640) peakZoom = 1.4;
-    else if (vw < 1025) peakZoom = 1.8;
-    else peakZoom = 2.2;
+    if (vw < 640) peakZoom = 1.2;       // mobile: gentle
+    else if (vw < 1025) peakZoom = 1.35; // tablet: moderate
+    else peakZoom = 1.5;                  // desktop: noticeable but smooth
 
     // Reduce zoom if points are far apart so both remain visible
-    const spreadPenalty = pointSpread > 0.25 ? Math.max(0.5, 1 - (pointSpread - 0.25) * 1.2) : 1;
-    peakZoom = Math.max(1.15, peakZoom * spreadPenalty);
+    const spreadPenalty = pointSpread > 0.25 ? Math.max(0.6, 1 - (pointSpread - 0.25) * 0.8) : 1;
+    peakZoom = Math.max(1.08, peakZoom * spreadPenalty);
 
-    // Punch zoom is slightly higher, focused on user click
-    const punchZoom = Math.min(peakZoom * 1.15, peakZoom + 0.3);
+    // Punch zoom is only slightly higher — subtle overshoot
+    const punchZoom = Math.min(peakZoom * 1.08, peakZoom + 0.1);
 
-    // Timing (ms)
-    const T_PUNCH = 350;       // quick snap to user click
-    const T_PAN = 800;         // pan to midpoint
-    const T_HOLD = 1600;       // hold at peak
-    const T_PULL = 1400;       // pull back
+    // Timing (ms) — slower and smoother for cinematic feel
+    const T_PUNCH = 600;       // gentle zoom-in to user click
+    const T_PAN = 1000;        // smooth pan to midpoint
+    const T_HOLD = 1400;       // hold at peak (breathing)
+    const T_PULL = 1800;       // slow, graceful pull-back
     const T_TOTAL = T_PUNCH + T_PAN + T_HOLD + T_PULL;
 
-    // Easing helpers
-    const easeOutExpo = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-    const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    // Easing helpers — all smooth curves, no sharp expo
     const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
     let startTime: number | null = null;
@@ -790,26 +800,26 @@ export default function WorldMapCanvas({
       let originY: number;
 
       if (elapsed < T_PUNCH) {
-        // Phase 1: Punch zoom to user click
-        const t = easeOutExpo(elapsed / T_PUNCH);
+        // Phase 1: Gentle zoom toward user click
+        const t = easeOutCubic(elapsed / T_PUNCH);
         currentZoom = lerp(1, punchZoom, t);
         originX = uxPct;
         originY = uyPct;
       } else if (elapsed < T_PUNCH + T_PAN) {
-        // Phase 2: Pan to midpoint + settle to peak zoom
-        const t = easeInOutCubic((elapsed - T_PUNCH) / T_PAN);
+        // Phase 2: Smooth pan to midpoint + settle to peak zoom
+        const t = easeInOutQuad((elapsed - T_PUNCH) / T_PAN);
         currentZoom = lerp(punchZoom, peakZoom, t);
         originX = lerp(uxPct, mxPct, t);
         originY = lerp(uyPct, myPct, t);
       } else if (elapsed < T_PUNCH + T_PAN + T_HOLD) {
-        // Phase 3: Hold with subtle breath
+        // Phase 3: Hold with gentle breathing
         const holdT = (elapsed - T_PUNCH - T_PAN) / T_HOLD;
-        const breath = Math.sin(holdT * Math.PI) * 0.03;
+        const breath = Math.sin(holdT * Math.PI) * 0.02;
         currentZoom = peakZoom + breath;
         originX = mxPct;
         originY = myPct;
       } else if (elapsed < T_TOTAL) {
-        // Phase 4: Pull back to overview
+        // Phase 4: Slow graceful pull-back to overview
         const t = easeOutCubic((elapsed - T_PUNCH - T_PAN - T_HOLD) / T_PULL);
         currentZoom = lerp(peakZoom, 1, t);
         originX = lerp(mxPct, 50, t);
@@ -872,7 +882,9 @@ export default function WorldMapCanvas({
   // the "empty" space around the canvas looks like ocean instead of a black bar.
   const oceanBg = theme === 'light'
     ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
-    : 'linear-gradient(180deg, #EDE0C8 0%, #E8D8BC 50%, #E0CEB0 100%)';
+    : theme === 'neon'
+      ? 'linear-gradient(180deg, #080C14 0%, #0B0E14 50%, #060A10 100%)'
+      : 'linear-gradient(180deg, #EDE0C8 0%, #E8D8BC 50%, #E0CEB0 100%)';
 
   return (
     <div

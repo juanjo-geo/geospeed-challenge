@@ -27,6 +27,7 @@ function getAudioCtxClass(): AudioCtxClass | null {
 /**
  * Call this once from any direct user-gesture handler (tap, click) to activate
  * the AudioContext on mobile browsers (especially iOS Safari).
+ * Plays a silent buffer to fully unlock audio output on iOS.
  * Already called internally on every playX() function for convenience.
  */
 export function unlockAudio(): void {
@@ -34,9 +35,18 @@ export function unlockAudio(): void {
     const Cls = getAudioCtxClass();
     if (!Cls) return;
     if (!ctx) ctx = new Cls();
+    if (unlocked && ctx.state === 'running') return; // already good
     if (ctx.state === 'suspended') {
       ctx.resume().then(() => { unlocked = true; }).catch(() => {});
-    } else {
+    }
+    // iOS trick: play a silent buffer in the user-gesture call stack
+    // This is the only reliable way to unlock audio on iOS Safari
+    if (!unlocked) {
+      const silent = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = silent;
+      src.connect(ctx.destination);
+      src.start(0);
       unlocked = true;
     }
   } catch (_) { /* ignore */ }
@@ -119,6 +129,7 @@ export function playClick() {
 
 /** Perfect hit — rich chord with shimmer (<50km) */
 export function playPerfect() {
+  unlockAudio();
   const c = getCtx();
   if (!c) return;
   // Play a full major chord + octave for maximum satisfaction
@@ -133,6 +144,7 @@ export function playPerfect() {
 
 /** Ascending chime — good result (≥500 pts) */
 export function playGood() {
+  unlockAudio();
   const baseFreq = vary(523, 0.08); // Vary the root note each time
   playTone(baseFreq, 0.15, 'sine', 0.12);
   setTimeout(() => playTone(baseFreq * 1.26, 0.15, 'sine', 0.12), 80);   // ~E5
@@ -141,12 +153,14 @@ export function playGood() {
 
 /** Descending buzz — bad result (<500 pts) */
 export function playBad() {
+  unlockAudio();
   playTone(vary(300, 0.1), 0.2, 'triangle', 0.1);
   setTimeout(() => playTone(vary(220, 0.1), 0.3, 'triangle', 0.08), 120);
 }
 
 /** Short tick for timer warning (last 5 seconds) — pitch rises as time runs out */
 export function playTick(secondsLeft?: number) {
+  unlockAudio();
   // Pitch increases as time gets more urgent (higher = more panic)
   const basePitch = secondsLeft !== undefined ? 800 + (6 - Math.max(secondsLeft, 1)) * 80 : 1000;
   playTone(vary(basePitch, 0.05), 0.06, 'square', 0.06);
@@ -154,6 +168,7 @@ export function playTick(secondsLeft?: number) {
 
 /** Heartbeat pulse for last 3 seconds — low thump */
 export function playHeartbeat() {
+  unlockAudio();
   const c = getCtx();
   if (!c) return;
   try {
@@ -185,6 +200,7 @@ export function playHeartbeat() {
 
 /** Streak sound — pitch scales with streak level */
 export function playStreak(streakLevel: number) {
+  unlockAudio();
   // Each streak level raises pitch by a semitone (musical progression)
   const basePitch = 440 * Math.pow(2, (streakLevel - 1) / 12);
   playTone(vary(basePitch, 0.05), 0.12, 'sine', 0.1);
@@ -193,6 +209,7 @@ export function playStreak(streakLevel: number) {
 
 /** Game over — low descending tones */
 export function playGameOver() {
+  unlockAudio();
   playTone(vary(440, 0.05), 0.3, 'sine', 0.12);
   setTimeout(() => playTone(vary(370, 0.05), 0.3, 'sine', 0.12), 200);
   setTimeout(() => playTone(vary(294, 0.05), 0.5, 'sine', 0.14), 400);
@@ -200,6 +217,7 @@ export function playGameOver() {
 
 /** Victory fanfare — ascending with final sustain */
 export function playVictory() {
+  unlockAudio();
   const base = vary(523, 0.05);
   playTone(base, 0.15, 'sine', 0.12);
   setTimeout(() => playTone(base * 1.26, 0.12, 'sine', 0.12), 100);
@@ -211,11 +229,13 @@ export function playVictory() {
 
 /** Countdown beep for last 3 seconds */
 export function playCountdown() {
+  unlockAudio();
   playTone(vary(880, 0.03), 0.12, 'sine', 0.1);
 }
 
 /** Final countdown beep (GO!) */
 export function playGo() {
+  unlockAudio();
   playTone(vary(1320, 0.03), 0.3, 'sine', 0.15);
   // Add a burst for emphasis
   setTimeout(() => playNoise(0.08, 0.06), 50);

@@ -19,7 +19,12 @@ interface Particle {
 const GOLD_PALETTE = ['#f5c842', '#ecdda2', '#c9b977', '#ffd700', '#fff4b8', '#e6c200'];
 const RAINBOW_PALETTE = ['#f5c842', '#4ade80', '#38bdf8', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
 
-export function fireConfetti(options?: { intensity?: 'light' | 'medium' | 'heavy'; palette?: 'gold' | 'rainbow' }) {
+export function fireConfetti(options?: {
+  intensity?: 'light' | 'medium' | 'heavy';
+  palette?: 'gold' | 'rainbow';
+  /** Origin point in viewport pixels (default: center of screen) */
+  origin?: { x: number; y: number };
+}) {
   const intensity = options?.intensity ?? 'medium';
   const palette = options?.palette === 'rainbow' ? RAINBOW_PALETTE : GOLD_PALETTE;
 
@@ -36,11 +41,15 @@ export function fireConfetti(options?: { intensity?: 'light' | 'medium' | 'heavy
   const W = window.innerWidth;
   const H = window.innerHeight;
 
+  // Origin: use provided coords or fallback to center
+  const ox = options?.origin?.x ?? W * 0.5;
+  const oy = options?.origin?.y ?? H * 0.5;
+
   const particles: Particle[] = [];
   for (let i = 0; i < count; i++) {
     particles.push({
-      x: W * (0.3 + Math.random() * 0.4),
-      y: H * 0.5,
+      x: ox + (Math.random() - 0.5) * 30,
+      y: oy,
       vx: (Math.random() - 0.5) * 16,
       vy: -Math.random() * 18 - 6,
       w: 4 + Math.random() * 6,
@@ -94,11 +103,11 @@ export function fireConfetti(options?: { intensity?: 'light' | 'medium' | 'heavy
 }
 
 /** Fire a small star burst (for perfect 1000pt rounds) */
-export function fireStarBurst() {
-  fireConfetti({ intensity: 'light', palette: 'gold' });
+export function fireStarBurst(origin?: { x: number; y: number }) {
+  fireConfetti({ intensity: 'light', palette: 'gold', origin });
 }
 
-/** Fire a full celebration (for new records) */
-export function fireCelebration() {
-  fireConfetti({ intensity: 'heavy', palette: 'rainbow' });
+/** Fire a full celebration (for new records, origin optional) */
+export function fireCelebration(origin?: { x: number; y: number }) {
+  fireConfetti({ intensity: 'heavy', palette: 'rainbow', origin });
 }

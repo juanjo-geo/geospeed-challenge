@@ -78,7 +78,7 @@ const en: Translations = {
   home_playNow: 'PLAY NOW',
   home_playNowDesc: 'Classic · Medium · World — no setup needed',
   home_speedDemon: 'SPEED DEMON',
-  home_speedDemonDesc: '3s · 30 cities',
+  home_speedDemonDesc: '5s · 30 cities',
   home_streakDaysSingular: '{count} day streak!',
   home_streakDaysPlural: '{count} day streak!',
   home_streakBonusLives: '+{lives} bonus life',

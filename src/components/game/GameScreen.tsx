@@ -175,8 +175,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     'Enter': () => { if (isWaiting && showPopup) advanceRound(); },
   }, true);
 
-  const handleMapClick = useCallback((lat: number, lon: number) => {
+  const lastClickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
+
+  const handleMapClick = useCallback((lat: number, lon: number, viewportX?: number, viewportY?: number) => {
     if (isWaiting || !currentCity) return;
+    lastClickViewportRef.current = viewportX != null && viewportY != null ? { x: viewportX, y: viewportY } : undefined;
     clearInterval(timerRef.current);
     playClick();
     hapticTap();
@@ -206,8 +209,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     };
 
     setTimeout(() => {
-      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(); } // Perfect: rich chord + shimmer
-      else if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(); }
+      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); } // Perfect: rich chord + shimmer
+      else if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
       else if (totalPoints >= 500) { playGood(); hapticSuccess(); }
       else { playBad(); hapticError(); }
       // Streak sound: pitch rises with each consecutive good round

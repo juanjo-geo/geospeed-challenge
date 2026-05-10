@@ -76,7 +76,7 @@ const es = {
   home_playNow: 'JUGAR AHORA',
   home_playNowDesc: 'Clásico · Medio · Mundial — sin configurar nada',
   home_speedDemon: 'SPEED DEMON',
-  home_speedDemonDesc: '3s · 30 ciudades',
+  home_speedDemonDesc: '5s · 30 ciudades',
   home_streakDaysSingular: '¡Racha de {count} día!',
   home_streakDaysPlural: '¡Racha de {count} días!',
   home_streakBonusLives: '+{lives} vida de bonus',
