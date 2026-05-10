@@ -163,6 +163,22 @@
   right: max(0.5rem, var(--sar));
 }
 
+/* ── Map container — ensure proper sizing across devices ── */
+/* In compact mode (mobile), map uses flex-grow to fill all available vertical space */
+@media (max-width: 639px) {
+  .game-map-container {
+    flex: 1 1 0%;
+    min-height: 50dvh;
+    aspect-ratio: 16 / 9;
+  }
+}
+/* In medium/wide (tablet/desktop), map fills the grid cell */
+@media (min-width: 640px) {
+  .game-map-container {
+    height: 100%;
+  }
+}
+
 /* Hide scrollbar but keep scroll functionality */
 .scrollbar-hidden {
   scrollbar-width: none; /* Firefox */

@@ -43,21 +43,34 @@ export default function GameLayout({
       role="main"
       aria-label={ariaLabel}
     >
-      {/* Left sidebar */}
+      {/* Left sidebar — safe-area for notch/island on landscape iOS */}
       {hasSidebar && sidebarContent && (
-        <div className="flex min-h-0 flex-col px-3 py-3 gap-2 border-r border-border bg-card/50 overflow-y-auto overflow-x-hidden">
+        <div
+          className="flex min-h-0 flex-col gap-2 border-r border-border bg-card/50 overflow-y-auto overflow-x-hidden"
+          style={{
+            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+            paddingRight: '0.75rem',
+            paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+          }}
+        >
           {sidebarContent}
         </div>
       )}
 
-      {/* Map area — h-full gives children explicit height in grid context */}
-      <div className="relative h-full min-w-0 overflow-hidden">
+      {/* Map area — fills available space in grid/flex context */}
+      <div className="relative h-full min-w-0 overflow-hidden game-map-container">
         {children}
       </div>
 
-      {/* Right panel (wide only) */}
+      {/* Right panel (wide only) — safe-area right edge */}
       {isWide && rightPanelContent && (
-        <div className="min-h-0 overflow-y-auto border-l border-border bg-card/40">
+        <div
+          className="min-h-0 overflow-y-auto border-l border-border bg-card/40"
+          style={{
+            paddingRight: 'max(0.5rem, env(safe-area-inset-right, 0px))',
+          }}
+        >
           {rightPanelContent}
         </div>
       )}

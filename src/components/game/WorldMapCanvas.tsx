@@ -865,7 +865,7 @@ export default function WorldMapCanvas({
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden flex items-center justify-center"
-      style={{ minHeight: '50dvh', background: oceanBg }}
+      style={{ minHeight: '50dvh',  background: oceanBg }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
