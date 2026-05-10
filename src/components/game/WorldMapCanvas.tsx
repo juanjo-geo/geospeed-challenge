@@ -728,6 +728,7 @@ export default function WorldMapCanvas({
   // Phase 3: Hold at peak (1200-2800ms)
   // Phase 4: Smooth pull-back to overview (2800-4200ms)
   const zoomBombRafRef = useRef<number>(0);
+  const zoomBombActiveRef = useRef<boolean>(false);
   useEffect(() => {
     if (!userClick || !correctLocation || !containerRef.current) {
       return;
@@ -814,23 +815,31 @@ export default function WorldMapCanvas({
         originX = lerp(mxPct, 50, t);
         originY = lerp(myPct, 50, t);
       } else {
-        // Done
-        setZoomStyle({
-          transform: 'scale(1)',
-          transformOrigin: '50% 50%',
-          transition: 'none',
-        });
+        // Done — reset via DOM, then sync React state
+        zoomBombActiveRef.current = false;
+        const el = canvasRef.current;
+        if (el) {
+          el.style.transform = 'scale(1)';
+          el.style.transformOrigin = '50% 50%';
+          el.style.transition = 'none';
+        }
+        setZoomStyle({});
         return;
       }
 
-      setZoomStyle({
-        transform: `scale(${currentZoom.toFixed(4)})`,
-        transformOrigin: `${originX.toFixed(2)}% ${originY.toFixed(2)}%`,
-        transition: 'none', // rAF drives it, no CSS transition
-      });
+      // Direct DOM manipulation — bypasses React state to avoid batching drops
+      const el = canvasRef.current;
+      if (el) {
+        el.style.transform = `scale(${currentZoom.toFixed(4)})`;
+        el.style.transformOrigin = `${originX.toFixed(2)}% ${originY.toFixed(2)}%`;
+        el.style.transition = 'none';
+      }
 
       zoomBombRafRef.current = requestAnimationFrame(animateZoom);
     };
+
+    // Mark zoom bomb as active so React inline styles don't overwrite DOM
+    zoomBombActiveRef.current = true;
 
     // Small delay so the click registers visually first
     const kickoff = setTimeout(() => {
@@ -847,11 +856,15 @@ export default function WorldMapCanvas({
   useEffect(() => {
     if (!userClick && !correctLocation) {
       if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
-      setZoomStyle({
-        transform: 'scale(1)',
-        transformOrigin: '50% 50%',
-        transition: 'transform 600ms cubic-bezier(0.16, 1, 0.3, 1)',
-      });
+      zoomBombActiveRef.current = false;
+      // Smooth pullback via DOM
+      const el = canvasRef.current;
+      if (el) {
+        el.style.transition = 'transform 600ms cubic-bezier(0.16, 1, 0.3, 1)';
+        el.style.transform = 'scale(1)';
+        el.style.transformOrigin = '50% 50%';
+      }
+      setZoomStyle({});
     }
   }, [userClick, correctLocation]);
   // Ocean background colors — must match exactly what drawBaseMap paints as ocean.
@@ -883,15 +896,21 @@ export default function WorldMapCanvas({
           touchAction: 'none',
           cursor: clickDisabled ? 'default' : 'crosshair',
           // Combine auto-zoom (result) and pinch zoom (user)
-          transform: pinchZoom > 1
-            ? `scale(${pinchZoom})`
-            : zoomStyle.transform || 'scale(1)',
-          transformOrigin: pinchZoom > 1
-            ? `${pinchOrigin.x}% ${pinchOrigin.y}%`
-            : (zoomStyle.transformOrigin as string) || '50% 50%',
-          transition: pinchZoom > 1
-            ? 'transform 0.1s ease-out'
-            : (zoomStyle.transition as string) || 'transform 2s cubic-bezier(0.16, 1, 0.3, 1)',
+          // When zoomBombActiveRef is true, rAF drives the canvas directly via DOM —
+          // do NOT set transform/origin here or React will overwrite rAF values.
+          ...(pinchZoom > 1
+            ? {
+                transform: `scale(${pinchZoom})`,
+                transformOrigin: `${pinchOrigin.x}% ${pinchOrigin.y}%`,
+                transition: 'transform 0.1s ease-out',
+              }
+            : zoomBombActiveRef.current
+              ? {} // rAF owns transform — React must not touch it
+              : {
+                  transform: zoomStyle.transform || 'scale(1)',
+                  transformOrigin: (zoomStyle.transformOrigin as string) || '50% 50%',
+                  transition: (zoomStyle.transition as string) || 'transform 2s cubic-bezier(0.16, 1, 0.3, 1)',
+                }),
         }}
       />
       {/* Zoom indicator */}
