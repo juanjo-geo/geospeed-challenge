@@ -7,7 +7,7 @@
  * Handles SPA navigation (falls back to /index.html for HTML requests).
  */
 
-const CACHE_NAME = 'geospeed-v5';
+const CACHE_NAME = 'geospeed-v6';
 
 // Critical app shell files to pre-cache for offline support
 const APP_SHELL = [
@@ -35,6 +35,41 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+});
+
+// Push: show notification from server or scheduled event
+self.addEventListener('push', (event) => {
+  let data = { title: '🌍 GeoSpeed', body: '¡Hora de jugar!' };
+  try {
+    if (event.data) data = event.data.json();
+  } catch (_) {}
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-192x192.png',
+      tag: data.tag || 'geospeed',
+      data: data,
+    })
+  );
+});
+
+// Notification click: open the app or focus existing tab
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Focus existing tab if open
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Otherwise open a new tab
+      return self.clients.openWindow(url);
+    })
+  );
 });
 
 // Fetch: NETWORK-FIRST for everything.

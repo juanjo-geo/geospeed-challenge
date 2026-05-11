@@ -63,15 +63,25 @@ const StoreScreen = lazy(() => import('@/components/game/StoreScreen'));
 const SpectatorScreen = lazy(() => import('@/components/game/SpectatorScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
-import { consumeLife, getEnergy } from '@/lib/energySystem';
+import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { syncAfterGame } from '@/lib/cloudSync';
-import { addLives } from '@/lib/energySystem';
+import { checkStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
 import { useI18n } from '@/i18n';
 import { useBackgroundMusic, type MusicTrack } from '@/hooks/useBackgroundMusic';
+import {
+  supportsNotifications,
+  getPermission,
+  hasBeenAsked,
+  requestPermission,
+  scheduleDailyReminder,
+  scheduleStreakWarning,
+  scheduleLivesRegenerated,
+  startNotificationLoop,
+} from '@/lib/notifications';
 
 type Phase = 'splash' | 'home' | 'profile' | 'store' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
@@ -320,7 +330,52 @@ const Index = () => {
     }
   }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores]);
 
-  const handlePlayAgain = useCallback(() => { setRevengeCities(null); gameKeyRef.current += 1; setPhase('countdown'); }, []);
+  // ── Notifications: start check loop + schedule after each game ──
+  useEffect(() => {
+    startNotificationLoop();
+  }, []);
+
+  // After a game ends, schedule contextual notifications + offer permission
+  useEffect(() => {
+    if (phase !== 'final') return;
+
+    // Schedule notifications if already granted
+    if (getPermission() === 'granted') {
+      scheduleDailyReminder();
+      const streak = checkStreak();
+      if (streak.currentStreak >= 2) {
+        scheduleStreakWarning(streak.currentStreak);
+      }
+      const energy = getEnergy();
+      if (energy.lives < energy.maxLives && energy.nextRegenMs > 0) {
+        // Schedule for when ALL lives are full
+        const msPerLife = 20 * 60 * 1000;
+        const livesNeeded = energy.maxLives - energy.lives;
+        const totalMs = energy.nextRegenMs + (livesNeeded - 1) * msPerLife;
+        scheduleLivesRegenerated(totalMs);
+      }
+    } else if (supportsNotifications() && !hasBeenAsked()) {
+      // Show prompt after first game only
+      setTimeout(() => setShowNotifPrompt(true), 2000);
+    }
+  }, [phase]);
+
+  const handleNotifAccept = useCallback(async () => {
+    await requestPermission();
+    setShowNotifPrompt(false);
+    // Schedule immediately if granted
+    if (getPermission() === 'granted') {
+      scheduleDailyReminder();
+      const streak = checkStreak();
+      if (streak.currentStreak >= 2) scheduleStreakWarning(streak.currentStreak);
+    }
+  }, []);
+
+  const handleNotifDismiss = useCallback(() => {
+    setShowNotifPrompt(false);
+  }, []);
+
+  const handlePlayAgain = useCallback(() => { setRevengeCities(null); setChallengeSeed(null); setChallengerScore(null); gameKeyRef.current += 1; setPhase('countdown'); }, []);
   const handleRevenge = useCallback((rounds: RoundResult[]) => {
     // Pick worst 5 rounds (lowest score) — one-time only
     const worst = [...rounds].sort((a, b) => a.totalPoints - b.totalPoints).slice(0, 5);
@@ -361,6 +416,11 @@ const Index = () => {
   }, []);
 
   const [isSpeedDemon, setIsSpeedDemon] = useState(false);
+  // Challenge a Friend state
+  const [challengeSeed, setChallengeSeed] = useState<number | null>(null);
+  const [challengerScore, setChallengerScore] = useState<number | null>(null);
+  // Notification permission prompt
+  const [showNotifPrompt, setShowNotifPrompt] = useState(false);
 
   const handleStartTraining = useCallback(() => {
     unlockAudio();
@@ -382,6 +442,59 @@ const Index = () => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
+
+  // ── Challenge a Friend ──
+  const generateChallengeLink = useCallback((score: number) => {
+    const seed = Math.floor(Math.random() * 1_000_000);
+    const params = new URLSearchParams({
+      ch: String(seed),
+      d: difficulty,
+      m: gameMode,
+      s: String(score),
+    });
+    return `${window.location.origin}/?${params.toString()}`;
+  }, [difficulty, gameMode]);
+
+  const handleShareChallenge = useCallback(async () => {
+    const link = generateChallengeLink(finalScore);
+    const text = `🌍 GeoSpeed Challenge: Hice ${finalScore.toLocaleString()} pts. ¿Puedes superarme? ¡Juega las mismas ciudades!`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'GeoSpeed Challenge', text, url: link });
+      } catch (_) {}
+    } else {
+      await navigator.clipboard?.writeText(`${text}\n${link}`);
+    }
+  }, [finalScore, generateChallengeLink]);
+
+  // Parse challenge URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ch = params.get('ch');
+    const d = params.get('d');
+    const m = params.get('m');
+    const s = params.get('s');
+    if (ch) {
+      setChallengeSeed(Number(ch));
+      if (d && ['easy', 'medium', 'hard'].includes(d)) setDifficulty(d as Difficulty);
+      if (m) setGameMode(m as GameMode);
+      if (s) setChallengerScore(Number(s));
+      // Clean URL without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  // Auto-start challenge after splash completes
+  useEffect(() => {
+    if (challengeSeed !== null && phase === 'home') {
+      unlockAudio();
+      if (!consumeLife()) { setShowNoLives(true); return; }
+      setIsTraining(false);
+      setIsSpeedDemon(false);
+      gameKeyRef.current += 1;
+      setPhase('countdown');
+    }
+  }, [challengeSeed, phase]);
 
   const handleRoomReady = useCallback((room: GameRoom, isHost: boolean) => {
     setMpRoom(room);
@@ -711,6 +824,7 @@ const Index = () => {
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : {})}
+          {...(challengeSeed !== null ? { seed: challengeSeed } : {})}
         />
       );
     }
@@ -726,6 +840,8 @@ const Index = () => {
           onPlayAgain={handlePlayAgain}
           onGoHome={handleGoHome}
           onRevenge={revengeUsed ? undefined : handleRevenge}
+          onShareChallenge={handleShareChallenge}
+          challengerScore={challengerScore}
           totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
         />
       );
@@ -770,6 +886,34 @@ const Index = () => {
         </Suspense>
       </PhaseErrorBoundary>
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
+
+      {/* Notification permission prompt — shown after first game */}
+      {showNotifPrompt && (
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full shadow-2xl animate-fade-in-up">
+            <p className="text-2xl text-center mb-2">🔔</p>
+            <p className="text-sm font-bold text-center mb-1" style={{ color: 'hsl(var(--primary))' }}>¿Activar notificaciones?</p>
+            <p className="text-xs text-muted-foreground text-center mb-4">
+              Te avisamos cuando tu racha esté en riesgo, tus vidas estén llenas o haya un nuevo desafío diario.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleNotifAccept}
+                className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              >
+                Sí, activar
+              </button>
+              <button
+                onClick={handleNotifDismiss}
+                className="flex-1 py-2.5 rounded-lg font-bold text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating music toggle — always visible */}
       {phase !== 'splash' && (

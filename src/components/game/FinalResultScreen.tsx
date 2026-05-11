@@ -23,6 +23,8 @@ interface FinalResultScreenProps {
   onPlayAgain: () => void;
   onGoHome: () => void;
   onRevenge?: (rounds: RoundResult[]) => void;
+  onShareChallenge?: () => void;
+  challengerScore?: number | null;
   totalRounds?: number;
 }
 
@@ -35,6 +37,8 @@ export default function FinalResultScreen({
   onPlayAgain,
   onGoHome,
   onRevenge,
+  onShareChallenge,
+  challengerScore,
   totalRounds = 13,
 }: FinalResultScreenProps) {
   const { user, displayName: authName } = useAuth();
@@ -338,6 +342,42 @@ export default function FinalResultScreen({
             }}
           >
             🔥 REVANCHA — Mejora tus 5 peores
+          </button>
+        )}
+
+        {/* Challenge comparison — shows when coming from a friend's challenge link */}
+        {challengerScore != null && challengerScore > 0 && (
+          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-400/30 rounded-lg p-3 mb-3 text-center animate-fade-in">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">⚔️ Resultado del duelo</p>
+            <div className="flex items-center justify-center gap-4">
+              <div>
+                <p className="text-[9px] text-muted-foreground">Retador</p>
+                <p className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>{challengerScore.toLocaleString()}</p>
+              </div>
+              <span className="text-lg font-black text-muted-foreground">VS</span>
+              <div>
+                <p className="text-[9px] text-muted-foreground">Tú</p>
+                <p className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>{totalScore.toLocaleString()}</p>
+              </div>
+            </div>
+            <p className="font-bold text-xs mt-2" style={{ color: totalScore > challengerScore ? '#22c55e' : totalScore === challengerScore ? 'hsl(var(--primary))' : '#ef4444' }}>
+              {totalScore > challengerScore ? '🏆 ¡Ganaste el duelo!' : totalScore === challengerScore ? '🤝 ¡Empate!' : '😤 El retador te superó'}
+            </p>
+          </div>
+        )}
+
+        {/* Challenge a friend button */}
+        {onShareChallenge && (
+          <button
+            onClick={onShareChallenge}
+            className="w-full py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3"
+            style={{
+              background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
+              color: '#fff',
+              boxShadow: '0 4px 20px rgba(124, 58, 237, 0.35)',
+            }}
+          >
+            ⚔️ RETA A UN AMIGO
           </button>
         )}
 
