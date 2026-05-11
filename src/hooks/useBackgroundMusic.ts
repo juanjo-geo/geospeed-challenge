@@ -15,7 +15,7 @@ const TRACKS: Record<Exclude<MusicTrack, 'none'>, string> = {
   gameplay: '/music/track-gameplay.mp3',
 };
 
-const BASE_VOLUME = 0.15;
+const BASE_VOLUME = 0.10;
 const FADE_DURATION = 800; // ms
 
 // ── Global singleton state (shared across all hook instances) ──

@@ -32,15 +32,18 @@ export interface StreakCheckResult {
 }
 
 /**
- * Rewards for streak milestones
+ * Rewards for streak milestones — generous to drive retention
+ * Every day gives at least 1 life; milestones give bonuses
  */
 const STREAK_REWARDS: StreakReward[] = [
-  { day: 1, lives: 0 }, // Welcome back
-  { day: 3, lives: 1 },
-  { day: 5, lives: 2 },
-  { day: 7, lives: 3, badge: 'Semanal' },
-  { day: 14, lives: 5 },
-  { day: 30, lives: 10, badge: 'Mensual' },
+  { day: 1, lives: 1 },  // Always reward coming back
+  { day: 2, lives: 1 },
+  { day: 3, lives: 2, badge: '3 días 🔥' },
+  { day: 5, lives: 3, badge: 'Explorador Constante' },
+  { day: 7, lives: 5, badge: 'Racha Semanal ⚡' },
+  { day: 14, lives: 5, badge: 'Maratonista 💎' },
+  { day: 21, lives: 5, badge: 'Imparable 👑' },
+  { day: 30, lives: 10, badge: 'Deidad de la Racha 🏆' },
 ];
 
 /**
@@ -98,20 +101,21 @@ function saveStateToStorage(state: StreakState): void {
 }
 
 /**
- * Get the reward for a specific streak day
- * Returns the reward for the milestone reached, or null if no reward
+ * Get the reward for a specific streak day.
+ * Every day gives at least 1 life. Milestones give bonus lives + badges.
  */
-function getRewardForDay(day: number): StreakReward | null {
-  // Find the highest milestone reward that the current streak qualifies for
-  let qualifyingReward: StreakReward | null = null;
+function getRewardForDay(day: number): StreakReward {
+  // Check for exact milestone match first
+  const exact = STREAK_REWARDS.find(r => r.day === day);
+  if (exact) return exact;
 
-  for (const reward of STREAK_REWARDS) {
-    if (day >= reward.day) {
-      qualifyingReward = reward;
-    }
+  // After day 30, every 7 days is a mini-milestone with 5 lives
+  if (day > 30 && day % 7 === 0) {
+    return { day, lives: 5, badge: `Semana ${Math.floor(day / 7)}` };
   }
 
-  return qualifyingReward;
+  // Default: 1 life per day (always rewarding)
+  return { day, lives: 1 };
 }
 
 /**
@@ -143,7 +147,7 @@ export function checkStreak(): StreakCheckResult {
       state.longestStreak = state.currentStreak;
     }
 
-    // Get the reward for this day
+    // Get the reward for this day (always returns something)
     reward = getRewardForDay(state.currentStreak);
   } else {
     // Streak broken or first time - reset to 1
@@ -151,7 +155,7 @@ export function checkStreak(): StreakCheckResult {
     state.lastPlayDate = today;
     isNewDay = true;
 
-    // First day always has the day 1 reward
+    // First day reward
     reward = getRewardForDay(1);
   }
 

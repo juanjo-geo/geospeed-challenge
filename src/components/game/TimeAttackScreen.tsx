@@ -371,8 +371,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
         {/* Live coordinates */}
         {cursorCoords && !isAnimating && !isCompact && !isPortraitMobile && (
-          <div className="absolute bottom-3 left-3 z-[6] pointer-events-none">
-            <span className="text-[9px] font-mono tabular-nums" style={{ color: 'hsl(var(--primary) / 0.6)' }}>
+          <div className="absolute bottom-4 left-4 z-[6] pointer-events-none">
+            <span className="text-base font-mono font-bold tabular-nums tracking-wide" style={{ color: 'hsl(var(--primary) / 0.7)', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
               {Math.abs(cursorCoords.lat).toFixed(1)}°{cursorCoords.lat >= 0 ? 'N' : 'S'}{' '}
               {Math.abs(cursorCoords.lon).toFixed(1)}°{cursorCoords.lon >= 0 ? 'E' : 'W'}
             </span>
