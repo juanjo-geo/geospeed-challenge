@@ -442,9 +442,25 @@ const Index = () => {
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 overflow-y-auto game-bg">
           <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl text-center animate-fade-in-up my-4">
-            <p className="text-3xl sm:text-4xl mb-2 sm:mb-3">⚡</p>
-            <h2 className="text-xl sm:text-2xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>{t('ta_title').toUpperCase()}</h2>
-            <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">{t('ta_subtitle')}</p>
+            {/* Logo + nombre */}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <img src="/logo.png" alt="GeoSpeed" className="w-10 sm:w-12 object-contain" />
+              <span
+                className="text-lg sm:text-xl font-black tracking-tight"
+                style={{
+                  fontFamily: 'Impact, system-ui',
+                  background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                GEOSPEED
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black mb-0.5" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ BLITZ</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm font-bold uppercase tracking-wider mb-1">Contrarreloj Extremo</p>
+            <p className="text-muted-foreground text-[10px] sm:text-xs mb-4 sm:mb-6 italic">{t('ta_subtitle')}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 uppercase tracking-widest">{t('ta_selectDifficulty')}</p>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
               {MODE_CONFIG.map(m => (
@@ -521,9 +537,24 @@ const Index = () => {
       return (
         <div className="min-h-[100dvh] flex items-center justify-center px-3 py-4 sm:p-6 game-bg">
           <div className="bg-card border rounded-xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl animate-fade-in-up text-center">
-            <p className="text-3xl sm:text-4xl mb-2">⚡</p>
-            <h2 className="text-xl sm:text-2xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>¡TIEMPO!</h2>
-            <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">Contrareloj Extremo</p>
+            {/* Logo + nombre */}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <img src="/logo.png" alt="GeoSpeed" className="w-10 sm:w-12 object-contain" />
+              <span
+                className="text-lg sm:text-xl font-black tracking-tight"
+                style={{
+                  fontFamily: 'Impact, system-ui',
+                  background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                GEOSPEED
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black mb-0.5" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ ¡TIEMPO!</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 sm:mb-6">Blitz — Contrarreloj Extremo</p>
 
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-4 sm:mb-6">
               <div className="bg-muted rounded-lg p-2 sm:p-3">
