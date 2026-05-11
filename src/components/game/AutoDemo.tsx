@@ -95,12 +95,12 @@ export default function AutoDemo() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // Background
-      ctx.fillStyle = isLight ? '#B0D8EC' : isNeon ? '#0B0E14' : '#E8D8BC';
+      ctx.fillStyle = isLight ? '#B0D8EC' : isNeon ? '#080E18' : '#E8D8BC';
       ctx.fillRect(0, 0, w, h);
 
       // Simplified countries
-      ctx.fillStyle = isLight ? '#D8E8D0' : isNeon ? '#1E2836' : '#C8A060';
-      ctx.strokeStyle = isLight ? '#8899AA55' : isNeon ? 'rgba(220, 230, 240, 0.45)' : '#2A140844';
+      ctx.fillStyle = isLight ? '#D8E8D0' : isNeon ? '#1A2A20' : '#C8A060';
+      ctx.strokeStyle = isLight ? '#8899AA55' : isNeon ? 'rgba(200, 220, 210, 0.5)' : '#2A140844';
       ctx.lineWidth = isNeon ? 0.8 : 0.5;
       for (const country of countries) {
         for (const polygon of country.polygons) {

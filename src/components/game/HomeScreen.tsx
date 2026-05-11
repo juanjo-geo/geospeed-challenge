@@ -47,6 +47,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedMode, setSelectedMode] = useState<GameMode>('world');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
   const [rankingMode, setRankingMode] = useState<string>('all');
   const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
   const [showRanking, setShowRanking] = useState(false);
@@ -288,36 +289,97 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       ══════════════════════════════════════════ */}
       {!isNewPlayer && (
         <>
-      {/* ── JUGAR AHORA — Quick-launch for returning players ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-150">
+      {/* ── Modalidad ── */}
+      <div id="game-modes" className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-150">
+        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest" id="mode-label">{t('home_mode')}</p>
+        <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2" role="radiogroup" aria-labelledby="mode-label">
+          {MODE_CONFIG.map(m => {
+            const lock = MODE_UNLOCK[m.key];
+            const isLocked = lock && playerLevel.level < lock.level;
+            const isSelected = selectedMode === m.key;
+            return (
+              <button
+                key={m.key}
+                onClick={() => !isLocked && setSelectedMode(m.key)}
+                role="radio"
+                aria-checked={isSelected}
+                disabled={!!isLocked}
+                className={`relative flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                  isLocked
+                    ? 'border-border bg-card/50 opacity-50 cursor-not-allowed'
+                    : isSelected
+                    ? 'border-primary bg-primary/10 btn-glow'
+                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
+                }`}
+              >
+                <span className="text-lg sm:text-xl md:text-2xl">{isLocked ? '🔒' : m.emoji}</span>
+                <span className={`text-[9px] sm:text-[11px] md:text-sm font-bold leading-tight text-center ${isLocked ? 'text-muted-foreground' : isSelected ? 'text-primary' : 'text-foreground'}`}>
+                  {m.label}
+                </span>
+                {isLocked && <span className="text-[7px] sm:text-[8px] text-muted-foreground">{lock.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Dificultad ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-180" role="group" aria-label="Seleccionar dificultad">
+        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">{t('home_difficulty')}</p>
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2" role="radiogroup" aria-label="Seleccionar dificultad">
+          {DIFF_CONFIG.map(d => {
+            const labelKey = d.key === 'easy' ? 'home_diffEasy' : d.key === 'medium' ? 'home_diffMedium' : 'home_diffHard';
+            const descKey = d.key === 'easy' ? 'home_diffEasyDesc' : d.key === 'medium' ? 'home_diffMediumDesc' : 'home_diffHardDesc';
+            const isSelected = selectedDifficulty === d.key;
+            const selectedColor = d.key === 'easy' ? 'border-green-500 bg-green-500/15 shadow-[0_0_18px_hsl(142_71%_45%/0.3)]' : d.key === 'medium' ? 'border-yellow-500 bg-yellow-500/15 shadow-[0_0_18px_hsl(48_96%_53%/0.3)]' : 'border-red-500 bg-red-500/15 shadow-[0_0_18px_hsl(0_84%_60%/0.3)]';
+            return (
+              <button
+                key={d.key}
+                onClick={() => setSelectedDifficulty(d.key)}
+                role="radio"
+                aria-checked={isSelected}
+                className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                  isSelected
+                    ? selectedColor
+                    : `bg-card ${d.borderClass} ${d.glowClass}`
+                }`}
+                aria-label={`Dificultad ${t(labelKey)}: ${t(descKey)}`}
+              >
+                <span className="text-base sm:text-lg">{d.emoji}</span>
+                <div className="font-bold text-xs sm:text-sm text-foreground">{t(labelKey)}</div>
+                <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center leading-tight">{t(descKey)}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── JUGAR AHORA — CTA principal ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-200">
         <button
-          onClick={() => onStartGame('medium', 'world')}
+          onClick={() => onStartGame(selectedDifficulty, selectedMode)}
           className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3 sm:py-3.5 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.97] shadow-xl hover:shadow-2xl"
           style={{
-            background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 70%, hsl(var(--accent) / 0.6) 100%)',
-            color: 'hsl(var(--primary-foreground))',
-            boxShadow: '0 4px 24px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--accent) / 0.08), 0 0 0 1px hsl(var(--primary) / 0.2)',
+            background: 'linear-gradient(135deg, #E53E3E 0%, #DD6B20 50%, #D69E2E 100%)',
+            color: '#fff',
+            boxShadow: '0 4px 24px rgba(229,62,62,0.35), 0 0 40px rgba(221,107,32,0.15), 0 0 0 1px rgba(229,62,62,0.3)',
           }}
-          aria-label="Jugar ahora — Modo clásico, dificultad media, mundo"
+          aria-label={`Jugar ahora — ${DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.label}, ${MODE_CONFIG.find(m => m.key === selectedMode)?.label}`}
         >
-          {/* Shimmer effect on hover */}
           <span
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             style={{
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
             }}
           />
           <span className="relative text-xl">🌍</span>
           <span className="relative">{t('home_playNow') || 'JUGAR AHORA'}</span>
           <span className="relative text-xl">▶</span>
         </button>
-        <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground mt-1 opacity-70">
-          {t('home_playNowDesc') || 'Clásico · Medio · Mundial — sin configurar nada'}
-        </p>
       </div>
 
-      {/* ── Auto-demo for returning players — below the fold, compact ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-200">
+      {/* ── Auto-demo for returning players ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-250">
         <AutoDemo />
       </div>
 
@@ -484,63 +546,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_duelDesc')}</div>
           </div>
         </button>
-      </div>
-
-      {/* ── Modalidad ── */}
-      <div id="game-modes" className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-400">
-        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest" id="mode-label">{t('home_mode')}</p>
-        <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2" role="radiogroup" aria-labelledby="mode-label">
-          {MODE_CONFIG.map(m => {
-            const lock = MODE_UNLOCK[m.key];
-            const isLocked = lock && playerLevel.level < lock.level;
-            const isSelected = selectedMode === m.key;
-            return (
-              <button
-                key={m.key}
-                onClick={() => !isLocked && setSelectedMode(m.key)}
-                role="radio"
-                aria-checked={isSelected}
-                disabled={!!isLocked}
-                className={`relative flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                  isLocked
-                    ? 'border-border bg-card/50 opacity-50 cursor-not-allowed'
-                    : isSelected
-                    ? 'border-primary bg-primary/10 btn-glow'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
-                }`}
-              >
-                <span className="text-lg sm:text-xl md:text-2xl">{isLocked ? '🔒' : m.emoji}</span>
-                <span className={`text-[9px] sm:text-[11px] md:text-sm font-bold leading-tight text-center ${isLocked ? 'text-muted-foreground' : isSelected ? 'text-primary' : 'text-foreground'}`}>
-                  {m.label}
-                </span>
-                {isLocked && <span className="text-[7px] sm:text-[8px] text-muted-foreground">{lock.label}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Dificultad ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-5 animate-fade-in-up animation-delay-450" role="group" aria-label="Seleccionar dificultad">
-        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">{t('home_difficulty')}</p>
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-          {DIFF_CONFIG.map(d => {
-            const labelKey = d.key === 'easy' ? 'home_diffEasy' : d.key === 'medium' ? 'home_diffMedium' : 'home_diffHard';
-            const descKey = d.key === 'easy' ? 'home_diffEasyDesc' : d.key === 'medium' ? 'home_diffMediumDesc' : 'home_diffHardDesc';
-            return (
-              <button
-                key={d.key}
-                onClick={() => onStartGame(d.key, selectedMode)}
-                className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-xl border-2 bg-card transition-all duration-200 active:scale-[0.97] ${d.borderClass} ${d.glowClass}`}
-                aria-label={`Dificultad ${t(labelKey)}: ${t(descKey)}`}
-              >
-                <span className="text-base sm:text-lg">{d.emoji}</span>
-                <div className="font-bold text-xs sm:text-sm text-foreground">{t(labelKey)}</div>
-                <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center leading-tight">{t(descKey)}</div>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* ── Collapsible Ranking ── */}
