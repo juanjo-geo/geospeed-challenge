@@ -15,7 +15,7 @@ const TRACKS: Record<Exclude<MusicTrack, 'none'>, string> = {
   gameplay: '/music/track-gameplay.mp3',
 };
 
-const BASE_VOLUME = 0.05; // MP3s pre-mastered at 15% — this gives ~0.75% effective
+const BASE_VOLUME = 0.25; // MP3s pre-mastered at 15% — effective ~3.75%
 const FADE_DURATION = 800; // ms
 
 // ── Global singleton state (shared across all hook instances) ──

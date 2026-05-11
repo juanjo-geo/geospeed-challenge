@@ -132,6 +132,9 @@ const Index = () => {
   const [showNoLives, setShowNoLives] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [revengeCities, setRevengeCities] = useState<City[] | null>(null);
+  const [revengeUsed, setRevengeUsed] = useState(false);
+  const [originalScore, setOriginalScore] = useState(0);
+  const [originalWorstScores, setOriginalWorstScores] = useState<number[]>([]);
   // Multiplayer state
   const [mpRoom, setMpRoom] = useState<GameRoom | null>(null);
   const [mpIsHost, setMpIsHost] = useState(false);
@@ -262,6 +265,25 @@ const Index = () => {
   const handleGameOver = useCallback((rounds: RoundResult[], reason: 'timeout' | 'complete') => {
     const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
     const avgDist = rounds.length > 0 ? rounds.reduce((s, r) => s + r.distance, 0) / rounds.length : 0;
+
+    if (revengeCities) {
+      // Revenge game finished — calculate improvement over original worst scores
+      const revengeScore = total;
+      const originalWorstTotal = originalWorstScores.reduce((s, v) => s + v, 0);
+      const improvement = Math.max(0, revengeScore - originalWorstTotal);
+      const combinedScore = originalScore + improvement;
+      setFinalRounds(rounds);
+      setFinalScore(combinedScore);
+      setEndReason('complete');
+      setRevengeUsed(true);
+      setRevengeCities(null);
+      setPhase('final');
+      return;
+    }
+
+    // Normal game — store original score for potential revenge
+    setOriginalScore(total);
+    setRevengeUsed(false);
     setFinalRounds(rounds);
     setFinalScore(total);
     setEndReason(reason);
@@ -296,13 +318,15 @@ const Index = () => {
     } else {
       setPhase('final');
     }
-  }, [difficulty, gameMode]);
+  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores]);
 
   const handlePlayAgain = useCallback(() => { setRevengeCities(null); gameKeyRef.current += 1; setPhase('countdown'); }, []);
   const handleRevenge = useCallback((rounds: RoundResult[]) => {
-    // Pick worst 5 rounds (lowest score) for revenge replay
+    // Pick worst 5 rounds (lowest score) — one-time only
     const worst = [...rounds].sort((a, b) => a.totalPoints - b.totalPoints).slice(0, 5);
+    setOriginalWorstScores(worst.map(r => r.totalPoints));
     setRevengeCities(worst.map(r => r.city));
+    setRevengeUsed(true);
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
@@ -701,7 +725,7 @@ const Index = () => {
           reason={endReason}
           onPlayAgain={handlePlayAgain}
           onGoHome={handleGoHome}
-          onRevenge={handleRevenge}
+          onRevenge={revengeUsed ? undefined : handleRevenge}
           totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
         />
       );

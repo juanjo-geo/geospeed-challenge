@@ -46,8 +46,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const isCompact = layoutMode === 'compact';
   const hasSidebar = layoutMode !== 'compact';
   const isPortraitMobile = useIsPortraitMobile();
-  // Progressive difficulty: easy→medium→hard across the pool
-  const [cities] = useState(() => getProgressiveCities(POOL_SIZE, gameMode));
+  const [cities] = useState(() => getRandomCities(difficulty, POOL_SIZE, gameMode));
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [globalTime, setGlobalTime] = useState(GLOBAL_TIME);

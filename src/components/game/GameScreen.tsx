@@ -74,13 +74,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const isPortraitMobile = useIsPortraitMobile();
   const effectiveMaxTime = maxTimeOverride ?? MAX_TIME;
   const totalRounds = totalRoundsOverride ?? (isTraining ? TRAINING_ROUNDS : TOTAL_ROUNDS);
-  // Revenge mode uses injected cities; otherwise progressive difficulty
+  // Revenge mode uses injected cities; otherwise player-selected difficulty
   const [cities] = useState(() =>
     citiesOverride
       ? citiesOverride
-      : seed !== undefined
-        ? getRandomCities(difficulty, totalRounds, gameMode, seed)
-        : getProgressiveCities(totalRounds, gameMode, seed),
+      : getRandomCities(difficulty, totalRounds, gameMode, seed),
   );
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
