@@ -184,9 +184,16 @@ installGlobalListeners();
 
 /**
  * Public API — call from any interactive handler as extra safety.
+ * Only runs the full unlock ceremony if audio isn't already working.
  */
 export function unlockAudio(): void {
   installGlobalListeners();
+  // If context is already running, no ceremony needed — avoids click artifacts on iOS
+  if (ctx && ctx.state === 'running') return;
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().then(() => { unlocked = true; }).catch(() => {});
+    return;
+  }
   doUnlock();
 }
 
