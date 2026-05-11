@@ -170,22 +170,23 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         <img
           src="/logo.png"
           alt="GeoSpeed Logo"
-          className={isNewPlayer ? 'w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36' : 'w-14 h-14 sm:w-20 sm:h-20'}
+          className={`object-contain ${isNewPlayer ? 'w-20 sm:w-28 md:w-36' : 'w-14 sm:w-20'}`}
         />
         <h1
-          className={`font-black tracking-tight leading-none mt-1 ${isNewPlayer ? 'text-2xl sm:text-3xl md:text-5xl' : 'text-xl sm:text-2xl md:text-4xl'}`}
+          className={`font-black tracking-tight leading-none mt-1 ${isNewPlayer ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-2xl sm:text-3xl md:text-5xl'}`}
           style={{
             fontFamily: 'Impact, system-ui',
             background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
+            filter: 'drop-shadow(0 2px 8px rgba(240,160,48,0.4))',
           }}
         >
           GEOSPEED
         </h1>
         <p
-          className={`tracking-[0.3em] uppercase ${isNewPlayer ? 'text-xs sm:text-sm mt-0.5' : 'text-[10px] sm:text-xs mt-0'}`}
+          className={`tracking-[0.3em] uppercase ${isNewPlayer ? 'text-xs sm:text-sm md:text-base mt-1' : 'text-[10px] sm:text-xs mt-0.5'}`}
           style={{
             background: 'linear-gradient(90deg, #F0A030, #D48020)',
             WebkitBackgroundClip: 'text',
