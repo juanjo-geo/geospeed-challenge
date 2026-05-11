@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistance, addGameHistory } from '@/lib/gameUtils';
-import { type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { type RoundResult } from '@/components/game/GameScreen';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 
@@ -131,6 +131,7 @@ const Index = () => {
   const [countdown, setCountdown] = useState(3);
   const [showNoLives, setShowNoLives] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
+  const [revengeCities, setRevengeCities] = useState<City[] | null>(null);
   // Multiplayer state
   const [mpRoom, setMpRoom] = useState<GameRoom | null>(null);
   const [mpIsHost, setMpIsHost] = useState(false);
@@ -297,8 +298,15 @@ const Index = () => {
     }
   }, [difficulty, gameMode]);
 
-  const handlePlayAgain = useCallback(() => { gameKeyRef.current += 1; setPhase('countdown'); }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); setPhase('home'); window.scrollTo(0, 0); }, []);
+  const handlePlayAgain = useCallback(() => { setRevengeCities(null); gameKeyRef.current += 1; setPhase('countdown'); }, []);
+  const handleRevenge = useCallback((rounds: RoundResult[]) => {
+    // Pick worst 5 rounds (lowest score) for revenge replay
+    const worst = [...rounds].sort((a, b) => a.totalPoints - b.totalPoints).slice(0, 5);
+    setRevengeCities(worst.map(r => r.city));
+    gameKeyRef.current += 1;
+    setPhase('countdown');
+  }, []);
+  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setPhase('home'); window.scrollTo(0, 0); }, []);
   const handleOpenStore = useCallback(() => setPhase('store'), []);
   const handleOpenProfile = useCallback(() => setPhase('profile'), []);
 
@@ -678,6 +686,7 @@ const Index = () => {
           onGameOver={handleGameOver}
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
+          {...(revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : {})}
         />
       );
     }
@@ -692,6 +701,7 @@ const Index = () => {
           reason={endReason}
           onPlayAgain={handlePlayAgain}
           onGoHome={handleGoHome}
+          onRevenge={handleRevenge}
           totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
         />
       );

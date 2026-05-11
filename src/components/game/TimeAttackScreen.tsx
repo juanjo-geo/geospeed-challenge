@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { City, getRandomCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playGameOver } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
@@ -46,7 +46,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const isCompact = layoutMode === 'compact';
   const hasSidebar = layoutMode !== 'compact';
   const isPortraitMobile = useIsPortraitMobile();
-  const [cities] = useState(() => getRandomCities(difficulty, POOL_SIZE, gameMode));
+  // Progressive difficulty: easy→medium→hard across the pool
+  const [cities] = useState(() => getProgressiveCities(POOL_SIZE, gameMode));
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [globalTime, setGlobalTime] = useState(GLOBAL_TIME);

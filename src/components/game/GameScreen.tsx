@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { City, getRandomCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playStreak, playGameOver } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
@@ -49,6 +49,8 @@ interface GameScreenProps {
   maxTimeOverride?: number;
   /** Override number of rounds (default 13, training 6) */
   totalRoundsOverride?: number;
+  /** Revenge mode: inject specific cities to replay */
+  citiesOverride?: City[];
 }
 
 function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
@@ -62,7 +64,7 @@ function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride }: GameScreenProps) {
   const { t } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -72,7 +74,14 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const isPortraitMobile = useIsPortraitMobile();
   const effectiveMaxTime = maxTimeOverride ?? MAX_TIME;
   const totalRounds = totalRoundsOverride ?? (isTraining ? TRAINING_ROUNDS : TOTAL_ROUNDS);
-  const [cities] = useState(() => getRandomCities(difficulty, totalRounds, gameMode, seed));
+  // Revenge mode uses injected cities; otherwise progressive difficulty
+  const [cities] = useState(() =>
+    citiesOverride
+      ? citiesOverride
+      : seed !== undefined
+        ? getRandomCities(difficulty, totalRounds, gameMode, seed)
+        : getProgressiveCities(totalRounds, gameMode, seed),
+  );
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(effectiveMaxTime);

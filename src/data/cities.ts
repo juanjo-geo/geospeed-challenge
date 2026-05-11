@@ -507,6 +507,47 @@ export function getRandomCities(difficulty: Difficulty, count: number = 13, mode
   return shuffled.slice(0, count);
 }
 
+/**
+ * Progressive Difficulty Ramp — cities start easy and get harder.
+ * Classic 13 rounds: 5 easy → 4 medium → 4 hard
+ * Time Attack 40 pool: 15 easy → 13 medium → 12 hard
+ * Generic: ~38% easy, ~31% medium, ~31% hard
+ */
+export function getProgressiveCities(
+  count: number,
+  mode: GameMode = 'world',
+  seed?: number,
+): City[] {
+  const easyCount = Math.ceil(count * 0.38);
+  const medCount  = Math.ceil((count - easyCount) / 2);
+  const hardCount = count - easyCount - medCount;
+
+  // Seeded PRNG
+  let rng: () => number;
+  if (seed !== undefined) {
+    let s = seed;
+    rng = () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
+  } else {
+    rng = Math.random;
+  }
+
+  const shuffle = (arr: City[]) => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  const easy = shuffle(getCitiesByDifficulty('easy', mode)).slice(0, easyCount);
+  const med  = shuffle(getCitiesByDifficulty('medium', mode)).slice(0, medCount);
+  const hard = shuffle(getCitiesByDifficulty('hard', mode)).slice(0, hardCount);
+
+  // Concatenate in order: easy first, then medium, then hard
+  return [...easy, ...med, ...hard];
+}
+
 // Map viewport bounds per mode
 export interface MapBounds {
   latMin: number;

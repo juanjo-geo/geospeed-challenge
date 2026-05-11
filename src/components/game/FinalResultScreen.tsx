@@ -22,6 +22,7 @@ interface FinalResultScreenProps {
   reason: 'timeout' | 'complete';
   onPlayAgain: () => void;
   onGoHome: () => void;
+  onRevenge?: (rounds: RoundResult[]) => void;
   totalRounds?: number;
 }
 
@@ -33,6 +34,7 @@ export default function FinalResultScreen({
   reason,
   onPlayAgain,
   onGoHome,
+  onRevenge,
   totalRounds = 13,
 }: FinalResultScreenProps) {
   const { user, displayName: authName } = useAuth();
@@ -324,6 +326,21 @@ export default function FinalResultScreen({
         >
           {sharing ? `⏳ ${t('final_sharing')}` : `📸 ${t('final_share')}`}
         </button>
+        {/* Revenge mode — replay worst rounds */}
+        {onRevenge && rounds.length >= 5 && (
+          <button
+            onClick={() => onRevenge(rounds)}
+            className="w-full py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3"
+            style={{
+              background: 'linear-gradient(135deg, hsl(0 72% 50%), hsl(25 95% 53%))',
+              color: '#fff',
+              boxShadow: '0 4px 20px hsla(0, 72%, 50%, 0.35)',
+            }}
+          >
+            🔥 REVANCHA — Mejora tus 5 peores
+          </button>
+        )}
+
         <div className="flex gap-2 sm:gap-3">
           <button
             onClick={onPlayAgain}
