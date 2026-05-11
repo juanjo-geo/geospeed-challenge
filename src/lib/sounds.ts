@@ -13,30 +13,37 @@
 //
 // All synthesis via Web Audio API — zero external dependencies.
 
-// ── iOS Audio Unlock System ────────────────────────────────────────────────
+// ── iOS Audio Unlock System (NUCLEAR) ─────────────────────────────────────
 //
-// iOS Safari is extremely strict about Web Audio:
-// - AudioContext starts 'suspended' and can ONLY transition to 'running'
-//   inside the synchronous call stack of a native DOM event (touch/click)
-// - React synthetic events are NOT always recognized as user gestures
-// - setTimeout/setInterval callbacks are NEVER user gestures
-// - ctx.resume() is async — state does NOT change synchronously
-// - The mute switch silences Web Audio unless you also play via <audio> tag
-// - iOS can re-suspend the context during Low Power Mode or backgrounding
+// iOS Safari is pathologically strict about Web Audio:
+// - AudioContext can ONLY be unblocked in a native DOM event's call stack
+// - iOS 17+ re-suspends the context aggressively (Low Power, backgrounding,
+//   lock screen, switching tabs, Siri interruptions, phone calls)
+// - The hardware mute (silent) switch kills Web Audio unless the audio
+//   session category is set to "playback" — achieved via <audio> element
+// - React synthetic events are NOT always valid user gestures
+// - ctx.resume() is async; state doesn't change synchronously
 //
-// Solution: Triple-layer unlock (HTMLAudioElement + AudioContext buffer +
-// oscillator) triggered from native DOM events via capture-phase listeners
-// that are NEVER removed. State tracked via the 'statechange' event.
+// NUCLEAR STRATEGY:
+// 1. EVERY touch/click calls doUnlock() — no "already unlocked" shortcut
+// 2. Persistent <audio> element kept warm (sets audio session category)
+// 3. AudioContext recreated from scratch if it gets into 'closed' state
+// 4. All gains boosted for iPhone speaker audibility
+// 5. Fallback: if ctx is suspended when a sound plays, we queue a retry
 
 type AudioCtxClass = typeof AudioContext;
 
 let ctx: AudioContext | null = null;
 let unlocked = false;
 let listenerInstalled = false;
+let warmAudioEl: HTMLAudioElement | null = null;
+let unlockAttempts = 0;
 
-// Tiny silent WAV — 44 bytes, plays through iOS media pipeline to unlock
-// audio category. This is the same technique used by Howler.js.
+// Tiny silent WAV — 44 bytes, plays through iOS media pipeline
 const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+
+// Slightly longer silent WAV (100ms) — better at convincing iOS media session
+const SILENT_WAV_LONG = 'data:audio/wav;base64,UklGRnoAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
 
 function getAudioCtxClass(): AudioCtxClass | null {
   if (typeof window === 'undefined') return null;
@@ -47,73 +54,87 @@ function getAudioCtxClass(): AudioCtxClass | null {
   );
 }
 
+/** Keep a "warm" Audio element that iOS keeps in its audio session */
+function getWarmAudio(): HTMLAudioElement {
+  if (!warmAudioEl) {
+    warmAudioEl = new Audio(SILENT_WAV_LONG);
+    warmAudioEl.setAttribute('playsinline', '');
+    warmAudioEl.setAttribute('preload', 'auto');
+    warmAudioEl.loop = false;
+    warmAudioEl.volume = 0.01;
+  }
+  return warmAudioEl;
+}
+
 /**
- * Core unlock — runs in the synchronous call stack of a native DOM event.
- * Uses three parallel strategies because different iOS versions respond
- * to different approaches:
- *
- * 1. HTMLAudioElement.play() with silent WAV — unlocks iOS media session
- * 2. AudioContext.resume() — tells WebKit we want audio
- * 3. Silent buffer + oscillator start — "primes the pump"
+ * Core unlock — runs on EVERY user interaction. No shortcuts.
+ * iOS can re-suspend at any time, so we always do the full ceremony.
  */
 function doUnlock(): void {
-  // Strategy 1: HTML Audio element — most reliable iOS unlock
-  // This also works around the mute switch in some contexts
+  unlockAttempts++;
+
+  // ─── Strategy 1: HTML Audio element ───
+  // Plays a silent WAV to establish iOS audio session category
   try {
-    const audio = new Audio(SILENT_WAV);
-    audio.setAttribute('playsinline', '');
-    audio.volume = 0.01; // near-silent but not zero (iOS ignores volume=0)
+    const audio = getWarmAudio();
+    audio.currentTime = 0;
     const p = audio.play();
-    if (p) p.catch(() => {});
+    if (p) p.then(() => { /* audio session active */ }).catch(() => {
+      // Retry with fresh element on failure
+      try {
+        const fresh = new Audio(SILENT_WAV);
+        fresh.setAttribute('playsinline', '');
+        fresh.volume = 0.01;
+        fresh.play()?.catch(() => {});
+      } catch (_) {}
+    });
   } catch (_) { /* ignore */ }
 
-  // Strategy 2 & 3: AudioContext
+  // ─── Strategy 2: AudioContext create/resume ───
   try {
     const Cls = getAudioCtxClass();
     if (!Cls) return;
-    if (!ctx) ctx = new Cls();
 
-    // Listen for state changes — this is how we RELIABLY know it's running
-    // (checking .state synchronously after resume() is unreliable on iOS)
-    if (!unlocked) {
-      const onStateChange = () => {
+    // If context is closed (dead), destroy and recreate
+    if (ctx && ctx.state === 'closed') {
+      ctx = null;
+    }
+
+    if (!ctx) {
+      ctx = new Cls();
+      // Monitor state changes permanently
+      ctx.addEventListener('statechange', () => {
         if (ctx && ctx.state === 'running') {
           unlocked = true;
-          ctx.removeEventListener('statechange', onStateChange);
         }
-      };
-      ctx.addEventListener('statechange', onStateChange);
-      // Also check immediately in case it's already running
-      if (ctx.state === 'running') {
-        unlocked = true;
-        ctx.removeEventListener('statechange', onStateChange);
-      }
+      });
     }
 
-    // Resume — the promise resolves when the context is actually running
-    if (ctx.state !== 'running') {
-      ctx.resume().then(() => { unlocked = true; }).catch(() => {});
-    }
+    // ALWAYS call resume — even if state appears 'running'
+    // On iOS this is the critical call that must happen in gesture stack
+    ctx.resume().then(() => { unlocked = true; }).catch(() => {});
 
-    // Strategy 3: Play a silent buffer AND an oscillator in the same call stack
-    // This is required by some iOS versions as additional "proof" of user intent
+    // ─── Strategy 3: Silent buffer + oscillator ───
+    // Some iOS versions need actual audio nodes started in the gesture
     try {
-      const silent = ctx.createBuffer(1, 1, ctx.sampleRate || 44100);
+      const sr = ctx.sampleRate || 44100;
+      const silent = ctx.createBuffer(1, sr * 0.01, sr); // 10ms silent
       const src = ctx.createBufferSource();
       src.buffer = silent;
       src.connect(ctx.destination);
       src.start(0);
 
+      // Oscillator at zero gain — another "proof of user intent"
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       g.gain.value = 0;
       osc.connect(g);
       g.connect(ctx.destination);
       osc.start(0);
-      osc.stop(ctx.currentTime + 0.001);
+      osc.stop(ctx.currentTime + 0.01);
     } catch (_) { /* ignore */ }
 
-    // Synchronous state check — works on Chrome/Firefox, bonus on iOS
+    // Synchronous check
     if (ctx.state === 'running') {
       unlocked = true;
     }
@@ -121,31 +142,35 @@ function doUnlock(): void {
 }
 
 /**
- * Global "first touch" listeners — capture phase, NEVER removed.
- * Lightweight when already unlocked (just checks a boolean).
- * This is critical because React synthetic events don't always qualify
- * as "user gestures" for iOS AudioContext.
+ * Global listeners — capture phase, NEVER removed.
+ * CRITICAL: calls doUnlock() on EVERY interaction, not just when !unlocked.
+ * This is because iOS can re-suspend the AudioContext at any time.
  */
 function installGlobalListeners(): void {
   if (listenerInstalled || typeof document === 'undefined') return;
   listenerInstalled = true;
 
   const handler = () => {
-    // Always attempt unlock on every touch — iOS can re-suspend after
-    // inactivity, backgrounding, or Low Power Mode interruptions
-    if (!unlocked) {
-      doUnlock();
-    } else if (ctx && ctx.state === 'suspended') {
-      // Re-resume if iOS suspended us (e.g., after phone call, lock screen)
-      ctx.resume().then(() => { unlocked = true; }).catch(() => {});
-    }
+    // ALWAYS call doUnlock — no "if (!unlocked)" shortcut.
+    // iOS re-suspends aggressively, so we re-unlock every single time.
+    doUnlock();
   };
 
-  // Use native DOM events with capture:true to fire BEFORE React
-  // touchstart is critical on iOS — it's the earliest gesture event
-  ['touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach(evt => {
+  // All possible user gesture events — capture phase fires before React
+  const events = ['touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown', 'pointerdown', 'pointerup'];
+  events.forEach(evt => {
     document.addEventListener(evt, handler, { capture: true, passive: true });
   });
+
+  // Also listen on window for iframe/cross-frame scenarios
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', () => {
+      // When tab regains focus, iOS may have suspended us
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    });
+  }
 }
 
 // Install immediately on module load
@@ -153,8 +178,6 @@ installGlobalListeners();
 
 /**
  * Public API — call from any interactive handler as extra safety.
- * The global listeners should handle everything, but this provides
- * defense-in-depth for cases where the module loads lazily.
  */
 export function unlockAudio(): void {
   installGlobalListeners();
@@ -163,25 +186,32 @@ export function unlockAudio(): void {
 
 /**
  * Get the AudioContext for sound playback.
- * Returns null if context doesn't exist yet (extremely rare — means
- * no user interaction has occurred yet).
+ * If context is dead or suspended, attempts recovery.
+ * Returns null only if WebAudio is completely unavailable.
  */
 function getCtx(): AudioContext | null {
-  if (!ctx) {
-    // Create context lazily — won't be 'running' until a gesture fires doUnlock
+  if (!ctx || ctx.state === 'closed') {
     try {
       const Cls = getAudioCtxClass();
       if (!Cls) return null;
       ctx = new Cls();
+      ctx.addEventListener('statechange', () => {
+        if (ctx && ctx.state === 'running') unlocked = true;
+      });
     } catch (_) {
       return null;
     }
   }
-  // If suspended, try to resume (will only succeed in gesture call stack)
+  // Always attempt resume — it's a no-op if already running
   if (ctx.state === 'suspended') {
     ctx.resume().catch(() => {});
   }
   return ctx;
+}
+
+/** Check if audio system is likely working (for UI indicators) */
+export function isAudioReady(): boolean {
+  return unlocked && ctx !== null && ctx.state === 'running';
 }
 
 // ── Anti-Monotony Helpers ─────────────────────────────────────────────────
@@ -195,6 +225,18 @@ function vary(base: number, pct = 0.15): number {
 /** Pick a random item from an array */
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ── Volume boost for mobile speakers ──
+// iPhone speakers have tiny drivers that struggle with low gains.
+// Desktop headphones are loud at 0.1; iPhone speaker needs 0.3+.
+const IS_IOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const IS_MOBILE = typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
+const VOL_MULT = IS_IOS ? 2.5 : IS_MOBILE ? 1.8 : 1.0;
+
+/** Apply platform volume multiplier */
+function vol(baseGain: number): number {
+  return Math.min(baseGain * VOL_MULT, 0.85); // cap at 0.85 to avoid clipping
 }
 
 // ── Core Synthesis Primitives ─────────────────────────────────────────────
@@ -214,7 +256,7 @@ function playTone(
     osc.type = type;
     osc.frequency.value = vary(freq, 0.10);
     if (opts?.detune) osc.detune.value = opts.detune;
-    const finalGain = vary(gain, 0.2);
+    const finalGain = vary(vol(gain), 0.2);
     const attack = opts?.attack ?? 0.005;
     g.gain.setValueAtTime(0.001, c.currentTime);
     g.gain.linearRampToValueAtTime(finalGain, c.currentTime + attack);
@@ -245,7 +287,7 @@ function playFilteredNoise(
     const filter = c.createBiquadFilter();
     filter.type = filterType;
     filter.frequency.value = vary(filterFreq, 0.15);
-    g.gain.setValueAtTime(vary(gain, 0.2), c.currentTime);
+    g.gain.setValueAtTime(vary(vol(gain), 0.2), c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     source.connect(filter);
     filter.connect(g);
@@ -264,7 +306,7 @@ function playImpact(freq = 80, duration = 0.12, gain = 0.18) {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(vary(freq * 2, 0.1), c.currentTime);
     osc.frequency.exponentialRampToValueAtTime(vary(freq, 0.1), c.currentTime + duration * 0.3);
-    g.gain.setValueAtTime(vary(gain, 0.2), c.currentTime);
+    g.gain.setValueAtTime(vary(vol(gain), 0.2), c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     osc.connect(g);
     g.connect(c.destination);
@@ -285,7 +327,7 @@ function playCoinBell(freq = 2400, duration = 0.25, gain = 0.08) {
       osc.type = 'sine';
       osc.frequency.value = vary(freq, 0.08);
       osc.detune.value = detune;
-      const finalGain = vary(gain, 0.2);
+      const finalGain = vary(vol(gain), 0.2);
       g.gain.setValueAtTime(finalGain, c.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
       osc.connect(g);
@@ -314,7 +356,7 @@ function playGlassShatter(gain = 0.06) {
     filter.Q.value = 2;
     filter.frequency.setValueAtTime(vary(8000, 0.15), c.currentTime);
     filter.frequency.exponentialRampToValueAtTime(800, c.currentTime + duration);
-    g.gain.setValueAtTime(vary(gain, 0.2), c.currentTime);
+    g.gain.setValueAtTime(vary(vol(gain), 0.2), c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     source.connect(filter);
     filter.connect(g);
@@ -469,7 +511,7 @@ export function playHeartbeat() {
     const freq = vary(55, 0.1);
     osc.frequency.setValueAtTime(freq * 1.5, c.currentTime);
     osc.frequency.exponentialRampToValueAtTime(freq, c.currentTime + 0.08);
-    g.gain.setValueAtTime(vary(0.22, 0.15), c.currentTime);
+    g.gain.setValueAtTime(vary(vol(0.22), 0.15), c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
     osc.connect(g);
     g.connect(c.destination);
@@ -482,7 +524,7 @@ export function playHeartbeat() {
         const g2 = c.createGain();
         osc2.type = 'sine';
         osc2.frequency.setValueAtTime(vary(48, 0.1), c.currentTime);
-        g2.gain.setValueAtTime(vary(0.16, 0.15), c.currentTime);
+        g2.gain.setValueAtTime(vary(vol(0.16), 0.15), c.currentTime);
         g2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
         osc2.connect(g2);
         g2.connect(c.destination);

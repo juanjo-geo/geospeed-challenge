@@ -87,7 +87,8 @@ export default function MultiplayerLobby({ onRoomReady, onBack, onSpectate }: Mu
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 game-bg">
-      <div className="animate-fade-in-up mb-6">
+      <div className="animate-fade-in-up mb-6 flex flex-col items-center">
+        <img src="/logo.png" alt="GeoSpeed" className="w-14 sm:w-16 object-contain mb-2" />
         <h1 className="text-3xl font-black tracking-tight text-center" style={{ fontFamily: 'Impact, system-ui', color: 'hsl(var(--primary))' }}>
           🎮 {t('mp_lobby').toUpperCase()}
         </h1>
