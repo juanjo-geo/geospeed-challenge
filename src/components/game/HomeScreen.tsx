@@ -63,6 +63,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
   const [streakDismissed, setStreakDismissed] = useState(false);
 
+  // Scroll to top on mount (returning from game/store/profile)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Check daily streak on mount
   useEffect(() => {
     if (isNewPlayer) return;

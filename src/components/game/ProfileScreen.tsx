@@ -52,7 +52,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
     <div className="min-h-[100dvh] flex flex-col items-center px-3 py-4 sm:px-4 sm:py-6 md:px-6 overflow-y-auto game-bg">
       <div className="w-full max-w-lg animate-fade-in-up">
 
-        {/* Header with back button */}
+        {/* Header with back button + logo */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <button
             onClick={onBack}
@@ -63,11 +63,17 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
           </button>
           <h1
             className="text-xl sm:text-2xl font-black flex-1 text-center"
-            style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}
+            style={{
+              fontFamily: 'Impact, system-ui',
+              background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
           >
             {t('profile_title')}
           </h1>
-          <div className="w-[72px]" /> {/* Spacer for centering */}
+          <img src="/logo.png" alt="GeoSpeed" className="w-9 sm:w-10 object-contain shrink-0" />
         </div>
 
         {/* Avatar + Name + Level card */}
