@@ -22,67 +22,73 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         transform: phase === 'exit' ? 'scale(1.05)' : 'scale(1)',
       }}
     >
-      {/* Glowing ring */}
+      {/* Logo image with glow */}
       <div
-        className="relative mb-4 sm:mb-6 transition-all duration-1000 ease-out"
+        className="relative mb-2 sm:mb-4 transition-all duration-1000 ease-out"
         style={{
           opacity: phase === 'enter' ? 0 : 1,
-          transform: phase === 'enter' ? 'scale(0.7)' : 'scale(1)',
+          transform: phase === 'enter' ? 'scale(0.6) rotate(-10deg)' : 'scale(1) rotate(0deg)',
         }}
       >
-        <div
-          className="w-20 h-20 sm:w-28 sm:h-28 rounded-full flex items-center justify-center"
+        <img
+          src="/logo.png"
+          alt="GeoSpeed Logo"
+          className="w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 object-contain"
           style={{
-            background: 'radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, hsl(var(--accent) / 0.05) 50%, transparent 70%)',
-            boxShadow: '0 0 60px hsl(var(--primary) / 0.2), 0 0 120px hsl(var(--accent) / 0.08)',
+            filter: `drop-shadow(0 0 20px rgba(240,160,48,0.5)) drop-shadow(0 0 40px rgba(0,212,170,0.2))`,
           }}
-        >
-          <span className="text-4xl sm:text-6xl drop-shadow-lg" style={{ filter: 'drop-shadow(0 0 12px hsl(var(--primary) / 0.4))' }}>📍</span>
-        </div>
+        />
       </div>
 
-      {/* Title */}
+      {/* Title — gold gradient text */}
       <h1
         className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight transition-all duration-1000 ease-out delay-200"
         style={{
           fontFamily: 'Impact, system-ui',
-          color: 'hsl(var(--primary))',
+          background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
           opacity: phase === 'enter' ? 0 : 1,
           transform: phase === 'enter' ? 'translateY(20px)' : 'translateY(0)',
-          textShadow: '0 0 40px hsl(var(--primary) / 0.3)',
+          filter: 'drop-shadow(0 2px 8px rgba(240,160,48,0.4))',
         }}
       >
         GEOSPEED
       </h1>
       <p
-        className="text-xs sm:text-sm md:text-base tracking-[0.3em] uppercase mt-1.5 sm:mt-2 transition-all duration-1000 ease-out delay-500"
+        className="text-xs sm:text-sm md:text-base tracking-[0.3em] uppercase mt-1 sm:mt-1.5 transition-all duration-1000 ease-out delay-500"
         style={{
-          color: 'hsl(var(--muted-foreground))',
-          opacity: phase === 'enter' ? 0 : 1,
+          background: 'linear-gradient(90deg, #F0A030, #D48020)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          opacity: phase === 'enter' ? 0 : 0.8,
           transform: phase === 'enter' ? 'translateY(12px)' : 'translateY(0)',
         }}
       >
         IQ Challenge
       </p>
 
-      {/* Loading bar — gradient from primary to accent */}
-      <div className="mt-8 sm:mt-10 w-32 sm:w-40 h-1 bg-muted/30 rounded-full overflow-hidden">
+      {/* Loading bar — gold to teal */}
+      <div className="mt-6 sm:mt-8 w-32 sm:w-40 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(240,160,48,0.15)' }}>
         <div
           className="h-full rounded-full transition-all ease-out"
           style={{
-            background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))',
+            background: 'linear-gradient(90deg, #D48020, #F0A030, #00D4AA)',
             width: phase === 'enter' ? '0%' : phase === 'hold' ? '85%' : '100%',
             transitionDuration: phase === 'hold' ? '2000ms' : '600ms',
+            boxShadow: '0 0 8px rgba(240,160,48,0.4)',
           }}
         />
       </div>
 
       {/* Tagline */}
       <p
-        className="mt-4 text-[10px] sm:text-xs tracking-widest uppercase transition-all duration-1000 ease-out delay-700"
+        className="mt-3 text-[10px] sm:text-xs tracking-widest uppercase transition-all duration-1000 ease-out delay-700"
         style={{
-          color: 'hsl(var(--accent))',
-          opacity: phase === 'enter' ? 0 : 0.6,
+          color: '#00D4AA',
+          opacity: phase === 'enter' ? 0 : 0.5,
           transform: phase === 'enter' ? 'translateY(8px)' : 'translateY(0)',
         }}
       >
