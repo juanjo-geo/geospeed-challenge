@@ -31,12 +31,18 @@ export default function MultiplayerLobby({ onRoomReady, onBack, onSpectate }: Mu
     if (!playerName.trim()) { setError('Ingresa tu nombre'); return; }
     setLoading(true);
     setError('');
-    const room = await createRoom(playerName.trim(), difficulty, mode);
-    setLoading(false);
-    if (room) {
-      onRoomReady(room, true);
-    } else {
-      setError('Error al crear la sala. Intenta de nuevo.');
+    try {
+      const room = await createRoom(playerName.trim(), difficulty, mode);
+      if (room) {
+        onRoomReady(room, true);
+      } else {
+        setError('Error al crear la sala. Verifica tu conexión e intenta de nuevo.');
+      }
+    } catch (e) {
+      console.error('[Duelo] createRoom crash:', e);
+      setError('Error de conexión. El servidor multijugador podría no estar disponible.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,12 +51,18 @@ export default function MultiplayerLobby({ onRoomReady, onBack, onSpectate }: Mu
     if (!joinCode.trim()) { setError('Ingresa el código de la sala'); return; }
     setLoading(true);
     setError('');
-    const room = await joinRoom(joinCode.trim(), playerName.trim());
-    setLoading(false);
-    if (room) {
-      onRoomReady(room, false);
-    } else {
-      setError('Sala no encontrada o ya está llena.');
+    try {
+      const room = await joinRoom(joinCode.trim(), playerName.trim());
+      if (room) {
+        onRoomReady(room, false);
+      } else {
+        setError('Sala no encontrada o ya está llena.');
+      }
+    } catch (e) {
+      console.error('[Duelo] joinRoom crash:', e);
+      setError('Error de conexión. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,12 +70,18 @@ export default function MultiplayerLobby({ onRoomReady, onBack, onSpectate }: Mu
     if (!playerName.trim()) { setError('Ingresa tu nombre'); return; }
     setLoading(true);
     setError('');
-    const result = await quickMatch(playerName.trim(), difficulty, mode);
-    setLoading(false);
-    if (result) {
-      onRoomReady(result.room, result.isHost);
-    } else {
-      setError('Error en matchmaking. Intenta de nuevo.');
+    try {
+      const result = await quickMatch(playerName.trim(), difficulty, mode);
+      if (result) {
+        onRoomReady(result.room, result.isHost);
+      } else {
+        setError('Error en matchmaking. Intenta de nuevo.');
+      }
+    } catch (e) {
+      console.error('[Duelo] quickMatch crash:', e);
+      setError('Error de conexión. El servidor multijugador podría no estar disponible.');
+    } finally {
+      setLoading(false);
     }
   };
 

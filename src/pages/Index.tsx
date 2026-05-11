@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistance, addGameHistory } from '@/lib/gameUtils';
 import { type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
@@ -9,6 +9,46 @@ import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import HomeScreen from '@/components/game/HomeScreen';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
+
+// ── Error Boundary — catches lazy-load failures and render crashes ──
+class PhaseErrorBoundary extends Component<
+  { children: ReactNode; onReset: () => void },
+  { error: Error | null }
+> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[GeoSpeed] Phase render error:', error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="fixed inset-0 flex flex-col items-center justify-center game-bg p-6 text-center">
+          <img src="/logo.png" alt="GeoSpeed" className="w-14 mb-4 opacity-60" />
+          <h2 className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))' }}>
+            Algo salió mal
+          </h2>
+          <p className="text-sm text-muted-foreground mb-1 max-w-xs">
+            {this.state.error.message || 'Error desconocido'}
+          </p>
+          <p className="text-xs text-muted-foreground/60 mb-6 max-w-xs break-all">
+            {this.state.error.name}
+          </p>
+          <button
+            onClick={() => { this.setState({ error: null }); this.props.onReset(); }}
+            className="px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.97]"
+            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+          >
+            ← VOLVER AL INICIO
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ── Lazy loads (loaded on demand per phase) ──
 const GameScreen = lazy(() => import('@/components/game/GameScreen'));
@@ -639,13 +679,15 @@ const Index = () => {
 
   return (
     <>
-      <Suspense fallback={lazyFallback}>
-        {skipTransition ? renderPhase() : (
-          <PhaseTransition phaseKey={phase}>
-            {renderPhase()}
-          </PhaseTransition>
-        )}
-      </Suspense>
+      <PhaseErrorBoundary onReset={handleGoHome}>
+        <Suspense fallback={lazyFallback}>
+          {skipTransition ? renderPhase() : (
+            <PhaseTransition phaseKey={phase}>
+              {renderPhase()}
+            </PhaseTransition>
+          )}
+        </Suspense>
+      </PhaseErrorBoundary>
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
     </>
   );
