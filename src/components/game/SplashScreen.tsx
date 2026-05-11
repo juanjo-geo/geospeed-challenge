@@ -24,7 +24,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
     >
       {/* Logo image with glow */}
       <div
-        className="relative mb-2 sm:mb-4 transition-all duration-1000 ease-out"
+        className="relative mb-1 sm:mb-2 transition-all duration-1000 ease-out"
         style={{
           opacity: phase === 'enter' ? 0 : 1,
           transform: phase === 'enter' ? 'scale(0.6) rotate(-10deg)' : 'scale(1) rotate(0deg)',

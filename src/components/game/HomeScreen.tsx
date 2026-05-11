@@ -173,7 +173,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           className={`object-contain ${isNewPlayer ? 'w-20 sm:w-28 md:w-36' : 'w-14 sm:w-20'}`}
         />
         <h1
-          className={`font-black tracking-tight leading-none mt-1 ${isNewPlayer ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-2xl sm:text-3xl md:text-5xl'}`}
+          className={`font-black tracking-tight leading-none mt-0.5 ${isNewPlayer ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-2xl sm:text-3xl md:text-5xl'}`}
           style={{
             fontFamily: 'Impact, system-ui',
             background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
