@@ -1,30 +1,25 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// GeoSpeed — Background Music System
+// GeoSpeed — Background Music System (single track)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Two tracks: menu (chill) and gameplay (upbeat synthwave).
-// Volume at 15%, fade in/out transitions, mute persisted in localStorage.
-// Automatically pauses when tab is hidden and resumes on focus.
+// One continuous track that plays from splash through all phases.
+// Volume at 25% of pre-mastered MP3 (~3.75% effective).
+// Mute persisted in localStorage. Pauses when tab hidden, resumes on focus.
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 
-export type MusicTrack = 'menu' | 'gameplay' | 'none';
+export type MusicTrack = 'on' | 'none';
 
-const TRACKS: Record<Exclude<MusicTrack, 'none'>, string> = {
-  menu: '/music/track-menu.mp3',
-  gameplay: '/music/track-gameplay.mp3',
-};
-
-const BASE_VOLUME = 0.25; // MP3s pre-mastered at 15% — effective ~3.75%
+const TRACK_SRC = '/music/track-menu.mp3';
+const BASE_VOLUME = 0.25;
 const FADE_DURATION = 800; // ms
 
-// ── Global singleton state (shared across all hook instances) ──
+// ── Global singleton state ──
 let audioEl: HTMLAudioElement | null = null;
-let currentTrack: MusicTrack = 'none';
+let isPlaying = false;
 let isMuted = false;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
 
-// Load muted preference from localStorage
 try {
   isMuted = localStorage.getItem('geospeed_music_muted') === 'true';
 } catch (_) {}
@@ -36,6 +31,7 @@ function getAudio(): HTMLAudioElement {
     audioEl.volume = 0;
     audioEl.preload = 'auto';
     audioEl.setAttribute('playsinline', '');
+    audioEl.src = TRACK_SRC;
   }
   return audioEl;
 }
@@ -62,9 +58,7 @@ function fadeTo(targetVol: number, onDone?: () => void) {
   let step = 0;
   fadeInterval = setInterval(() => {
     step++;
-    const progress = step / steps;
-    // Ease-out curve for smooth fade
-    const eased = 1 - Math.pow(1 - progress, 2);
+    const eased = 1 - Math.pow(1 - step / steps, 2);
     audio.volume = Math.max(0, Math.min(1, startVol + diff * eased));
     if (step >= steps) {
       stopFade();
@@ -74,55 +68,30 @@ function fadeTo(targetVol: number, onDone?: () => void) {
   }, stepTime);
 }
 
-function playTrack(track: Exclude<MusicTrack, 'none'>) {
+function startMusic() {
   const audio = getAudio();
   if (isMuted) {
-    // Still load the track so it's ready when unmuted
-    if (currentTrack !== track) {
-      audio.src = TRACKS[track];
-      audio.load();
-      currentTrack = track;
-    }
+    audio.load();
+    isPlaying = true;
     return;
   }
-
-  if (currentTrack === track && !audio.paused) {
-    // Already playing this track
-    return;
-  }
-
-  if (currentTrack !== 'none' && currentTrack !== track && !audio.paused) {
-    // Different track playing → fade out, switch, fade in
-    fadeTo(0, () => {
-      audio.src = TRACKS[track];
-      audio.volume = 0;
-      currentTrack = track;
-      const p = audio.play();
-      if (p) p.catch(() => {});
-      fadeTo(BASE_VOLUME);
-    });
-  } else {
-    // No track playing or same track paused → load and fade in
-    if (currentTrack !== track) {
-      audio.src = TRACKS[track];
-      currentTrack = track;
-    }
-    audio.volume = 0;
-    const p = audio.play();
-    if (p) p.catch(() => {});
-    fadeTo(BASE_VOLUME);
-  }
+  if (isPlaying && !audio.paused) return;
+  isPlaying = true;
+  audio.volume = 0;
+  const p = audio.play();
+  if (p) p.catch(() => {});
+  fadeTo(BASE_VOLUME);
 }
 
 function stopMusic() {
   const audio = getAudio();
   if (audio.paused) {
-    currentTrack = 'none';
+    isPlaying = false;
     return;
   }
   fadeTo(0, () => {
     audio.pause();
-    currentTrack = 'none';
+    isPlaying = false;
   });
 }
 
@@ -135,8 +104,7 @@ function setMuted(muted: boolean) {
   const audio = getAudio();
   if (muted) {
     fadeTo(0, () => { audio.pause(); });
-  } else if (currentTrack !== 'none') {
-    // Resume the current track
+  } else if (isPlaying) {
     audio.volume = 0;
     const p = audio.play();
     if (p) p.catch(() => {});
@@ -149,7 +117,7 @@ function toggleMuted(): boolean {
   return isMuted;
 }
 
-// ── Visibility change: pause when tab hidden, resume on focus ──
+// ── Visibility: pause when tab hidden, resume on focus ──
 let visibilityInstalled = false;
 function installVisibilityHandler() {
   if (visibilityInstalled || typeof document === 'undefined') return;
@@ -158,7 +126,7 @@ function installVisibilityHandler() {
     const audio = getAudio();
     if (document.hidden) {
       if (!audio.paused) audio.pause();
-    } else if (currentTrack !== 'none' && !isMuted) {
+    } else if (isPlaying && !isMuted) {
       const p = audio.play();
       if (p) p.catch(() => {});
     }
@@ -171,55 +139,40 @@ installVisibilityHandler();
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Controls which background music track plays.
+ * Single-track background music.
  *
  * Usage:
- *   const { setTrack, toggle, muted } = useBackgroundMusic('menu');
+ *   const { toggle, muted } = useBackgroundMusic('on');
  *
- * The track auto-starts when the component mounts (respecting mute state)
- * and fades out when unmounting or switching tracks.
+ * Pass 'on' to start playing (from splash onward).
+ * Music continues uninterrupted across all phases.
  */
 export function useBackgroundMusic(initialTrack: MusicTrack = 'none') {
-  const trackRef = useRef(initialTrack);
   const [mutedState, setMutedState] = useState(isMuted);
 
-  // Start/switch track on mount or when initialTrack changes
   useEffect(() => {
-    trackRef.current = initialTrack;
-    if (initialTrack === 'none') {
-      stopMusic();
+    if (initialTrack === 'on') {
+      startMusic();
     } else {
-      playTrack(initialTrack);
+      stopMusic();
     }
-    return () => {};
   }, [initialTrack]);
 
   const setTrack = useCallback((track: MusicTrack) => {
-    trackRef.current = track;
-    if (track === 'none') {
-      stopMusic();
-    } else {
-      playTrack(track);
-    }
+    if (track === 'on') startMusic();
+    else stopMusic();
   }, []);
 
   const toggle = useCallback(() => {
     toggleMuted();
-    // Force React re-render with new muted state
     setMutedState(isMuted);
   }, []);
 
-  return {
-    setTrack,
-    toggle,
-    muted: mutedState,
-  };
+  return { setTrack, toggle, muted: mutedState };
 }
 
-/** Get current mute state (non-reactive, for one-off checks) */
 export function isMusicMuted(): boolean {
   return isMuted;
 }
 
-/** Toggle mute from anywhere (e.g., a global button) */
 export { toggleMuted, setMuted };

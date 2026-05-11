@@ -153,21 +153,8 @@ const Index = () => {
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
 
-  // ── Background music — derive track from current phase ──
-  const musicTrack: MusicTrack = (() => {
-    switch (phase) {
-      case 'playing':
-      case 'ta-playing':
-      case 'mp-playing':
-      case 'daily':
-        return 'gameplay';
-      case 'splash':
-        return 'menu'; // music starts from the very beginning
-      default:
-        return 'menu';
-    }
-  })();
-  const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic(musicTrack);
+  // ── Background music — single track, always on from splash ──
+  const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
 
   // Initialize ads on mount
   useEffect(() => { initAds(); }, []);

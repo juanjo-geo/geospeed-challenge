@@ -124,14 +124,7 @@ function doUnlock(): void {
       src.connect(ctx.destination);
       src.start(0);
 
-      // Oscillator at zero gain — another "proof of user intent"
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      g.gain.value = 0;
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.start(0);
-      osc.stop(ctx.currentTime + 0.01);
+      // Note: oscillator removed — caused audible DAC pop/click on iPhone
     } catch (_) { /* ignore */ }
 
     // Synchronous check
