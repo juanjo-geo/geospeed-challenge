@@ -47,7 +47,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedMode, setSelectedMode] = useState<GameMode>('world');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
   const [rankingMode, setRankingMode] = useState<string>('all');
   const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
   const [showRanking, setShowRanking] = useState(false);
