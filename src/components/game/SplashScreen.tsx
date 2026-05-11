@@ -33,11 +33,11 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         <div
           className="w-20 h-20 sm:w-28 sm:h-28 rounded-full flex items-center justify-center"
           style={{
-            background: 'radial-gradient(circle, hsla(var(--primary), 0.15) 0%, hsla(var(--accent), 0.05) 50%, transparent 70%)',
-            boxShadow: '0 0 60px hsla(var(--primary), 0.2), 0 0 120px hsla(var(--accent), 0.08)',
+            background: 'radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, hsl(var(--accent) / 0.05) 50%, transparent 70%)',
+            boxShadow: '0 0 60px hsl(var(--primary) / 0.2), 0 0 120px hsl(var(--accent) / 0.08)',
           }}
         >
-          <span className="text-4xl sm:text-6xl drop-shadow-lg" style={{ filter: 'drop-shadow(0 0 12px hsla(var(--primary), 0.4))' }}>📍</span>
+          <span className="text-4xl sm:text-6xl drop-shadow-lg" style={{ filter: 'drop-shadow(0 0 12px hsl(var(--primary) / 0.4))' }}>📍</span>
         </div>
       </div>
 
@@ -49,7 +49,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           color: 'hsl(var(--primary))',
           opacity: phase === 'enter' ? 0 : 1,
           transform: phase === 'enter' ? 'translateY(20px)' : 'translateY(0)',
-          textShadow: '0 0 40px hsla(var(--primary), 0.3)',
+          textShadow: '0 0 40px hsl(var(--primary) / 0.3)',
         }}
       >
         GEOSPEED
