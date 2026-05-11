@@ -187,16 +187,17 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
           {/* ── Logo ── */}
-          <div className="w-full flex items-center justify-center gap-2 pb-2 mb-2 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-8 h-8 object-contain" />
+          <div className="w-full flex items-center justify-center gap-2.5 pb-2.5 mb-2.5 border-b border-border/50 shrink-0">
+            <img src="/logo.png" alt="GeoSpeed" className="w-10 sm:w-12 object-contain" />
             <span
-              className="text-lg font-black tracking-tight"
+              className="text-xl sm:text-2xl font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
+                filter: 'drop-shadow(0 1px 4px rgba(240,160,48,0.3))',
               }}
             >
               GEOSPEED
@@ -246,8 +247,28 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             </div>
           )}
 
+          {/* ── Compass decoration ── */}
+          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[60px] pointer-events-none select-none">
+            <svg viewBox="0 0 100 100" className="w-20 sm:w-24 opacity-[0.06]" fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="50" cy="50" r="46" />
+              <circle cx="50" cy="50" r="40" />
+              <circle cx="50" cy="50" r="2" fill="currentColor" />
+              <line x1="50" y1="4" x2="50" y2="14" strokeWidth="1.2" />
+              <line x1="50" y1="86" x2="50" y2="96" strokeWidth="1.2" />
+              <line x1="4" y1="50" x2="14" y2="50" strokeWidth="1.2" />
+              <line x1="86" y1="50" x2="96" y2="50" strokeWidth="1.2" />
+              <line x1="17.6" y1="17.6" x2="22.8" y2="22.8" />
+              <line x1="77.2" y1="17.6" x2="82.4" y2="22.8" />
+              <line x1="17.6" y1="82.4" x2="22.8" y2="77.2" />
+              <line x1="77.2" y1="82.4" x2="82.4" y2="77.2" />
+              <polygon points="50,10 45,50 55,50" fill="currentColor" opacity="0.5" stroke="none" />
+              <polygon points="50,90 45,50 55,50" fill="currentColor" opacity="0.2" stroke="none" />
+              <text x="50" y="22" textAnchor="middle" fontSize="7" fill="currentColor" stroke="none" fontWeight="bold" opacity="0.7">N</text>
+            </svg>
+          </div>
+
           {/* ── Timer ── */}
-          <div className="w-full mt-auto shrink-0">
+          <div className="w-full shrink-0">
             <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">{t('game_timeLeft')}</p>
             <div className={`text-center text-3xl font-mono font-black mb-1.5 ${isLow ? 'text-red-400 animate-pulse' : 'text-foreground'}`} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
               {globalTime}s

@@ -287,16 +287,17 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
           {/* ── Logo ── */}
-          <div className="w-full flex items-center justify-center gap-2 pb-2 mb-2 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-8 h-8 object-contain" />
+          <div className="w-full flex items-center justify-center gap-2.5 pb-2.5 mb-2.5 border-b border-border/50 shrink-0">
+            <img src="/logo.png" alt="GeoSpeed" className="w-10 sm:w-12 object-contain" />
             <span
-              className="text-lg font-black tracking-tight"
+              className="text-xl sm:text-2xl font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
+                filter: 'drop-shadow(0 1px 4px rgba(240,160,48,0.3))',
               }}
             >
               GEOSPEED
@@ -394,9 +395,32 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </div>
           )}
 
+          {/* ── Compass decoration ── */}
+          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[60px] pointer-events-none select-none">
+            <svg viewBox="0 0 100 100" className="w-20 sm:w-24 opacity-[0.06]" fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="50" cy="50" r="46" />
+              <circle cx="50" cy="50" r="40" />
+              <circle cx="50" cy="50" r="2" fill="currentColor" />
+              {/* Cardinal ticks */}
+              <line x1="50" y1="4" x2="50" y2="14" strokeWidth="1.2" />
+              <line x1="50" y1="86" x2="50" y2="96" strokeWidth="1.2" />
+              <line x1="4" y1="50" x2="14" y2="50" strokeWidth="1.2" />
+              <line x1="86" y1="50" x2="96" y2="50" strokeWidth="1.2" />
+              {/* Intercardinal ticks */}
+              <line x1="17.6" y1="17.6" x2="22.8" y2="22.8" />
+              <line x1="77.2" y1="17.6" x2="82.4" y2="22.8" />
+              <line x1="17.6" y1="82.4" x2="22.8" y2="77.2" />
+              <line x1="77.2" y1="82.4" x2="82.4" y2="77.2" />
+              {/* North needle */}
+              <polygon points="50,10 45,50 55,50" fill="currentColor" opacity="0.5" stroke="none" />
+              <polygon points="50,90 45,50 55,50" fill="currentColor" opacity="0.2" stroke="none" />
+              {/* N label */}
+              <text x="50" y="22" textAnchor="middle" fontSize="7" fill="currentColor" stroke="none" fontWeight="bold" opacity="0.7">N</text>
+            </svg>
+          </div>
+
           {/* ── Timer ── */}
-          <div className="w-full mt-auto shrink-0">
-            <p className="text-center text-[10px] italic text-foreground/40 mb-1">Velocidad y precisión</p>
+          <div className="w-full shrink-0">
             <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} />
           </div>
         </div>
@@ -549,42 +573,46 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           <div
             className={`absolute z-10 flex animate-slide-in-right ${
               isPortraitMobile
-                ? 'inset-x-0 bottom-0 justify-center pb-2 px-2'
-                : `inset-y-0 items-center ${isCompact ? 'right-0 w-[clamp(17rem,70vw,26rem)]' : 'right-0 w-[clamp(22rem,45vw,30rem)]'}`
+                ? 'inset-x-0 bottom-0 justify-center pb-3 px-3'
+                : `inset-y-0 items-center ${isCompact ? 'right-0 w-[clamp(18rem,72vw,28rem)]' : 'right-0 w-[clamp(23rem,46vw,32rem)]'}`
             }`}
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
-            <div className={`flex flex-col justify-center gap-2 overflow-y-auto rounded-xl border border-border/80 bg-card/65 p-3 shadow-2xl backdrop-blur-md ${
-              isPortraitMobile ? 'w-full max-h-[50vh]' : 'max-h-[90%]'
+            <div className={`flex flex-col justify-center gap-3 overflow-y-auto rounded-2xl border border-border/80 bg-card/70 p-4 sm:p-5 shadow-2xl backdrop-blur-md ${
+              isPortraitMobile ? 'w-full max-h-[55vh]' : 'max-h-[90%]'
             }`}>
               <div className="text-center">
-                <span className="text-3xl block animate-record-pop">{feedback.emoji}</span>
-                <p className={`text-sm font-black ${feedback.color}`}>{feedback.phrase}</p>
+                <span className="text-4xl sm:text-5xl block animate-record-pop" style={{ filter: 'drop-shadow(0 0 8px currentColor)' }}>{feedback.emoji}</span>
+                <p className={`mt-1 text-base sm:text-lg font-black ${feedback.color}`}>{feedback.phrase}</p>
+                {showStreak && (
+                  <p className={`mt-0.5 animate-score-pop text-xs sm:text-sm font-bold ${palette.warn.tw}`}>
+                    🔥 Racha ×{streak}{streak >= 3 && ` (+${(streak - 2) * 15}%)`}
+                  </p>
+                )}
               </div>
 
-              <div className="text-center border-t border-border/40 pt-1.5">
-                <h3 className="text-base font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
-                <p className="text-xs text-foreground/80">{lastResult.city.country}</p>
+              <div className="text-center border-t border-border/40 pt-2">
+                <h3 className="text-lg sm:text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
+                <p className="text-xs sm:text-sm font-semibold text-foreground/80">{lastResult.city.country}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5">
-                <div className="bg-muted/50 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">{t('game_distance')}</p>
-                  <p className="font-mono font-bold text-xs">{formatDistance(lastResult.distance)}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-muted/50 rounded-xl p-2.5 sm:p-3 text-center">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground uppercase">{t('game_distance')}</p>
+                  <p className="font-mono font-bold text-sm sm:text-base">{formatDistance(lastResult.distance)}</p>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">{t('game_time')}</p>
-                  <p className="font-mono font-bold text-xs">{lastResult.timeUsed}s</p>
+                <div className="bg-muted/50 rounded-xl p-2.5 sm:p-3 text-center">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground uppercase">{t('game_time')}</p>
+                  <p className="font-mono font-bold text-sm sm:text-base">{lastResult.timeUsed}s</p>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">{t('game_base')}</p>
-                  <p className="font-mono font-bold text-xs">{lastResult.basePoints}</p>
+                <div className="bg-muted/50 rounded-xl p-2.5 sm:p-3 text-center">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground uppercase">{t('game_base')}</p>
+                  <p className="font-mono font-bold text-sm sm:text-base">{lastResult.basePoints}</p>
                 </div>
-                {/* Total — highlighted */}
-                <div className="rounded-lg p-2 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
-                  <p className="text-[9px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>{t('game_total')}</p>
-                  <p className="font-mono font-black text-sm" style={{ color: 'hsl(var(--primary))' }}>
+                <div className="rounded-xl p-2.5 sm:p-3 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
+                  <p className="text-[10px] sm:text-[11px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>{t('game_total')}</p>
+                  <p className="font-mono font-black text-base sm:text-lg" style={{ color: 'hsl(var(--primary))', textShadow: '0 0 10px hsl(var(--primary) / 0.4)' }}>
                     {lastResult.totalPoints.toLocaleString()}
                   </p>
                 </div>
@@ -592,7 +620,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
               <button
                 onClick={advanceRound}
-                className="w-full py-2 rounded-lg font-black text-xs transition-all active:scale-[0.97] btn-glow"
+                className="w-full py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-[0.97] btn-glow"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
               >
                 {t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}

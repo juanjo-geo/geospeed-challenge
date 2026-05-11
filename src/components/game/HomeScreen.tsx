@@ -134,7 +134,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 👤 <span className="font-bold text-foreground">{displayName || user.email?.split('@')[0]}</span>
               </span>
               <button
-                onClick={signOut}
+                onClick={() => { if (window.confirm('¿Seguro que deseas cerrar sesión?')) signOut(); }}
                 className="text-[10px] sm:text-xs text-muted-foreground hover:text-red-400 transition-colors px-1.5 sm:px-2 py-1 rounded border border-border active:scale-[0.97]"
                 aria-label="Cerrar sesión"
               >
