@@ -71,6 +71,7 @@ import { addLives } from '@/lib/energySystem';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
 import { useI18n } from '@/i18n';
+import { useBackgroundMusic, type MusicTrack } from '@/hooks/useBackgroundMusic';
 
 type Phase = 'splash' | 'home' | 'profile' | 'store' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
@@ -137,6 +138,22 @@ const Index = () => {
   const [spectateRoomId, setSpectateRoomId] = useState<string>('');
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
+
+  // ── Background music — derive track from current phase ──
+  const musicTrack: MusicTrack = (() => {
+    switch (phase) {
+      case 'playing':
+      case 'ta-playing':
+      case 'mp-playing':
+      case 'daily':
+        return 'gameplay';
+      case 'splash':
+        return 'none'; // don't play during splash
+      default:
+        return 'menu';
+    }
+  })();
+  const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic(musicTrack);
 
   // Initialize ads on mount
   useEffect(() => { initAds(); }, []);
@@ -719,6 +736,22 @@ const Index = () => {
         </Suspense>
       </PhaseErrorBoundary>
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
+
+      {/* Floating music toggle — always visible */}
+      {phase !== 'splash' && (
+        <button
+          onClick={toggleMusic}
+          className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-md transition-all active:scale-90 shadow-lg"
+          style={{
+            background: 'hsl(var(--background) / 0.7)',
+            borderColor: 'hsl(var(--primary) / 0.3)',
+          }}
+          aria-label={isMusicMuted ? 'Activar música' : 'Silenciar música'}
+          title={isMusicMuted ? 'Activar música' : 'Silenciar música'}
+        >
+          <span className="text-base">{isMusicMuted ? '🔇' : '🎵'}</span>
+        </button>
+      )}
     </>
   );
 };
