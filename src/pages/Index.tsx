@@ -154,6 +154,8 @@ const Index = () => {
   const [spectateRoomId, setSpectateRoomId] = useState<string>('');
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
+  // Phase to return to after rotate screen (for mid-game rotation)
+  const preRotatePhaseRef = useRef<Phase | null>(null);
 
   // ── Background music — single track, always on from splash ──
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
@@ -197,6 +199,7 @@ const Index = () => {
   // Countdown logic — goes 3 → 2 → 1 → 0 (GO!) → start playing
   useEffect(() => {
     if (phase !== 'countdown') return;
+    unlockAudio(); // Ensure AudioContext is running before any sounds
     setCountdown(3);
     playCountdown();
     hapticTap();
@@ -242,6 +245,7 @@ const Index = () => {
     gameKeyRef.current += 1;
     // Suggest rotate if mobile is in portrait
     if (isMobile && window.innerHeight > window.innerWidth) {
+      preRotatePhaseRef.current = 'countdown';
       setPhase('rotate');
       return;
     }
@@ -253,8 +257,11 @@ const Index = () => {
     if (phase !== 'rotate') return;
     const check = () => {
       if (window.innerWidth > window.innerHeight) {
-        gameKeyRef.current += 1;
-        setPhase('countdown');
+        const returnTo = preRotatePhaseRef.current || 'countdown';
+        preRotatePhaseRef.current = null;
+        // Only increment game key if starting fresh (not resuming)
+        if (returnTo === 'countdown') gameKeyRef.current += 1;
+        setPhase(returnTo);
       }
     };
     const onOrientationChange = () => setTimeout(check, 300);
@@ -265,6 +272,24 @@ const Index = () => {
       window.removeEventListener('orientationchange', onOrientationChange);
     };
   }, [phase]);
+
+  // Detect portrait rotation DURING gameplay → pause and show rotate screen
+  useEffect(() => {
+    const playPhases: Phase[] = ['playing', 'ta-playing', 'mp-playing', 'daily'];
+    if (!playPhases.includes(phase) || !isMobile) return;
+    const check = () => {
+      if (window.innerHeight > window.innerWidth) {
+        preRotatePhaseRef.current = phase;
+        setPhase('rotate');
+      }
+    };
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', () => setTimeout(check, 200));
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', check);
+    };
+  }, [phase, isMobile]);
 
   const handleGameOver = useCallback((rounds: RoundResult[], reason: 'timeout' | 'complete') => {
     const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
@@ -553,7 +578,12 @@ const Index = () => {
     }
 
     if (phase === 'rotate') {
-      return <RotateScreen onLandscapeDetected={() => setPhase('countdown')} t={t} />;
+      return <RotateScreen onLandscapeDetected={() => {
+        const returnTo = preRotatePhaseRef.current || 'countdown';
+        preRotatePhaseRef.current = null;
+        if (returnTo === 'countdown') gameKeyRef.current += 1;
+        setPhase(returnTo);
+      }} t={t} />;
     }
 
     if (phase === 'countdown') {
