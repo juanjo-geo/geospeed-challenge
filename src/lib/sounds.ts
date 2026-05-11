@@ -143,16 +143,22 @@ function doUnlock(): void {
 
 /**
  * Global listeners — capture phase, NEVER removed.
- * CRITICAL: calls doUnlock() on EVERY interaction, not just when !unlocked.
- * This is because iOS can re-suspend the AudioContext at any time.
+ * Only does the full unlock ceremony when ctx is NOT running.
+ * Once running, just a lightweight resume() check — no audible artifacts.
  */
 function installGlobalListeners(): void {
   if (listenerInstalled || typeof document === 'undefined') return;
   listenerInstalled = true;
 
   const handler = () => {
-    // ALWAYS call doUnlock — no "if (!unlocked)" shortcut.
-    // iOS re-suspends aggressively, so we re-unlock every single time.
+    // If context is running, do nothing — audio is working fine
+    if (ctx && ctx.state === 'running') return;
+    // If context is suspended (iOS re-suspended it), just resume — no audio nodes
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().then(() => { unlocked = true; }).catch(() => {});
+      return;
+    }
+    // Only do full ceremony if we have no context or it's closed
     doUnlock();
   };
 
