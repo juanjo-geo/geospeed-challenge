@@ -33,7 +33,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         <img
           src="/logo.png"
           alt="GeoSpeed Logo"
-          className="w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 object-contain"
+          className="w-[72px] h-[72px] sm:w-[108px] sm:h-[108px] md:w-[132px] md:h-[132px] object-contain"
           style={{
             filter: 'none',
           }}
