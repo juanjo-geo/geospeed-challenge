@@ -13,6 +13,8 @@ interface WorldMapCanvasProps {
   hintZone?: { lat: number; lon: number } | null;
   /** Continent name to subtly highlight as a visual hint (e.g. 'Europe', 'Asia') */
   highlightContinent?: string | null;
+  /** Callback with live lat/lon as cursor moves over the map */
+  onCursorMove?: (lat: number, lon: number) => void;
 }
 
 // ── Continent → country mapping (ISO-style names matching countries.ts) ──
@@ -40,6 +42,7 @@ export default function WorldMapCanvas({
   gameMode = 'world',
   hintZone,
   highlightContinent,
+  onCursorMove,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
@@ -729,6 +732,17 @@ export default function WorldMapCanvas({
     onMapClick(yToLat(adjustedY), xToLon(adjustedX), e.clientX, e.clientY);
   }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin]);
 
+  // ── Cursor coordinate tracking ──
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onCursorMove) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const adjustedX = (x - rect.width * pinchOrigin.x / 100) / pinchZoom + rect.width * pinchOrigin.x / 100;
+    const adjustedY = (y - rect.height * pinchOrigin.y / 100) / pinchZoom + rect.height * pinchOrigin.y / 100;
+    onCursorMove(yToLat(adjustedY), xToLon(adjustedX));
+  }, [onCursorMove, xToLon, yToLat, pinchZoom, pinchOrigin]);
+
   // ── ZOOM BOMB — Smooth cinematic camera flight to result ──
   // Phase 1: Gentle zoom to user click (0-600ms)
   // Phase 2: Smooth pan to midpoint (600-1600ms)
@@ -894,6 +908,7 @@ export default function WorldMapCanvas({
       <canvas
         ref={canvasRef}
         onClick={handleClick}
+        onMouseMove={handleMouseMove}
         role="img"
         aria-label="Mapa mundial interactivo. Haz clic para colocar tu respuesta."
         tabIndex={0}

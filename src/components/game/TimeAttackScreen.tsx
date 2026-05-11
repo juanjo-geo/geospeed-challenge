@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { City, getRandomCities, type Difficulty, type GameMode } from '@/data/cities';
+import { City, getRandomCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playGameOver } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
@@ -57,6 +57,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const [lastPoints, setLastPoints] = useState<number | null>(null);
   const [flash, setFlash] = useState<'good' | 'bad' | null>(null);
   const [scorePop, setScorePop] = useState(false);
+  const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
   const roundStartRef = useRef(Date.now());
   const roundsRef = useRef<TimeAttackResult['rounds']>([]);
   const gameOverRef = useRef(false);
@@ -98,6 +99,15 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   useEffect(() => {
     roundStartRef.current = Date.now();
   }, [currentIdx]);
+
+  // Throttled cursor coordinate update
+  const cursorThrottleRef = useRef(0);
+  const handleCursorMove = useCallback((lat: number, lon: number) => {
+    const now = Date.now();
+    if (now - cursorThrottleRef.current < 100) return;
+    cursorThrottleRef.current = now;
+    setCursorCoords({ lat, lon });
+  }, []);
 
   const handleMapClick = useCallback((lat: number, lon: number, viewportX?: number, viewportY?: number) => {
     if (isAnimating || !currentCity || gameOverRef.current) return;
@@ -341,8 +351,52 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           </div>
         )}
 
+        {/* ── Command Center Overlays ── */}
+        <div className="absolute inset-0 pointer-events-none z-[2]" style={{ background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.5) 100%)' }} />
+        <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 pointer-events-none z-[6]" style={{ borderColor: 'hsl(var(--primary) / 0.45)' }} />
+        <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 pointer-events-none z-[6]" style={{ borderColor: 'hsl(var(--primary) / 0.45)' }} />
+        <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 pointer-events-none z-[6]" style={{ borderColor: 'hsl(var(--primary) / 0.45)' }} />
+        <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 pointer-events-none z-[6]" style={{ borderColor: 'hsl(var(--primary) / 0.45)' }} />
+
+        {/* Floating city HUD (medium/wide) */}
+        {!isCompact && !isPortraitMobile && !isAnimating && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border backdrop-blur-md" style={{ background: 'hsl(var(--background) / 0.8)', borderColor: 'hsl(var(--primary) / 0.3)' }}>
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t('game_find')}</span>
+              <span className="text-sm font-black" style={{ color: 'hsl(var(--primary))' }}>{currentCity.name}</span>
+              <span className="text-[10px] text-muted-foreground/60">{roundsRef.current.length} ciudades</span>
+            </div>
+          </div>
+        )}
+
+        {/* Live coordinates */}
+        {cursorCoords && !isAnimating && !isCompact && !isPortraitMobile && (
+          <div className="absolute bottom-3 left-3 z-[6] pointer-events-none">
+            <span className="text-[9px] font-mono tabular-nums" style={{ color: 'hsl(var(--primary) / 0.6)' }}>
+              {Math.abs(cursorCoords.lat).toFixed(1)}°{cursorCoords.lat >= 0 ? 'N' : 'S'}{' '}
+              {Math.abs(cursorCoords.lon).toFixed(1)}°{cursorCoords.lon >= 0 ? 'E' : 'W'}
+            </span>
+          </div>
+        )}
+
+        {/* Distance scale */}
+        {!isCompact && !isPortraitMobile && (
+          <div className="absolute bottom-3 right-3 z-[6] pointer-events-none flex items-center gap-1.5">
+            <div className="h-[2px] w-10" style={{ background: 'hsl(var(--primary) / 0.5)' }} />
+            <span className="text-[9px] font-mono" style={{ color: 'hsl(var(--primary) / 0.5)' }}>500km</span>
+          </div>
+        )}
+
+        {/* Mode label persistent */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[6] pointer-events-none">
+          <span className="px-3 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em]" style={{ background: 'hsl(var(--background) / 0.6)', color: 'hsl(var(--primary) / 0.7)', border: '1px solid hsl(var(--primary) / 0.2)' }}>
+            {MODE_CONFIG.find(m => m.key === gameMode)?.emoji} {MODE_CONFIG.find(m => m.key === gameMode)?.label}
+          </span>
+        </div>
+
         <WorldMapCanvas
           onMapClick={handleMapClick}
+          onCursorMove={handleCursorMove}
           clickDisabled={isAnimating}
           userClick={lastClick}
           correctLocation={lastCorrect}
