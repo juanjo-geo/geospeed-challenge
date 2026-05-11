@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { unlockAudio } from '@/lib/sounds';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -6,6 +7,7 @@ interface SplashScreenProps {
 
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const [phase, setPhase] = useState<'enter' | 'hold' | 'exit'>('enter');
+  const [tapped, setTapped] = useState(false);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('hold'), 100);
@@ -14,13 +16,23 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onComplete]);
 
+  // Tap anywhere on splash to unlock audio early (enables music autoplay)
+  const handleTap = useCallback(() => {
+    if (!tapped) {
+      setTapped(true);
+      unlockAudio();
+    }
+  }, [tapped]);
+
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-4 transition-all duration-700 ease-out game-bg"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-4 transition-all duration-700 ease-out game-bg cursor-pointer"
       style={{
         opacity: phase === 'exit' ? 0 : 1,
         transform: phase === 'exit' ? 'scale(1.05)' : 'scale(1)',
       }}
+      onClick={handleTap}
+      onTouchStart={handleTap}
     >
       {/* Logo image with glow */}
       <div
@@ -81,6 +93,16 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       >
         ¿Cuánto conoces el mundo?
       </p>
+
+      {/* Tap hint */}
+      {!tapped && phase === 'hold' && (
+        <p
+          className="absolute bottom-8 text-[10px] tracking-widest uppercase animate-pulse"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+        >
+          TAP TO START
+        </p>
+      )}
     </div>
   );
 }

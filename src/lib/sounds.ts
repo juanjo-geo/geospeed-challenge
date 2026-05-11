@@ -73,24 +73,11 @@ function getWarmAudio(): HTMLAudioElement {
 function doUnlock(): void {
   unlockAttempts++;
 
-  // ─── Strategy 1: HTML Audio element ───
-  // Plays a silent WAV to establish iOS audio session category
-  try {
-    const audio = getWarmAudio();
-    audio.currentTime = 0;
-    const p = audio.play();
-    if (p) p.then(() => { /* audio session active */ }).catch(() => {
-      // Retry with fresh element on failure
-      try {
-        const fresh = new Audio(SILENT_WAV);
-        fresh.setAttribute('playsinline', '');
-        fresh.volume = 0;
-        fresh.play()?.catch(() => {});
-      } catch (_) {}
-    });
-  } catch (_) { /* ignore */ }
+  // Note: HTML Audio warm element (Strategy 1) removed entirely.
+  // It caused audible DAC pop/click on iPhone when starting/stopping.
+  // ctx.resume() alone (Strategy 2) is sufficient for iOS 15+.
 
-  // ─── Strategy 2: AudioContext create/resume ───
+  // ─── AudioContext create/resume ───
   try {
     const Cls = getAudioCtxClass();
     if (!Cls) return;
@@ -114,18 +101,8 @@ function doUnlock(): void {
     // On iOS this is the critical call that must happen in gesture stack
     ctx.resume().then(() => { unlocked = true; }).catch(() => {});
 
-    // ─── Strategy 3: Silent buffer + oscillator ───
-    // Some iOS versions need actual audio nodes started in the gesture
-    try {
-      const sr = ctx.sampleRate || 44100;
-      const silent = ctx.createBuffer(1, sr * 0.01, sr); // 10ms silent
-      const src = ctx.createBufferSource();
-      src.buffer = silent;
-      src.connect(ctx.destination);
-      src.start(0);
-
-      // Note: oscillator removed — caused audible DAC pop/click on iPhone
-    } catch (_) { /* ignore */ }
+    // Note: silent buffer + oscillator removed — both caused audible DAC
+    // pop/click on iPhone. ctx.resume() alone is sufficient for iOS 15+.
 
     // Synchronous check
     if (ctx.state === 'running') {
@@ -648,7 +625,7 @@ export function playVictory() {
 
 /** Countdown beep for 3-2-1 */
 export function playCountdown() {
-  unlockAudio();
+  // No unlockAudio() here — already called once in handleSelectDifficulty
   playTone(vary(880, 0.03), 0.12, 'sine', 0.10);
   // Subtle sub-bass hit for weight
   playImpact(vary(100, 0.1), 0.06, 0.06);
@@ -656,7 +633,6 @@ export function playCountdown() {
 
 /** Final countdown beep (GO!) */
 export function playGo() {
-  unlockAudio();
   // Bright ascending burst
   playTone(vary(1320, 0.03), 0.25, 'sine', 0.14);
   setTimeout(() => playTone(vary(1760, 0.03), 0.3, 'sine', 0.12), 50);

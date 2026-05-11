@@ -122,7 +122,9 @@ function PhaseTransition({ children, phaseKey }: { children: React.ReactNode; ph
   );
 }
 
-const difficultyLabels: Record<Difficulty, string> = {
+// Difficulty labels — now resolved via i18n inside the component
+// (kept as fallback for non-i18n contexts)
+const difficultyLabelsEs: Record<Difficulty, string> = {
   easy: '🟢 Fácil',
   medium: '🟡 Medio',
   hard: '🔴 Experto',
@@ -238,6 +240,11 @@ const Index = () => {
       return;
     }
     gameKeyRef.current += 1;
+    // Suggest rotate if mobile is in portrait
+    if (isMobile && window.innerHeight > window.innerWidth) {
+      setPhase('rotate');
+      return;
+    }
     setPhase('countdown');
   }, [isMobile]);
 
@@ -521,7 +528,8 @@ const Index = () => {
 
   const handleMpPlayAgain = useCallback(() => setPhase('mp-lobby'), []);
 
-  const modeLabel = MODE_CONFIG.find(m => m.key === gameMode)?.label || 'Mapamundi';
+  const modeLabel = t(`mode_${gameMode}` as any) || MODE_CONFIG.find(m => m.key === gameMode)?.label || 'World';
+  const diffLabel = t(`diff_${difficulty}` as any) || difficultyLabelsEs[difficulty];
 
   // --- Render ---
   const renderPhase = () => {
@@ -545,7 +553,7 @@ const Index = () => {
     }
 
     if (phase === 'rotate') {
-      return <RotateScreen onLandscapeDetected={() => setPhase('countdown')} />;
+      return <RotateScreen onLandscapeDetected={() => setPhase('countdown')} t={t} />;
     }
 
     if (phase === 'countdown') {
@@ -556,7 +564,7 @@ const Index = () => {
           <img src="/logo.png" alt="GeoSpeed" className="w-12 sm:w-14 md:w-16 object-contain mb-3 sm:mb-4 animate-fade-in" />
 
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
-            {isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 5s/ciudad' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
+            {isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 5s/city' : `${modeLabel} — ${diffLabel}`}
           </p>
 
           <div className="relative flex items-center justify-center">
@@ -633,7 +641,7 @@ const Index = () => {
                     difficulty === d ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-muted-foreground/40'
                   }`}
                 >
-                  {difficultyLabels[d]}
+                  {t(`diff_${d}` as any) || difficultyLabelsEs[d]}
                 </button>
               ))}
             </div>
@@ -922,7 +930,7 @@ const Index = () => {
 };
 
 /** Rotate-screen that auto-advances once landscape is detected */
-function RotateScreen({ onLandscapeDetected }: { onLandscapeDetected: () => void }) {
+function RotateScreen({ onLandscapeDetected, t }: { onLandscapeDetected: () => void; t: (key: string) => string }) {
   useEffect(() => {
     const check = () => {
       if (window.innerWidth > window.innerHeight) {
@@ -957,10 +965,10 @@ function RotateScreen({ onLandscapeDetected }: { onLandscapeDetected: () => void
       </div>
       <div className="text-center px-8">
         <p className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-          📱 GIRA TU TELÉFONO
+          {t('rotate_title')}
         </p>
         <p className="text-sm text-muted-foreground">
-          Para jugar necesitas modo horizontal
+          {t('rotate_desc')}
         </p>
       </div>
     </div>

@@ -319,7 +319,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               >
                 <span className="text-lg sm:text-xl md:text-2xl">{isLocked ? '🔒' : m.emoji}</span>
                 <span className={`text-[9px] sm:text-[11px] md:text-sm font-bold leading-tight text-center ${isLocked ? 'text-muted-foreground' : isSelected ? 'text-primary' : 'text-foreground'}`}>
-                  {m.label}
+                  {t(`mode_${m.key}` as any) || m.label}
                 </span>
                 {isLocked && <span className="text-[7px] sm:text-[8px] text-muted-foreground">{lock.label}</span>}
               </button>

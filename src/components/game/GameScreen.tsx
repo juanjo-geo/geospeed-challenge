@@ -305,9 +305,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         >
           {/* ── Logo ── */}
           <div className="w-full flex items-center justify-center gap-2.5 pb-2.5 mb-2.5 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-10 sm:w-12 object-contain" />
+            <img src="/logo.png" alt="GeoSpeed" className="w-[50px] sm:w-[60px] object-contain" />
             <span
-              className="text-xl sm:text-2xl font-black tracking-tight"
+              className="text-2xl sm:text-3xl font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',

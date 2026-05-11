@@ -265,6 +265,21 @@ const en: Translations = {
   countdown_ready: 'Find the cities as fast as you can',
   countdown_go: 'Let\'s play!',
 
+  // ── Mode & Difficulty labels ──
+  mode_world: 'World',
+  mode_europe: 'Europe',
+  mode_asia: 'Asia',
+  mode_americas: 'Americas',
+  mode_africa: 'Africa',
+  diff_easy: '🟢 Easy',
+  diff_medium: '🟡 Medium',
+  diff_hard: '🔴 Expert',
+
+  // ── Rotate Screen ──
+  rotate_title: '📱 ROTATE YOUR PHONE',
+  rotate_desc: 'Landscape mode is required to play',
+  rotate_suggestion: 'Rotate your phone for a better experience',
+
   // ── Misc ──
   sr_announceRound: 'Round {round}. Find {city} on the map. You have {time} seconds.',
   sr_announceResult: '{feedback}. {city}, {country}. Distance: {distance} kilometers. {points} points. Round {round} of {total}.',

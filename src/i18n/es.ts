@@ -263,6 +263,21 @@ const es = {
   countdown_ready: 'Localiza las ciudades lo más rápido posible',
   countdown_go: '¡A jugar!',
 
+  // ── Mode & Difficulty labels ──
+  mode_world: 'World',
+  mode_europe: 'Europa',
+  mode_asia: 'Asia',
+  mode_americas: 'América',
+  mode_africa: 'África',
+  diff_easy: '🟢 Fácil',
+  diff_medium: '🟡 Medio',
+  diff_hard: '🔴 Experto',
+
+  // ── Rotate Screen ──
+  rotate_title: '📱 GIRA TU TELÉFONO',
+  rotate_desc: 'Para jugar necesitas modo horizontal',
+  rotate_suggestion: 'Gira tu móvil para una mejor experiencia',
+
   // ── Misc ──
   sr_announceRound: 'Ronda {round}. Encuentra {city} en el mapa. Tienes {time} segundos.',
   sr_announceResult: '{feedback}. {city}, {country}. Distancia: {distance} kilómetros. {points} puntos. Ronda {round} de {total}.',
