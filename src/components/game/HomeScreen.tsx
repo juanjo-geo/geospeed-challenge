@@ -343,22 +343,24 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             const labelKey = d.key === 'easy' ? 'home_diffEasy' : d.key === 'medium' ? 'home_diffMedium' : 'home_diffHard';
             const descKey = d.key === 'easy' ? 'home_diffEasyDesc' : d.key === 'medium' ? 'home_diffMediumDesc' : 'home_diffHardDesc';
             const isSelected = selectedDifficulty === d.key;
-            const selectedColor = d.key === 'easy' ? 'border-green-500 bg-green-500/15 shadow-[0_0_18px_hsl(142_71%_45%/0.3)]' : d.key === 'medium' ? 'border-yellow-500 bg-yellow-500/15 shadow-[0_0_18px_hsl(48_96%_53%/0.3)]' : 'border-red-500 bg-red-500/15 shadow-[0_0_18px_hsl(0_84%_60%/0.3)]';
             return (
               <button
                 key={d.key}
                 onClick={() => setSelectedDifficulty(d.key)}
                 role="radio"
                 aria-checked={isSelected}
-                className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                className={`relative flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
                   isSelected
-                    ? selectedColor
+                    ? 'border-[#F0A030] bg-[#F0A030]/15 shadow-[0_0_20px_rgba(240,160,48,0.3)]'
                     : `bg-card ${d.borderClass} ${d.glowClass}`
                 }`}
                 aria-label={`Dificultad ${t(labelKey)}: ${t(descKey)}`}
               >
+                {isSelected && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold" style={{ background: '#F0A030', color: '#0A0E18' }}>✓</span>
+                )}
                 <span className="text-base sm:text-lg">{d.emoji}</span>
-                <div className="font-bold text-xs sm:text-sm text-foreground">{t(labelKey)}</div>
+                <div className={`font-bold text-xs sm:text-sm ${isSelected ? 'text-[#F0A030]' : 'text-foreground'}`}>{t(labelKey)}</div>
                 <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center leading-tight">{t(descKey)}</div>
               </button>
             );
