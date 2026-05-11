@@ -216,9 +216,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       <div className={`w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-150 ${isNewPlayer ? 'mb-3 sm:mb-4' : 'mb-1.5 sm:mb-2'}`}>
         <button
           onClick={() => setShowHowToPlay(prev => !prev)}
-          className="w-full text-center text-[11px] sm:text-xs text-muted-foreground hover:text-primary transition-colors py-1"
+          className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl border border-border bg-card/60 text-[11px] sm:text-xs font-bold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all active:scale-[0.97]"
         >
-          {showHowToPlay ? `▴ ${t('home_hideInstructions')}` : t('home_howToPlay')}
+          <span>{showHowToPlay ? '▴' : '❓'}</span>
+          {showHowToPlay ? t('home_hideInstructions') : t('home_howToPlay')}
         </button>
 
         <div className={`overflow-hidden transition-all duration-500 ease-out ${showHowToPlay ? 'max-h-[1200px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}>
