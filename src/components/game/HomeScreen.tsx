@@ -165,19 +165,42 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       )}
 
-      {/* ── Logo — compact for returning players ── */}
-      <div className={`animate-fade-in-up text-center ${isNewPlayer ? 'mb-1 sm:mb-2' : 'mb-0.5'}`}>
-        <span
-          className={`block ${isNewPlayer ? 'text-3xl sm:text-4xl md:text-5xl mb-0.5 sm:mb-1' : 'text-2xl sm:text-3xl mb-0'}`}
-        >📍</span>
+      {/* ── Logo + Title + Tagline — same style as loader ── */}
+      <div className={`animate-fade-in-up flex flex-col items-center ${isNewPlayer ? 'mb-1 sm:mb-2' : 'mb-0.5'}`}>
+        <img
+          src="/logo.png"
+          alt="GeoSpeed Logo"
+          className={isNewPlayer ? 'w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36' : 'w-14 h-14 sm:w-20 sm:h-20'}
+        />
         <h1
-          className={`font-black tracking-tight leading-none ${isNewPlayer ? 'text-2xl sm:text-3xl md:text-5xl' : 'text-xl sm:text-2xl md:text-4xl'}`}
-          style={{ fontFamily: 'Impact, system-ui', color: 'hsl(var(--primary))' }}
+          className={`font-black tracking-tight leading-none mt-1 ${isNewPlayer ? 'text-2xl sm:text-3xl md:text-5xl' : 'text-xl sm:text-2xl md:text-4xl'}`}
+          style={{
+            fontFamily: 'Impact, system-ui',
+            background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
         >
-          GEOSPEED IQ CHALLENGE
+          GEOSPEED
         </h1>
+        <p
+          className={`tracking-[0.3em] uppercase ${isNewPlayer ? 'text-xs sm:text-sm mt-0.5' : 'text-[10px] sm:text-xs mt-0'}`}
+          style={{
+            background: 'linear-gradient(90deg, #F0A030, #D48020)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            opacity: 0.8,
+          }}
+        >
+          IQ Challenge
+        </p>
       </div>
-      <p className={`text-muted-foreground italic animate-fade-in-up animation-delay-100 ${isNewPlayer ? 'text-sm sm:text-base md:text-lg mb-2 sm:mb-3' : 'text-xs sm:text-sm mb-1 sm:mb-1.5'}`}>
+      <p
+        className={`animate-fade-in-up animation-delay-100 tracking-widest uppercase ${isNewPlayer ? 'text-[10px] sm:text-xs mb-2 sm:mb-3' : 'text-[9px] sm:text-[10px] mb-1 sm:mb-1.5'}`}
+        style={{ color: '#00D4AA', opacity: 0.5 }}
+      >
         {t('home_tagline')}
       </p>
 
