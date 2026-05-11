@@ -241,7 +241,7 @@ const Index = () => {
   }, [difficulty, gameMode]);
 
   const handlePlayAgain = useCallback(() => { gameKeyRef.current += 1; setPhase('countdown'); }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); setPhase('home'); }, []);
+  const handleGoHome = useCallback(() => { setIsTraining(false); setPhase('home'); window.scrollTo(0, 0); }, []);
   const handleOpenStore = useCallback(() => setPhase('store'), []);
   const handleOpenProfile = useCallback(() => setPhase('profile'), []);
 
@@ -363,6 +363,9 @@ const Index = () => {
       const isGo = countdown === 0;
       return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
+          {/* Logo pequeño */}
+          <img src="/logo.png" alt="GeoSpeed" className="w-12 sm:w-14 md:w-16 object-contain mb-3 sm:mb-4 animate-fade-in" />
+
           <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
             {isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 5s/ciudad' : `${modeLabel} — ${difficultyLabels[difficulty]}`}
           </p>
@@ -628,7 +631,7 @@ const Index = () => {
   const lazyFallback = (
     <div className="fixed inset-0 flex items-center justify-center game-bg">
       <div className="text-center animate-pulse">
-        <span className="text-4xl block mb-2">📍</span>
+        <img src="/logo.png" alt="GeoSpeed" className="w-10 mx-auto mb-2" />
         <p className="text-sm text-muted-foreground">{t('loading')}</p>
       </div>
     </div>
