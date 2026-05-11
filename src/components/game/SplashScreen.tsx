@@ -56,19 +56,6 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       >
         GEOSPEED
       </h1>
-      <p
-        className="text-xs sm:text-sm md:text-base tracking-[0.2em] uppercase mt-1 sm:mt-1.5 transition-all duration-1000 ease-out delay-500"
-        style={{
-          background: 'linear-gradient(90deg, #F0A030, #D48020)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          opacity: phase === 'enter' ? 0 : 0.8,
-          transform: phase === 'enter' ? 'translateY(12px)' : 'translateY(0)',
-        }}
-      >
-        ¿Cuánto conoces el mundo?
-      </p>
 
       {/* Loading bar — gold to teal */}
       <div className="mt-6 sm:mt-8 w-32 sm:w-40 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(240,160,48,0.15)' }}>

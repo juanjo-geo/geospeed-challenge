@@ -6,7 +6,7 @@
 // Volume at 15%, fade in/out transitions, mute persisted in localStorage.
 // Automatically pauses when tab is hidden and resumes on focus.
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 export type MusicTrack = 'menu' | 'gameplay' | 'none';
 
@@ -181,7 +181,7 @@ installVisibilityHandler();
  */
 export function useBackgroundMusic(initialTrack: MusicTrack = 'none') {
   const trackRef = useRef(initialTrack);
-  const mutedRef = useRef(isMuted);
+  const [mutedState, setMutedState] = useState(isMuted);
 
   // Start/switch track on mount or when initialTrack changes
   useEffect(() => {
@@ -191,11 +191,7 @@ export function useBackgroundMusic(initialTrack: MusicTrack = 'none') {
     } else {
       playTrack(initialTrack);
     }
-    // Cleanup: fade out when component unmounts
-    return () => {
-      // Don't stop if another instance is managing music
-      // (only stop if this component's track is still active)
-    };
+    return () => {};
   }, [initialTrack]);
 
   const setTrack = useCallback((track: MusicTrack) => {
@@ -209,13 +205,14 @@ export function useBackgroundMusic(initialTrack: MusicTrack = 'none') {
 
   const toggle = useCallback(() => {
     toggleMuted();
-    mutedRef.current = isMuted;
+    // Force React re-render with new muted state
+    setMutedState(isMuted);
   }, []);
 
   return {
     setTrack,
     toggle,
-    get muted() { return isMuted; },
+    muted: mutedState,
   };
 }
 

@@ -190,18 +190,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         >
           GEOSPEED
         </h1>
-        <p
-          className={`tracking-[0.2em] uppercase ${isNewPlayer ? 'text-xs sm:text-sm md:text-base mt-1' : 'text-[10px] sm:text-xs mt-0.5'}`}
-          style={{
-            background: 'linear-gradient(90deg, #F0A030, #D48020)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            opacity: 0.8,
-          }}
-        >
-          ¿Cuánto conoces el mundo?
-        </p>
       </div>
       <p
         className={`animate-fade-in-up animation-delay-100 tracking-widest uppercase ${isNewPlayer ? 'text-[10px] sm:text-xs mb-2 sm:mb-3' : 'text-[9px] sm:text-[10px] mb-1 sm:mb-1.5'}`}

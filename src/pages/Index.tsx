@@ -148,7 +148,7 @@ const Index = () => {
       case 'daily':
         return 'gameplay';
       case 'splash':
-        return 'none'; // don't play during splash
+        return 'menu'; // music starts from the very beginning
       default:
         return 'menu';
     }
