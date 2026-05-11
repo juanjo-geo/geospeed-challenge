@@ -35,7 +35,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           alt="GeoSpeed Logo"
           className="w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 object-contain"
           style={{
-            filter: `drop-shadow(0 0 20px rgba(240,160,48,0.5)) drop-shadow(0 0 40px rgba(0,212,170,0.2))`,
+            filter: 'none',
           }}
         />
       </div>
