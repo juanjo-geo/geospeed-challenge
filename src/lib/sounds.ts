@@ -184,11 +184,19 @@ installGlobalListeners();
 
 /**
  * Public API — call from any interactive handler as extra safety.
- * Only runs the full unlock ceremony if audio isn't already working.
+ * Runs the full unlock ceremony ONCE per session (first user gesture),
+ * then only resumes if suspended. Avoids repeated click artifacts on iOS.
  */
+let hasUnlockedOnce = false;
 export function unlockAudio(): void {
   installGlobalListeners();
-  // If context is already running, no ceremony needed — avoids click artifacts on iOS
+  // First explicit call: always do full ceremony (user gesture required for iOS)
+  if (!hasUnlockedOnce) {
+    hasUnlockedOnce = true;
+    doUnlock();
+    return;
+  }
+  // Subsequent calls: only intervene if context needs help
   if (ctx && ctx.state === 'running') return;
   if (ctx && ctx.state === 'suspended') {
     ctx.resume().then(() => { unlocked = true; }).catch(() => {});
