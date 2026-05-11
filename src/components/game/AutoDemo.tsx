@@ -99,9 +99,9 @@ export default function AutoDemo() {
       ctx.fillRect(0, 0, w, h);
 
       // Simplified countries
-      ctx.fillStyle = isLight ? '#D8E8D0' : isNeon ? 'rgba(255, 140, 0, 0.08)' : '#C8A060';
-      ctx.strokeStyle = isLight ? '#8899AA33' : isNeon ? 'rgba(255, 140, 0, 0.06)' : '#2A140833';
-      ctx.lineWidth = 0.4;
+      ctx.fillStyle = isLight ? '#D8E8D0' : isNeon ? '#1E2836' : '#C8A060';
+      ctx.strokeStyle = isLight ? '#8899AA55' : isNeon ? 'rgba(220, 230, 240, 0.45)' : '#2A140844';
+      ctx.lineWidth = isNeon ? 0.8 : 0.5;
       for (const country of countries) {
         for (const polygon of country.polygons) {
           if (polygon.length < 4) continue;

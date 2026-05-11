@@ -427,22 +427,22 @@
 /* ── Neon-Velocity theme (optional high-contrast mode per Guía de Estilo) ── */
 :root.neon {
   --background: 220 20% 5%;      /* #0B0E14 — midnight blue-black */
-  --foreground: 0 0% 93%;        /* near-white text */
+  --foreground: 210 15% 92%;     /* cool white — less harsh than pure white */
 
-  --card: 220 15% 10%;
-  --card-foreground: 0 0% 93%;
+  --card: 215 18% 11%;           /* slightly blue-tinted card — not flat black */
+  --card-foreground: 210 15% 92%;
 
-  --popover: 220 15% 10%;
-  --popover-foreground: 0 0% 93%;
+  --popover: 215 18% 11%;
+  --popover-foreground: 210 15% 92%;
 
   --primary: 30 100% 50%;        /* #FF8C00 — electric orange (speed) */
   --primary-foreground: 0 0% 5%;
 
-  --secondary: 220 15% 15%;
-  --secondary-foreground: 0 0% 93%;
+  --secondary: 215 15% 16%;      /* blue-grey secondary — adds depth */
+  --secondary-foreground: 210 15% 92%;
 
-  --muted: 220 10% 14%;
-  --muted-foreground: 220 10% 50%;
+  --muted: 215 12% 15%;          /* subtle blue undertone */
+  --muted-foreground: 210 12% 55%;  /* brighter muted text for readability */
 
   --accent: 185 100% 50%;        /* #00F5FF — cyan (precision/success) */
   --accent-foreground: 0 0% 5%;
@@ -450,17 +450,20 @@
   --destructive: 0 85% 55%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 220 10% 20%;
-  --input: 220 10% 20%;
+  --border: 215 12% 22%;         /* slightly lighter borders for structure */
+  --input: 215 12% 18%;
   --ring: 30 100% 50%;
 
-  --bg-from: 220 20% 3%;
-  --bg-to: 220 20% 7%;
-  --game-panel: 220 15% 8%;
+  --bg-from: 220 22% 3%;
+  --bg-to: 218 18% 8%;
+  --game-panel: 215 15% 9%;
 }
 /* In neon mode, success feedback uses cyan instead of green */
 :root.neon .text-green-400 { color: hsl(185 100% 50%) !important; }
 :root.neon .bg-green-500\/20 { background-color: hsl(185 100% 50% / 0.2) !important; }
+/* Neon mode: inject cyan accents into key UI elements for visual variety */
+:root.neon .border-primary\/40 { border-color: hsl(185 60% 40% / 0.4) !important; }
+:root.neon .hover\:border-primary:hover { border-color: hsl(185 100% 50%) !important; }
 
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {

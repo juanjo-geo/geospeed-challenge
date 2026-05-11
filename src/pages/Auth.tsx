@@ -51,7 +51,13 @@ export default function Auth() {
         },
       });
       if (error) {
-        setError(error.message);
+        // Translate common Supabase errors to Spanish
+        const msg = error.message;
+        if (msg.includes('already registered')) setError('Este email ya tiene una cuenta. Inicia sesión.');
+        else if (msg.includes('valid email')) setError('Ingresa un email válido.');
+        else if (msg.includes('least 6')) setError('La contraseña debe tener al menos 6 caracteres.');
+        else if (msg.includes('signup is disabled') || msg.includes('Signups not allowed')) setError('El registro está temporalmente deshabilitado. Intenta con Google o Apple.');
+        else setError(msg);
       } else {
         setConfirmSent(true);
       }

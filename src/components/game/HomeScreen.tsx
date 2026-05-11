@@ -294,9 +294,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           onClick={() => onStartGame('medium', 'world')}
           className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3 sm:py-3.5 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.97] shadow-xl hover:shadow-2xl"
           style={{
-            background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)',
+            background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 70%, hsl(var(--accent) / 0.6) 100%)',
             color: 'hsl(var(--primary-foreground))',
-            boxShadow: '0 4px 24px hsl(var(--primary) / 0.35), 0 0 0 1px hsl(var(--primary) / 0.2)',
+            boxShadow: '0 4px 24px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--accent) / 0.08), 0 0 0 1px hsl(var(--primary) / 0.2)',
           }}
           aria-label="Jugar ahora — Modo clásico, dificultad media, mundo"
         >
@@ -366,7 +366,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
             {/* Level bar */}
             <div className="bg-card border border-border rounded-xl p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl" style={{ background: 'linear-gradient(90deg, hsl(var(--primary)/0) 0%, hsl(var(--primary)) 50%, hsl(var(--primary)/0) 100%)' }} />
+              <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl" style={{ background: 'linear-gradient(90deg, hsl(var(--primary)/0) 0%, hsl(var(--primary)) 35%, hsl(var(--accent)) 65%, hsl(var(--accent)/0) 100%)' }} />
               <span className="text-xl sm:text-2xl">{playerLevel.emoji}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-1.5 sm:gap-2">
@@ -374,7 +374,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   <span className="text-[9px] sm:text-[10px] text-muted-foreground">{playerLevel.xp.toLocaleString()} {t('home_xp')}</span>
                 </div>
                 <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${playerLevel.progress}%`, background: 'hsl(var(--primary))' }} />
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${playerLevel.progress}%`, background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))' }} />
                 </div>
               </div>
               <button
@@ -415,8 +415,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           role="group"
           aria-label="Estadísticas del jugador"
         >
-          <StatCard label={t('home_statsGames')}   value={stats.gamesPlayed.toString()} />
-          <StatCard label={t('home_statsRecord')}     value={stats.bestScore.toLocaleString()} />
+          <StatCard label={t('home_statsGames')}   value={stats.gamesPlayed.toString()} accentColor="hsl(var(--primary))" />
+          <StatCard label={t('home_statsRecord')}     value={stats.bestScore.toLocaleString()} accentColor="hsl(var(--accent))" />
           <StatCard label={t('home_statsAvgDist')} value={`${avgDist.toLocaleString()} km`} />
         </div>
       )}
@@ -665,13 +665,14 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, accentColor }: { label: string; value: string; accentColor?: string }) {
+  const color = accentColor || 'hsl(var(--primary))';
   return (
     <div className="bg-card border border-border rounded-xl p-2 sm:p-2.5 md:p-3 text-center relative overflow-hidden">
-      {/* Accent top line */}
-      <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl" style={{ background: 'hsl(var(--primary))' }} />
+      {/* Accent top line — gradient for visual variety */}
+      <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl" style={{ background: `linear-gradient(90deg, ${color}, hsl(var(--accent)))` }} />
       <div className="text-[8px] sm:text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5 mt-0.5">{label}</div>
-      <div className="text-sm sm:text-base md:text-lg font-bold font-mono" style={{ color: 'hsl(var(--primary))' }}>{value}</div>
+      <div className="text-sm sm:text-base md:text-lg font-bold font-mono" style={{ color }}>{value}</div>
     </div>
   );
 }

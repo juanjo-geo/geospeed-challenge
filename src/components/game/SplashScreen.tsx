@@ -33,8 +33,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         <div
           className="w-20 h-20 sm:w-28 sm:h-28 rounded-full flex items-center justify-center"
           style={{
-            background: 'radial-gradient(circle, hsla(var(--primary), 0.15) 0%, transparent 70%)',
-            boxShadow: '0 0 60px hsla(var(--primary), 0.2), 0 0 120px hsla(var(--primary), 0.1)',
+            background: 'radial-gradient(circle, hsla(var(--primary), 0.15) 0%, hsla(var(--accent), 0.05) 50%, transparent 70%)',
+            boxShadow: '0 0 60px hsla(var(--primary), 0.2), 0 0 120px hsla(var(--accent), 0.08)',
           }}
         >
           <span className="text-4xl sm:text-6xl drop-shadow-lg" style={{ filter: 'drop-shadow(0 0 12px hsla(var(--primary), 0.4))' }}>📍</span>
@@ -65,17 +65,29 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         IQ Challenge
       </p>
 
-      {/* Loading bar */}
+      {/* Loading bar — gradient from primary to accent */}
       <div className="mt-8 sm:mt-10 w-32 sm:w-40 h-1 bg-muted/30 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all ease-out"
           style={{
-            background: 'hsl(var(--primary))',
+            background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))',
             width: phase === 'enter' ? '0%' : phase === 'hold' ? '85%' : '100%',
             transitionDuration: phase === 'hold' ? '2000ms' : '600ms',
           }}
         />
       </div>
+
+      {/* Tagline */}
+      <p
+        className="mt-4 text-[10px] sm:text-xs tracking-widest uppercase transition-all duration-1000 ease-out delay-700"
+        style={{
+          color: 'hsl(var(--accent))',
+          opacity: phase === 'enter' ? 0 : 0.6,
+          transform: phase === 'enter' ? 'translateY(8px)' : 'translateY(0)',
+        }}
+      >
+        ¿Cuánto conoces el mundo?
+      </p>
     </div>
   );
 }
