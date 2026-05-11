@@ -17,6 +17,7 @@ type AudioCtxClass = typeof AudioContext;
 
 let ctx: AudioContext | null = null;
 let unlocked = false;
+let globalListenerInstalled = false;
 
 function getAudioCtxClass(): AudioCtxClass | null {
   if (typeof window === 'undefined') return null;
@@ -28,45 +29,112 @@ function getAudioCtxClass(): AudioCtxClass | null {
 }
 
 /**
- * Call from any direct user-gesture handler (tap/click) to activate
- * AudioContext on mobile (especially iOS Safari).
+ * Ensure AudioContext exists. Does NOT resume — that requires a user gesture.
  */
-export function unlockAudio(): void {
-  try {
-    const Cls = getAudioCtxClass();
-    if (!Cls) return;
-    if (!ctx) ctx = new Cls();
-    if (unlocked && ctx.state === 'running') return;
-    if (ctx.state === 'suspended') {
-      ctx.resume().then(() => { unlocked = true; }).catch(() => {});
-    }
-    if (!unlocked) {
-      const silent = ctx.createBuffer(1, 1, ctx.sampleRate);
-      const src = ctx.createBufferSource();
-      src.buffer = silent;
-      src.connect(ctx.destination);
-      src.start(0);
-      unlocked = true;
-    }
-  } catch (_) { /* ignore */ }
-}
-
-function getCtx(): AudioContext | null {
+function ensureCtx(): AudioContext | null {
   try {
     const Cls = getAudioCtxClass();
     if (!Cls) return null;
-    if (!ctx) {
-      ctx = new Cls();
-      ctx.resume().then(() => { unlocked = true; }).catch(() => {});
-    } else if (ctx.state === 'suspended') {
-      ctx.resume().then(() => { unlocked = true; }).catch(() => {});
-    } else {
-      unlocked = true;
-    }
+    if (!ctx) ctx = new Cls();
     return ctx;
   } catch (_) {
     return null;
   }
+}
+
+/**
+ * The real iOS unlock — must run synchronously inside a user-gesture call stack.
+ *
+ * iOS Safari requirements:
+ * 1. AudioContext must be created OR resumed inside a direct user gesture (touchend/click)
+ * 2. A buffer source must be started in the same synchronous call stack
+ * 3. resume() must be called synchronously (we don't just rely on the promise)
+ */
+function doUnlock(): void {
+  const c = ensureCtx();
+  if (!c) return;
+
+  // Always try to resume — iOS may re-suspend the context after inactivity
+  if (c.state === 'suspended') {
+    // Synchronous call in the gesture stack — iOS Safari checks this
+    c.resume().catch(() => {});
+  }
+
+  // Play a silent buffer — this is the critical iOS unlock trick.
+  // Must happen in the same call stack as the user gesture.
+  // We do this every time if not yet confirmed running, since iOS
+  // can silently fail the first attempt.
+  if (!unlocked || c.state !== 'running') {
+    try {
+      const silent = c.createBuffer(1, 1, c.sampleRate);
+      const src = c.createBufferSource();
+      src.buffer = silent;
+      src.connect(c.destination);
+      src.start(0);
+      // Also create and immediately start+stop an oscillator
+      // Some iOS versions need this as well
+      const osc = c.createOscillator();
+      osc.frequency.value = 1;
+      const g = c.createGain();
+      g.gain.value = 0; // silent
+      osc.connect(g);
+      g.connect(c.destination);
+      osc.start(0);
+      osc.stop(c.currentTime + 0.001);
+    } catch (_) { /* ignore */ }
+  }
+
+  if (c.state === 'running') {
+    unlocked = true;
+  }
+}
+
+/**
+ * Install a global "first touch" listener that unlocks audio on the very
+ * first user interaction. This catches cases where individual button handlers
+ * go through React's synthetic event system (which iOS sometimes doesn't
+ * consider a "direct user gesture").
+ */
+function installGlobalUnlockListener(): void {
+  if (globalListenerInstalled || typeof document === 'undefined') return;
+  globalListenerInstalled = true;
+
+  const events = ['touchstart', 'touchend', 'click', 'keydown'] as const;
+  const handler = () => {
+    doUnlock();
+    if (unlocked) {
+      // Success — remove all listeners
+      events.forEach(e => document.removeEventListener(e, handler, true));
+    }
+  };
+  events.forEach(e => document.addEventListener(e, handler, { capture: true, passive: true }));
+}
+
+// Install immediately on module load — catches first tap anywhere
+installGlobalUnlockListener();
+
+/**
+ * Call from any user-gesture handler to ensure audio works on iOS.
+ * Safe to call multiple times.
+ */
+export function unlockAudio(): void {
+  doUnlock();
+  installGlobalUnlockListener(); // ensure it's there
+}
+
+/**
+ * Get AudioContext, attempting resume if suspended.
+ * For non-gesture contexts (setTimeout callbacks etc.), this will
+ * return the context even if suspended — the next user gesture will resume it.
+ */
+function getCtx(): AudioContext | null {
+  const c = ensureCtx();
+  if (!c) return null;
+  // Try to resume if suspended — will only work if in a gesture stack
+  if (c.state === 'suspended') {
+    c.resume().catch(() => {});
+  }
+  return c;
 }
 
 // ── Anti-Monotony Helpers ─────────────────────────────────────────────────
