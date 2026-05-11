@@ -506,18 +506,18 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Round result — overlay on wide */}
         {showRightPanel && (
           <div
-            className="absolute inset-y-0 right-0 z-10 w-[clamp(24rem,38vw,34rem)] flex items-center animate-slide-in-right"
+            className="absolute inset-y-0 right-0 z-10 w-[clamp(28rem,42vw,40rem)] flex items-center animate-slide-in-right"
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
-            <div className="flex flex-col justify-center gap-3 rounded-2xl border border-border/80 bg-card/60 p-5 shadow-2xl backdrop-blur-md max-h-[90%] overflow-y-auto">
+            <div className="flex flex-col justify-center gap-4 rounded-2xl border border-border/80 bg-card/60 p-6 lg:p-8 shadow-2xl backdrop-blur-md max-h-[90%] overflow-y-auto">
               {/* Feedback */}
               <div className="text-center">
                 <span
-                  className="text-6xl block animate-record-pop"
+                  className="text-7xl block animate-record-pop"
                   style={{ filter: 'drop-shadow(0 0 10px currentColor)' }}
                 >{feedback.emoji}</span>
-                <p className={`mt-1.5 text-xl font-black ${feedback.color}`}>{feedback.phrase}</p>
+                <p className={`mt-2 text-2xl font-black ${feedback.color}`}>{feedback.phrase}</p>
                 {showStreak && (
                   <p className={`mt-0.5 animate-score-pop text-sm font-bold ${palette.warn.tw}`}>
                     🔥 Racha ×{streak}{streak >= 3 && ` (+${(streak - 2) * 15}%)`}
@@ -526,29 +526,29 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               </div>
 
               {/* City */}
-              <div className="text-center border-t border-border/50 pt-2.5">
-                <h3 className="text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
-                <p className="text-sm font-semibold text-foreground/80">{lastResult.city.country}</p>
+              <div className="text-center border-t border-border/50 pt-3">
+                <h3 className="text-2xl font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
+                <p className="text-base font-semibold text-foreground/80">{lastResult.city.country}</p>
               </div>
 
               {/* Stats grid */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">{t('game_distance')}</p>
-                  <p className="font-mono text-base font-bold">{formatDistance(lastResult.distance)}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-muted/50 p-3 lg:p-4 text-center">
+                  <p className="text-xs uppercase text-muted-foreground">{t('game_distance')}</p>
+                  <p className="font-mono text-lg font-bold">{formatDistance(lastResult.distance)}</p>
                 </div>
-                <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">{t('game_time')}</p>
-                  <p className="font-mono text-base font-bold">{lastResult.timeUsed}s</p>
+                <div className="rounded-xl bg-muted/50 p-3 lg:p-4 text-center">
+                  <p className="text-xs uppercase text-muted-foreground">{t('game_time')}</p>
+                  <p className="font-mono text-lg font-bold">{lastResult.timeUsed}s</p>
                 </div>
-                <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                  <p className="text-[11px] uppercase text-muted-foreground">{t('game_base')}</p>
-                  <p className="font-mono text-base font-bold">{lastResult.basePoints}</p>
+                <div className="rounded-xl bg-muted/50 p-3 lg:p-4 text-center">
+                  <p className="text-xs uppercase text-muted-foreground">{t('game_base')}</p>
+                  <p className="font-mono text-lg font-bold">{lastResult.basePoints}</p>
                 </div>
                 {/* Total — highlighted */}
-                <div className="rounded-lg p-2.5 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
-                  <p className="text-[11px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>{t('game_total')}</p>
-                  <p className="font-mono text-lg font-black" style={{ color: 'hsl(var(--primary))', textShadow: '0 0 10px hsl(var(--primary) / 0.4)' }}>
+                <div className="rounded-xl p-3 lg:p-4 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
+                  <p className="text-xs uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>{t('game_total')}</p>
+                  <p className="font-mono text-xl font-black" style={{ color: 'hsl(var(--primary))', textShadow: '0 0 10px hsl(var(--primary) / 0.4)' }}>
                     {lastResult.totalPoints.toLocaleString()}
                   </p>
                 </div>
@@ -556,7 +556,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
               <button
                 onClick={advanceRound}
-                className="w-full rounded-xl py-3 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-xl py-3.5 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
                 aria-label={t('game_next') + ', ' + t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               >
@@ -574,7 +574,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             className={`absolute z-10 flex animate-slide-in-right ${
               isPortraitMobile
                 ? 'inset-x-0 bottom-0 justify-center pb-3 px-3'
-                : `inset-y-0 items-center ${isCompact ? 'right-0 w-[clamp(18rem,72vw,28rem)]' : 'right-0 w-[clamp(23rem,46vw,32rem)]'}`
+                : `inset-y-0 items-center ${isCompact ? 'right-0 w-[clamp(22rem,78vw,32rem)]' : 'right-0 w-[clamp(26rem,50vw,36rem)]'}`
             }`}
             role="dialog"
             aria-label={t('game_resultLabel')}
