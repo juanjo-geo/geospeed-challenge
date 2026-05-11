@@ -90,8 +90,18 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-6 game-bg">
       <div className="bg-card border rounded-xl p-8 max-w-sm w-full shadow-2xl animate-fade-in-up">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-black" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-            📍 GEOSPEED
+          <img src="/logo.png" alt="GeoSpeed" className="w-14 object-contain mx-auto mb-1" />
+          <h1
+            className="text-2xl font-black tracking-tight"
+            style={{
+              fontFamily: 'Impact, system-ui',
+              background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            GEOSPEED
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             {isLogin ? 'Inicia sesión para guardar tu progreso' : 'Crea tu cuenta de jugador'}

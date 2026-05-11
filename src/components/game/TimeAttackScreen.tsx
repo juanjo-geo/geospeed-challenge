@@ -183,9 +183,19 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
           {/* ── Logo ── */}
-          <div className="w-full text-center pb-2 mb-2 border-b border-border/50 shrink-0">
-            <span className="text-lg font-black tracking-wide" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-              📍 GEOSPEED
+          <div className="w-full flex items-center justify-center gap-2 pb-2 mb-2 border-b border-border/50 shrink-0">
+            <img src="/logo.png" alt="GeoSpeed" className="w-8 h-8 object-contain" />
+            <span
+              className="text-lg font-black tracking-tight"
+              style={{
+                fontFamily: 'Impact, system-ui',
+                background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              GEOSPEED
             </span>
           </div>
 
