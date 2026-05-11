@@ -8,10 +8,10 @@ import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
 import { getEnergy } from '@/lib/energySystem';
 import { checkStreak, claimDailyReward, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
-import ThemeToggle from './ThemeToggle';
+// ThemeToggle removed — neon-only mode
 import AutoDemo from './AutoDemo';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import { useA11y } from '@/contexts/AccessibilityContext';
+// useA11y removed — colorblind toggle removed
 import { useI18n, LOCALES } from '@/i18n';
 
 interface HomeScreenProps {
@@ -40,7 +40,7 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
 
 export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
-  const { colorblind, toggleColorblind } = useA11y();
+  // colorblind toggle removed
   const { t, locale, setLocale } = useI18n();
   const navigate = useNavigate();
   const stats = getPlayerStats();
@@ -112,19 +112,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               {t('home_store')}
             </button>
           )}
-          <ThemeToggle />
-          <button
-            onClick={toggleColorblind}
-            className={`p-1.5 sm:p-2 rounded-lg border transition-all active:scale-[0.95] text-sm ${
-              colorblind
-                ? 'border-primary bg-primary/15 text-primary'
-                : 'border-border text-muted-foreground hover:text-foreground'
-            }`}
-            title={colorblind ? t('home_colorblindOn') : t('home_colorblindOff')}
-            aria-label={colorblind ? 'Modo daltónico activado' : 'Activar modo daltónico'}
-          >
-            👁
-          </button>
           <button
             onClick={() => {
               const idx = LOCALES.findIndex(l => l.key === locale);
@@ -358,11 +345,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-200">
         <button
           onClick={() => onStartGame(selectedDifficulty, selectedMode)}
-          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3 sm:py-3.5 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.97] shadow-xl hover:shadow-2xl"
+          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.96] shadow-xl hover:shadow-2xl hover:scale-[1.03] hover:brightness-110"
           style={{
             background: 'linear-gradient(135deg, #E53E3E 0%, #DD6B20 50%, #D69E2E 100%)',
             color: '#fff',
-            boxShadow: '0 4px 24px rgba(229,62,62,0.35), 0 0 40px rgba(221,107,32,0.15), 0 0 0 1px rgba(229,62,62,0.3)',
+            boxShadow: '0 4px 24px rgba(229,62,62,0.4), 0 0 60px rgba(221,107,32,0.2), 0 0 0 1px rgba(229,62,62,0.3)',
           }}
           aria-label={`Jugar ahora — ${DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.label}, ${MODE_CONFIG.find(m => m.key === selectedMode)?.label}`}
         >

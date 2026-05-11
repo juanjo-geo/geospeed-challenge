@@ -91,31 +91,19 @@ export default function WorldMapCanvas({
   const isLightMode = () => theme === 'light';
   const isNeonMode = () => theme === 'neon';
 
-  // ── NEON-VELOCITY: Wide-range tech tones on deep blue-black ──
-  // Colors alternate between cool (blue-grey, slate) and warm (steel, graphite)
-  // with a ~40-point brightness spread so adjacent countries pop.
-  const MAP_PALETTE_NEON = [
-    '#1E2836', // deep navy
-    '#4A5568', // warm silver
-    '#2D3A4A', // ocean steel
-    '#5C6B7A', // light graphite
-    '#1A2530', // midnight
-    '#3D4E5E', // blue-steel
-    '#4E5D6B', // silver slate
-    '#253340', // dark teal-grey
-    '#5A6878', // pale steel
-    '#344455', // medium navy
-    '#627282', // lightest — almost silver
-    '#2A3848', // deep steel
-    '#48586A', // blue graphite
-    '#1F2D3A', // charcoal navy
-    '#556575', // silver blue
-    '#384858', // medium slate
-    '#3A4C5C', // teal-steel
-    '#4C5C6C', // warm slate
-    '#223040', // shadow navy
-    '#506070', // pale graphite
-  ];
+  // ── NEON: Colorful continent-based palette (like a political world map) ──
+  // Each continent gets 4 color variants for adjacent-country differentiation
+  const CONTINENT_COLORS_NEON: Record<string, string[]> = {
+    Europe:   ['#D4783C', '#E8963C', '#C46830', '#F0A850'], // warm orange
+    Asia:     ['#E85050', '#D43C3C', '#C83030', '#F06060'], // red
+    Africa:   ['#D4A030', '#E8B840', '#C89828', '#F0C850'], // gold/yellow
+    Americas: ['#3888C8', '#4898D8', '#2878B8', '#58A8E0'], // blue
+    Oceania:  ['#30A860', '#40B870', '#289850', '#50C880'], // green
+  };
+  const FALLBACK_NEON = ['#5A6878', '#4A5568', '#627282', '#3D4E5E']; // grey for unmapped
+
+  // Flat palette still needed for non-neon code paths
+  const MAP_PALETTE_NEON = Object.values(CONTINENT_COLORS_NEON).flat();
 
   // Dark mode: warm earth tones — watercolor atlas feel
   const MAP_PALETTE_DARK = [
@@ -173,7 +161,13 @@ export default function WorldMapCanvas({
     // Pass 1: Fill all polygons.
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
-      ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
+      if (neon) {
+        const cont = getCountryContinent(country.name);
+        const colors = cont ? CONTINENT_COLORS_NEON[cont] : FALLBACK_NEON;
+        ctx.fillStyle = colors[ci % colors.length];
+      } else {
+        ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
+      }
       for (const polygon of country.polygons) {
         ctx.beginPath();
         let hasVisiblePoint = false;
