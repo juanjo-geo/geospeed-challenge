@@ -1,5 +1,5 @@
 /**
- * GeoSpeed IQ Challenge — Premium / Monetization System
+ * GeoSpeed — Premium / Monetization System
  *
  * Manages:
  *  - Pro subscription state (infinite lives, no ads, exclusive features)

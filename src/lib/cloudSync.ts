@@ -1,5 +1,5 @@
 /**
- * GeoSpeed IQ Challenge — Cloud Sync
+ * GeoSpeed — Cloud Sync
  *
  * Synchronizes player stats, game history, energy, and premium status
  * with Supabase for logged-in users. Falls back to localStorage for guests.

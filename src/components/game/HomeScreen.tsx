@@ -191,7 +191,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           GEOSPEED
         </h1>
         <p
-          className={`tracking-[0.3em] uppercase ${isNewPlayer ? 'text-xs sm:text-sm md:text-base mt-1' : 'text-[10px] sm:text-xs mt-0.5'}`}
+          className={`tracking-[0.2em] uppercase ${isNewPlayer ? 'text-xs sm:text-sm md:text-base mt-1' : 'text-[10px] sm:text-xs mt-0.5'}`}
           style={{
             background: 'linear-gradient(90deg, #F0A030, #D48020)',
             WebkitBackgroundClip: 'text',
@@ -200,7 +200,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             opacity: 0.8,
           }}
         >
-          IQ Challenge
+          ¿Cuánto conoces el mundo?
         </p>
       </div>
       <p

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// GeoSpeed IQ Challenge — JUICE-TIER Audio Engine
+// GeoSpeed — JUICE-TIER Audio Engine
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // 8 Essential sounds + anti-monotony system + dynamic intensity
@@ -61,7 +61,7 @@ function getWarmAudio(): HTMLAudioElement {
     warmAudioEl.setAttribute('playsinline', '');
     warmAudioEl.setAttribute('preload', 'auto');
     warmAudioEl.loop = false;
-    warmAudioEl.volume = 0.01;
+    warmAudioEl.volume = 0;
   }
   return warmAudioEl;
 }
@@ -84,7 +84,7 @@ function doUnlock(): void {
       try {
         const fresh = new Audio(SILENT_WAV);
         fresh.setAttribute('playsinline', '');
-        fresh.volume = 0.01;
+        fresh.volume = 0;
         fresh.play()?.catch(() => {});
       } catch (_) {}
     });

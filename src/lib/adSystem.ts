@@ -1,5 +1,5 @@
 /**
- * GeoSpeed IQ Challenge — Ad System
+ * GeoSpeed — Ad System
  *
  * Abstraction layer for ad integration. Currently uses placeholder UI.
  * When ready for production, replace the showInterstitial / showRewarded

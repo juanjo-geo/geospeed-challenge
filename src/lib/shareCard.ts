@@ -336,7 +336,7 @@ export async function shareResult(data: ShareCardData) {
     try {
       await navigator.share({
         title: `📍 GeoSpeed — ${data.score.toLocaleString()} pts`,
-        text: `Hice ${data.score.toLocaleString()} puntos en GeoSpeed IQ Challenge. ¿Puedes superarlo? 🌍`,
+        text: `Hice ${data.score.toLocaleString()} puntos en GeoSpeed. ¿Puedes superarlo? 🌍`,
         files: [file],
       });
       return;

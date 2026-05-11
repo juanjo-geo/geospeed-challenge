@@ -57,7 +57,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         GEOSPEED
       </h1>
       <p
-        className="text-xs sm:text-sm md:text-base tracking-[0.3em] uppercase mt-1 sm:mt-1.5 transition-all duration-1000 ease-out delay-500"
+        className="text-xs sm:text-sm md:text-base tracking-[0.2em] uppercase mt-1 sm:mt-1.5 transition-all duration-1000 ease-out delay-500"
         style={{
           background: 'linear-gradient(90deg, #F0A030, #D48020)',
           WebkitBackgroundClip: 'text',
@@ -67,7 +67,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           transform: phase === 'enter' ? 'translateY(12px)' : 'translateY(0)',
         }}
       >
-        IQ Challenge
+        ¿Cuánto conoces el mundo?
       </p>
 
       {/* Loading bar — gold to teal */}

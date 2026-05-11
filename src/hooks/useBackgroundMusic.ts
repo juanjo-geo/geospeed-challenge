@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// GeoSpeed IQ Challenge — Background Music System
+// GeoSpeed — Background Music System
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Two tracks: menu (chill) and gameplay (upbeat synthwave).

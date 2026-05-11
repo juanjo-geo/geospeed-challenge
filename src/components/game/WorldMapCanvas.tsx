@@ -723,23 +723,30 @@ export default function WorldMapCanvas({
     // Unlock audio on first tap/click — required for iOS Safari Web Audio
     unlockAudio();
     if (clickDisabled) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    // Use CONTAINER rect (not canvas) — canvas has CSS transform that skews getBoundingClientRect
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    // Adjust for pinch zoom
-    const adjustedX = (x - rect.width * pinchOrigin.x / 100) / pinchZoom + rect.width * pinchOrigin.x / 100;
-    const adjustedY = (y - rect.height * pinchOrigin.y / 100) / pinchZoom + rect.height * pinchOrigin.y / 100;
+    // Inverse of CSS scale transform: logicalPos = (visualPos - origin) / zoom + origin
+    const originX = rect.width * pinchOrigin.x / 100;
+    const originY = rect.height * pinchOrigin.y / 100;
+    const adjustedX = (x - originX) / pinchZoom + originX;
+    const adjustedY = (y - originY) / pinchZoom + originY;
     onMapClick(yToLat(adjustedY), xToLon(adjustedX), e.clientX, e.clientY);
   }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin]);
 
   // ── Cursor coordinate tracking ──
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!onCursorMove) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const adjustedX = (x - rect.width * pinchOrigin.x / 100) / pinchZoom + rect.width * pinchOrigin.x / 100;
-    const adjustedY = (y - rect.height * pinchOrigin.y / 100) / pinchZoom + rect.height * pinchOrigin.y / 100;
+    const originX = rect.width * pinchOrigin.x / 100;
+    const originY = rect.height * pinchOrigin.y / 100;
+    const adjustedX = (x - originX) / pinchZoom + originX;
+    const adjustedY = (y - originY) / pinchZoom + originY;
     onCursorMove(yToLat(adjustedY), xToLon(adjustedX));
   }, [onCursorMove, xToLon, yToLat, pinchZoom, pinchOrigin]);
 

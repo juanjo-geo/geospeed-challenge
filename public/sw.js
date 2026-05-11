@@ -1,5 +1,5 @@
 /**
- * GeoSpeed IQ Challenge — Service Worker v5
+ * GeoSpeed — Service Worker v5
  *
  * Strategy: Network-first for ALL requests (ensures fresh deploys are picked up).
  * Falls back to cache only when offline.
