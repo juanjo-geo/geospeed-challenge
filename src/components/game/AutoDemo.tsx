@@ -95,12 +95,12 @@ export default function AutoDemo() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // Background
-      ctx.fillStyle = isLight ? '#B0D8EC' : isNeon ? '#080E18' : '#E8D8BC';
+      ctx.fillStyle = isLight ? '#B0D8EC' : isNeon ? '#0A0E18' : '#E8D8BC';
       ctx.fillRect(0, 0, w, h);
 
-      // Simplified countries — warm amber/sand tones on dark ocean
-      ctx.fillStyle = isLight ? '#D8E8D0' : isNeon ? '#3D2E1A' : '#C8A060';
-      ctx.strokeStyle = isLight ? '#8899AA55' : isNeon ? 'rgba(245, 200, 100, 0.35)' : '#2A140844';
+      // Simplified countries — gold/teal tones matching logo palette
+      ctx.fillStyle = isLight ? '#D8E8D0' : isNeon ? '#2A3828' : '#C8A060';
+      ctx.strokeStyle = isLight ? '#8899AA55' : isNeon ? 'rgba(240, 160, 48, 0.3)' : '#2A140844';
       ctx.lineWidth = isNeon ? 0.8 : 0.5;
       for (const country of countries) {
         for (const polygon of country.polygons) {
@@ -132,7 +132,7 @@ export default function AutoDemo() {
       const nameAlpha = cycleT < 0.1 ? cycleT / 0.1 : cycleT > fadeStart ? Math.max(0, 1 - (cycleT - fadeStart) / (1 - fadeStart)) : 1;
       ctx.globalAlpha = nameAlpha;
       ctx.font = `bold ${Math.max(11, w / 28)}px system-ui`;
-      ctx.fillStyle = isNeon ? '#FF8C00' : isLight ? '#1a3a4a' : '#f5c842';
+      ctx.fillStyle = isNeon ? '#F0A030' : isLight ? '#1a3a4a' : '#f5c842';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText(`¿Dónde está ${city.name}?`, w / 2, 6);
@@ -151,7 +151,7 @@ export default function AutoDemo() {
         const curY = startY + (uy - startY) * t;
 
         // Draw cursor
-        ctx.fillStyle = isNeon ? '#00F5FF' : '#4fc3f7';
+        ctx.fillStyle = isNeon ? '#00D4AA' : '#4fc3f7';
         ctx.beginPath();
         ctx.moveTo(curX, curY);
         ctx.lineTo(curX + 2, curY + 12);
@@ -170,7 +170,7 @@ export default function AutoDemo() {
         if (clickAge < 0.3) {
           const rippleR = 4 + clickAge / 0.3 * 20;
           ctx.globalAlpha = (1 - clickAge / 0.3) * 0.5 * dotAlpha;
-          ctx.strokeStyle = isNeon ? '#00F5FF' : '#4fc3f7';
+          ctx.strokeStyle = isNeon ? '#00D4AA' : '#4fc3f7';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(ux, uy, rippleR, 0, Math.PI * 2);
@@ -180,7 +180,7 @@ export default function AutoDemo() {
 
         // User click dot
         ctx.globalAlpha = dotAlpha;
-        ctx.fillStyle = isNeon ? '#00F5FF' : '#4fc3f7';
+        ctx.fillStyle = isNeon ? '#00D4AA' : '#4fc3f7';
         ctx.beginPath();
         ctx.arc(ux, uy, 4, 0, Math.PI * 2);
         ctx.fill();
@@ -210,7 +210,7 @@ export default function AutoDemo() {
             const p0 = { x: u0 * u0 * ux + 2 * u0 * t0 * cpx + t0 * t0 * cx, y: u0 * u0 * uy + 2 * u0 * t0 * cpy + t0 * t0 * cy };
             const p1 = { x: u1 * u1 * ux + 2 * u1 * t1 * cpx + t1 * t1 * cx, y: u1 * u1 * uy + 2 * u1 * t1 * cpy + t1 * t1 * cy };
             const alpha = 0.3 + 0.7 * (i / steps);
-            ctx.strokeStyle = isNeon ? `rgba(255,140,0,${alpha * dotAlpha})` : `rgba(245,200,66,${alpha * dotAlpha})`;
+            ctx.strokeStyle = isNeon ? `rgba(240,160,48,${alpha * dotAlpha})` : `rgba(245,200,66,${alpha * dotAlpha})`;
             ctx.lineWidth = 2;
             ctx.setLineDash([]);
             ctx.beginPath();
@@ -230,7 +230,7 @@ export default function AutoDemo() {
           const cpy = my + (dx / (dist || 1)) * bulge;
 
           // Full arc
-          ctx.strokeStyle = isNeon ? `rgba(255,140,0,${0.7 * dotAlpha})` : `rgba(245,200,66,${0.7 * dotAlpha})`;
+          ctx.strokeStyle = isNeon ? `rgba(240,160,48,${0.7 * dotAlpha})` : `rgba(245,200,66,${0.7 * dotAlpha})`;
           ctx.lineWidth = 2;
           ctx.setLineDash([]);
           ctx.beginPath();
@@ -257,7 +257,7 @@ export default function AutoDemo() {
 
           ctx.globalAlpha = scoreAlpha;
           ctx.font = `bold ${Math.max(13, w / 22) * popScale}px system-ui`;
-          ctx.fillStyle = isNeon ? '#00F5FF' : '#22c55e';
+          ctx.fillStyle = isNeon ? '#00D4AA' : '#22c55e';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(`${city.emoji} +${city.score}`, (ux + cx) / 2, (uy + cy) / 2 + yOff - 10);

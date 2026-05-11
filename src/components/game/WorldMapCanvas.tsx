@@ -91,16 +91,16 @@ export default function WorldMapCanvas({
   const isLightMode = () => theme === 'light';
   const isNeonMode = () => theme === 'neon';
 
-  // ── NEON: Colorful continent-based palette (like a political world map) ──
-  // Each continent gets 4 color variants for adjacent-country differentiation
+  // ── NEON: Continent palette derived from logo (gold/orange/teal) ──
+  // Each continent uses tones from the logo's color story
   const CONTINENT_COLORS_NEON: Record<string, string[]> = {
-    Europe:   ['#D4783C', '#E8963C', '#C46830', '#F0A850'], // warm orange
-    Asia:     ['#E85050', '#D43C3C', '#C83030', '#F06060'], // red
-    Africa:   ['#D4A030', '#E8B840', '#C89828', '#F0C850'], // gold/yellow
-    Americas: ['#3888C8', '#4898D8', '#2878B8', '#58A8E0'], // blue
-    Oceania:  ['#30A860', '#40B870', '#289850', '#50C880'], // green
+    Europe:   ['#C87828', '#E09038', '#B06820', '#D88530'], // warm amber (pin gold)
+    Asia:     ['#D45020', '#E86830', '#C04018', '#F07838'], // hot orange (speed streaks)
+    Africa:   ['#D4A030', '#E8B840', '#C09028', '#F0C048'], // bright gold
+    Americas: ['#1A8870', '#209878', '#168068', '#28A888'], // teal (logo accent)
+    Oceania:  ['#20786C', '#288880', '#187060', '#309888'], // deep teal
   };
-  const FALLBACK_NEON = ['#5A6878', '#4A5568', '#627282', '#3D4E5E']; // grey for unmapped
+  const FALLBACK_NEON = ['#3A4858', '#4A5868', '#2A3848', '#506070'];
 
   // Flat palette still needed for non-neon code paths
   const MAP_PALETTE_NEON = Object.values(CONTINENT_COLORS_NEON).flat();
@@ -143,9 +143,9 @@ export default function WorldMapCanvas({
     } else if (neon) {
       // Neon-Velocity: deep blue-black ocean — maximizes contrast
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
-      oceanGrad.addColorStop(0, '#080C14');
-      oceanGrad.addColorStop(0.5, '#0B0E14');
-      oceanGrad.addColorStop(1, '#060A10');
+      oceanGrad.addColorStop(0, '#0A0E18');
+      oceanGrad.addColorStop(0.5, '#0C1020');
+      oceanGrad.addColorStop(1, '#080C16');
       ctx.fillStyle = oceanGrad;
     } else {
       // Dark: cream/bone ocean — matches warm earth-tone watercolor palette
@@ -217,7 +217,7 @@ export default function WorldMapCanvas({
           const inContinent = continentCountries.has(country.name);
           if (inContinent) {
             // Bright subtle highlight
-            ctx.fillStyle = neon ? 'rgba(0,245,255,0.15)' : light ? 'rgba(0,150,255,0.12)' : 'rgba(245,200,66,0.15)';
+            ctx.fillStyle = neon ? 'rgba(0,212,170,0.15)' : light ? 'rgba(0,150,255,0.12)' : 'rgba(245,200,66,0.15)';
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;
@@ -247,7 +247,7 @@ export default function WorldMapCanvas({
     }
 
     // Graticule — extends across the ENTIRE canvas, not just geographic bounds
-    ctx.strokeStyle = neon ? 'rgba(0,245,255,0.08)' : light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
+    ctx.strokeStyle = neon ? 'rgba(0,212,170,0.08)' : light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
     ctx.lineWidth = 0.8;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;
@@ -448,7 +448,7 @@ export default function WorldMapCanvas({
 
       // ── Gradient trail line (drawn portion) ──
       // Neon: orange trail for speed feel; others: gold
-      const trailR = neon ? '255,140,0' : '245,200,66';
+      const trailR = neon ? '240,160,48' : '245,200,66';
       const steps = Math.max(Math.floor(eased * 80), 2);
       for (let i = 0; i < steps - 1; i++) {
         const t0 = (i / steps) * eased;
@@ -480,8 +480,8 @@ export default function WorldMapCanvas({
 
       // ── User pin (always visible, pulsing ring) ──
       const pulse = 1 + 0.15 * Math.sin(elapsed * 0.004);
-      ctx.fillStyle = neon ? '#00F5FF' : '#4fc3f7';
-      ctx.strokeStyle = neon ? 'rgba(0,245,255,0.35)' : 'rgba(79,195,247,0.3)';
+      ctx.fillStyle = neon ? '#00D4AA' : '#4fc3f7';
+      ctx.strokeStyle = neon ? 'rgba(0,212,170,0.35)' : 'rgba(79,195,247,0.3)';
       ctx.lineWidth = 3 * pulse;
       ctx.beginPath();
       ctx.arc(ux, uy, 8 * pulse, 0, Math.PI * 2);
@@ -524,7 +524,7 @@ export default function WorldMapCanvas({
       } else {
         // ── Glowing dot at line tip ──
         const tip = bezierPt(eased);
-        const glowR = neon ? '255,140,0' : '245,200,66';
+        const glowR = neon ? '240,160,48' : '245,200,66';
         const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 12);
         glow.addColorStop(0, `rgba(${glowR},0.9)`);
         glow.addColorStop(0.5, `rgba(${glowR},0.3)`);
@@ -879,7 +879,7 @@ export default function WorldMapCanvas({
   const oceanBg = theme === 'light'
     ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
     : theme === 'neon'
-      ? 'linear-gradient(180deg, #080C14 0%, #0B0E14 50%, #060A10 100%)'
+      ? 'linear-gradient(180deg, #0A0E18 0%, #0C1020 50%, #080C16 100%)'
       : 'linear-gradient(180deg, #EDE0C8 0%, #E8D8BC 50%, #E0CEB0 100%)';
 
   return (

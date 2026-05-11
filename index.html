@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="neon">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -8,13 +8,12 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <!-- Apply saved theme before first paint to avoid flash -->
-    <script>(function(){try{var t=localStorage.getItem('geospeed_theme');if(t==='light'){document.documentElement.classList.add('light');document.documentElement.style.background='hsl(174,30%,94%)'}else{document.documentElement.style.background='#020202'};var l=localStorage.getItem('geospeed_locale');if(!l){l=navigator.language&&navigator.language.startsWith('en')?'en':'es'}document.documentElement.lang=l}catch(e){}})()</script>
+    <!-- Force neon theme before first paint -->
+    <script>(function(){document.documentElement.classList.add('neon');document.documentElement.style.background='#0A0E18';try{var l=localStorage.getItem('geospeed_locale');if(!l){l=navigator.language&&navigator.language.startsWith('en')?'en':'es'}document.documentElement.lang=l}catch(e){}})()</script>
     <title>GeoSpeed IQ Challenge</title>
     <meta name="description" content="GeoSpeed IQ Challenge - ¿Cuánto conoces el mundo? Localiza ciudades en el mapa y demuestra tu conocimiento geográfico." />
     <meta name="author" content="GeoSpeed" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#07130a" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e8f5f4" />
+    <meta name="theme-color" content="#0A0E18" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="GeoSpeed IQ Challenge" />

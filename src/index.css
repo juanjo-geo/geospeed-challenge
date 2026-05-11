@@ -426,44 +426,44 @@
 
 /* ── Neon-Velocity theme (optional high-contrast mode per Guía de Estilo) ── */
 :root.neon {
-  --background: 220 20% 5%;      /* #0B0E14 — midnight blue-black */
-  --foreground: 210 15% 92%;     /* cool white — less harsh than pure white */
+  --background: 222 28% 5%;      /* #0A0E18 — deep navy black (logo bg) */
+  --foreground: 45 20% 92%;      /* warm white — matches gold tones */
 
-  --card: 215 18% 11%;           /* slightly blue-tinted card — not flat black */
-  --card-foreground: 210 15% 92%;
+  --card: 220 22% 10%;           /* dark navy card */
+  --card-foreground: 45 20% 92%;
 
-  --popover: 215 18% 11%;
-  --popover-foreground: 210 15% 92%;
+  --popover: 220 22% 10%;
+  --popover-foreground: 45 20% 92%;
 
-  --primary: 30 100% 50%;        /* #FF8C00 — electric orange (speed) */
+  --primary: 38 88% 56%;         /* #F0A030 — warm gold (the pin) */
   --primary-foreground: 0 0% 5%;
 
-  --secondary: 215 15% 16%;      /* blue-grey secondary — adds depth */
-  --secondary-foreground: 210 15% 92%;
+  --secondary: 220 18% 15%;     /* deep navy secondary */
+  --secondary-foreground: 45 20% 92%;
 
-  --muted: 215 12% 15%;          /* subtle blue undertone */
-  --muted-foreground: 210 12% 55%;  /* brighter muted text for readability */
+  --muted: 220 15% 14%;          /* subtle navy undertone */
+  --muted-foreground: 40 10% 55%;  /* warm muted text */
 
-  --accent: 185 100% 50%;        /* #00F5FF — cyan (precision/success) */
+  --accent: 168 100% 42%;        /* #00D4AA — teal-cyan (circle & wave in logo) */
   --accent-foreground: 0 0% 5%;
 
   --destructive: 0 85% 55%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 215 12% 22%;         /* slightly lighter borders for structure */
-  --input: 215 12% 18%;
-  --ring: 30 100% 50%;
+  --border: 220 15% 20%;         /* navy borders */
+  --input: 220 15% 16%;
+  --ring: 24 100% 55%;           /* #FF6B1A — hot orange (speed streaks) */
 
-  --bg-from: 220 22% 3%;
-  --bg-to: 218 18% 8%;
-  --game-panel: 215 15% 9%;
+  --bg-from: 222 28% 3%;
+  --bg-to: 220 22% 7%;
+  --game-panel: 220 20% 8%;
 }
-/* In neon mode, success feedback uses cyan instead of green */
-:root.neon .text-green-400 { color: hsl(185 100% 50%) !important; }
-:root.neon .bg-green-500\/20 { background-color: hsl(185 100% 50% / 0.2) !important; }
-/* Neon mode: inject cyan accents into key UI elements for visual variety */
-:root.neon .border-primary\/40 { border-color: hsl(185 60% 40% / 0.4) !important; }
-:root.neon .hover\:border-primary:hover { border-color: hsl(185 100% 50%) !important; }
+/* Neon mode: teal success feedback */
+:root.neon .text-green-400 { color: hsl(168 100% 42%) !important; }
+:root.neon .bg-green-500\/20 { background-color: hsl(168 100% 42% / 0.2) !important; }
+/* Neon mode: teal accents on UI borders */
+:root.neon .border-primary\/40 { border-color: hsl(168 60% 35% / 0.4) !important; }
+:root.neon .hover\:border-primary:hover { border-color: hsl(168 100% 42%) !important; }
 
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
