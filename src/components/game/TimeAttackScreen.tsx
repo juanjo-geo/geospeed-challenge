@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, type Difficulty, type GameMode } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playGameOver } from '@/lib/sounds';
-import { hapticTap, hapticSuccess, hapticError, hapticTick } from '@/lib/haptics';
+import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
+import { fireStarBurst } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 import { useA11y } from '@/contexts/AccessibilityContext';
@@ -59,6 +60,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const roundStartRef = useRef(Date.now());
   const roundsRef = useRef<TimeAttackResult['rounds']>([]);
   const gameOverRef = useRef(false);
+  const lastClickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
 
   const currentCity = cities[currentIdx % cities.length];
 
@@ -97,8 +99,9 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     roundStartRef.current = Date.now();
   }, [currentIdx]);
 
-  const handleMapClick = useCallback((lat: number, lon: number) => {
+  const handleMapClick = useCallback((lat: number, lon: number, viewportX?: number, viewportY?: number) => {
     if (isAnimating || !currentCity || gameOverRef.current) return;
+    lastClickViewportRef.current = viewportX != null && viewportY != null ? { x: viewportX, y: viewportY } : undefined;
     playClick();
     hapticTap();
     const timeUsed = Math.round((Date.now() - roundStartRef.current) / 1000);
@@ -109,7 +112,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
     roundsRef.current.push({ city: currentCity, distance, totalPoints, timeUsed });
     setTimeout(() => {
-      if (distance < 50) { playPerfect(); hapticSuccess(); }
+      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
+      else if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
       else if (totalPoints >= 500) { playGood(); hapticSuccess(); }
       else { playBad(); hapticError(); }
     }, 150);
