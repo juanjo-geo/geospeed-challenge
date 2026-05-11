@@ -122,7 +122,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               const idx = LOCALES.findIndex(l => l.key === locale);
               setLocale(LOCALES[(idx + 1) % LOCALES.length].key);
             }}
-            className="p-1.5 sm:p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-all active:scale-[0.95] text-sm"
+            className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-all active:scale-[0.95]"
             title={LOCALES.find(l => l.key === locale)?.label}
             aria-label={`Language: ${LOCALES.find(l => l.key === locale)?.label}`}
           >
