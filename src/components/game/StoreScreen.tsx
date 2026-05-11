@@ -96,10 +96,17 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         {!proStatus.isPro ? (
           <div className="mb-6 sm:mb-8">
             <div className="text-center mb-3 sm:mb-4">
-              <span className="text-3xl sm:text-4xl block mb-1">⭐</span>
+              <img src="/logo.png" alt="GeoSpeed Logo" className="w-16 sm:w-20 object-contain mx-auto" />
               <h2
-                className="text-xl sm:text-2xl font-black"
-                style={{ fontFamily: 'Impact, system-ui', color: 'hsl(var(--primary))' }}
+                className="text-xl sm:text-2xl font-black tracking-tight"
+                style={{
+                  fontFamily: 'Impact, system-ui',
+                  background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: 'drop-shadow(0 2px 8px rgba(240,160,48,0.4))',
+                }}
               >
                 GEOSPEED PRO
               </h2>
