@@ -783,22 +783,22 @@ export default function WorldMapCanvas({
     const pointSpread = Math.max(pointSpreadX, pointSpreadY);
 
     let peakZoom: number;
-    if (vw < 640) peakZoom = 1.1;        // mobile: very gentle
-    else if (vw < 1025) peakZoom = 1.15; // tablet: subtle
-    else peakZoom = 1.2;                  // desktop: noticeable but smooth
+    if (vw < 640) peakZoom = 1.8;        // mobile: deep immersive zoom
+    else if (vw < 1025) peakZoom = 2.0;  // tablet: strong
+    else peakZoom = 2.2;                  // desktop: cinematic
 
-    // Reduce zoom if points are far apart so both remain visible
-    const spreadPenalty = pointSpread > 0.25 ? Math.max(0.6, 1 - (pointSpread - 0.25) * 0.8) : 1;
-    peakZoom = Math.max(1.05, peakZoom * spreadPenalty);
+    // Reduce zoom if points are very far apart so both stay in frame
+    const spreadPenalty = pointSpread > 0.3 ? Math.max(0.5, 1 - (pointSpread - 0.3) * 0.7) : 1;
+    peakZoom = Math.max(1.4, peakZoom * spreadPenalty);
 
-    // Punch zoom — almost no overshoot
-    const punchZoom = Math.min(peakZoom * 1.03, peakZoom + 0.04);
+    // Punch zoom — slight overshoot for dramatic impact
+    const punchZoom = Math.min(peakZoom * 1.06, peakZoom + 0.15);
 
-    // Timing (ms) — long and gentle
-    const T_PUNCH = 800;       // slow zoom-in to user click
-    const T_PAN = 1200;        // smooth pan to midpoint
-    const T_HOLD = 1000;       // brief hold
-    const T_PULL = 2000;       // very slow pull-back
+    // Timing (ms) — extended ~6.5s total (+1.5s vs before)
+    const T_PUNCH = 1000;      // zoom-in to user click
+    const T_PAN = 1500;        // smooth pan to midpoint
+    const T_HOLD = 1200;       // hold with breathing
+    const T_PULL = 2800;       // slow cinematic pull-back
     const T_TOTAL = T_PUNCH + T_PAN + T_HOLD + T_PULL;
 
     // Easing helpers — all smooth curves, no sharp expo
