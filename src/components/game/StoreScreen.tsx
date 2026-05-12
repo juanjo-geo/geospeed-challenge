@@ -58,7 +58,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background game-bg overflow-y-auto">
       {/* Header — extra top padding for Dynamic Island / notch */}
-      <div className="flex items-center justify-between px-4 sm:px-6 pt-[env(safe-area-inset-top,12px)] pb-3 sm:pb-4 border-b border-border/50" style={{ paddingTop: 'max(env(safe-area-inset-top, 12px), 48px)' }}
+      <div className="flex items-center justify-between px-4 sm:px-6 pt-[env(safe-area-inset-top,12px)] pb-3 sm:pb-4 border-b border-border/50" style={{ paddingTop: 'max(env(safe-area-inset-top, 12px), 48px)' }}>
         <button
           onClick={onClose}
           className="text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-lg active:scale-[0.97]"
