@@ -5,10 +5,12 @@
  *  - Pro subscription state (infinite lives, no ads, exclusive features)
  *  - Life packs (one-time purchases)
  *  - Game counter for interstitial ad cadence
- *  - Persistent state in localStorage + Supabase sync when logged in
+ *  - Server-side validation via Supabase player_data table
+ *  - localStorage as cache, Supabase as source of truth for logged-in users
  */
 
 import { addLives } from './energySystem';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ──────────────────────────────────────────────────────────
 export interface ProStatus {
@@ -130,13 +132,81 @@ function saveState(state: PremiumState): void {
   } catch { /* ignore */ }
 }
 
-// ─── Pro status ─────────────────────────────────────────────────────
+// ─── Server-validated Pro cache ─────────────────────────────────────
+// For logged-in users, the server is the source of truth.
+// We cache the server response for 5 minutes to avoid excessive queries.
+let _serverProCache: { isPro: boolean; checkedAt: number } | null = null;
+const SERVER_PRO_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Validates Pro status against Supabase for logged-in users.
+ * Falls back to localStorage for guests or if the query fails.
+ */
+export async function validateProFromServer(): Promise<ProStatus> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return getProStatus(); // Guest → use local
+
+    const { data, error } = await supabase
+      .from('player_data')
+      .select('premium')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !data) return getProStatus(); // Table missing or no row → use local
+
+    const premium = data.premium as { isPro?: boolean; proExpiresAt?: string | null; proSource?: string | null } | null;
+    if (!premium) return getProStatus();
+
+    // Check expiration server-side
+    let isActive = premium.isPro === true;
+    if (isActive && premium.proSource === 'subscription' && premium.proExpiresAt) {
+      if (new Date(premium.proExpiresAt) < new Date()) {
+        isActive = false;
+        // Expire it on server too
+        await supabase
+          .from('player_data')
+          .update({ premium: { isPro: false, proExpiresAt: null, proSource: null }, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+      }
+    }
+
+    // Update local cache to match server
+    const localState = getState();
+    localState.isPro = isActive;
+    localState.proExpiresAt = isActive ? (premium.proExpiresAt ?? null) : null;
+    localState.proSource = isActive ? (premium.proSource as 'subscription' | 'lifetime' | null) : null;
+    saveState(localState);
+
+    _serverProCache = { isPro: isActive, checkedAt: Date.now() };
+
+    return {
+      isPro: isActive,
+      expiresAt: premium.proExpiresAt ?? null,
+      source: premium.proSource as 'subscription' | 'lifetime' | null,
+    };
+  } catch {
+    return getProStatus(); // Network error → use local
+  }
+}
+
+// ─── Pro status (synchronous — uses local + server cache) ──────────
 export function getProStatus(): ProStatus {
   const state = getState();
+  // If server cache is fresh and says NOT pro, override localStorage
+  // This prevents the localStorage hack
+  if (_serverProCache && (Date.now() - _serverProCache.checkedAt) < SERVER_PRO_CACHE_TTL) {
+    if (!_serverProCache.isPro && state.isPro) {
+      // Server says not pro but localStorage says pro → trust server
+      state.isPro = false;
+      state.proExpiresAt = null;
+      state.proSource = null;
+      saveState(state);
+    }
+  }
   // Check expiration for subscriptions
   if (state.isPro && state.proSource === 'subscription' && state.proExpiresAt) {
     if (new Date(state.proExpiresAt) < new Date()) {
-      // Subscription expired
       state.isPro = false;
       state.proExpiresAt = null;
       state.proSource = null;
@@ -159,7 +229,7 @@ export function isPro(): boolean {
 // In production, the server validates the payment and then calls these.
 // For now, they work with localStorage for the MVP.
 
-export function activatePro(source: 'subscription' | 'lifetime', durationDays?: number): void {
+export async function activatePro(source: 'subscription' | 'lifetime', durationDays?: number): Promise<void> {
   const state = getState();
   state.isPro = true;
   state.proSource = source;
@@ -171,6 +241,26 @@ export function activatePro(source: 'subscription' | 'lifetime', durationDays?: 
     state.proExpiresAt = expires.toISOString();
   }
   saveState(state);
+
+  // Persist to server for logged-in users
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const premiumPayload = {
+        isPro: state.isPro,
+        proExpiresAt: state.proExpiresAt,
+        proSource: state.proSource,
+      };
+      await supabase
+        .from('player_data')
+        .upsert({
+          user_id: user.id,
+          premium: premiumPayload,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+      _serverProCache = { isPro: true, checkedAt: Date.now() };
+    }
+  } catch { /* Silent — local state is already saved */ }
 }
 
 export function purchaseLives(productId: string): boolean {

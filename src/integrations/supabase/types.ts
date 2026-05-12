@@ -71,6 +71,33 @@ export type Database = {
         }
         Relationships: []
       }
+      player_data: {
+        Row: {
+          user_id: string
+          stats: Json
+          history: Json
+          energy: Json
+          premium: Json
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          stats?: Json
+          history?: Json
+          energy?: Json
+          premium?: Json
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          stats?: Json
+          history?: Json
+          energy?: Json
+          premium?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaderboard: {
         Row: {
           created_at: string

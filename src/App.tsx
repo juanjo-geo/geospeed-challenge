@@ -12,6 +12,17 @@ import Index from "./pages/Index.tsx";
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
+/** Thin wrapper that extracts route params and forwards them to Index as props */
+function DailyRoute() {
+  return <Index deepLink={{ type: 'daily' }} />;
+}
+function ChallengeRoute() {
+  return <Index deepLink={{ type: 'challenge' }} />;
+}
+function DuelRoute() {
+  return <Index deepLink={{ type: 'duel' }} />;
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -27,6 +38,10 @@ const App = () => (
           <Suspense fallback={null}>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/daily" element={<DailyRoute />} />
+              <Route path="/daily/:date" element={<DailyRoute />} />
+              <Route path="/challenge/:seed" element={<ChallengeRoute />} />
+              <Route path="/duel/:code" element={<DuelRoute />} />
               <Route path="/auth" element={<Auth />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

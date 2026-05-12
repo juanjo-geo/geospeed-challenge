@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistance, addGameHistory } from '@/lib/gameUtils';
 import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
@@ -131,9 +132,15 @@ const difficultyLabelsEs: Record<Difficulty, string> = {
   hard: '🔥 Experto',
 };
 
-const Index = () => {
+export interface DeepLinkProps {
+  deepLink?: { type: 'daily' | 'challenge' | 'duel' };
+}
+
+const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const { t } = useI18n();
   const isMobile = useIsMobile();
+  const routeParams = useParams<{ date?: string; seed?: string; code?: string }>();
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('splash');
   const [difficulty, setDifficulty] = useState<Difficulty>('basic');
   const [gameMode, setGameMode] = useState<GameMode>('world');
@@ -383,7 +390,7 @@ const Index = () => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setPhase('home'); window.scrollTo(0, 0); }, []);
+  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => setPhase('store'), []);
   const handleOpenProfile = useCallback(() => setPhase('profile'), []);
 
@@ -444,13 +451,9 @@ const Index = () => {
   // ── Challenge a Friend ──
   const generateChallengeLink = useCallback((score: number) => {
     const seed = Math.floor(Math.random() * 1_000_000);
-    const params = new URLSearchParams({
-      ch: String(seed),
-      d: difficulty,
-      m: gameMode,
-      s: String(score),
-    });
-    return `${window.location.origin}/?${params.toString()}`;
+    // Clean URL: /challenge/SEED?d=difficulty&m=mode&s=score
+    const params = new URLSearchParams({ d: difficulty, m: gameMode, s: String(score) });
+    return `${window.location.origin}/challenge/${seed}?${params.toString()}`;
   }, [difficulty, gameMode]);
 
   const handleShareChallenge = useCallback(async () => {
@@ -465,24 +468,35 @@ const Index = () => {
     }
   }, [finalScore, generateChallengeLink]);
 
-  // Parse challenge URL on mount
+  /** Generate a shareable daily challenge URL */
+  const getDailyShareLink = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return `${window.location.origin}/daily/${today}`;
+  }, []);
+
+  // Parse challenge URL on mount (supports both old ?ch= query params and new /challenge/:seed route)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Old format: /?ch=123&d=easy&m=world&s=5000
     const ch = params.get('ch');
+    // New format: /challenge/123?d=easy&m=world&s=5000
+    const seedFromRoute = deepLink?.type === 'challenge' ? routeParams.seed : null;
+    const seed = ch || seedFromRoute;
     const d = params.get('d');
     const m = params.get('m');
     const s = params.get('s');
-    if (ch) {
-      setChallengeSeed(Number(ch));
+    if (seed) {
+      setChallengeSeed(Number(seed));
       if (d && ['basic', 'easy', 'medium', 'hard'].includes(d)) setDifficulty(d as Difficulty);
       if (m) setGameMode(m as GameMode);
       if (s) setChallengerScore(Number(s));
       // Clean URL without reloading
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, '', '/');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-start challenge after splash completes
+  // Auto-start challenge after splash completes (query-param or deep link)
   useEffect(() => {
     if (challengeSeed !== null && phase === 'home') {
       unlockAudio();
@@ -493,6 +507,35 @@ const Index = () => {
       setPhase('countdown');
     }
   }, [challengeSeed, phase]);
+
+  // ── Deep link processing — /daily, /challenge/:seed, /duel/:code ──
+  const deepLinkProcessed = useRef(false);
+  useEffect(() => {
+    if (phase !== 'home' || deepLinkProcessed.current || !deepLink) return;
+    deepLinkProcessed.current = true;
+
+    if (deepLink.type === 'daily') {
+      // /daily or /daily/2026-05-12 → start daily challenge
+      unlockAudio();
+      if (!consumeLife()) { setShowNoLives(true); navigate('/', { replace: true }); return; }
+      setDifficulty('medium');
+      setGameMode('world');
+      setPhase('daily');
+      // Don't navigate away — keep URL clean after game
+    } else if (deepLink.type === 'challenge' && routeParams.seed) {
+      // /challenge/123456 → start challenge with seed
+      const seed = Number(routeParams.seed);
+      if (!isNaN(seed)) {
+        setChallengeSeed(seed);
+        // challengeSeed effect will auto-start the game
+      }
+      navigate('/', { replace: true });
+    } else if (deepLink.type === 'duel' && routeParams.code) {
+      // /duel/ABC12 → go to multiplayer lobby with pre-filled code
+      setPhase('mp-lobby');
+      navigate('/', { replace: true });
+    }
+  }, [phase, deepLink, routeParams, navigate]);
 
   const handleRoomReady = useCallback((room: GameRoom, isHost: boolean) => {
     setMpRoom(room);

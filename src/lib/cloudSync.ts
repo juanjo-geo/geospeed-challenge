@@ -15,6 +15,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getPlayerStats, type PlayerStats } from './gameUtils';
+import { validateProFromServer } from './premiumSystem';
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface CloudPlayerData {
@@ -105,6 +106,9 @@ export async function syncOnLogin(): Promise<void> {
       await pushToCloud();
     }
     // If equal, do nothing (already in sync)
+
+    // Validate premium status from server — prevents localStorage hacking
+    await validateProFromServer();
   } catch {
     // Sync failed silently — local data continues to work
   }

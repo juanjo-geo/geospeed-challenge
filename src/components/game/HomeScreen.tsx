@@ -280,7 +280,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           {isNewPlayer && (
             <div className="mt-2 sm:mt-2.5">
               <button
-                onClick={() => onStartGame('easy', 'world')}
+                onClick={() => onStartGame('basic', 'world')}
                 className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
               >
                 🌍 {t('home_startGame')}
@@ -502,20 +502,42 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* ── Desafío Diario ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
-        <button
-          onClick={onDailyChallenge}
-          className="w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 active:scale-[0.97] animate-pulse-glow-subtle"
-          aria-label="Desafío diario"
-        >
-          <span className="text-xl sm:text-2xl shrink-0">📅</span>
-          <div className="text-left flex-1 min-w-0">
-            <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t('home_dailyChallengeDesc')}</div>
-          </div>
-          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
-            {new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' })}
-          </span>
-        </button>
+        <div className="w-full flex items-center gap-0 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 animate-pulse-glow-subtle">
+          <button
+            onClick={onDailyChallenge}
+            className="flex-1 flex items-center gap-2 sm:gap-3 p-3 sm:p-4 active:scale-[0.97] transition-transform"
+            aria-label="Desafío diario"
+          >
+            <span className="text-xl sm:text-2xl shrink-0">📅</span>
+            <div className="text-left flex-1 min-w-0">
+              <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
+              <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t('home_dailyChallengeDesc')}</div>
+            </div>
+            <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
+              {new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' })}
+            </span>
+          </button>
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              const today = new Date().toISOString().split('T')[0];
+              const url = `${window.location.origin}/daily/${today}`;
+              const text = locale === 'en'
+                ? `🌍 GeoSpeed Daily Challenge (${new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' })}). Same cities for everyone — can you beat me?`
+                : `🌍 Desafío Diario GeoSpeed (${new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}). Mismas ciudades para todos — ¿puedes superarme?`;
+              if (navigator.share) {
+                try { await navigator.share({ title: 'GeoSpeed Daily', text, url }); } catch (_) {}
+              } else {
+                await navigator.clipboard?.writeText(`${text}\n${url}`);
+              }
+            }}
+            className="shrink-0 px-3 py-3 sm:px-4 border-l border-amber-500/30 hover:bg-amber-500/10 active:scale-90 transition-all"
+            aria-label="Compartir desafío diario"
+            title="Compartir link del desafío"
+          >
+            <span className="text-sm">🔗</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Contrareloj + Speed Demon + Duelo ── */}
