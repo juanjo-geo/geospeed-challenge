@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { type RoundResult } from './GameScreen';
 import { formatDistance, qualifiesForLeaderboard, addToLeaderboard, updatePlayerStats, getPlayerStats, getLeaderboard } from '@/lib/gameUtils';
-import { playVictory } from '@/lib/sounds';
+import { playVictory, playLevelUp, playRevengeActivate, playShareSuccess, playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import { shareResult } from '@/lib/shareCard';
-import { getPlayerLevel } from '@/lib/levelSystem';
+import { getPlayerLevel, checkLevelUp, calculateXP } from '@/lib/levelSystem';
 import { fireCelebration } from '@/lib/confetti';
 import { hapticCelebration } from '@/lib/haptics';
 import RoundBreakdown from './RoundBreakdown';
@@ -82,9 +82,17 @@ export default function FinalResultScreen({
   useEffect(() => {
     const stats = getPlayerStats();
     setPreviousBest(stats.bestScore);
+    const prevXp = calculateXP();
     updatePlayerStats(totalScore, distances);
     qualifiesForLeaderboard(totalScore).then(setQualifies);
     if (reason === 'complete') playVictory();
+
+    // Level up check — play fanfare if player leveled up
+    const newXp = prevXp + totalScore;
+    const levelResult = checkLevelUp(prevXp, newXp);
+    if (levelResult.leveled) {
+      setTimeout(() => playLevelUp(), reason === 'complete' ? 900 : 400);
+    }
 
     // Fire confetti for new records (check after setting previousBest)
     if (totalScore > stats.bestScore && stats.bestScore > 0) {
@@ -266,7 +274,7 @@ export default function FinalResultScreen({
         </div>
 
         {/* Best round highlight */}
-        {bestRound && bestRound.totalPoints >= 500 && (
+        {bestRound && bestRound.totalPoints >= 300 && (
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-2.5 sm:p-3 mb-3 sm:mb-4 text-center">
             <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">🌟 Mejor ronda</p>
             <p className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>
@@ -333,7 +341,7 @@ export default function FinalResultScreen({
         {/* Revenge mode — replay worst rounds */}
         {onRevenge && rounds.length >= 5 && (
           <button
-            onClick={() => onRevenge(rounds)}
+            onClick={() => { playRevengeActivate(); onRevenge(rounds); }}
             className="w-full py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3"
             style={{
               background: 'linear-gradient(135deg, hsl(0 72% 50%), hsl(25 95% 53%))',
@@ -369,7 +377,7 @@ export default function FinalResultScreen({
         {/* Challenge a friend button */}
         {onShareChallenge && (
           <button
-            onClick={onShareChallenge}
+            onClick={() => { playShareSuccess(); onShareChallenge?.(); }}
             className="w-full py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3"
             style={{
               background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
@@ -383,14 +391,14 @@ export default function FinalResultScreen({
 
         <div className="flex gap-2 sm:gap-3">
           <button
-            onClick={onPlayAgain}
+            onClick={() => { playButtonTap(); onPlayAgain(); }}
             className="flex-1 py-2 sm:py-2.5 md:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
             style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
             {t('final_playAgain')}
           </button>
           <button
-            onClick={onGoHome}
+            onClick={() => { playButtonTap(); onGoHome(); }}
             className="flex-1 py-2 sm:py-2.5 md:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted"
           >
             {t('final_home')}

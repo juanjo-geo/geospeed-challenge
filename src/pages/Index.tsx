@@ -243,12 +243,6 @@ const Index = () => {
       return;
     }
     gameKeyRef.current += 1;
-    // Suggest rotate if mobile is in portrait
-    if (isMobile && window.innerHeight > window.innerWidth) {
-      preRotatePhaseRef.current = 'countdown';
-      setPhase('rotate');
-      return;
-    }
     setPhase('countdown');
   }, [isMobile]);
 

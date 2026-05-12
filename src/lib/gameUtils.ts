@@ -12,20 +12,27 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/**
+ * Continuous scoring curve — every km closer = more points.
+ * Formula: max(0, 1000 × (1 − d/7000)^1.5)
+ * 0km=1000, 50km=989, 200km=935, 500km=832, 1000km=660, 2000km=366, 5000km=55, 7000km+=0
+ */
 export function calculateBasePoints(distanceKm: number): number {
-  if (distanceKm >= 8000) return 0;
-  if (distanceKm < 50) return 1000;
-  if (distanceKm < 200) return 800;
-  if (distanceKm < 500) return 500;
-  if (distanceKm < 1000) return 300;
-  if (distanceKm < 2000) return 100;
-  return 50;
+  if (distanceKm >= 7000) return 0;
+  return Math.round(1000 * Math.pow(1 - distanceKm / 7000, 1.5));
 }
 
+/**
+ * Gradual speed multiplier — every second counts.
+ * Formula: clamp(0.4, 2.2 − t × 0.13, 2.2)
+ * 1s=x2.07, 3s=x1.81, 5s=x1.55, 8s=x1.16, 10s=x0.90, 14s+=x0.40
+ */
 export function getMultiplier(timeUsedSeconds: number): { value: number; label: string; emoji: string } {
-  if (timeUsedSeconds < 4) return { value: 2, label: "×2", emoji: "🚀" };
-  if (timeUsedSeconds < 9) return { value: 1, label: "×1", emoji: "🎯" };
-  return { value: 0.5, label: "×0.5", emoji: "🦕" };
+  const raw = 2.2 - timeUsedSeconds * 0.13;
+  const value = Math.round(Math.max(0.4, Math.min(2.2, raw)) * 100) / 100;
+  const emoji = value >= 1.8 ? '🚀' : value >= 1.3 ? '⚡' : value >= 1.0 ? '🎯' : value >= 0.7 ? '🐢' : '🦕';
+  const label = `×${value.toFixed(1)}`;
+  return { value, label, emoji };
 }
 
 export function formatDistance(km: number): string {

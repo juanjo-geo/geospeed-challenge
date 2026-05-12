@@ -50,7 +50,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center px-3 py-4 sm:px-4 sm:py-6 md:px-6 overflow-y-auto game-bg">
-      <div className="w-full max-w-lg animate-fade-in-up">
+      <div className="w-full max-w-lg animate-fade-in-up" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 32px)' }}>
 
         {/* Header with back button + logo */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6">

@@ -26,13 +26,35 @@ interface DemoCity {
   emoji: string;
 }
 
-const DEMO_CITIES: DemoCity[] = [
+const ALL_DEMO_CITIES: DemoCity[] = [
   { name: 'París', lat: 48.86, lon: 2.35, clickLat: 47.5, clickLon: 4.2, score: 800, emoji: '🔥' },
   { name: 'Tokio', lat: 35.68, lon: 139.69, clickLat: 36.5, clickLon: 137.0, score: 1000, emoji: '🎯' },
   { name: 'Buenos Aires', lat: -34.6, lon: -58.38, clickLat: -32.0, clickLon: -56.0, score: 500, emoji: '👏' },
   { name: 'El Cairo', lat: 30.04, lon: 31.24, clickLat: 28.5, clickLon: 33.0, score: 800, emoji: '🔥' },
   { name: 'Nueva York', lat: 40.71, lon: -74.01, clickLat: 41.5, clickLon: -72.0, score: 1000, emoji: '🎯' },
+  { name: 'Sídney', lat: -33.87, lon: 151.21, clickLat: -35.0, clickLon: 149.0, score: 800, emoji: '🔥' },
+  { name: 'Londres', lat: 51.51, lon: -0.13, clickLat: 50.0, clickLon: 1.5, score: 800, emoji: '🔥' },
+  { name: 'Moscú', lat: 55.76, lon: 37.62, clickLat: 54.0, clickLon: 40.0, score: 500, emoji: '👏' },
+  { name: 'Río de Janeiro', lat: -22.91, lon: -43.17, clickLat: -21.0, clickLon: -41.0, score: 800, emoji: '🔥' },
+  { name: 'Mumbai', lat: 19.08, lon: 72.88, clickLat: 17.5, clickLon: 75.0, score: 500, emoji: '👏' },
+  { name: 'Ciudad de México', lat: 19.43, lon: -99.13, clickLat: 20.5, clickLon: -97.0, score: 800, emoji: '🔥' },
+  { name: 'Pekín', lat: 39.9, lon: 116.4, clickLat: 41.0, clickLon: 114.0, score: 800, emoji: '🔥' },
+  { name: 'Nairobi', lat: -1.29, lon: 36.82, clickLat: 0.5, clickLon: 38.5, score: 500, emoji: '👏' },
+  { name: 'Roma', lat: 41.9, lon: 12.5, clickLat: 40.5, clickLon: 14.0, score: 1000, emoji: '🎯' },
+  { name: 'Estambul', lat: 41.01, lon: 28.98, clickLat: 39.5, clickLon: 31.0, score: 800, emoji: '🔥' },
 ];
+
+// Fisher-Yates shuffle + pick 6 random cities per mount
+function pickRandomCities(arr: DemoCity[], count: number): DemoCity[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, count);
+}
+
+const DEMO_CITIES = pickRandomCities(ALL_DEMO_CITIES, 6);
 
 export default function AutoDemo() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

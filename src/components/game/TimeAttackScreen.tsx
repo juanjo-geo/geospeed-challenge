@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
-import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playGameOver } from '@/lib/sounds';
+import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
-import { fireStarBurst } from '@/lib/confetti';
+import { fireStarBurst, fireGoldBurst } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 import { useA11y } from '@/contexts/AccessibilityContext';
@@ -78,7 +78,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           clearInterval(globalTimerRef.current);
           if (!gameOverRef.current) {
             gameOverRef.current = true;
-            playGameOver();
+            playTimeExpired();
+            setTimeout(() => playGameOver(), 300);
             hapticError();
             onGameOverRef.current({
               cities: roundsRef.current.length,
@@ -122,10 +123,18 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
     roundsRef.current.push({ city: currentCity, distance, totalPoints, timeUsed });
     setTimeout(() => {
+      // Tier S: Perfect (<50km) — rainbow confetti
       if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
-      else if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
-      else if (totalPoints >= 500) { playGood(); hapticSuccess(); }
+      // Tier A: Excellent (<300km) — gold confetti
+      else if (distance < 300) { playGood(); hapticCelebration(); fireGoldBurst(lastClickViewportRef.current); }
+      // Tier B: Good (<1000km)
+      else if (distance < 1000) { playGood(); hapticSuccess(); }
+      // Tier C: Medium (<3000km)
+      else if (distance < 3000) { playMedium(); hapticTap(); }
+      // Tier D: Far
       else { playBad(); hapticError(); }
+      // Speed bonus sound
+      if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 300); }
     }, 150);
     setScore(s => s + totalPoints);
     setScorePop(true);
@@ -134,7 +143,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     setLastCorrect({ lat: currentCity.lat, lon: currentCity.lon });
     setLastDistance(distance);
     setLastPoints(totalPoints);
-    setFlash(totalPoints >= 500 ? 'good' : 'bad');
+    setFlash(distance < 1000 ? 'good' : 'bad');
     setIsAnimating(true);
     announce(t('sr_timeAttackResult', { city: currentCity.name, distance: Math.round(distance), points: totalPoints, time: globalTime }));
 
@@ -146,6 +155,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       setLastPoints(null);
       setFlash(null);
       setCurrentIdx(i => i + 1);
+      playRoundTransition();
     }, 1500);
   }, [isAnimating, currentCity]);
 

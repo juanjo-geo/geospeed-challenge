@@ -10,6 +10,7 @@ import { checkStreak, claimDailyReward, type StreakReward } from '@/lib/dailyStr
 import EnergyBar from './EnergyBar';
 // ThemeToggle removed — neon-only mode
 import AutoDemo from './AutoDemo';
+import { playButtonTap } from '@/lib/sounds';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 // useA11y removed — colorblind toggle removed
 import { useI18n, LOCALES } from '@/i18n';
@@ -364,7 +365,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       {/* ── JUGAR AHORA — CTA principal ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-200">
         <button
-          onClick={() => onStartGame(selectedDifficulty, selectedMode)}
+          onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
           className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.96] shadow-xl hover:shadow-2xl hover:scale-[1.03] hover:brightness-110"
           style={{
             background: 'linear-gradient(135deg, #E53E3E 0%, #DD6B20 50%, #D69E2E 100%)',

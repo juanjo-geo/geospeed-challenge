@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
-import { playClick, playGood, playBad, playPerfect, playTick, playHeartbeat, playStreak, playGameOver } from '@/lib/sounds';
+import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
-import { fireStarBurst } from '@/lib/confetti';
+import { fireStarBurst, fireGoldBurst } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -56,10 +56,10 @@ interface GameScreenProps {
 function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
   const p = palette;
   if (distance < 50) return { emoji: '🎯', phrase: t?.('game_perfect') ?? '¡PERFECTO!', color: p?.good.tw ?? 'text-green-400' };
-  if (distance < 200) return { emoji: '🔥', phrase: t?.('game_incredible') ?? '¡Increíble!', color: p?.good.tw ?? 'text-green-400' };
-  if (distance < 500) return { emoji: '👏', phrase: t?.('game_veryGood') ?? '¡Muy bien!', color: p?.fair.tw ?? 'text-emerald-400' };
-  if (distance < 1000) return { emoji: '👍', phrase: t?.('game_good') ?? 'Bien hecho', color: p?.medium.tw ?? 'text-yellow-400' };
-  if (distance < 2000) return { emoji: '👀', phrase: t?.('game_almost') ?? 'Casi...', color: p?.warn.tw ?? 'text-orange-400' };
+  if (distance < 300) return { emoji: '🔥', phrase: t?.('game_incredible') ?? '¡Increíble!', color: p?.good.tw ?? 'text-green-400' };
+  if (distance < 1000) return { emoji: '👏', phrase: t?.('game_veryGood') ?? '¡Muy bien!', color: p?.fair.tw ?? 'text-emerald-400' };
+  if (distance < 2000) return { emoji: '👍', phrase: t?.('game_good') ?? 'Bien hecho', color: p?.medium.tw ?? 'text-yellow-400' };
+  if (distance < 3000) return { emoji: '👀', phrase: t?.('game_almost') ?? 'Casi...', color: p?.warn.tw ?? 'text-orange-400' };
   if (distance < 5000) return { emoji: '🌍', phrase: t?.('game_far') ?? 'Lejos...', color: p?.bad.tw ?? 'text-red-400' };
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
@@ -130,7 +130,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          playGameOver();
+          playTimeExpired();
+          setTimeout(() => playGameOver(), 300);
           hapticError();
           onGameOver(rounds, 'timeout');
           return 0;
@@ -174,6 +175,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       setIsWaiting(false);
       setShowPopup(false);
       setLastResult(null);
+      playRoundTransition();
     }
   }, [currentRound, rounds, lastResult, onGameOver]);
 
@@ -206,12 +208,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const basePoints = calculateBasePoints(distance);
     const mult = getMultiplier(timeUsed);
 
-    // Compute streak before scoring so bonus applies immediately
-    const newStreak = distance < 1000 ? streak + 1 : 0;
+    // Resilient streak: threshold 1500km, fail = halve (not reset), cap x1.60
+    const newStreak = distance < 1500 ? streak + 1 : Math.max(0, Math.floor(streak / 2));
     setStreak(newStreak);
 
-    // Streak bonus: +15% per level starting at streak ≥ 3 (×1.15, ×1.30, ×1.45…)
-    const streakBonus = newStreak >= 3 ? 1 + (newStreak - 2) * 0.15 : 1;
+    // Streak bonus: +10% per level starting at streak ≥ 2, capped at x1.60
+    const streakBonus = newStreak >= 2 ? Math.min(1.6, 1 + (newStreak - 1) * 0.10) : 1;
     const totalPoints = Math.round(basePoints * mult.value * streakBonus);
 
     const result: RoundResult = {
@@ -226,12 +228,20 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     };
 
     setTimeout(() => {
-      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); } // Perfect: rich chord + shimmer
-      else if (totalPoints >= 1000) { playGood(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
-      else if (totalPoints >= 500) { playGood(); hapticSuccess(); }
+      // Tier S: Perfect (<50km) — rainbow confetti + perfect chord
+      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
+      // Tier A: Excellent (<300km) — gold confetti + good sound
+      else if (distance < 300) { playGood(); hapticCelebration(); fireGoldBurst(lastClickViewportRef.current); }
+      // Tier B: Good (<1000km) — good sound, no confetti
+      else if (distance < 1000) { playGood(); hapticSuccess(); }
+      // Tier C: Medium (<3000km) — neutral feedback
+      else if (distance < 3000) { playMedium(); hapticTap(); }
+      // Tier D: Far (3000km+) — bad sound
       else { playBad(); hapticError(); }
+      // Speed multiplier bonus sound (top tier speed)
+      if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 350); }
       // Streak sound: pitch rises with each consecutive good round
-      if (newStreak >= 3) { setTimeout(() => playStreak(newStreak), 300); }
+      if (newStreak >= 2) { setTimeout(() => playStreak(newStreak), 300); }
     }, 200);
     setScore(s => s + totalPoints);
     setScorePop(true);
@@ -251,6 +261,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const mult = lastResult ? getMultiplier(lastResult.timeUsed) : null;
   const feedback = lastResult ? getRoundFeedback(lastResult.distance, palette, t) : null;
   const showStreak = streak >= 2;
+  const streakPct = streak >= 2 ? Math.min(60, (streak - 1) * 10) : 0;
   const isTimerCritical = timeLeft <= 3 && !isWaiting;
   const isTimerUrgent = timeLeft <= 5 && !isWaiting;
 
@@ -394,15 +405,15 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               {showStreak && (
                 <div className="text-center animate-score-pop">
                   <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
-                    🔥×{streak}{streak >= 3 && <span className="ml-0.5 text-[10px] opacity-80">+{(streak - 2) * 15}%</span>}
+                    🔥×{streak}{streakPct > 0 && <span className="ml-0.5 text-[10px] opacity-80">+{streakPct}%</span>}
                   </span>
                 </div>
               )}
               {mult && (
                 <div className="text-center">
                   <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
-                    mult.value >= 2 ? `${palette.good.twBgSoft} ${palette.good.twBorder} ${palette.good.tw}`
-                    : mult.value >= 1 ? `${palette.medium.twBgSoft} ${palette.medium.twBorder} ${palette.medium.tw}`
+                    mult.value >= 1.5 ? `${palette.good.twBgSoft} ${palette.good.twBorder} ${palette.good.tw}`
+                    : mult.value >= 1.0 ? `${palette.medium.twBgSoft} ${palette.medium.twBorder} ${palette.medium.tw}`
                     : `${palette.bad.twBgSoft} ${palette.bad.twBorder} ${palette.bad.tw}`
                   }`}>
                     {mult.emoji} {mult.label}
@@ -488,12 +499,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 <span className="rounded-full bg-muted/80 px-1.5 py-0.5">R{currentRound + 1}/{totalRounds}</span>
                 {showStreak && (
                   <span className="rounded-full bg-orange-500/20 px-1.5 py-0.5 font-bold text-orange-400">
-                    🔥×{streak}{streak >= 3 && ` +${(streak - 2) * 15}%`}
+                    🔥×{streak}{streakPct > 0 && ` +${streakPct}%`}
                   </span>
                 )}
                 {mult && (
                   <span className={`rounded-full px-1.5 py-0.5 font-bold ${
-                    mult.value >= 2 ? `${palette.good.twBgSoft} ${palette.good.tw}` : mult.value >= 1 ? `${palette.medium.twBgSoft} ${palette.medium.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
+                    mult.value >= 1.5 ? `${palette.good.twBgSoft} ${palette.good.tw}` : mult.value >= 1.0 ? `${palette.medium.twBgSoft} ${palette.medium.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
                   }`}>
                     {mult.emoji} {mult.label}
                   </span>
@@ -583,7 +594,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 <p className={`mt-2 text-2xl font-black ${feedback.color}`}>{feedback.phrase}</p>
                 {showStreak && (
                   <p className={`mt-0.5 animate-score-pop text-sm font-bold ${palette.warn.tw}`}>
-                    🔥 Racha ×{streak}{streak >= 3 && ` (+${(streak - 2) * 15}%)`}
+                    🔥 Racha ×{streak}{streakPct > 0 && ` (+${streakPct}%)`}
                   </p>
                 )}
               </div>
@@ -650,7 +661,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 <p className={`mt-1 text-base sm:text-lg font-black ${feedback.color}`}>{feedback.phrase}</p>
                 {showStreak && (
                   <p className={`mt-0.5 animate-score-pop text-xs sm:text-sm font-bold ${palette.warn.tw}`}>
-                    🔥 Racha ×{streak}{streak >= 3 && ` (+${(streak - 2) * 15}%)`}
+                    🔥 Racha ×{streak}{streakPct > 0 && ` (+${streakPct}%)`}
                   </p>
                 )}
               </div>

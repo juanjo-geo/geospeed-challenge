@@ -640,3 +640,206 @@ export function playGo() {
   setTimeout(() => playImpact(vary(120, 0.1), 0.1, 0.10), 30);
   setTimeout(() => playFilteredNoise(0.1, 0.05, 4000, 'highpass'), 60);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. ROUND TRANSITION — Whoosh + new city reveal
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playRoundTransition() {
+  const c = getCtx();
+  if (!c) return;
+  try {
+    // Ascending whoosh — filtered noise sweep
+    const duration = 0.25;
+    const bufferSize = Math.floor(c.sampleRate * duration);
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const source = c.createBufferSource();
+    source.buffer = buffer;
+    const g = c.createGain();
+    const filter = c.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 1.5;
+    filter.frequency.setValueAtTime(vary(400, 0.15), c.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(vary(4000, 0.15), c.currentTime + duration * 0.7);
+    g.gain.setValueAtTime(vary(vol(0.06), 0.2), c.currentTime);
+    g.gain.setValueAtTime(vary(vol(0.08), 0.2), c.currentTime + duration * 0.3);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+    source.connect(filter);
+    filter.connect(g);
+    g.connect(c.destination);
+    source.start();
+    // Subtle bright ping at the end — "city revealed"
+    setTimeout(() => playTone(vary(pick([1200, 1400, 1600]), 0.1), 0.1, 'sine', 0.06), 180);
+  } catch (_) { /* ignore */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. MEDIUM ACCURACY (100-300pts) — Neutral "meh" feedback
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playMedium() {
+  unlockAudio();
+  const variation = pick([0, 1, 2]);
+
+  if (variation === 0) {
+    // Flat two-note — not exciting, not punishing
+    const base = vary(440, 0.1);
+    playTone(base, 0.12, 'triangle', 0.08);
+    setTimeout(() => playTone(base * 0.94, 0.18, 'triangle', 0.07), 80); // slight drop
+  } else if (variation === 1) {
+    // Single warm tone with wobble
+    const base = vary(392, 0.1); // G4
+    playTone(base, 0.2, 'sine', 0.09, { detune: vary(0, 15) });
+    setTimeout(() => playImpact(vary(150, 0.1), 0.06, 0.04), 50);
+  } else {
+    // Quick descending pair
+    const base = vary(500, 0.1);
+    playTone(base, 0.1, 'triangle', 0.08);
+    setTimeout(() => playTone(base * 0.84, 0.15, 'triangle', 0.07), 70);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11. SPEED MULTIPLIER x2 — Power-up whoosh + sparkle
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playMultiplierX2() {
+  unlockAudio();
+  // Fast ascending sweep
+  const base = vary(660, 0.08); // E5
+  playTone(base, 0.08, 'sine', 0.07);
+  setTimeout(() => playTone(base * 1.5, 0.08, 'sine', 0.08), 40);
+  setTimeout(() => playTone(base * 2, 0.15, 'sine', 0.10), 80);
+  // Sparkle pop
+  setTimeout(() => playCoinBell(vary(3800, 0.1), 0.12, 0.04), 100);
+  setTimeout(() => playFilteredNoise(0.08, 0.03, 5500, 'highpass'), 110);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 12. TIME EXPIRED (round) — Dramatic buzz-out, different from Game Over
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playTimeExpired() {
+  unlockAudio();
+  // Harsh buzzer — descending sawtooth
+  const base = vary(350, 0.1);
+  playTone(base, 0.15, 'sawtooth', 0.07);
+  setTimeout(() => playTone(base * 0.7, 0.2, 'sawtooth', 0.06), 80);
+  // Low thump for weight
+  setTimeout(() => playImpact(vary(60, 0.1), 0.15, 0.10), 120);
+  // Quick air-out noise
+  setTimeout(() => playFilteredNoise(0.12, 0.04, 600, 'lowpass'), 100);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 13. LEVEL UP — Triumphant ascending scale + shimmer
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playLevelUp() {
+  unlockAudio();
+  const base = vary(523, 0.05); // C5
+  // Rapid ascending major scale: C-E-G-C
+  [1, 1.26, 1.5, 2].forEach((ratio, i) => {
+    setTimeout(() => playTone(base * ratio, 0.15, 'sine', 0.10 + i * 0.01), i * 60);
+  });
+  // Sustain final note with harmonics
+  setTimeout(() => {
+    playTone(base * 2, 0.4, 'sine', 0.14);
+    playTone(base * 2.52, 0.35, 'sine', 0.08); // E6
+    // Coin shimmer cascade
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => playCoinBell(vary(3500 + i * 600, 0.12), 0.15, 0.04), i * 50);
+    }
+  }, 250);
+  // Sparkle finish
+  setTimeout(() => playFilteredNoise(0.15, 0.04, 5000, 'highpass'), 400);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 14. BUTTON TAP — Subtle UI click for menu interactions
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playButtonTap() {
+  const c = getCtx();
+  if (!c) return;
+  try {
+    // Ultra-short tick — crisp and light
+    const freq = vary(pick([1800, 2000, 2200]), 0.08);
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const finalGain = vary(vol(0.04), 0.2);
+    g.gain.setValueAtTime(finalGain, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
+    osc.connect(g);
+    g.connect(c.destination);
+    osc.start();
+    osc.stop(c.currentTime + 0.04);
+    // Tiny sub-click body
+    playImpact(vary(300, 0.1), 0.025, 0.02);
+  } catch (_) { /* ignore */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 15. REVENGE ACTIVATE — Fire-up dramatic power chord
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playRevengeActivate() {
+  unlockAudio();
+  // Dark power chord — E minor feel
+  const base = vary(165, 0.05); // E3
+  playTone(base, 0.3, 'sawtooth', 0.08);
+  playTone(base * 1.5, 0.3, 'sawtooth', 0.06);   // B3
+  playTone(base * 2, 0.25, 'sawtooth', 0.07);     // E4
+  // Rising tension sweep
+  setTimeout(() => {
+    playTone(vary(330, 0.05), 0.15, 'square', 0.05);
+    playTone(vary(495, 0.05), 0.15, 'square', 0.04);
+  }, 150);
+  // Impact slam
+  setTimeout(() => playImpact(vary(50, 0.1), 0.2, 0.15), 200);
+  // Fire crackle
+  setTimeout(() => playFilteredNoise(0.15, 0.04, 2000, 'highpass'), 250);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 16. SHARE / CHALLENGE — Notification swoosh + chime
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playShareSuccess() {
+  unlockAudio();
+  // Quick ascending swoosh
+  const c = getCtx();
+  if (!c) return;
+  try {
+    const duration = 0.2;
+    const bufferSize = Math.floor(c.sampleRate * duration);
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const source = c.createBufferSource();
+    source.buffer = buffer;
+    const g = c.createGain();
+    const filter = c.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 2;
+    filter.frequency.setValueAtTime(vary(600, 0.15), c.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(vary(5000, 0.15), c.currentTime + duration);
+    g.gain.setValueAtTime(vary(vol(0.05), 0.2), c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+    source.connect(filter);
+    filter.connect(g);
+    g.connect(c.destination);
+    source.start();
+  } catch (_) { /* ignore */ }
+  // Bright notification chime
+  setTimeout(() => {
+    const base = vary(880, 0.05); // A5
+    playTone(base, 0.1, 'sine', 0.08);
+    setTimeout(() => playTone(base * 1.5, 0.15, 'sine', 0.09), 60);
+    setTimeout(() => playCoinBell(vary(3200, 0.1), 0.12, 0.03), 100);
+  }, 120);
+}

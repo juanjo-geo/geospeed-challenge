@@ -102,9 +102,14 @@ export function fireConfetti(options?: {
   requestAnimationFrame(animate);
 }
 
-/** Fire a small star burst (for perfect 1000pt rounds) */
+/** Tier S — Perfect (<50km): rainbow heavy burst from click point */
 export function fireStarBurst(origin?: { x: number; y: number }) {
-  fireConfetti({ intensity: 'light', palette: 'gold', origin });
+  fireConfetti({ intensity: 'heavy', palette: 'rainbow', origin });
+}
+
+/** Tier A — Excellent (50-300km): gold medium burst from click point */
+export function fireGoldBurst(origin?: { x: number; y: number }) {
+  fireConfetti({ intensity: 'medium', palette: 'gold', origin });
 }
 
 /** Fire a full celebration (for new records, origin optional) */
