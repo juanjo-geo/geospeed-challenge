@@ -26,17 +26,20 @@ interface HomeScreenProps {
   onOpenProfile?: () => void;
 }
 
-const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string }[] = [
-  { key: 'easy',   label: 'Fácil',   emoji: '🟢', desc: '30 capitales',  borderClass: 'border-green-500/40  hover:border-green-500',  glowClass: 'hover:shadow-[0_0_18px_hsl(142_71%_45%/0.25)]' },
-  { key: 'medium', label: 'Medio',   emoji: '🟡', desc: '30 regionales', borderClass: 'border-yellow-500/40 hover:border-yellow-500', glowClass: 'hover:shadow-[0_0_18px_hsl(48_96%_53%/0.25)]'  },
-  { key: 'hard',   label: 'Experto', emoji: '🔴', desc: '30 difíciles',  borderClass: 'border-red-500/40    hover:border-red-500',    glowClass: 'hover:shadow-[0_0_18px_hsl(0_84%_60%/0.25)]'   },
+const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string; unlockLevel: number }[] = [
+  { key: 'basic',  label: 'Básico',  emoji: '🌍', desc: '20 megaciudades', borderClass: 'border-emerald-400/40 hover:border-emerald-400', glowClass: 'hover:shadow-[0_0_18px_hsl(160_84%_39%/0.25)]', unlockLevel: 1 },
+  { key: 'easy',   label: 'Fácil',   emoji: '🧭', desc: '47 capitales',    borderClass: 'border-blue-500/40  hover:border-blue-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(217_91%_60%/0.25)]',  unlockLevel: 2 },
+  { key: 'medium', label: 'Medio',   emoji: '⚡', desc: '53 regionales',   borderClass: 'border-yellow-500/40 hover:border-yellow-500',  glowClass: 'hover:shadow-[0_0_18px_hsl(48_96%_53%/0.25)]',   unlockLevel: 4 },
+  { key: 'hard',   label: 'Experto', emoji: '🔥', desc: '60 difíciles',    borderClass: 'border-red-500/40    hover:border-red-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(0_84%_60%/0.25)]',    unlockLevel: 6 },
 ];
 
 const MEDALS = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
 
 const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> = {
-  asia:   { level: 2, label: 'Nv.2' },
-  africa: { level: 3, label: 'Nv.3' },
+  europe:   { level: 2, label: 'Nv.2' },
+  asia:     { level: 3, label: 'Nv.3' },
+  americas: { level: 4, label: 'Nv.4' },
+  africa:   { level: 5, label: 'Nv.5' },
 };
 
 export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile }: HomeScreenProps) {
@@ -48,7 +51,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedMode, setSelectedMode] = useState<GameMode>('world');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('basic');
   const [rankingMode, setRankingMode] = useState<string>('all');
   const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
   const [showRanking, setShowRanking] = useState(false);
@@ -332,30 +335,36 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       {/* ── Dificultad ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-180" role="group" aria-label="Seleccionar dificultad">
         <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">{t('home_difficulty')}</p>
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2" role="radiogroup" aria-label="Seleccionar dificultad">
+        <div className="grid grid-cols-4 gap-1 sm:gap-1.5" role="radiogroup" aria-label="Seleccionar dificultad">
           {DIFF_CONFIG.map(d => {
-            const labelKey = d.key === 'easy' ? 'home_diffEasy' : d.key === 'medium' ? 'home_diffMedium' : 'home_diffHard';
-            const descKey = d.key === 'easy' ? 'home_diffEasyDesc' : d.key === 'medium' ? 'home_diffMediumDesc' : 'home_diffHardDesc';
+            const labelKey = `home_diff${d.key.charAt(0).toUpperCase() + d.key.slice(1)}` as any;
+            const descKey = `${labelKey}Desc` as any;
             const isSelected = selectedDifficulty === d.key;
+            const isLocked = playerLevel.level < d.unlockLevel;
             return (
               <button
                 key={d.key}
-                onClick={() => setSelectedDifficulty(d.key)}
+                onClick={() => !isLocked && setSelectedDifficulty(d.key)}
                 role="radio"
                 aria-checked={isSelected}
-                className={`relative flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                  isSelected
+                disabled={isLocked}
+                className={`relative flex flex-col items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2.5 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                  isLocked
+                    ? 'border-border/30 bg-card/40 opacity-50 cursor-not-allowed'
+                    : isSelected
                     ? 'border-[#F0A030] bg-[#F0A030]/15 shadow-[0_0_20px_rgba(240,160,48,0.3)]'
                     : `bg-card ${d.borderClass} ${d.glowClass}`
                 }`}
-                aria-label={`Dificultad ${t(labelKey)}: ${t(descKey)}`}
+                aria-label={isLocked ? `${t(labelKey)} — ${t('home_diffLocked', { level: String(d.unlockLevel) })}` : `Dificultad ${t(labelKey)}: ${t(descKey)}`}
               >
-                {isSelected && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold" style={{ background: '#F0A030', color: '#0A0E18' }}>✓</span>
+                {isSelected && !isLocked && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: '#F0A030', color: '#0A0E18' }}>✓</span>
                 )}
-                <span className="text-base sm:text-lg">{d.emoji}</span>
-                <div className={`font-bold text-xs sm:text-sm ${isSelected ? 'text-[#F0A030]' : 'text-foreground'}`}>{t(labelKey)}</div>
-                <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center leading-tight">{t(descKey)}</div>
+                <span className="text-sm sm:text-lg">{isLocked ? '🔒' : d.emoji}</span>
+                <div className={`font-bold text-[10px] sm:text-xs ${isLocked ? 'text-muted-foreground/50' : isSelected ? 'text-[#F0A030]' : 'text-foreground'}`}>{t(labelKey)}</div>
+                <div className="text-[7px] sm:text-[9px] text-muted-foreground text-center leading-tight">
+                  {isLocked ? `Nv.${d.unlockLevel}` : t(descKey)}
+                </div>
               </button>
             );
           })}

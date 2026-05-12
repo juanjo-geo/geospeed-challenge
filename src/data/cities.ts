@@ -1,4 +1,4 @@
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = 'basic' | 'easy' | 'medium' | 'hard';
 export type GameMode = 'world' | 'europe' | 'asia' | 'americas' | 'africa';
 
 export interface City {
@@ -11,27 +11,36 @@ export interface City {
 
 // ===================== WORLD CITIES =====================
 export const worldCities: City[] = [
-  // === EASY (60 capitals) ===
-  { name: "Tokio", country: "Japón", lat: 35.68, lon: 139.69, difficulty: "easy" },
-  { name: "Pekín", country: "China", lat: 39.90, lon: 116.40, difficulty: "easy" },
-  { name: "Moscú", country: "Rusia", lat: 55.76, lon: 37.62, difficulty: "easy" },
-  { name: "Londres", country: "Reino Unido", lat: 51.51, lon: -0.13, difficulty: "easy" },
-  { name: "París", country: "Francia", lat: 48.86, lon: 2.35, difficulty: "easy" },
-  { name: "Berlín", country: "Alemania", lat: 52.52, lon: 13.41, difficulty: "easy" },
-  { name: "Roma", country: "Italia", lat: 41.90, lon: 12.50, difficulty: "easy" },
-  { name: "Madrid", country: "España", lat: 40.42, lon: -3.70, difficulty: "easy" },
+  // === BASIC (20 megacities) ===
+  { name: "Tokio", country: "Japón", lat: 35.68, lon: 139.69, difficulty: "basic" },
+  { name: "Pekín", country: "China", lat: 39.90, lon: 116.40, difficulty: "basic" },
+  { name: "Moscú", country: "Rusia", lat: 55.76, lon: 37.62, difficulty: "basic" },
+  { name: "Londres", country: "Reino Unido", lat: 51.51, lon: -0.13, difficulty: "basic" },
+  { name: "París", country: "Francia", lat: 48.86, lon: 2.35, difficulty: "basic" },
+  { name: "Berlín", country: "Alemania", lat: 52.52, lon: 13.41, difficulty: "basic" },
+  { name: "Roma", country: "Italia", lat: 41.90, lon: 12.50, difficulty: "basic" },
+  { name: "Madrid", country: "España", lat: 40.42, lon: -3.70, difficulty: "basic" },
+  { name: "Buenos Aires", country: "Argentina", lat: -34.60, lon: -58.38, difficulty: "basic" },
+  { name: "Ciudad de México", country: "México", lat: 19.43, lon: -99.13, difficulty: "basic" },
+  { name: "El Cairo", country: "Egipto", lat: 30.04, lon: 31.24, difficulty: "basic" },
+  { name: "Bangkok", country: "Tailandia", lat: 13.76, lon: 100.50, difficulty: "basic" },
+  { name: "Seúl", country: "Corea del Sur", lat: 37.57, lon: 126.98, difficulty: "basic" },
+  { name: "Bombay", country: "India", lat: 19.08, lon: 72.88, difficulty: "basic" },
+  { name: "Estambul", country: "Turquía", lat: 41.01, lon: 28.98, difficulty: "basic" },
+  { name: "Sídney", country: "Australia", lat: -33.87, lon: 151.21, difficulty: "basic" },
+  { name: "Los Ángeles", country: "EE.UU.", lat: 34.05, lon: -118.24, difficulty: "basic" },
+  { name: "Río de Janeiro", country: "Brasil", lat: -22.91, lon: -43.17, difficulty: "basic" },
+  { name: "Nueva York", country: "EE.UU.", lat: 40.71, lon: -74.01, difficulty: "basic" },
+  { name: "Johannesburgo", country: "Sudáfrica", lat: -26.20, lon: 28.05, difficulty: "basic" },
+
+  // === EASY (47 capitals) ===
   { name: "Washington D.C.", country: "EE.UU.", lat: 38.91, lon: -77.04, difficulty: "easy" },
   { name: "Ottawa", country: "Canadá", lat: 45.42, lon: -75.70, difficulty: "easy" },
   { name: "Canberra", country: "Australia", lat: -35.28, lon: 149.13, difficulty: "easy" },
   { name: "Brasilia", country: "Brasil", lat: -15.79, lon: -47.88, difficulty: "easy" },
-  { name: "Buenos Aires", country: "Argentina", lat: -34.60, lon: -58.38, difficulty: "easy" },
-  { name: "Ciudad de México", country: "México", lat: 19.43, lon: -99.13, difficulty: "easy" },
-  { name: "El Cairo", country: "Egipto", lat: 30.04, lon: 31.24, difficulty: "easy" },
   { name: "Nairobi", country: "Kenia", lat: -1.29, lon: 36.82, difficulty: "easy" },
   { name: "Nueva Delhi", country: "India", lat: 28.61, lon: 77.21, difficulty: "easy" },
-  { name: "Bangkok", country: "Tailandia", lat: 13.76, lon: 100.50, difficulty: "easy" },
   { name: "Yakarta", country: "Indonesia", lat: -6.21, lon: 106.85, difficulty: "easy" },
-  { name: "Seúl", country: "Corea del Sur", lat: 37.57, lon: 126.98, difficulty: "easy" },
   { name: "Lima", country: "Perú", lat: -12.05, lon: -77.04, difficulty: "easy" },
   { name: "Bogotá", country: "Colombia", lat: 4.71, lon: -74.07, difficulty: "easy" },
   { name: "Santiago", country: "Chile", lat: -33.45, lon: -70.67, difficulty: "easy" },
@@ -73,21 +82,15 @@ export const worldCities: City[] = [
   { name: "Daca", country: "Bangladés", lat: 23.81, lon: 90.41, difficulty: "easy" },
   { name: "Naipyidó", country: "Myanmar", lat: 19.76, lon: 96.07, difficulty: "easy" },
 
-  // === MEDIUM (60 regional cities) ===
-  { name: "Bombay", country: "India", lat: 19.08, lon: 72.88, difficulty: "medium" },
+  // === MEDIUM (53 regional cities) ===
   { name: "Shanghái", country: "China", lat: 31.23, lon: 121.47, difficulty: "medium" },
-  { name: "Estambul", country: "Turquía", lat: 41.01, lon: 28.98, difficulty: "medium" },
   { name: "Barcelona", country: "España", lat: 41.39, lon: 2.17, difficulty: "medium" },
   { name: "Múnich", country: "Alemania", lat: 48.14, lon: 11.58, difficulty: "medium" },
   { name: "Milán", country: "Italia", lat: 45.46, lon: 9.19, difficulty: "medium" },
-  { name: "Sídney", country: "Australia", lat: -33.87, lon: 151.21, difficulty: "medium" },
   { name: "Melbourne", country: "Australia", lat: -37.81, lon: 144.96, difficulty: "medium" },
   { name: "Toronto", country: "Canadá", lat: 43.65, lon: -79.38, difficulty: "medium" },
   { name: "Chicago", country: "EE.UU.", lat: 41.88, lon: -87.63, difficulty: "medium" },
-  { name: "Los Ángeles", country: "EE.UU.", lat: 34.05, lon: -118.24, difficulty: "medium" },
-  { name: "Río de Janeiro", country: "Brasil", lat: -22.91, lon: -43.17, difficulty: "medium" },
   { name: "São Paulo", country: "Brasil", lat: -23.55, lon: -46.63, difficulty: "medium" },
-  { name: "Johannesburgo", country: "Sudáfrica", lat: -26.20, lon: 28.05, difficulty: "medium" },
   { name: "Lagos", country: "Nigeria", lat: 6.52, lon: 3.38, difficulty: "medium" },
   { name: "Karachi", country: "Pakistán", lat: 24.86, lon: 67.01, difficulty: "medium" },
   { name: "Ho Chi Minh", country: "Vietnam", lat: 10.82, lon: 106.63, difficulty: "medium" },
@@ -114,7 +117,6 @@ export const worldCities: City[] = [
   { name: "Gdansk", country: "Polonia", lat: 54.35, lon: 18.65, difficulty: "medium" },
   { name: "San Francisco", country: "EE.UU.", lat: 37.77, lon: -122.42, difficulty: "medium" },
   { name: "Miami", country: "EE.UU.", lat: 25.76, lon: -80.19, difficulty: "medium" },
-  { name: "Nueva York", country: "EE.UU.", lat: 40.71, lon: -74.01, difficulty: "medium" },
   { name: "Guadalajara", country: "México", lat: 20.67, lon: -103.35, difficulty: "medium" },
   { name: "Medellín", country: "Colombia", lat: 6.25, lon: -75.56, difficulty: "medium" },
   { name: "Córdoba", country: "Argentina", lat: -31.42, lon: -64.18, difficulty: "medium" },
@@ -159,9 +161,6 @@ export const worldCities: City[] = [
   { name: "Timbu", country: "Bután", lat: 27.47, lon: 89.64, difficulty: "hard" },
   { name: "Vientián", country: "Laos", lat: 17.97, lon: 102.63, difficulty: "hard" },
   { name: "Nom Pen", country: "Camboya", lat: 11.56, lon: 104.93, difficulty: "hard" },
-  { name: "Bandar Seri Begawan", country: "Brunéi", lat: 4.94, lon: 114.95, difficulty: "hard" },
-  { name: "Dili", country: "Timor Oriental", lat: -8.56, lon: 125.57, difficulty: "hard" },
-  { name: "Suva", country: "Fiyi", lat: -18.14, lon: 178.44, difficulty: "hard" },
   { name: "Port Moresby", country: "Papúa Nueva Guinea", lat: -9.48, lon: 147.15, difficulty: "hard" },
   { name: "Windhoek", country: "Namibia", lat: -22.56, lon: 17.08, difficulty: "hard" },
   { name: "Lusaka", country: "Zambia", lat: -15.39, lon: 28.32, difficulty: "hard" },
@@ -182,20 +181,23 @@ export const worldCities: City[] = [
   { name: "Kampala", country: "Uganda", lat: 0.35, lon: 32.58, difficulty: "hard" },
   { name: "Mogadiscio", country: "Somalia", lat: 2.05, lon: 45.32, difficulty: "hard" },
   { name: "Asmara", country: "Eritrea", lat: 15.34, lon: 38.93, difficulty: "hard" },
-  { name: "Yibuti", country: "Yibuti", lat: 11.59, lon: 43.15, difficulty: "hard" },
-  { name: "Moroni", country: "Comoras", lat: -11.70, lon: 43.26, difficulty: "hard" },
-  { name: "Victoria", country: "Seychelles", lat: -4.62, lon: 55.45, difficulty: "hard" },
-  { name: "Port Louis", country: "Mauricio", lat: -20.16, lon: 57.50, difficulty: "hard" },
   { name: "Paramaribo", country: "Surinam", lat: 5.85, lon: -55.17, difficulty: "hard" },
   { name: "Georgetown", country: "Guyana", lat: 6.80, lon: -58.16, difficulty: "hard" },
-  { name: "Cayena", country: "Guayana Francesa", lat: 4.94, lon: -52.33, difficulty: "hard" },
   { name: "Managua", country: "Nicaragua", lat: 12.11, lon: -86.27, difficulty: "hard" },
   { name: "Tegucigalpa", country: "Honduras", lat: 14.07, lon: -87.19, difficulty: "hard" },
   { name: "San Salvador", country: "El Salvador", lat: 13.69, lon: -89.19, difficulty: "hard" },
-  { name: "Belmopán", country: "Belice", lat: 17.25, lon: -88.77, difficulty: "hard" },
-  { name: "Honiara", country: "Islas Salomón", lat: -9.43, lon: 160.03, difficulty: "hard" },
-  { name: "Apia", country: "Samoa", lat: -13.83, lon: -171.76, difficulty: "hard" },
-  { name: "Nukualofa", country: "Tonga", lat: -21.21, lon: -175.20, difficulty: "hard" },
+  { name: "Marrakech", country: "Marruecos", lat: 31.63, lon: -8.00, difficulty: "hard" },
+  { name: "Dubrovnik", country: "Croacia", lat: 42.65, lon: 18.09, difficulty: "hard" },
+  { name: "Cartagena", country: "Colombia", lat: 10.39, lon: -75.51, difficulty: "hard" },
+  { name: "Cusco", country: "Perú", lat: -13.53, lon: -71.97, difficulty: "hard" },
+  { name: "Vladivostok", country: "Rusia", lat: 43.12, lon: 131.87, difficulty: "hard" },
+  { name: "Edimburgo", country: "Reino Unido", lat: 55.95, lon: -3.19, difficulty: "hard" },
+  { name: "La Meca", country: "Arabia Saudita", lat: 21.43, lon: 39.83, difficulty: "hard" },
+  { name: "Zúrich", country: "Suiza", lat: 47.37, lon: 8.54, difficulty: "hard" },
+  { name: "Mombasa", country: "Kenia", lat: -4.05, lon: 39.67, difficulty: "hard" },
+  { name: "Samarcanda", country: "Uzbekistán", lat: 39.65, lon: 66.96, difficulty: "hard" },
+  { name: "Cancún", country: "México", lat: 21.16, lon: -86.85, difficulty: "hard" },
+  { name: "Chiang Mai", country: "Tailandia", lat: 18.79, lon: 98.98, difficulty: "hard" },
 ];
 
 // ===================== EUROPE CITIES =====================
@@ -490,7 +492,9 @@ export function getCitiesByDifficulty(difficulty: Difficulty, mode: GameMode = '
 }
 
 export function getRandomCities(difficulty: Difficulty, count: number = 13, mode: GameMode = 'world', seed?: number): City[] {
-  const pool = getCitiesByDifficulty(difficulty, mode);
+  // Basic difficulty only exists for world mode — fall back to easy for regional
+  const effectiveDifficulty = (difficulty === 'basic' && mode !== 'world') ? 'easy' : difficulty;
+  const pool = getCitiesByDifficulty(effectiveDifficulty, mode);
   const shuffled = [...pool];
   // Seeded PRNG for deterministic multiplayer city selection
   let rng: () => number;
@@ -509,6 +513,7 @@ export function getRandomCities(difficulty: Difficulty, count: number = 13, mode
 
 /**
  * Progressive Difficulty Ramp — cities start easy and get harder.
+ * Basic difficulty: all cities are basic (no progression).
  * Classic 13 rounds: 5 easy → 4 medium → 4 hard
  * Time Attack 40 pool: 15 easy → 13 medium → 12 hard
  * Generic: ~38% easy, ~31% medium, ~31% hard
@@ -517,11 +522,8 @@ export function getProgressiveCities(
   count: number,
   mode: GameMode = 'world',
   seed?: number,
+  difficulty?: Difficulty,
 ): City[] {
-  const easyCount = Math.ceil(count * 0.38);
-  const medCount  = Math.ceil((count - easyCount) / 2);
-  const hardCount = count - easyCount - medCount;
-
   // Seeded PRNG
   let rng: () => number;
   if (seed !== undefined) {
@@ -539,6 +541,21 @@ export function getProgressiveCities(
     }
     return a;
   };
+
+  // Basic difficulty: all cities from basic pool (world only, fall back to easy)
+  if (difficulty === 'basic') {
+    const effectiveMode = mode;
+    const basicPool = getCitiesByDifficulty('basic', effectiveMode);
+    if (basicPool.length > 0) {
+      return shuffle(basicPool).slice(0, count);
+    }
+    // Fall back to easy for regional modes
+    return shuffle(getCitiesByDifficulty('easy', effectiveMode)).slice(0, count);
+  }
+
+  const easyCount = Math.ceil(count * 0.38);
+  const medCount  = Math.ceil((count - easyCount) / 2);
+  const hardCount = count - easyCount - medCount;
 
   const easy = shuffle(getCitiesByDifficulty('easy', mode)).slice(0, easyCount);
   const med  = shuffle(getCitiesByDifficulty('medium', mode)).slice(0, medCount);

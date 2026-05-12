@@ -83,7 +83,7 @@ import {
   startNotificationLoop,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'profile' | 'store' | 'tutorial' | 'rotate' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
+type Phase = 'splash' | 'home' | 'profile' | 'store' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -125,16 +125,17 @@ function PhaseTransition({ children, phaseKey }: { children: React.ReactNode; ph
 // Difficulty labels — now resolved via i18n inside the component
 // (kept as fallback for non-i18n contexts)
 const difficultyLabelsEs: Record<Difficulty, string> = {
-  easy: '🟢 Fácil',
-  medium: '🟡 Medio',
-  hard: '🔴 Experto',
+  basic: '🌍 Básico',
+  easy: '🧭 Intermedio',
+  medium: '⚡ Avanzado',
+  hard: '🔥 Experto',
 };
 
 const Index = () => {
   const { t } = useI18n();
   const isMobile = useIsMobile();
   const [phase, setPhase] = useState<Phase>('splash');
-  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const [difficulty, setDifficulty] = useState<Difficulty>('basic');
   const [gameMode, setGameMode] = useState<GameMode>('world');
   const [finalRounds, setFinalRounds] = useState<RoundResult[]>([]);
   const [finalScore, setFinalScore] = useState(0);
@@ -154,8 +155,8 @@ const Index = () => {
   const [spectateRoomId, setSpectateRoomId] = useState<string>('');
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
-  // Phase to return to after rotate screen (for mid-game rotation)
-  const preRotatePhaseRef = useRef<Phase | null>(null);
+  // Overlay-based rotate screen — keeps game mounted so state is preserved
+  const [showRotateOverlay, setShowRotateOverlay] = useState(false);
 
   // ── Background music — single track, always on from splash ──
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
@@ -246,42 +247,26 @@ const Index = () => {
     setPhase('countdown');
   }, [isMobile]);
 
-  // Auto-detect landscape while on rotate screen
+  // Detect portrait rotation DURING gameplay → show overlay (game stays mounted)
   useEffect(() => {
-    if (phase !== 'rotate') return;
+    const playPhases: Phase[] = ['playing', 'ta-playing', 'mp-playing', 'daily'];
+    if (!playPhases.includes(phase) || !isMobile) {
+      // Outside gameplay: always hide overlay
+      setShowRotateOverlay(false);
+      return;
+    }
     const check = () => {
-      if (window.innerWidth > window.innerHeight) {
-        const returnTo = preRotatePhaseRef.current || 'countdown';
-        preRotatePhaseRef.current = null;
-        // Only increment game key if starting fresh (not resuming)
-        if (returnTo === 'countdown') gameKeyRef.current += 1;
-        setPhase(returnTo);
-      }
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setShowRotateOverlay(isPortrait);
     };
-    const onOrientationChange = () => setTimeout(check, 300);
+    // Check immediately
+    check();
+    const onOrientationChange = () => setTimeout(check, 200);
     window.addEventListener('resize', check);
     window.addEventListener('orientationchange', onOrientationChange);
     return () => {
       window.removeEventListener('resize', check);
       window.removeEventListener('orientationchange', onOrientationChange);
-    };
-  }, [phase]);
-
-  // Detect portrait rotation DURING gameplay → pause and show rotate screen
-  useEffect(() => {
-    const playPhases: Phase[] = ['playing', 'ta-playing', 'mp-playing', 'daily'];
-    if (!playPhases.includes(phase) || !isMobile) return;
-    const check = () => {
-      if (window.innerHeight > window.innerWidth) {
-        preRotatePhaseRef.current = phase;
-        setPhase('rotate');
-      }
-    };
-    window.addEventListener('resize', check);
-    window.addEventListener('orientationchange', () => setTimeout(check, 200));
-    return () => {
-      window.removeEventListener('resize', check);
-      window.removeEventListener('orientationchange', check);
     };
   }, [phase, isMobile]);
 
@@ -439,7 +424,7 @@ const Index = () => {
     unlockAudio();
     setIsTraining(true);
     setIsSpeedDemon(false);
-    setDifficulty('easy');
+    setDifficulty('basic');
     setGameMode('world');
     gameKeyRef.current += 1;
     setPhase('countdown');
@@ -450,7 +435,7 @@ const Index = () => {
     if (!consumeLife()) { setShowNoLives(true); return; }
     setIsTraining(false);
     setIsSpeedDemon(true);
-    setDifficulty('easy');
+    setDifficulty('basic');
     setGameMode('world');
     gameKeyRef.current += 1;
     setPhase('countdown');
@@ -489,7 +474,7 @@ const Index = () => {
     const s = params.get('s');
     if (ch) {
       setChallengeSeed(Number(ch));
-      if (d && ['easy', 'medium', 'hard'].includes(d)) setDifficulty(d as Difficulty);
+      if (d && ['basic', 'easy', 'medium', 'hard'].includes(d)) setDifficulty(d as Difficulty);
       if (m) setGameMode(m as GameMode);
       if (s) setChallengerScore(Number(s));
       // Clean URL without reloading
@@ -571,14 +556,7 @@ const Index = () => {
       }} />;
     }
 
-    if (phase === 'rotate') {
-      return <RotateScreen onLandscapeDetected={() => {
-        const returnTo = preRotatePhaseRef.current || 'countdown';
-        preRotatePhaseRef.current = null;
-        if (returnTo === 'countdown') gameKeyRef.current += 1;
-        setPhase(returnTo);
-      }} t={t} />;
-    }
+    // 'rotate' phase is no longer used — handled via overlay (showRotateOverlay)
 
     if (phase === 'countdown') {
       const isGo = countdown === 0;
@@ -656,8 +634,8 @@ const Index = () => {
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4 sm:mb-6">
-              {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
+            <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mb-4 sm:mb-6">
+              {(['basic', 'easy', 'medium', 'hard'] as Difficulty[]).map(d => (
                 <button
                   key={d}
                   onClick={() => setDifficulty(d)}
@@ -881,7 +859,7 @@ const Index = () => {
   }, [phase]);
 
   // Phases with their own full-screen animations skip PhaseTransition
-  const skipTransition = ['splash', 'countdown', 'rotate', 'tutorial'].includes(phase);
+  const skipTransition = ['splash', 'countdown', 'tutorial'].includes(phase);
 
   // Minimal loading fallback for lazy components
   const lazyFallback = (
@@ -934,6 +912,9 @@ const Index = () => {
         </div>
       )}
 
+      {/* Rotate overlay — shown on top of game when portrait during gameplay */}
+      {showRotateOverlay && <RotateOverlay t={t} />}
+
       {/* Floating music toggle — always visible */}
       {phase !== 'splash' && (
         <button
@@ -953,27 +934,10 @@ const Index = () => {
   );
 };
 
-/** Rotate-screen that auto-advances once landscape is detected */
-function RotateScreen({ onLandscapeDetected, t }: { onLandscapeDetected: () => void; t: (key: string) => string }) {
-  useEffect(() => {
-    const check = () => {
-      if (window.innerWidth > window.innerHeight) {
-        onLandscapeDetected();
-      }
-    };
-    const onOrientationChange = () => setTimeout(check, 200);
-    // Check immediately in case already landscape
-    check();
-    window.addEventListener('resize', check);
-    window.addEventListener('orientationchange', onOrientationChange);
-    return () => {
-      window.removeEventListener('resize', check);
-      window.removeEventListener('orientationchange', onOrientationChange);
-    };
-  }, [onLandscapeDetected]);
-
+/** Pure overlay — no internal orientation detection (parent controls visibility via state) */
+function RotateOverlay({ t }: { t: (key: string) => string }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] gap-6 game-bg">
+    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center min-h-[100dvh] gap-6 game-bg">
       <div className="animate-bounce" style={{ animationDuration: '2s' }}>
         <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="2" width="16" height="20" rx="2" />

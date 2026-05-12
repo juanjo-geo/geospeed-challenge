@@ -56,7 +56,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
         <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <button
             onClick={onBack}
-            className="text-sm font-bold px-3 py-2 rounded-lg border border-border hover:bg-muted transition-all active:scale-[0.97]"
+            className="text-sm font-bold px-3 py-1.5 rounded-lg border border-border/60 hover:border-border bg-card/50 hover:bg-muted transition-all active:scale-[0.97]"
             aria-label="Volver al menú"
           >
             ← Volver

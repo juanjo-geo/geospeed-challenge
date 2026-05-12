@@ -31,11 +31,11 @@ const LEVELS: { minXp: number; title: string; emoji: string }[] = [
 
 const LEVEL_REWARDS: Record<number, LevelReward> = {
   1: { lives: 0, description: 'Nivel inicial' },
-  2: { lives: 2, description: 'Explorador desbloqueado', unlock: 'Europe mode' },
+  2: { lives: 2, description: 'Explorador desbloqueado', unlock: 'Intermediate difficulty + Europe mode' },
   3: { lives: 3, description: 'Viajero desbloqueado', unlock: 'Asia mode' },
-  4: { lives: 3, description: 'Navegante desbloqueado' },
-  5: { lives: 5, description: 'Geógrafo desbloqueado', unlock: 'Expert difficulty' },
-  6: { lives: 5, description: 'Cartógrafo desbloqueado' },
+  4: { lives: 3, description: 'Navegante desbloqueado', unlock: 'Advanced difficulty + Americas mode' },
+  5: { lives: 5, description: 'Geógrafo desbloqueado', unlock: 'Africa mode' },
+  6: { lives: 5, description: 'Cartógrafo desbloqueado', unlock: 'Expert difficulty' },
   7: { lives: 5, description: 'Maestro desbloqueado' },
   8: { lives: 10, description: 'Leyenda desbloqueado' },
   9: { lives: 10, description: 'Oráculo desbloqueado' },

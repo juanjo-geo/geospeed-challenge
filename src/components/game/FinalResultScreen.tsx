@@ -137,6 +137,7 @@ export default function FinalResultScreen({
   }, [level.progress]);
 
   const handleShare = async () => {
+    playShareSuccess();
     setSharing(true);
     await shareResult({
       playerName: authName || initials || 'Jugador',

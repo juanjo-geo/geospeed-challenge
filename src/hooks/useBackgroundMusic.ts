@@ -79,8 +79,39 @@ function startMusic() {
   isPlaying = true;
   audio.volume = 0;
   const p = audio.play();
-  if (p) p.catch(() => {});
+  if (p) p.catch(() => {
+    // Autoplay blocked — retry on first user gesture
+    installPlayRetry();
+  });
   fadeTo(BASE_VOLUME);
+}
+
+let retryInstalled = false;
+function installPlayRetry() {
+  if (retryInstalled || typeof document === 'undefined') return;
+  retryInstalled = true;
+  const retry = () => {
+    if (!isPlaying || isMuted) return;
+    const audio = getAudio();
+    if (audio.paused) {
+      audio.volume = 0;
+      const p = audio.play();
+      if (p) p.then(() => {
+        fadeTo(BASE_VOLUME);
+        removeRetry();
+      }).catch(() => {});
+    } else {
+      removeRetry();
+    }
+  };
+  const removeRetry = () => {
+    ['touchstart', 'touchend', 'mousedown', 'click', 'keydown', 'pointerdown'].forEach(e => {
+      document.removeEventListener(e, retry, true);
+    });
+  };
+  ['touchstart', 'touchend', 'mousedown', 'click', 'keydown', 'pointerdown'].forEach(e => {
+    document.addEventListener(e, retry, { capture: true, passive: true, once: false });
+  });
 }
 
 function stopMusic() {
