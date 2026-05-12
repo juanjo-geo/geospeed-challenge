@@ -70,8 +70,12 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const onGameOverRef = useRef(onGameOver);
   useEffect(() => { onGameOverRef.current = onGameOver; }, [onGameOver]);
 
-  // Global countdown timer
+  // Global countdown timer — pauses when portrait on mobile
   useEffect(() => {
+    if (isPortraitMobile) {
+      clearInterval(globalTimerRef.current);
+      return;
+    }
     globalTimerRef.current = setInterval(() => {
       setGlobalTime(prev => {
         if (prev <= 1) {
@@ -95,7 +99,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       });
     }, 1000);
     return () => clearInterval(globalTimerRef.current);
-  }, []);
+  }, [isPortraitMobile]);
 
   useEffect(() => {
     roundStartRef.current = Date.now();

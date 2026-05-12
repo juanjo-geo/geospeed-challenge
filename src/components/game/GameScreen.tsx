@@ -121,7 +121,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   // Single timer effect — pauses when waiting, portrait, or no city
   useEffect(() => {
-    if (isWaiting || !currentCity) {
+    if (isWaiting || !currentCity || isPortraitMobile) {
       clearInterval(timerRef.current);
       return;
     }
