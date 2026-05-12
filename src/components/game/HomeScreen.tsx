@@ -27,10 +27,10 @@ interface HomeScreenProps {
 }
 
 const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string; unlockLevel: number }[] = [
-  { key: 'basic',  label: 'Básico',  emoji: '🌍', desc: '20 megaciudades', borderClass: 'border-emerald-400/40 hover:border-emerald-400', glowClass: 'hover:shadow-[0_0_18px_hsl(160_84%_39%/0.25)]', unlockLevel: 1 },
-  { key: 'easy',   label: 'Fácil',   emoji: '🧭', desc: '47 capitales',    borderClass: 'border-blue-500/40  hover:border-blue-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(217_91%_60%/0.25)]',  unlockLevel: 2 },
-  { key: 'medium', label: 'Medio',   emoji: '⚡', desc: '53 regionales',   borderClass: 'border-yellow-500/40 hover:border-yellow-500',  glowClass: 'hover:shadow-[0_0_18px_hsl(48_96%_53%/0.25)]',   unlockLevel: 4 },
-  { key: 'hard',   label: 'Experto', emoji: '🔥', desc: '60 difíciles',    borderClass: 'border-red-500/40    hover:border-red-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(0_84%_60%/0.25)]',    unlockLevel: 6 },
+  { key: 'basic',  label: 'Turista',  emoji: '🌍', desc: '20 megaciudades', borderClass: 'border-emerald-400/40 hover:border-emerald-400', glowClass: 'hover:shadow-[0_0_18px_hsl(160_84%_39%/0.25)]', unlockLevel: 1 },
+  { key: 'easy',   label: 'Rookie',   emoji: '🧭', desc: '47 capitales',    borderClass: 'border-blue-500/40  hover:border-blue-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(217_91%_60%/0.25)]',  unlockLevel: 2 },
+  { key: 'medium', label: 'Crack',   emoji: '⚡', desc: '53 regionales',   borderClass: 'border-yellow-500/40 hover:border-yellow-500',  glowClass: 'hover:shadow-[0_0_18px_hsl(48_96%_53%/0.25)]',   unlockLevel: 4 },
+  { key: 'hard',   label: 'Leyenda', emoji: '🔥', desc: '60 difíciles',    borderClass: 'border-red-500/40    hover:border-red-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(0_84%_60%/0.25)]',    unlockLevel: 6 },
 ];
 
 const MEDALS = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
