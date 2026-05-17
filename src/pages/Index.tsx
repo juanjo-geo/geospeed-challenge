@@ -61,12 +61,15 @@ const MultiplayerResultScreen = lazy(() => import('@/components/game/Multiplayer
 const TimeAttackScreen = lazy(() => import('@/components/game/TimeAttackScreen'));
 const TutorialOverlay = lazy(() => import('@/components/game/TutorialOverlay'));
 const StoreScreen = lazy(() => import('@/components/game/StoreScreen'));
+const BattlePassScreen = lazy(() => import('@/components/game/BattlePassScreen'));
 const SpectatorScreen = lazy(() => import('@/components/game/SpectatorScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
 import { showInterstitial, initAds } from '@/lib/adSystem';
+import { addBattlePassXP } from '@/lib/cosmetics';
+import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs } from '@/lib/analytics';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { checkStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
@@ -84,7 +87,7 @@ import {
   startNotificationLoop,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'profile' | 'store' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
+type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -169,7 +172,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
 
   // Initialize ads on mount
-  useEffect(() => { initAds(); }, []);
+  useEffect(() => { initAds(); initAnalytics(); }, []);
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
@@ -244,6 +247,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setIsSpeedDemon(false);
     setDifficulty(diff);
     setGameMode(mode);
+    trackGameStart(mode, diff);
     // Show tutorial overlay for first-time players
     const tutorialSeen = localStorage.getItem('geospeed_tutorial_seen');
     if (!tutorialSeen) {
@@ -323,8 +327,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       addLives(1);
     }
 
-    // Track game for ad cadence and sync to cloud
+    // Track game for ad cadence, battle pass XP, analytics, and sync to cloud
     incrementGameCounter();
+    addBattlePassXP(total);
+    trackGameComplete({ score: total, rounds: rounds.length, mode: gameMode, difficulty, avgDistance: avgDist, reason, durationMs: getSessionDurationMs() });
     syncAfterGame();
 
     // Show interstitial ad between games (every 3 games for free users)
@@ -391,8 +397,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setPhase('countdown');
   }, []);
   const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
-  const handleOpenStore = useCallback(() => setPhase('store'), []);
+  const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => setPhase('profile'), []);
+  const handleOpenBattlePass = useCallback(() => setPhase('battlepass'), []);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
   const handleSpectate = useCallback(async (code: string) => {
@@ -586,6 +593,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
     if (phase === 'store') {
       return <StoreScreen onClose={handleGoHome} />;
+    }
+
+    if (phase === 'battlepass') {
+      return <BattlePassScreen onClose={handleGoHome} />;
     }
 
     if (phase === 'profile') {
@@ -888,7 +899,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} />
     );
   };
 

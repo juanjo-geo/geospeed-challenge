@@ -5,6 +5,7 @@ import { formatDistance, qualifiesForLeaderboard, addToLeaderboard, updatePlayer
 import { playVictory, playLevelUp, playRevengeActivate, playShareSuccess, playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import { shareResult } from '@/lib/shareCard';
+import { canRecordVideo, shareVideo } from '@/lib/shareVideo';
 import { getPlayerLevel, checkLevelUp, calculateXP } from '@/lib/levelSystem';
 import { fireCelebration } from '@/lib/confetti';
 import { hapticCelebration } from '@/lib/haptics';
@@ -156,6 +157,42 @@ export default function FinalResultScreen({
       })),
     });
     setSharing(false);
+  };
+
+  // Video share — find best round for replay
+  const [sharingVideo, setSharingVideo] = useState(false);
+  const bestRound = useMemo(() => {
+    return rounds.reduce((best, r) => r.totalPoints > best.totalPoints ? r : best, rounds[0]);
+  }, [rounds]);
+
+  const handleShareVideo = async () => {
+    playShareSuccess();
+    setSharingVideo(true);
+    try {
+      const success = await shareVideo({
+        playerName: authName || initials || 'Jugador',
+        totalScore,
+        mode,
+        difficulty,
+        totalCities: rounds.length,
+        bestRound: {
+          clickLat: bestRound.clickLat,
+          clickLon: bestRound.clickLon,
+          cityLat: bestRound.city.lat,
+          cityLon: bestRound.city.lon,
+          cityName: bestRound.city.name,
+          distance: bestRound.distance,
+          score: bestRound.totalPoints,
+        },
+      });
+      if (!success) {
+        // Fallback to image share
+        await handleShare();
+      }
+    } catch {
+      await handleShare();
+    }
+    setSharingVideo(false);
   };
 
   return (
@@ -330,15 +367,28 @@ export default function FinalResultScreen({
           </p>
         )}
 
-        <button
-          onClick={handleShare}
-          disabled={sharing}
-          className="w-full py-2.5 sm:py-3 md:py-3.5 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3 md:mb-4 disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(332 47% 45%))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.35)' }}
-          aria-label={t('final_share')}
-        >
-          {sharing ? `⏳ ${t('final_sharing')}` : `📸 ${t('final_share')}`}
-        </button>
+        <div className="flex gap-2 mb-2 sm:mb-3 md:mb-4">
+          <button
+            onClick={handleShare}
+            disabled={sharing || sharingVideo}
+            className="flex-1 py-2.5 sm:py-3 md:py-3.5 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(332 47% 45%))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.35)' }}
+            aria-label={t('final_share')}
+          >
+            {sharing ? `⏳ ${t('final_sharing')}` : `📸 ${t('final_share')}`}
+          </button>
+          {canRecordVideo() && (
+            <button
+              onClick={handleShareVideo}
+              disabled={sharing || sharingVideo}
+              className="py-2.5 sm:py-3 md:py-3.5 px-4 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)', color: '#fff', boxShadow: '0 4px 20px rgba(124, 58, 237, 0.35)' }}
+              aria-label="Compartir video"
+            >
+              {sharingVideo ? '⏳' : '🎬'}
+            </button>
+          )}
+        </div>
         {/* Revenge mode — replay worst rounds */}
         {onRevenge && rounds.length >= 5 && (
           <button

@@ -24,6 +24,7 @@ interface HomeScreenProps {
   onSpeedDemon?: () => void;
   onOpenStore?: () => void;
   onOpenProfile?: () => void;
+  onOpenBattlePass?: () => void;
 }
 
 const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string; unlockLevel: number }[] = [
@@ -42,7 +43,7 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
   africa:   { level: 5, label: 'Nv.5' },
 };
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile, onOpenBattlePass }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
   // colorblind toggle removed
   const { t, locale, setLocale } = useI18n();
@@ -119,6 +120,15 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               aria-label="Abrir tienda"
             >
               {t('home_store')}
+            </button>
+          )}
+          {onOpenBattlePass && (
+            <button
+              onClick={onOpenBattlePass}
+              className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-[#f5c842]/40 text-[#f5c842] hover:bg-[#f5c842]/10 transition-all active:scale-[0.97]"
+              aria-label="Battle Pass"
+            >
+              🏆 Pass
             </button>
           )}
           <button
