@@ -159,11 +159,8 @@ export default function FinalResultScreen({
     setSharing(false);
   };
 
-  // Video share — find best round for replay
+  // Video share
   const [sharingVideo, setSharingVideo] = useState(false);
-  const bestRound = useMemo(() => {
-    return rounds.reduce((best, r) => r.totalPoints > best.totalPoints ? r : best, rounds[0]);
-  }, [rounds]);
 
   const handleShareVideo = async () => {
     playShareSuccess();
