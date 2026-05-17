@@ -364,15 +364,18 @@ export default function WorldMapCanvas({
     return () => ro.disconnect();
   }, []);
 
-  // Build offscreen cache at high DPI
+  // Build offscreen cache at high DPI with anti-aliasing
   useEffect(() => {
     const dpr = dprRef.current;
     const offscreen = document.createElement('canvas');
     offscreen.width = dimensions.w * dpr;
     offscreen.height = dimensions.h * dpr;
-    const ctx = offscreen.getContext('2d');
+    const ctx = offscreen.getContext('2d', { alpha: false });
     if (ctx) {
       ctx.scale(dpr, dpr);
+      // Enable anti-aliasing for smoother country borders
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       drawBaseMap(ctx, dimensions.w, dimensions.h);
     }
     offscreenRef.current = offscreen;
@@ -401,6 +404,8 @@ export default function WorldMapCanvas({
       canvas.style.width = `${dimensions.w}px`;
       canvas.style.height = `${dimensions.h}px`;
       ctx.scale(dpr, dpr);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
       lineProgressRef.current = 0;
       return;
@@ -972,6 +977,9 @@ export default function WorldMapCanvas({
   // Ocean background colors — must match exactly what drawBaseMap paints as ocean.
   // This makes letterbox areas (when geo ratio ≠ container ratio) visually seamless:
   // the "empty" space around the canvas looks like ocean instead of a black bar.
+  // ── Custom crosshair cursor (Phase 4) ──
+  const crosshairCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23f5c842' stroke-width='1.5' opacity='0.7'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23f5c842' opacity='0.9'/%3E%3Cline x1='16' y1='0' x2='16' y2='10' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='16' y1='22' x2='16' y2='32' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='0' y1='16' x2='10' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='22' y1='16' x2='32' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3C/svg%3E") 16 16, crosshair`;
+
   const oceanBg = theme === 'light'
     ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
     : theme === 'neon'
@@ -999,7 +1007,7 @@ export default function WorldMapCanvas({
           width: '100%',
           height: '100%',
           touchAction: 'none',
-          cursor: clickDisabled ? 'default' : 'crosshair',
+          cursor: clickDisabled ? 'default' : crosshairCursor,
           // Combine auto-zoom (result) and pinch zoom (user)
           // When zoomBombActiveRef is true, rAF drives the canvas directly via DOM —
           // do NOT set transform/origin here or React will overwrite rAF values.
