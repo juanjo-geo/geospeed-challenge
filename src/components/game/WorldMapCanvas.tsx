@@ -498,8 +498,41 @@ export default function WorldMapCanvas({
 
       // Show correct pin and distance label only when line is complete
       if (progress >= 1) {
-        // Correct pin (gold star)
-        drawStar(ctx, cx, cy, 5, 10, 5);
+        // Correct pin — vivid pulsing beacon (green for close, red for far)
+        const isClose = (distanceKm ?? 9999) < 500;
+        const beaconColor = isClose ? '#22c55e' : '#ef4444'; // vivid green or red
+        const beaconGlow = isClose ? 'rgba(34,197,94,' : 'rgba(239,68,68,';
+        const beaconPulse = 1 + 0.2 * Math.sin(Date.now() * 0.005);
+
+        // Outer glow ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, 18 * beaconPulse, 0, Math.PI * 2);
+        ctx.fillStyle = `${beaconGlow}0.2)`;
+        ctx.fill();
+
+        // Middle ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, 13 * beaconPulse, 0, Math.PI * 2);
+        ctx.fillStyle = `${beaconGlow}0.35)`;
+        ctx.fill();
+
+        // Core circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = beaconColor;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Crosshair lines for extra visibility
+        ctx.strokeStyle = `${beaconGlow}0.6)`;
+        ctx.lineWidth = 1.5;
+        const crossLen = 22;
+        ctx.beginPath();
+        ctx.moveTo(cx - crossLen, cy); ctx.lineTo(cx + crossLen, cy);
+        ctx.moveTo(cx, cy - crossLen); ctx.lineTo(cx, cy + crossLen);
+        ctx.stroke();
 
         // ── Distance label on arc midpoint ──
         if (distanceKm != null) {
@@ -523,6 +556,10 @@ export default function WorldMapCanvas({
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(text, labelPt.x, labelPt.y);
+        }
+        // Keep animating for 3s after line completes (beacon pulse)
+        if (elapsed < lineDuration + 3000) {
+          animFrameRef.current = requestAnimationFrame(animate);
         }
       } else {
         // ── Glowing dot at line tip ──

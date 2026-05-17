@@ -190,21 +190,23 @@ export function fireDistanceReveal(distanceKm: number) {
 
   const overlay = document.createElement('div');
   overlay.style.cssText = `
-    position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+    position: fixed; inset: 0; z-index: 10001; pointer-events: none;
     display: flex; align-items: center; justify-content: center;
-    animation: distance-reveal-in 0.3s ease-out;
+    animation: distance-reveal-in 0.4s ease-out;
+    background: rgba(0,0,0,0.45);
   `;
 
   const distText = Math.round(distanceKm).toLocaleString();
   overlay.innerHTML = `
-    <div style="text-align: center; animation: distance-reveal-scale 1.2s ease-out forwards;">
+    <div style="text-align: center; animation: distance-reveal-scale 2s ease-out forwards;">
       <div style="font-size: clamp(60px, 15vw, 140px); font-weight: 900; font-family: Impact, system-ui;
-        color: #ef4444; text-shadow: 0 0 40px rgba(239,68,68,0.6), 0 4px 20px rgba(0,0,0,0.5);
+        color: #ef4444; text-shadow: 0 0 60px rgba(239,68,68,0.8), 0 0 120px rgba(239,68,68,0.4), 0 4px 20px rgba(0,0,0,0.7);
         line-height: 1;">
         ${distText} km
       </div>
-      <div style="font-size: clamp(14px, 3vw, 24px); font-weight: 700; color: #fca5a5;
-        margin-top: 8px; letter-spacing: 0.2em; text-transform: uppercase;">
+      <div style="font-size: clamp(16px, 3.5vw, 28px); font-weight: 800; color: #fca5a5;
+        margin-top: 12px; letter-spacing: 0.15em; text-transform: uppercase;
+        text-shadow: 0 0 20px rgba(252,165,165,0.5);">
         ¡Al otro lado del mundo!
       </div>
     </div>
@@ -217,15 +219,16 @@ export function fireDistanceReveal(distanceKm: number) {
     style.textContent = `
       @keyframes distance-reveal-scale {
         0% { transform: scale(0.3); opacity: 0; }
-        20% { transform: scale(1.15); opacity: 1; }
-        35% { transform: scale(0.95); }
-        50% { transform: scale(1); }
-        80% { opacity: 1; }
-        100% { transform: scale(0.9); opacity: 0; }
+        15% { transform: scale(1.15); opacity: 1; }
+        25% { transform: scale(0.95); }
+        35% { transform: scale(1.02); }
+        40% { transform: scale(1); }
+        75% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0.85); opacity: 0; }
       }
       @keyframes distance-reveal-in {
-        0% { background: rgba(239,68,68,0.15); }
-        100% { background: transparent; }
+        0% { background: rgba(239,68,68,0.25); }
+        100% { background: rgba(0,0,0,0.45); }
       }
       @keyframes screen-shake {
         0%, 100% { transform: translate(0); }
@@ -246,10 +249,10 @@ export function fireDistanceReveal(distanceKm: number) {
   // Screen shake on the game container
   const gameEl = document.querySelector('[data-game-container]') as HTMLElement;
   if (gameEl) {
-    gameEl.style.animation = 'screen-shake 0.5s ease-out';
-    setTimeout(() => { gameEl.style.animation = ''; }, 600);
+    gameEl.style.animation = 'screen-shake 0.6s ease-out';
+    setTimeout(() => { gameEl.style.animation = ''; }, 700);
   }
 
   document.body.appendChild(overlay);
-  setTimeout(() => overlay.remove(), 1400);
+  setTimeout(() => overlay.remove(), 2200);
 }
