@@ -33,6 +33,20 @@ interface ShareVideoData {
   totalCities: number;
 }
 
+// ── Audio capture support ──
+let audioDestination: MediaStreamAudioDestinationNode | null = null;
+
+/**
+ * Get or create an audio destination node for capturing Web Audio output.
+ * Call this from the sounds module to route audio to the recorder.
+ */
+export function getAudioDestination(ctx: AudioContext): MediaStreamAudioDestinationNode {
+  if (!audioDestination || audioDestination.context !== ctx) {
+    audioDestination = ctx.createMediaStreamDestination();
+  }
+  return audioDestination;
+}
+
 // ── Feature detection ──
 export function canRecordVideo(): boolean {
   try {
@@ -365,10 +379,22 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
     }
   }
 
-  // ── Record the animation ──
-  const stream = canvas.captureStream(FPS);
-  const recorder = new MediaRecorder(stream, {
-    mimeType: 'video/webm;codecs=vp9',
+  // ── Record the animation (video + audio) ──
+  const videoStream = canvas.captureStream(FPS);
+  const combinedStream = new MediaStream([...videoStream.getTracks()]);
+
+  // Add audio track if available (routed from Web Audio via sounds module)
+  if (audioDestination && audioDestination.stream.getAudioTracks().length > 0) {
+    for (const track of audioDestination.stream.getAudioTracks()) {
+      combinedStream.addTrack(track);
+    }
+  }
+
+  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+    ? 'video/webm;codecs=vp9,opus'
+    : 'video/webm';
+  const recorder = new MediaRecorder(combinedStream, {
+    mimeType,
     videoBitsPerSecond: 2_500_000,
   });
 

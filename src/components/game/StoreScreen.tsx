@@ -8,6 +8,7 @@ import {
 } from '@/lib/premiumSystem';
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
+import { paymentProvider } from '@/lib/paymentProvider';
 
 interface StoreScreenProps {
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const [energy, setEnergy] = useState(getEnergy());
   const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const liveProducts = STORE_PRODUCTS.filter(p => p.type === 'lives');
   const proProducts = STORE_PRODUCTS.filter(p => p.type !== 'lives');
@@ -27,10 +29,16 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     setPurchasing(product.id);
     setPurchaseMessage(null);
 
-    // Simulate payment processing delay
-    await new Promise(r => setTimeout(r, 800));
-
     try {
+      const result = await paymentProvider.purchase(product.id);
+
+      if (!result.success) {
+        // Payment provider returned an error — show it and bail
+        setPurchaseMessage(result.error || t('store_purchaseError'));
+        return;
+      }
+
+      // Payment succeeded — apply the entitlement locally
       if (product.type === 'lives') {
         purchaseLives(product.id);
         setEnergy(getEnergy());
@@ -52,6 +60,33 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       setPurchaseMessage(t('store_purchaseError'));
     } finally {
       setPurchasing(null);
+    }
+  }, []);
+
+  const handleRestorePurchases = useCallback(async () => {
+    setRestoring(true);
+    setPurchaseMessage(null);
+
+    try {
+      const result = await paymentProvider.restorePurchases();
+      if (result.success) {
+        // Check if the restore revealed an active subscription
+        const status = await paymentProvider.getSubscriptionStatus();
+        if (status.isActive) {
+          // Re-activate Pro locally based on restored subscription
+          activatePro('subscription', 365);
+          setProStatus(getProStatus());
+          setPurchaseMessage(t('store_proActivated'));
+        } else {
+          setPurchaseMessage(t('store_noPurchasesToRestore') || 'No purchases to restore');
+        }
+      } else {
+        setPurchaseMessage(result.error || t('store_purchaseError'));
+      }
+    } catch {
+      setPurchaseMessage(t('store_purchaseError'));
+    } finally {
+      setRestoring(false);
     }
   }, []);
 
@@ -221,6 +256,18 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Restore purchases */}
+        <div className="mb-4 text-center">
+          <button
+            onClick={handleRestorePurchases}
+            disabled={restoring}
+            className="text-[10px] sm:text-xs font-bold text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-lg border border-border/60 hover:border-border bg-card/50 active:scale-[0.97] disabled:opacity-50"
+          >
+            {restoring ? '⏳ ' : '🔄 '}
+            {t('store_restorePurchases') || 'Restore Purchases'}
+          </button>
         </div>
 
         {/* Footer note */}
