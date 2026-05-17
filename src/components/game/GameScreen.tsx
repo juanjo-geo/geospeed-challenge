@@ -244,8 +244,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); }
       // Tier F: Epic fail (>5000km) — cinematic distance reveal (delays feedback panel)
       if (distance >= 5000) {
-        setDistanceRevealActive(true);
-        setTimeout(() => fireDistanceReveal(distance), 400);
+        setTimeout(() => { setDistanceRevealActive(true); fireDistanceReveal(distance); }, 400);
         setTimeout(() => setDistanceRevealActive(false), 2800);
       }
       // Speed multiplier bonus sound (top tier speed)

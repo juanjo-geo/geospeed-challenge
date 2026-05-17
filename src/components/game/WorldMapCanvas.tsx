@@ -450,30 +450,52 @@ export default function WorldMapCanvas({
       };
 
       // ── Gradient trail line (drawn portion) ──
-      // Neon: orange trail for speed feel; others: gold
-      const trailR = neon ? '240,160,48' : '245,200,66';
+      // Bold orange-red trail, highly visible against any map theme
+      const trailColor = (distanceKm ?? 0) > 1000 ? '239,68,68' : '234,120,30'; // red if far, deep orange if close
       const steps = Math.max(Math.floor(eased * 80), 2);
       for (let i = 0; i < steps - 1; i++) {
         const t0 = (i / steps) * eased;
         const t1 = ((i + 1) / steps) * eased;
         const p0 = bezierPt(t0);
         const p1 = bezierPt(t1);
-        const alpha = 0.3 + 0.7 * (i / steps); // fade in along trail
-        ctx.strokeStyle = `rgba(${trailR},${alpha})`;
-        ctx.lineWidth = neon ? 2 : 2.5;
+        const alpha = 0.5 + 0.5 * (i / steps); // starts at 0.5, ends at 1.0
+        ctx.strokeStyle = `rgba(${trailColor},${alpha})`;
+        ctx.lineWidth = 3.5;
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
         ctx.stroke();
       }
+      // White outline under the trail for contrast on dark maps
+      if (progress >= 1) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(ux, uy);
+        ctx.quadraticCurveTo(cpx, cpy, cx, cy);
+        ctx.stroke();
+        // Re-draw trail on top of white outline
+        for (let i = 0; i < 80; i++) {
+          const t0 = i / 80;
+          const t1 = (i + 1) / 80;
+          const p0 = bezierPt(t0);
+          const p1 = bezierPt(t1);
+          ctx.strokeStyle = `rgba(${trailColor},${0.6 + 0.4 * (i / 80)})`;
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
+      }
 
       // ── Thin dashed guide from tip to destination (preview) ──
       if (progress < 1) {
         const tip = bezierPt(eased);
-        ctx.setLineDash([4, 6]);
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = `rgba(${trailColor},0.35)`;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(tip.x, tip.y);
         ctx.quadraticCurveTo(cpx, cpy, cx, cy);
@@ -498,40 +520,53 @@ export default function WorldMapCanvas({
 
       // Show correct pin and distance label only when line is complete
       if (progress >= 1) {
-        // Correct pin — vivid pulsing beacon (green for close, red for far)
+        // Correct pin — large vivid beacon impossible to miss
         const isClose = (distanceKm ?? 9999) < 500;
-        const beaconColor = isClose ? '#22c55e' : '#ef4444'; // vivid green or red
+        const beaconColor = isClose ? '#22c55e' : '#ef4444';
         const beaconGlow = isClose ? 'rgba(34,197,94,' : 'rgba(239,68,68,';
-        const beaconPulse = 1 + 0.2 * Math.sin(Date.now() * 0.005);
+        const t = Date.now() * 0.004;
+        const pulse = 1 + 0.25 * Math.sin(t);
 
-        // Outer glow ring
+        // Expanding ripple rings (2 offset ripples)
+        for (let r = 0; r < 2; r++) {
+          const rippleT = ((t * 0.8 + r * 3.14) % 6.28) / 6.28;
+          const rippleR = 16 + rippleT * 40;
+          const rippleAlpha = 0.5 * (1 - rippleT);
+          ctx.beginPath();
+          ctx.arc(cx, cy, rippleR, 0, Math.PI * 2);
+          ctx.strokeStyle = `${beaconGlow}${rippleAlpha})`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
+        // Large outer glow
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 35 * pulse);
+        grad.addColorStop(0, `${beaconGlow}0.5)`);
+        grad.addColorStop(0.5, `${beaconGlow}0.15)`);
+        grad.addColorStop(1, `${beaconGlow}0)`);
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(cx, cy, 18 * beaconPulse, 0, Math.PI * 2);
-        ctx.fillStyle = `${beaconGlow}0.2)`;
+        ctx.arc(cx, cy, 35 * pulse, 0, Math.PI * 2);
         ctx.fill();
 
-        // Middle ring
+        // Core circle — big and bold
         ctx.beginPath();
-        ctx.arc(cx, cy, 13 * beaconPulse, 0, Math.PI * 2);
-        ctx.fillStyle = `${beaconGlow}0.35)`;
-        ctx.fill();
-
-        // Core circle
-        ctx.beginPath();
-        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 12, 0, Math.PI * 2);
         ctx.fillStyle = beaconColor;
         ctx.fill();
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Crosshair lines for extra visibility
-        ctx.strokeStyle = `${beaconGlow}0.6)`;
-        ctx.lineWidth = 1.5;
-        const crossLen = 22;
+        // Crosshair lines — thick and long
+        ctx.strokeStyle = `${beaconGlow}0.8)`;
+        ctx.lineWidth = 2;
+        const crossLen = 30;
         ctx.beginPath();
-        ctx.moveTo(cx - crossLen, cy); ctx.lineTo(cx + crossLen, cy);
-        ctx.moveTo(cx, cy - crossLen); ctx.lineTo(cx, cy + crossLen);
+        ctx.moveTo(cx - crossLen, cy); ctx.lineTo(cx - 16, cy);
+        ctx.moveTo(cx + 16, cy); ctx.lineTo(cx + crossLen, cy);
+        ctx.moveTo(cx, cy - crossLen); ctx.lineTo(cx, cy - 16);
+        ctx.moveTo(cx, cy + 16); ctx.lineTo(cx, cy + crossLen);
         ctx.stroke();
 
         // ── Distance label on arc midpoint ──
@@ -562,22 +597,25 @@ export default function WorldMapCanvas({
           animFrameRef.current = requestAnimationFrame(animate);
         }
       } else {
-        // ── Glowing dot at line tip ──
+        // ── Glowing dot at line tip — large orange-red ──
         const tip = bezierPt(eased);
-        const glowR = neon ? '240,160,48' : '245,200,66';
-        const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 12);
-        glow.addColorStop(0, `rgba(${glowR},0.9)`);
-        glow.addColorStop(0.5, `rgba(${glowR},0.3)`);
-        glow.addColorStop(1, `rgba(${glowR},0)`);
+        const dotColor = (distanceKm ?? 0) > 1000 ? '239,68,68' : '234,120,30';
+        const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 18);
+        glow.addColorStop(0, `rgba(${dotColor},0.95)`);
+        glow.addColorStop(0.4, `rgba(${dotColor},0.4)`);
+        glow.addColorStop(1, `rgba(${dotColor},0)`);
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(tip.x, tip.y, 12, 0, Math.PI * 2);
+        ctx.arc(tip.x, tip.y, 18, 0, Math.PI * 2);
         ctx.fill();
         // solid core
-        ctx.fillStyle = neon ? '#FF8C00' : '#f5c842';
+        ctx.fillStyle = `rgb(${dotColor})`;
         ctx.beginPath();
-        ctx.arc(tip.x, tip.y, 4.5, 0, Math.PI * 2);
+        ctx.arc(tip.x, tip.y, 6, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
         animFrameRef.current = requestAnimationFrame(animate);
       }
