@@ -3,7 +3,7 @@ import { City, getRandomCities, getProgressiveCities, type Difficulty, type Game
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
-import { fireStarBurst, fireGoldBurst } from '@/lib/confetti';
+import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -236,8 +236,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       else if (distance < 1000) { playGood(); hapticSuccess(); }
       // Tier C: Medium (<3000km) — neutral feedback
       else if (distance < 3000) { playMedium(); hapticTap(); }
-      // Tier D: Far (3000km+) — bad sound
-      else { playBad(); hapticError(); }
+      // Tier D: Far (3000km+) — bad sound + red burst
+      else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); }
+      // Tier F: Epic fail (>5000km) — cinematic distance reveal
+      if (distance >= 5000) { setTimeout(() => fireDistanceReveal(distance), 400); }
       // Speed multiplier bonus sound (top tier speed)
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 350); }
       // Streak sound: pitch rises with each consecutive good round
@@ -299,6 +301,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${isTimerUrgent ? 'vignette-urgent' : ''} ${isTimerCritical ? 'animate-screen-shake' : ''}`}
       role="main"
       aria-label="Pantalla de juego"
+      data-game-container
     >
       {/* Portrait top bar — stacked vertical layout for mobile portrait */}
       {isPortraitMobile && (

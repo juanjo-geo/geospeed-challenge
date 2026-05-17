@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, ty
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistance, addGameHistory } from '@/lib/gameUtils';
+import { checkIncomingReferral } from '@/lib/referralSystem';
 import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { type RoundResult } from '@/components/game/GameScreen';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
@@ -172,7 +173,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
 
   // Initialize ads on mount
-  useEffect(() => { initAds(); initAnalytics(); }, []);
+  useEffect(() => { initAds(); initAnalytics(); checkIncomingReferral(); }, []);
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
@@ -671,7 +672,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
                 GEOSPEED
               </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ Blitz, Contrarreloj Extremo</h2>
+            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ 60 SEGUNDOS DE CAOS</h2>
             <p className="text-muted-foreground text-[10px] sm:text-xs mb-4 sm:mb-6 italic">{t('ta_subtitle')}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 uppercase tracking-widest">{t('ta_selectDifficulty')}</p>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
@@ -766,7 +767,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ ¡TIEMPO!</h2>
-            <p className="text-muted-foreground text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 sm:mb-6">Blitz, Contrarreloj Extremo</p>
+            <p className="text-muted-foreground text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 sm:mb-6">60 Segundos de Caos</p>
 
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-4 sm:mb-6">
               <div className="bg-muted rounded-lg p-2 sm:p-3">

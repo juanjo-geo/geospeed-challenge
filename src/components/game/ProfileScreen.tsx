@@ -221,8 +221,8 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
         <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
           <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mb-2">{t('profile_byMode')}</p>
           <div className="space-y-2">
-            <ModeBar label="Clásico" count={classicGames} total={totalGames} color="hsl(var(--primary))" />
-            <ModeBar label="Contrarreloj" count={taGames} total={totalGames} color="hsl(332 47% 55%)" />
+            <ModeBar label="13 Ciudades" count={classicGames} total={totalGames} color="hsl(var(--primary))" />
+            <ModeBar label="60s de Caos" count={taGames} total={totalGames} color="hsl(332 47% 55%)" />
             <ModeBar label="Desafío Diario" count={dailyGames} total={totalGames} color="hsl(48 96% 53%)" />
           </div>
         </div>
@@ -370,8 +370,8 @@ function HistoryTab({ history }: { history: GameHistoryEntry[] }) {
   }
 
   const typeLabels: Record<string, { label: string; emoji: string }> = {
-    classic: { label: 'Clásico', emoji: '🎮' },
-    timeattack: { label: 'Contrarreloj', emoji: '⏱️' },
+    classic: { label: '13 Ciudades', emoji: '🎮' },
+    timeattack: { label: '60s de Caos', emoji: '⏱️' },
     daily: { label: 'Diario', emoji: '📅' },
   };
 

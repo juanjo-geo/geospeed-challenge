@@ -14,6 +14,7 @@ import { playButtonTap } from '@/lib/sounds';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 // useA11y removed — colorblind toggle removed
 import { useI18n, LOCALES } from '@/i18n';
+import { getReferralProgress, claimReferralReward, type ReferralReward } from '@/lib/referralSystem';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode) => void;
@@ -560,6 +561,60 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </button>
         </div>
       </div>
+
+      {/* ── Referral — Invita amigos ── */}
+      {!isNewPlayer && (() => {
+        const ref = getReferralProgress();
+        return (
+          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-320">
+            <div className="rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-black text-xs sm:text-sm text-purple-400">🎁 Invita amigos, gana vidas</p>
+                <span className="text-[10px] sm:text-xs font-mono text-muted-foreground">{ref.count} invitados</span>
+              </div>
+              {ref.nextTier && (
+                <div className="mb-2">
+                  <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground mb-1">
+                    <span>{ref.nextTier.label}</span>
+                    <span>{ref.count}/{ref.nextTier.threshold}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-background rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-purple-500 transition-all" style={{ width: `${Math.min(100, (ref.count / ref.nextTier.threshold) * 100)}%` }} />
+                  </div>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-1">
+                    🎯 {ref.nextTier.threshold - ref.count} más → +{ref.nextTier.lives} vidas{ref.nextTier.bonus ? ` + ${ref.nextTier.bonus}` : ''}
+                  </p>
+                </div>
+              )}
+              {ref.claimable && (
+                <button
+                  onClick={() => { claimReferralReward(ref.claimable!.tier); playButtonTap(); }}
+                  className="w-full py-2 rounded-lg font-bold text-xs mb-2 transition-all active:scale-[0.97] animate-pulse"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)', color: '#fff' }}
+                >
+                  🎉 RECLAMAR: +{ref.claimable.lives} vidas{ref.claimable.bonus ? ` + ${ref.claimable.bonus}` : ''}
+                </button>
+              )}
+              <button
+                onClick={async () => {
+                  playButtonTap();
+                  const text = locale === 'en'
+                    ? `🌍 Think you know geography? Beat my score on GeoSpeed!`
+                    : `🌍 ¿Crees que conoces el mundo? ¡Supera mi score en GeoSpeed!`;
+                  if (navigator.share) {
+                    try { await navigator.share({ title: 'GeoSpeed', text, url: ref.link }); } catch (_) {}
+                  } else {
+                    await navigator.clipboard?.writeText(`${text}\n${ref.link}`);
+                  }
+                }}
+                className="w-full py-2 rounded-lg font-bold text-[10px] sm:text-xs border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 transition-all active:scale-[0.97]"
+              >
+                📤 COMPARTIR LINK DE INVITACIÓN
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Contrareloj + Speed Demon + Duelo ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-3 gap-1.5 sm:gap-2">
