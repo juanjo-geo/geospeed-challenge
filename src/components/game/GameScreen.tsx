@@ -85,6 +85,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [timeLeft, setTimeLeft] = useState(effectiveMaxTime);
   const [isWaiting, setIsWaiting] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [distanceRevealActive, setDistanceRevealActive] = useState(false);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
   const [rounds, setRounds] = useState<RoundResult[]>([]);
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState(AUTO_ADVANCE_SECONDS);
@@ -147,9 +148,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
-    const timeout = setTimeout(() => setShowPopup(true), 1200);
+    // If distance reveal is playing (>5000km), wait for it to finish before showing feedback
+    const delay = distanceRevealActive ? 2800 : 1200;
+    const timeout = setTimeout(() => setShowPopup(true), delay);
     return () => clearTimeout(timeout);
-  }, [isWaiting, lastResult, isPortraitMobile]);
+  }, [isWaiting, lastResult, distanceRevealActive]);
 
   useEffect(() => {
     if (!showPopup) return;
@@ -174,6 +177,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       setCurrentRound(r => r + 1);
       setIsWaiting(false);
       setShowPopup(false);
+      setDistanceRevealActive(false);
       setLastResult(null);
       playRoundTransition();
     }
@@ -238,8 +242,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       else if (distance < 3000) { playMedium(); hapticTap(); }
       // Tier D: Far (3000km+) — bad sound + red burst
       else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); }
-      // Tier F: Epic fail (>5000km) — cinematic distance reveal
-      if (distance >= 5000) { setTimeout(() => fireDistanceReveal(distance), 400); }
+      // Tier F: Epic fail (>5000km) — cinematic distance reveal (delays feedback panel)
+      if (distance >= 5000) {
+        setDistanceRevealActive(true);
+        setTimeout(() => fireDistanceReveal(distance), 400);
+        setTimeout(() => setDistanceRevealActive(false), 2800);
+      }
       // Speed multiplier bonus sound (top tier speed)
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 350); }
       // Streak sound: pitch rises with each consecutive good round
