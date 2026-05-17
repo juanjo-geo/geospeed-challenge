@@ -89,30 +89,29 @@ export function fireMultiplierFeedback(
 
   const overlay = document.createElement('div');
   overlay.style.cssText = `
-    position: fixed; inset: 0; z-index: 9990; pointer-events: none;
+    position: fixed; top: 12vh; left: 0; right: 0; z-index: 9990; pointer-events: none;
     display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 6px;
+    flex-direction: column; gap: 4px;
   `;
 
-  // Main multiplier text
+  // Main multiplier text — fast: in 0.3s, hold, out at 0.7s. Total ~1s.
   const multText = `×${multiplier.toFixed(1)}!`;
   overlay.innerHTML = `
     <div style="
       font-size: ${fontSize}; font-weight: 900; font-family: Impact, system-ui, sans-serif;
       color: ${color}; letter-spacing: -0.02em; line-height: 1;
       text-shadow: 0 0 30px rgba(245,200,66,0.7), 0 4px 15px rgba(0,0,0,0.5);
-      animation: juice-mult-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-                 juice-mult-glow 0.8s ease-in-out 0.5s 2,
-                 juice-mult-out 0.4s ease-in 1.8s forwards;
+      animation: juice-mult-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+                 juice-mult-out 0.3s ease-in 0.7s forwards;
     ">
       ${emoji} ${multText}
     </div>
     ${streak >= 3 ? `
       <div style="
-        font-size: clamp(16px, 3vw, 24px); font-weight: 800; font-family: system-ui;
+        font-size: clamp(14px, 2.5vw, 20px); font-weight: 800; font-family: system-ui;
         color: #f97316; letter-spacing: 0.1em; text-transform: uppercase;
         text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        animation: juice-combo-pulse 0.4s ease-in-out 0.6s 3;
+        animation: juice-combo-pulse 0.3s ease-in-out 0.15s 2;
       ">
         🔥 COMBO ×${streak}
       </div>
@@ -120,7 +119,7 @@ export function fireMultiplierFeedback(
   `;
 
   document.body.appendChild(overlay);
-  setTimeout(() => overlay.remove(), 2400);
+  setTimeout(() => overlay.remove(), 1200);
 }
 
 // ── 2. SCORE FLY ANIMATION ──────────────────────────────────────────
@@ -213,7 +212,7 @@ export function fireRoundFlash(
   const color = isGood ? '#4ade80' : '#f97316';
   const el = document.createElement('div');
   el.style.cssText = `
-    position: fixed; inset: 0; z-index: 9989; pointer-events: none;
+    position: fixed; top: 10vh; left: 0; right: 0; z-index: 9989; pointer-events: none;
     display: flex; align-items: center; justify-content: center;
     flex-direction: column; gap: 4px;
   `;

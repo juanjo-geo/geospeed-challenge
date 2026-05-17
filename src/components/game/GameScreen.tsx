@@ -4,7 +4,7 @@ import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance }
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
-import { fireMultiplierFeedback, fireScoreFly, fireRoundFlash, fireStreakBorder, fireCountdown } from '@/lib/juiceAnimations';
+import { fireMultiplierFeedback, fireScoreFly, fireRoundFlash, fireStreakBorder } from '@/lib/juiceAnimations';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -95,24 +95,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [streak, setStreak] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
-  const [countdownActive, setCountdownActive] = useState(false);
-  const countdownFiredRef = useRef(false);
   const roundStartRef = useRef(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const scoreElRef = useRef<HTMLParagraphElement>(null);
 
   const currentCity = cities[currentRound];
-
-  // ── Phase 4: Countdown on first round (3-2-1-GO!) ──
-  useEffect(() => {
-    if (countdownFiredRef.current || isTraining) return;
-    countdownFiredRef.current = true;
-    setCountdownActive(true);
-    fireCountdown().then(() => {
-      setCountdownActive(false);
-      roundStartRef.current = Date.now(); // Reset timer start after countdown
-    });
-  }, []);
 
   // Hint circle: reset on each new round, reveal after 5 s of no click (training only)
   useEffect(() => {
@@ -135,9 +122,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
 
-  // Single timer effect — pauses when waiting, portrait, countdown, or no city
+  // Single timer effect — pauses when waiting, portrait, or no city
   useEffect(() => {
-    if (isWaiting || !currentCity || isPortraitMobile || countdownActive) {
+    if (isWaiting || !currentCity || isPortraitMobile) {
       clearInterval(timerRef.current);
       return;
     }
@@ -159,7 +146,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [currentRound, isWaiting, currentCity, isPortraitMobile, countdownActive]);
+  }, [currentRound, isWaiting, currentCity, isPortraitMobile]);
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
@@ -220,7 +207,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const lastClickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
 
   const handleMapClick = useCallback((lat: number, lon: number, viewportX?: number, viewportY?: number) => {
-    if (isWaiting || !currentCity || countdownActive) return;
+    if (isWaiting || !currentCity) return;
     lastClickViewportRef.current = viewportX != null && viewportY != null ? { x: viewportX, y: viewportY } : undefined;
     clearInterval(timerRef.current);
     playClick();
@@ -268,9 +255,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       }
       // Speed multiplier bonus sound (top tier speed)
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 350); }
-      // ── Phase 4: Multiplier mega-feedback ──
+      // ── Phase 4: Multiplier mega-feedback (top of screen, finishes before feedback popup) ──
       if (mult.value >= 1.5) {
-        setTimeout(() => fireMultiplierFeedback(mult.value, newStreak, lastClickViewportRef.current), 500);
+        setTimeout(() => fireMultiplierFeedback(mult.value, newStreak, lastClickViewportRef.current), 150);
       }
       // Streak sound: pitch rises with each consecutive good round
       if (newStreak >= 2) { setTimeout(() => playStreak(newStreak), 300); }
