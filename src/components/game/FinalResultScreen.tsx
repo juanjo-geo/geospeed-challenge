@@ -308,6 +308,21 @@ export default function FinalResultScreen({
           )}
         </div>
 
+        {/* INSTANT REPLAY — prominent CTA */}
+        <button
+          onClick={() => { playButtonTap(); onPlayAgain(); }}
+          className="w-full py-3.5 sm:py-4 rounded-xl font-black text-base sm:text-lg transition-all active:scale-[0.95] flex items-center justify-center gap-2 mb-4 sm:mb-5 animate-fade-in shadow-lg hover:scale-[1.02]"
+          style={{
+            background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(44 91% 50%), hsl(var(--primary)))',
+            color: 'hsl(var(--primary-foreground))',
+            boxShadow: '0 6px 24px hsl(var(--primary) / 0.4)',
+            animation: 'fade-in-up 0.5s ease-out, pulse 2s ease-in-out 2s infinite',
+          }}
+          aria-label="Jugar otra vez inmediatamente"
+        >
+          🔄 OTRA VEZ
+        </button>
+
         {/* Best round highlight */}
         {bestRound && bestRound.totalPoints >= 300 && (
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-2.5 sm:p-3 mb-3 sm:mb-4 text-center">
@@ -438,13 +453,6 @@ export default function FinalResultScreen({
         )}
 
         <div className="flex gap-2 sm:gap-3">
-          <button
-            onClick={() => { playButtonTap(); onPlayAgain(); }}
-            className="flex-1 py-2 sm:py-2.5 md:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-          >
-            {t('final_playAgain')}
-          </button>
           <button
             onClick={() => { playButtonTap(); onGoHome(); }}
             className="flex-1 py-2 sm:py-2.5 md:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted"

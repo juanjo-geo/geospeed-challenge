@@ -262,6 +262,23 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const feedback = lastResult ? getRoundFeedback(lastResult.distance, palette, t) : null;
   const showStreak = streak >= 2;
   const streakPct = streak >= 2 ? Math.min(60, (streak - 1) * 10) : 0;
+
+  // Near-miss detection — motivate the player when they were close to a better tier
+  const nearMissMsg = (() => {
+    if (!lastResult) return null;
+    const d = lastResult.distance;
+    const t2 = lastResult.timeUsed;
+    // Close to perfect distance (<50km threshold)
+    if (d >= 50 && d < 80) return '¡A ' + Math.round(d - 50) + 'km del PERFECTO!';
+    // Close to speed x2 tier (needs <~3s for x1.8+)
+    if (t2 >= 4 && t2 <= 5 && d < 500) {
+      const betterMult = getMultiplier(t2 - 2).value;
+      if (betterMult > (mult?.value ?? 0)) return '¡' + (t2 - 3) + 's más rápido = ×' + betterMult.toFixed(1) + '!';
+    }
+    // Close to excellent (<300km threshold)
+    if (d >= 300 && d < 400) return '¡A ' + Math.round(d - 300) + 'km del EXCELENTE!';
+    return null;
+  })();
   const isTimerCritical = timeLeft <= 3 && !isWaiting;
   const isTimerUrgent = timeLeft <= 5 && !isWaiting;
 
@@ -599,6 +616,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 )}
               </div>
 
+              {nearMissMsg && (
+                <p className="text-center text-sm font-bold text-amber-400 animate-pulse mt-0.5">
+                  💨 {nearMissMsg}
+                </p>
+              )}
+
               {/* City */}
               <div className="text-center border-t border-border/50 pt-3">
                 <h3 className="text-2xl font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>
@@ -665,6 +688,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                   </p>
                 )}
               </div>
+
+              {nearMissMsg && (
+                <p className="text-center text-[11px] sm:text-xs font-bold text-amber-400 animate-pulse mt-0.5">
+                  💨 {nearMissMsg}
+                </p>
+              )}
 
               <div className="text-center border-t border-border/40 pt-2">
                 <h3 className="text-lg sm:text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{lastResult.city.name}</h3>

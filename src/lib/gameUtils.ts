@@ -174,3 +174,21 @@ export function addGameHistory(entry: GameHistoryEntry) {
   history.unshift(entry);
   localStorage.setItem('geospeed_history', JSON.stringify(history.slice(0, MAX_HISTORY)));
 }
+
+/**
+ * Get the count of players who submitted scores today (for social proof in Daily Challenge).
+ * Uses Supabase leaderboard table filtered by today's date.
+ */
+export async function getDailyPlayerCount(): Promise<number> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { count, error } = await supabase
+      .from('leaderboard')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', `${today}T00:00:00.000Z`);
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}

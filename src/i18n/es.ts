@@ -231,6 +231,9 @@ const es = {
   tutorial_resultGoodTip: 'Así se juega. En el juego real tendrás 15 segundos por ciudad.',
   tutorial_resultBadTip: 'No te preocupes, con la práctica mejorarás. {city} está en Europa occidental.',
   tutorial_startPlaying: '¡EMPEZAR A JUGAR!',
+  tutorial_ghostTitle: 'Toca el mapa',
+  tutorial_ghostDesc: 'Indica dónde crees que está la ciudad. Más cerca = más puntos.',
+  tutorial_ghostDismiss: 'Toca para continuar',
   tutorial_howItWorks: '¿Cómo funciona?',
 
   // ── Store ──

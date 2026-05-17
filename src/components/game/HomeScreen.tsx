@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
-import { getPlayerStats, getLeaderboard, getGameHistory, type LeaderboardEntry, type GameHistoryEntry, type LeaderboardPeriod } from '@/lib/gameUtils';
+import { getPlayerStats, getLeaderboard, getGameHistory, getDailyPlayerCount, type LeaderboardEntry, type GameHistoryEntry, type LeaderboardPeriod } from '@/lib/gameUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistance } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
@@ -67,10 +67,12 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [showBadges, setShowBadges] = useState(false);
   const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
   const [streakDismissed, setStreakDismissed] = useState(false);
+  const [dailyPlayers, setDailyPlayers] = useState<number>(0);
 
   // Scroll to top on mount (returning from game/store/profile)
   useEffect(() => {
     window.scrollTo(0, 0);
+    getDailyPlayerCount().then(setDailyPlayers);
   }, []);
 
   // Check daily streak on mount
@@ -525,7 +527,12 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <span className="text-xl sm:text-2xl shrink-0">📅</span>
             <div className="text-left flex-1 min-w-0">
               <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
-              <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t('home_dailyChallengeDesc')}</div>
+              <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
+                {dailyPlayers > 0
+                  ? `🔥 ${dailyPlayers} ${dailyPlayers === 1 ? 'persona jugó' : 'personas jugaron'} hoy`
+                  : t('home_dailyChallengeDesc')
+                }
+              </div>
             </div>
             <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
               {new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' })}

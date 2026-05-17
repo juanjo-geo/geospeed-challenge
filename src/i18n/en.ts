@@ -233,6 +233,9 @@ const en: Translations = {
   tutorial_resultGoodTip: 'That is how you play. In the real game you have 15 seconds per city.',
   tutorial_resultBadTip: 'Don\'t worry, practice makes perfect. {city} is in Western Europe.',
   tutorial_startPlaying: 'START PLAYING!',
+  tutorial_ghostTitle: 'Tap the map',
+  tutorial_ghostDesc: 'Point where you think the city is. Closer = more points.',
+  tutorial_ghostDismiss: 'Tap to continue',
   tutorial_howItWorks: 'How does it work?',
 
   // ── Store ──
