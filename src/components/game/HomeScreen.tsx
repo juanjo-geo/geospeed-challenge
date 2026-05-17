@@ -100,10 +100,37 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       >
         {t('home_skipToContent')}
       </a>
-      {/* ── Top bar: energy + user + theme toggle ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-1.5 sm:mb-3 animate-fade-in-up flex items-center justify-between gap-2">
-        <EnergyBar />
-        <div className="flex items-center gap-2">
+      {/* ── Top bar: energy + user ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-1 sm:mb-3 animate-fade-in-up flex flex-col gap-1.5 sm:gap-2">
+        {/* Row 1: Energy + Account */}
+        <div className="flex items-center justify-between gap-2">
+          <EnergyBar />
+          {user ? (
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm text-muted-foreground truncate max-w-[120px]">
+                👤 <span className="font-bold text-foreground">{displayName || user.email?.split('@')[0]}</span>
+              </span>
+              <button
+                onClick={() => { if (window.confirm('¿Seguro que deseas cerrar sesión?')) signOut(); }}
+                className="text-[10px] sm:text-xs text-muted-foreground hover:text-red-400 transition-colors px-1.5 sm:px-2 py-1 rounded border border-border active:scale-[0.97]"
+                aria-label="Cerrar sesión"
+              >
+                {t('home_signOut')}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/auth')}
+              className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-[0.97] btn-glow whitespace-nowrap"
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              aria-label="Iniciar sesión"
+            >
+              {t('home_signIn').toUpperCase()}
+            </button>
+          )}
+        </div>
+        {/* Row 2: Navigation buttons */}
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-wrap">
           {onOpenProfile && stats.gamesPlayed > 0 && (
             <button
               onClick={onOpenProfile}
@@ -142,33 +169,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           >
             {LOCALES.find(l => l.key === locale)?.flag}
           </button>
-          {user ? (
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="text-xs sm:text-sm text-muted-foreground truncate max-w-[100px]">
-                👤 <span className="font-bold text-foreground">{displayName || user.email?.split('@')[0]}</span>
-              </span>
-              <button
-                onClick={() => { if (window.confirm('¿Seguro que deseas cerrar sesión?')) signOut(); }}
-                className="text-[10px] sm:text-xs text-muted-foreground hover:text-red-400 transition-colors px-1.5 sm:px-2 py-1 rounded border border-border active:scale-[0.97]"
-                aria-label="Cerrar sesión"
-              >
-                {t('home_signOut')}
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-end gap-0.5">
-              <button
-                onClick={() => navigate('/auth')}
-                className="text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-lg transition-all active:scale-[0.97] btn-glow"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-                aria-label="Iniciar sesión"
-              >
-                {t('home_signIn').toUpperCase()}
-              </button>
-              <p className="text-[8px] sm:text-[9px] text-muted-foreground max-w-[130px] sm:max-w-[160px] text-right leading-tight">
-                {t('home_saveProgress')}
-              </p>
-            </div>
+          {!user && (
+            <p className="text-[8px] sm:text-[9px] text-muted-foreground leading-tight">
+              {t('home_saveProgress')}
+            </p>
           )}
         </div>
       </div>
