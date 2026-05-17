@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatDistance } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
 import { getEnergy } from '@/lib/energySystem';
-import { checkStreak, claimDailyReward, type StreakReward } from '@/lib/dailyStreak';
+import { checkStreak, claimDailyReward, getStreakAtRisk, protectStreak, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
 // ThemeToggle removed — neon-only mode
 import AutoDemo from './AutoDemo';
@@ -69,6 +69,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
   const [streakDismissed, setStreakDismissed] = useState(false);
   const [dailyPlayers, setDailyPlayers] = useState<number>(0);
+  const [streakRisk, setStreakRisk] = useState<{ days: number; canProtect: boolean } | null>(null);
+  const [streakProtected, setStreakProtected] = useState(false);
 
   // Scroll to top on mount (returning from game/store/profile)
   useEffect(() => {
@@ -83,6 +85,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
     if (result.isNewDay && result.reward && result.reward.lives > 0) {
       setStreakReward(result.reward);
     }
+    // Check if streak is at risk (FOMO trigger)
+    const risk = getStreakAtRisk();
+    if (risk) setStreakRisk(risk);
   }, [isNewPlayer]);
 
   useEffect(() => {
@@ -451,6 +456,43 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             >
               {t('home_claimReward')}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Streak at risk — FOMO banner ── */}
+      {streakRisk && !streakProtected && (
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up">
+          <div className="bg-gradient-to-r from-red-500/15 to-orange-500/10 border-2 border-red-500/50 rounded-xl p-3 sm:p-4 text-center relative overflow-hidden">
+            <div className="absolute inset-0 opacity-20" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(239,68,68,0.1) 10px, rgba(239,68,68,0.1) 20px)' }} />
+            <span className="text-2xl sm:text-3xl block mb-1 relative">⚠️</span>
+            <p className="font-black text-sm sm:text-base text-red-400 relative">
+              ¡Tu racha de {streakRisk.days} dias esta en peligro!
+            </p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 relative">
+              Juega hoy para mantenerla, o protegela ahora
+            </p>
+            <div className="flex gap-2 mt-3 relative">
+              <button
+                onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
+                className="flex-1 py-2 rounded-lg font-bold text-xs bg-red-500 text-white active:scale-[0.97] transition-all"
+              >
+                🎮 JUGAR AHORA
+              </button>
+              {streakRisk.canProtect && (
+                <button
+                  onClick={() => {
+                    playButtonTap();
+                    protectStreak();
+                    setStreakProtected(true);
+                    setStreakRisk(null);
+                  }}
+                  className="flex-1 py-2 rounded-lg font-bold text-xs border-2 border-amber-500/50 text-amber-400 hover:bg-amber-500/10 active:scale-[0.97] transition-all"
+                >
+                  🛡️ PROTEGER — $0.99
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

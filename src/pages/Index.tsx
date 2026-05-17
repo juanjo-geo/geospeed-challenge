@@ -70,7 +70,8 @@ import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { addBattlePassXP } from '@/lib/cosmetics';
-import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs } from '@/lib/analytics';
+import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
+import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { checkStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
@@ -173,7 +174,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
 
   // Initialize ads on mount
-  useEffect(() => { initAds(); initAnalytics(); checkIncomingReferral(); }, []);
+  useEffect(() => { initAds(); initAnalytics(); checkIncomingReferral(); resetSessionFrustration(); }, []);
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
@@ -893,6 +894,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onGoHome={handleGoHome}
           onRevenge={revengeUsed ? undefined : handleRevenge}
           onShareChallenge={handleShareChallenge}
+          onOpenStore={handleOpenStore}
           challengerScore={challengerScore}
           totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
         />

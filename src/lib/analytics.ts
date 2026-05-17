@@ -208,6 +208,57 @@ export function trackError(error: string, context?: string): void {
   trackEvent('error', { error_message: error.substring(0, 200), context: context || 'unknown' });
 }
 
+// ─── Monetization Funnel Events ─────────────────────────────────────
+
+export function trackLivesDepleted(): void {
+  trackEvent('lives_depleted', { session_games: getSessionGames() });
+}
+
+export function trackPurchaseIntent(productId: string): void {
+  trackEvent('purchase_intent', { product_id: productId });
+}
+
+export function trackPurchaseComplete(productId: string, priceCents: number): void {
+  trackEvent('purchase_complete', {
+    product_id: productId,
+    price_usd: priceCents / 100,
+    currency: 'USD',
+  });
+}
+
+export function trackFrustrationOffer(data: {
+  type: string;
+  level: string;
+  accepted: boolean;
+}): void {
+  trackEvent('frustration_offer', {
+    offer_type: data.type,
+    frustration_level: data.level,
+    accepted: data.accepted,
+  });
+}
+
+export function trackStreakProtect(days: number, accepted: boolean): void {
+  trackEvent('streak_protect', { streak_days: days, accepted });
+}
+
+export function trackSmartInterstitial(data: {
+  trigger: 'post_loss' | 'post_rage' | 'cadence';
+  shown: boolean;
+  reason?: string;
+}): void {
+  trackEvent('smart_interstitial', {
+    trigger: data.trigger,
+    shown: data.shown,
+    skip_reason: data.reason || '',
+  });
+}
+
+// ─── Session game counter (in-memory) ───────────────────────────────
+let _sessionGames = 0;
+export function incrementSessionGames(): void { _sessionGames++; }
+function getSessionGames(): number { return _sessionGames; }
+
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 function getPlatform(): string {

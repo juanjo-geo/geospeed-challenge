@@ -14,6 +14,8 @@ import ReplayMap from './ReplayMap';
 import { type GameMode } from '@/data/cities';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
+import { recordGameResult, getContextualOffer, type FrustrationOffer } from '@/lib/frustrationDetector';
+import FrustrationOfferModal from './FrustrationOfferModal';
 
 interface FinalResultScreenProps {
   rounds: RoundResult[];
@@ -25,6 +27,7 @@ interface FinalResultScreenProps {
   onGoHome: () => void;
   onRevenge?: (rounds: RoundResult[]) => void;
   onShareChallenge?: () => void;
+  onOpenStore?: () => void;
   challengerScore?: number | null;
   totalRounds?: number;
 }
@@ -39,6 +42,7 @@ export default function FinalResultScreen({
   onGoHome,
   onRevenge,
   onShareChallenge,
+  onOpenStore,
   challengerScore,
   totalRounds = 13,
 }: FinalResultScreenProps) {
@@ -53,6 +57,7 @@ export default function FinalResultScreen({
   const [rankPosition, setRankPosition] = useState<number | null>(null);
   const [rankTotal, setRankTotal] = useState<number>(0);
   const [xpAnimProgress, setXpAnimProgress] = useState<number>(0);
+  const [frustrationOffer, setFrustrationOffer] = useState<FrustrationOffer | null>(null);
 
   useEffect(() => {
     if (authName && authName.length >= 3) {
@@ -106,6 +111,13 @@ export default function FinalResultScreen({
       const pos = board.findIndex(e => totalScore >= e.score);
       setRankPosition(pos === -1 ? board.length + 1 : pos + 1);
     });
+
+    // Record frustration data and show contextual offer after a delay
+    recordGameResult({ score: totalScore, avgDistance, reason });
+    const offerTimer = setTimeout(() => {
+      const offer = getContextualOffer();
+      if (offer) setFrustrationOffer(offer);
+    }, 2500); // Show after 2.5s — let player absorb their score first
 
     // Screen reader announcement
     const avgD = Math.round(distances.reduce((a, b) => a + b, 0) / distances.length);
@@ -477,6 +489,20 @@ export default function FinalResultScreen({
           </div>
         )}
       </div>
+
+      {/* Frustration-based contextual offer */}
+      {frustrationOffer && (
+        <FrustrationOfferModal
+          offer={frustrationOffer}
+          onAccept={(action) => {
+            setFrustrationOffer(null);
+            if (action === 'store' && onOpenStore) onOpenStore();
+            else if (action === 'pro' && onOpenStore) onOpenStore();
+            else if (action === 'ad') { /* rewarded ad callback */ }
+          }}
+          onDismiss={() => setFrustrationOffer(null)}
+        />
+      )}
     </div>
   );
 }

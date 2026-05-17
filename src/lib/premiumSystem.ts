@@ -276,19 +276,38 @@ export function purchaseLives(productId: string): boolean {
   return true;
 }
 
-// ─── Ad cadence tracking ────────────────────────────────────────────
+// ─── Smart Ad Cadence Tracking ──────────────────────────────────────
+// Context-aware interstitial timing:
+//  - After a LOSS (timeout): always show (player is resetting anyway)
+//  - After a WIN with good score: never show (don't interrupt the high)
+//  - After a mediocre game: show every N games (standard cadence)
+
 export function incrementGameCounter(): void {
-  if (isPro()) return; // Pro users never see ads
+  if (isPro()) return;
   try {
     const count = parseInt(localStorage.getItem(GAMES_COUNTER_KEY) || '0', 10);
     localStorage.setItem(GAMES_COUNTER_KEY, String(count + 1));
   } catch { /* ignore */ }
 }
 
-export function shouldShowInterstitial(): boolean {
+/**
+ * Smart interstitial decision based on game context.
+ * @param context - 'loss' for timeout/bad game, 'win' for good game, 'neutral' for default cadence
+ */
+export function shouldShowInterstitial(context: 'loss' | 'win' | 'neutral' = 'neutral'): boolean {
   if (isPro()) return false;
   try {
     const count = parseInt(localStorage.getItem(GAMES_COUNTER_KEY) || '0', 10);
+
+    // Never interrupt a victory moment
+    if (context === 'win') return false;
+
+    // After a loss, show more aggressively (every 2 games instead of 3)
+    if (context === 'loss') {
+      return count > 0 && count % 2 === 0;
+    }
+
+    // Standard cadence for neutral games
     return count > 0 && count % INTERSTITIAL_CADENCE === 0;
   } catch {
     return false;
