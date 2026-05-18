@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistance, addGameHistory } from '@/lib/gameUtils';
 import { checkIncomingReferral } from '@/lib/referralSystem';
-import { recordInstallDate, checkRetention } from '@/lib/retentionTracker';
 import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { type RoundResult } from '@/components/game/GameScreen';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
@@ -62,7 +61,6 @@ const WaitingRoom = lazy(() => import('@/components/game/WaitingRoom'));
 const MultiplayerResultScreen = lazy(() => import('@/components/game/MultiplayerResultScreen'));
 const TimeAttackScreen = lazy(() => import('@/components/game/TimeAttackScreen'));
 const TutorialOverlay = lazy(() => import('@/components/game/TutorialOverlay'));
-const OnboardingGame = lazy(() => import('@/components/game/OnboardingGame'));
 const StoreScreen = lazy(() => import('@/components/game/StoreScreen'));
 const BattlePassScreen = lazy(() => import('@/components/game/BattlePassScreen'));
 const SpectatorScreen = lazy(() => import('@/components/game/SpectatorScreen'));
@@ -91,7 +89,7 @@ import {
   startNotificationLoop,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
+type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -176,7 +174,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
 
   // Initialize ads on mount
-  useEffect(() => { initAds(); initAnalytics(); checkIncomingReferral(); resetSessionFrustration(); recordInstallDate(); checkRetention(); }, []);
+  useEffect(() => { initAds(); initAnalytics(); checkIncomingReferral(); resetSessionFrustration(); }, []);
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
@@ -252,12 +250,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setDifficulty(diff);
     setGameMode(mode);
     trackGameStart(mode, diff);
-    // Show onboarding for brand-new players, tutorial overlay for returning players who haven't seen it
-    const onboardingDone = localStorage.getItem('geospeed_onboarding_done');
-    if (!onboardingDone) {
-      setPhase('onboarding');
-      return;
-    }
+    // Show tutorial overlay for first-time players
     const tutorialSeen = localStorage.getItem('geospeed_tutorial_seen');
     if (!tutorialSeen) {
       setPhase('tutorial');
@@ -612,17 +605,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return <ProfileScreen onBack={handleGoHome} />;
     }
 
-    if (phase === 'onboarding') {
-      return <OnboardingGame
-        onComplete={() => {
-          // After onboarding, go straight to a real game
-          gameKeyRef.current += 1;
-          setPhase('countdown');
-        }}
-        onGoHome={handleGoHome}
-      />;
-    }
-
     if (phase === 'tutorial') {
       return <TutorialOverlay onComplete={() => {
         gameKeyRef.current += 1;
@@ -934,7 +916,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [phase]);
 
   // Phases with their own full-screen animations skip PhaseTransition
-  const skipTransition = ['splash', 'countdown', 'tutorial', 'onboarding'].includes(phase);
+  const skipTransition = ['splash', 'countdown', 'tutorial'].includes(phase);
 
   // Minimal loading fallback for lazy components
   const lazyFallback = (

@@ -7,8 +7,6 @@ import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '
 import { fireMultiplierFeedback, fireScoreFly, fireRoundFlash, fireStreakBorder } from '@/lib/juiceAnimations';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useGamepad } from '@/hooks/useGamepad';
-import { useUltraWide } from '@/hooks/useUltraWide';
 import WorldMapCanvas from './WorldMapCanvas';
 import TimerBar from './TimerBar';
 import { useA11y } from '@/contexts/AccessibilityContext';
@@ -196,20 +194,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     'Space': () => { if (isWaiting && showPopup) advanceRound(); },
     'Enter': () => { if (isWaiting && showPopup) advanceRound(); },
   }, true);
-
-  // Gamepad support
-  const gamepadState = useGamepad((action) => {
-    if (action === 'advance' && isWaiting && showPopup) advanceRound();
-    if (action === 'confirm' && !isWaiting && currentCity) {
-      // Confirm at map center when using gamepad (no crosshair cursor yet)
-      // Future: use gamepad right-stick crosshair position
-    }
-    if (action === 'zoom_in') { /* future: trigger zoom in */ }
-    if (action === 'zoom_out') { /* future: trigger zoom out */ }
-  });
-
-  // Ultra-wide display support
-  const { isUltraWide, maxMapWidth } = useUltraWide();
 
   // Throttled cursor coordinate update (60fps is too much, 10fps is enough)
   const cursorThrottleRef = useRef(0);
@@ -519,7 +503,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       )}
 
       {/* ──── Map area (all modes) — h-full gives WorldMapCanvas explicit height in grid ──── */}
-      <div className="relative h-full min-w-0 overflow-hidden" style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
+      <div className="relative h-full min-w-0 overflow-hidden">
         {/* Floating HUD overlay (compact mode only) */}
         {isCompact && (
           <div className="pointer-events-none absolute z-20 hud-safe-top hud-safe-left hud-safe-right">
@@ -610,21 +594,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             <span className="text-base font-mono font-bold tabular-nums tracking-wide" style={{ color: 'hsl(var(--primary) / 0.7)', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
               {Math.abs(cursorCoords.lat).toFixed(1)}°{cursorCoords.lat >= 0 ? 'N' : 'S'}{' '}
               {Math.abs(cursorCoords.lon).toFixed(1)}°{cursorCoords.lon >= 0 ? 'E' : 'W'}
-            </span>
-          </div>
-        )}
-
-        {/* Gamepad connected indicator — bottom left, below coordinates */}
-        {gamepadState.connected && !isCompact && !isPortraitMobile && (
-          <div className="absolute bottom-10 left-4 z-[6] pointer-events-none flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'hsl(var(--primary) / 0.6)' }}>
-              <rect x="2" y="6" width="20" height="12" rx="3" />
-              <circle cx="8" cy="12" r="1.5" fill="currentColor" />
-              <circle cx="16" cy="12" r="1.5" fill="currentColor" />
-              <line x1="11" y1="9" x2="13" y2="9" />
-            </svg>
-            <span className="text-[10px] font-mono font-bold" style={{ color: 'hsl(var(--primary) / 0.5)' }}>
-              GAMEPAD
             </span>
           </div>
         )}

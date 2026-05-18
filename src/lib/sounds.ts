@@ -13,44 +13,6 @@
 //
 // All synthesis via Web Audio API — zero external dependencies.
 
-// ── Video recording audio capture ─────────────────────────────────────────
-import { getAudioDestination } from './shareVideo';
-
-let recordingNode: GainNode | null = null;
-
-/**
- * Start routing all audio output to the video recorder's audio destination.
- * Call before starting video recording.
- */
-export function startAudioCapture(): void {
-  const c = getCtx();
-  if (!c) return;
-  const dest = getAudioDestination(c);
-  recordingNode = c.createGain();
-  recordingNode.gain.value = 1;
-  recordingNode.connect(dest);
-  // Also connect to regular output so player still hears sounds
-  recordingNode.connect(c.destination);
-}
-
-/**
- * Stop routing audio to the recorder.
- */
-export function stopAudioCapture(): void {
-  if (recordingNode) {
-    recordingNode.disconnect();
-    recordingNode = null;
-  }
-}
-
-/**
- * Get the audio output node — routes to both speakers and recorder when capturing.
- * All sound primitives should connect to this instead of ctx.destination directly.
- */
-function getOutputNode(c: AudioContext): AudioNode {
-  return recordingNode || c.destination;
-}
-
 // ── iOS Audio Unlock System (NUCLEAR) ─────────────────────────────────────
 //
 // iOS Safari is pathologically strict about Web Audio:
@@ -291,7 +253,7 @@ function playTone(
     g.gain.linearRampToValueAtTime(finalGain, c.currentTime + attack);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     osc.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     osc.start();
     osc.stop(c.currentTime + duration);
   } catch (_) { /* ignore */ }
@@ -320,7 +282,7 @@ function playFilteredNoise(
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     source.connect(filter);
     filter.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     source.start();
   } catch (_) { /* ignore */ }
 }
@@ -338,7 +300,7 @@ function playImpact(freq = 80, duration = 0.12, gain = 0.18) {
     g.gain.setValueAtTime(vary(vol(gain), 0.2), c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     osc.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     osc.start();
     osc.stop(c.currentTime + duration);
   } catch (_) { /* ignore */ }
@@ -360,7 +322,7 @@ function playCoinBell(freq = 2400, duration = 0.25, gain = 0.08) {
       g.gain.setValueAtTime(finalGain, c.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
       osc.connect(g);
-      g.connect(getOutputNode(c));
+      g.connect(c.destination);
       osc.start();
       osc.stop(c.currentTime + duration);
     });
@@ -389,7 +351,7 @@ function playGlassShatter(gain = 0.06) {
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     source.connect(filter);
     filter.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     source.start();
   } catch (_) { /* ignore */ }
 }
@@ -543,7 +505,7 @@ export function playHeartbeat() {
     g.gain.setValueAtTime(vary(vol(0.22), 0.15), c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
     osc.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     osc.start();
     osc.stop(c.currentTime + 0.15);
     // "Dub" — slightly lighter
@@ -556,7 +518,7 @@ export function playHeartbeat() {
         g2.gain.setValueAtTime(vary(vol(0.16), 0.15), c.currentTime);
         g2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
         osc2.connect(g2);
-        g2.connect(getOutputNode(c));
+        g2.connect(c.destination);
         osc2.start();
         osc2.stop(c.currentTime + 0.12);
         // Subtle body resonance
@@ -706,7 +668,7 @@ export function playRoundTransition() {
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     source.connect(filter);
     filter.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     source.start();
     // Subtle bright ping at the end — "city revealed"
     setTimeout(() => playTone(vary(pick([1200, 1400, 1600]), 0.1), 0.1, 'sine', 0.06), 180);
@@ -813,7 +775,7 @@ export function playButtonTap() {
     g.gain.setValueAtTime(finalGain, c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
     osc.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     osc.start();
     osc.stop(c.currentTime + 0.04);
     // Tiny sub-click body
@@ -870,7 +832,7 @@ export function playShareSuccess() {
     g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     source.connect(filter);
     filter.connect(g);
-    g.connect(getOutputNode(c));
+    g.connect(c.destination);
     source.start();
   } catch (_) { /* ignore */ }
   // Bright notification chime
