@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const validDifficulties = ["easy", "medium", "hard"];
+    const validDifficulties = ["basic", "easy", "medium", "hard"];
     if (!validDifficulties.includes(difficulty)) {
       return new Response(JSON.stringify({ error: "Invalid difficulty" }), {
         status: 400,

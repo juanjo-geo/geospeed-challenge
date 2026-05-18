@@ -254,6 +254,14 @@ export function trackSmartInterstitial(data: {
   });
 }
 
+export function trackRetention(milestone: string, daysSinceInstall: number): void {
+  trackEvent('track_retention', { milestone, days_since_install: daysSinceInstall });
+}
+
+export function trackOnboarding(action: 'start' | 'complete', data?: Record<string, string | number>): void {
+  trackEvent(`onboarding_${action}`, data || {});
+}
+
 // ─── Session game counter (in-memory) ───────────────────────────────
 let _sessionGames = 0;
 export function incrementSessionGames(): void { _sessionGames++; }

@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     }
 
     // Validate difficulty
-    const validDifficulties = ["easy", "medium", "hard"];
+    const validDifficulties = ["basic", "easy", "medium", "hard"];
     if (!validDifficulties.includes(difficulty)) {
       return new Response(JSON.stringify({ error: "Invalid difficulty" }), {
         status: 400,

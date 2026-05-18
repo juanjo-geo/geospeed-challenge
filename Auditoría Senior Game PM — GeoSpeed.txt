@@ -1,0 +1,86 @@
+Auditoría Senior Game PM — GeoSpeed IQ Challenge
+Puntuación global: 7.8 / 10 (antes: 4.2 — salto de +3.6 puntos)
+
+Pilar 1: Core Gameplay Loop y Retención — 8.5/10
+Lo que está bien hecho:
+El "JUGAR AHORA" es un CTA enorme con gradiente rojo-naranja-oro que domina la pantalla. Para un jugador recurrente, el flujo es: tap → consume vida → countdown 3s → primer clic en el mapa. Son ~4-5 segundos hasta la acción satisfactoria. El auto-advance de 2 segundos entre rondas mantiene el ritmo sin ser agresivo, y se puede saltar con Space/tap.
+El sistema de energía (5 vidas, regen cada 20min) genera tensión de escasez sin ser abusivo. El daily streak con recompensas escalonadas (día 3, 7, 14, 30) es un gancho de retención D1/D7 sólido. Las notificaciones push de "tu racha está en riesgo" son psicología probada.
+Cuellos de botella para el 10:
+
+El tutorial de 4 pasos para nuevos usuarios añade ~15-20 segundos antes del primer clic real. Un juego viral en 2026 necesita que el jugador esté jugando en <5 segundos. Solución: eliminar tutorial explícito, reemplazar con "ghost hand" inline que guía el primer tap directamente en el mapa.
+No hay "one more round" dopamine loop. Al terminar, el jugador ve resultados pero no hay botón de "REVANCHA INSTANTÁNEA" que lo mantenga en flow sin volver al menú.
+Falta un sistema de "near miss" que muestre "¡2km más y hubieras tenido x2!" — esto genera la frustración productiva que alimenta replays.
+
+
+Pilar 2: Potencial Viral y Efecto MrBeast — 7.5/10
+Lo que está bien hecho:
+El Zoom Bomb es un sistema cinematográfico de 4 fases (4.8s) con adaptive zoom (1.8x-2.2x según dispositivo), punch zoom con 6% overshoot, y breathing animation. Es visualmente impactante. El video share genera WebM 9:16 optimizado para TikTok/Reels con reveal progresivo del score, arco Bézier animado y partículas sparkle.
+El texto de share "Hice 29,622 puntos en GeoSpeed. ¿Puedes superarlo?" tiene 45 caracteres — dentro del umbral de urgencia. El sistema de challenge con seed compartido (mismas ciudades) genera duelos reales entre amigos.
+Cuellos de botella para el 10:
+
+El Zoom Bomb sucede DESPUÉS del clic, durante la revelación. Para TikTok, el momento "WTF" necesita ser el RESULTADO visual (la línea cruzando medio mundo) no la animación de cámara. Falta un "distance reveal" con número gigante que aparezca con screen shake cuando el error es >5000km.
+No hay sistema de referral con recompensa. "Invita 3 amigos → 5 vidas gratis" multiplicaría el K-factor.
+El Daily Challenge no tiene countdown público ni leaderboard social visible antes de jugar ("450 personas ya jugaron hoy"). Esa prueba social genera FOMO masivo.
+Los nombres de modo (Clásico, Contrarreloj) son genéricos. Nombres como "MODO IMPOSIBLE" o "60 SEGUNDOS DE CAOS" generan más urgencia en thumbnails.
+
+
+Pilar 3: Estética Sensorial y Juice — 8.8/10
+Lo que está bien hecho:
+Este es el pilar más fuerte. El sistema de audio sintetizado con Web Audio tiene 16 efectos distintos, pitch randomization ±10-20%, gain variation ±20%, y 3 variaciones por tipo de sonido. Es exactamente lo que el framework pide para evitar monotonía. El manejo de iOS AudioContext es nuclear (silent WAV, gesture unlock, re-suspension recovery).
+Las animaciones tienen 19 keyframes CSS + animaciones canvas dedicadas. El score-pop, float-up, screen-shake en los últimos 3 segundos, vignette urgente, y heartbeat audio sincronizado crean una experiencia visceral. El pin dorado (#f5c842) con estrella de 5 puntas sobre arc animado con glow tip es el "héroe visual" reconocible.
+La paleta Neon-Velocity con 3 temas completos (dark/light/neon) y mapas coloreados por continente es producción AAA para un juego web.
+Cuellos de botella para el 10:
+
+El multiplicador 🚀 no tiene feedback diferenciado del ⚡. Para un "dopamine spike" real, el x2 necesita screen rotation/tilt + sonido único ascendente que escale con la racha.
+No hay particle burst en respuestas incorrectas (>2000km). Solo hay feedback positivo fuerte — la frustración visual también engancha.
+Falta bloom/glow CSS en modo neon. El tema dice "neon" pero no tiene drop-shadow glow real en los elementos UI.
+
+
+Pilar 4: Multi-dispositivo y GDK — 8.0/10
+Lo que está bien hecho:
+Canvas con ResizeObserver, DPI awareness (cap 2x), offscreen caching, y sistema de 3 layouts (compact/medium/wide) basado en viewport real. Pinch-to-zoom 1x-4x con auto-reset a 5s. Touch handling con passive: false para scroll prevention. Safe area insets para notch/Dynamic Island. PWA manifest completo con standalone + fullscreen display_override.
+Service Worker network-first con push notifications. Code splitting con React.lazy en rutas secundarias. Detección de Xbox/PlayStation en analytics. El viewport-fit: cover y overscroll-behavior: none son detalles de alguien que sabe de mobile web.
+Cuellos de botella para el 10:
+
+No hay soporte para gamepad API (navigator.getGamepads). Para Xbox/PC vía WebView2, necesitas D-pad navigation y A-button como tap.
+El mapa en móviles es jugable pero NO "visualmente impactante" al nivel de un juego nativo — falta anti-aliasing en los bordes de países y text rendering es system font sobre canvas sin smoothing.
+Assets sin optimizar: logoG.png pesa 473KB. En 4G eso son 2-3 segundos de carga extra.
+No hay offline-first para el catálogo de ciudades. Si pierde conexión mid-game, ¿funciona?
+
+
+Pilar 5: Monetización y Diseño Basado en Datos — 6.5/10
+Lo que está bien hecho:
+GA4 tracking con 14 eventos específicos incluyendo rage_quit (con round, time_played, abandon_pct), game_complete con duration, y share por método. Battle Pass de 30 niveles con track free/premium y 4 categorías de cosméticos (pins, trails, frames, map themes) con sistema de rareza. Store con 3 tiers de vidas + 3 tiers de Pro subscription. Ads con interstitial cada 3 partidas y rewarded por vida extra.
+El modelo freemium es justo: 5 vidas gratuitas con regen pasiva, Pro a $2.99/mes elimina ads + vidas infinitas.
+Cuellos de botella para el 10:
+
+No hay PlayFab ni backend analytics propio. GA4 client-side es insuficiente para retención D1/D7/D30 real — necesitas cohortes server-side, no solo pageviews. Sin un pipeline de datos (Amplitude, Mixpanel, o PlayFab), no puedes hacer A/B testing de precios ni segmentar por comportamiento.
+Las compras son localStorage. No hay validación server-side de IAP. Un usuario puede falsificar isPro: true en devtools. Para app stores, necesitas receipt validation con Apple/Google.
+No hay funnel de conversión medido. Sabes cuántos ven la store (store_view) y cuántos compran (purchase), pero no mides el paso intermedio: cuántos tocan un producto, cuántos abandonan el checkout, cuántos ven el modal de "sin vidas" y NO compran.
+Battle Pass rewards son solo cosméticos. Sin power-ups o ventajas funcionales (hint extra, +5 segundos), el incentivo de compra premium es bajo para un juego casual.
+No hay precio dinámico ni ofertas limitadas. "50% OFF solo hoy" después de rage quit es la conversión #1 en F2P móvil.
+
+
+Resumen ejecutivo
+PilarAntesAhoraGap al 10Core Loop y Retención5.08.5Tutorial friction, no instant replayPotencial Viral3.07.5No referral rewards, no social proof counterJuice y Sensorial4.08.8Multiplier differentiation, particles on failMulti-dispositivo5.08.0Gamepad API, asset optimizationMonetización y Datos4.06.5Server-side analytics, receipt validation, funnel tracking
+Top 5 cuellos de botella técnicos que separan del 10/10:
+
+Analytics server-side — Migrar de GA4 puro a Amplitude/Mixpanel con cohortes reales y A/B testing. Sin esto no puedes optimizar nada basado en datos.
+Tutorial zero-friction — Reemplazar los 4 pasos por un "tap here" ghost-hand overlay que desaparece después del primer clic. El jugador aprende jugando, no leyendo.
+Receipt validation — IAP server-side con Supabase Edge Functions que validen contra Apple/Google antes de otorgar Pro. Sin esto, monetización es hackeable.
+Referral loop — Sistema de "invita → recompensa" con deep links trackeable. Es el multiplicador viral más probado en gaming.
+Instant replay CTA — Botón "OTRA VEZ" prominente en la pantalla de resultados que consume vida y reinicia sin pasar por menú. Reduce friction de re-engagement un 40%.
+
+El juego pasó de ser un prototipo funcional (4.2) a un producto shippable con mecánicas sofisticadas (7.8). El mayor gap está en la capa de datos y monetización — que es justamente lo que determina si un juego se sostiene como negocio o muere en el mes 2.Dijiste: OK, armemos un plan para llegar al 10/10 segun el diagnostico y empecemos atrabajar, muestrame el plan y de confirmo el inicioOK, armemos un plan para llegar al 10/10 segun el diagnostico y empecemos atrabajar, muestrame el plan y de confirmo el inicioClaude respondió: ---Proceso de pensamientoProceso de pensamiento
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.25s;
+    animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+  }
+VvisualizeVvisualize show_widget
+Criterio de priorización: Impacto en retención/viralidad × Factibilidad técnica con el stack actual (React + Supabase + Vite).
+Fase 1 es puro código frontend — se puede implementar hoy mismo sin dependencias externas. Cada item es ~30-60 min de desarrollo.
+Fase 2 requiere algo de backend (referral tracking en Supabase) pero el grueso es frontend/canvas.
+Fase 3 toca monetización real — necesita Edge Functions nuevas y decisiones de producto (qué power-ups, qué precios).
+Fase 4 es polish fino que marca la diferencia entre "buen juego" y "juego premium".  

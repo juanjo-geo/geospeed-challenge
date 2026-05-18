@@ -1,0 +1,55 @@
+{
+  "ios": {
+    "app_name": "GeoSpeed IQ Challenge",
+    "subtitle": "How well do you know the world?",
+    "category": "Games",
+    "subcategory": "Trivia",
+    "age_rating": "4+",
+    "price": "Free",
+    "keywords": "geography,quiz,world,cities,trivia,maps,education,challenge,multiplayer,daily",
+    "description": {
+      "es": "¿Cuánto conoces el mundo? GeoSpeed IQ Challenge pone a prueba tu conocimiento geográfico con velocidad y precisión.\n\n📍 LOCALIZA ciudades del mundo en un mapa interactivo\n⚡ COMPITE contra el reloj — 15 segundos por ronda\n🎯 GANA puntos por precisión y velocidad\n🔥 MANTÉN tu racha diaria\n🏆 SUBE en el ranking global\n\n5 MODOS DE JUEGO:\n• Clásico: 13 rondas, demuestra tu conocimiento\n• Contrarreloj: 60 segundos de caos total\n• Duelo 1v1: Compite en tiempo real\n• Desafío Diario: Las mismas ciudades para todos\n• Entrenamiento: Aprende sin presión\n\n5 REGIONES: Mundo, Europa, Asia, América, África\n4 DIFICULTADES: Básico → Experto\n\nSistema de niveles, Battle Pass con cosméticos, y momentos virales para compartir. ¿Puedes llegar a Deidad Geo?\n\nDescarga gratis. Contiene compras dentro de la app.",
+      "en": "How well do you know the world? GeoSpeed IQ Challenge tests your geographic knowledge with speed and precision.\n\n📍 LOCATE cities around the world on an interactive map\n⚡ RACE against the clock — 15 seconds per round\n🎯 EARN points for accuracy and speed\n🔥 KEEP your daily streak alive\n🏆 CLIMB the global rankings\n\n5 GAME MODES:\n• Classic: 13 rounds, prove your knowledge\n• Time Attack: 60 seconds of total chaos\n• 1v1 Duel: Compete in real time\n• Daily Challenge: Same cities for everyone\n• Training: Learn without pressure\n\n5 REGIONS: World, Europe, Asia, Americas, Africa\n4 DIFFICULTIES: Basic → Expert\n\nLevel system, Battle Pass with cosmetics, and viral moments to share. Can you reach Geo Deity?\n\nFree to download. Contains in-app purchases."
+    },
+    "privacy_url": "https://geospeed.app/privacy",
+    "support_url": "https://geospeed.app/support",
+    "marketing_url": "https://geospeed.app",
+    "screenshots_specs": {
+      "iphone_6_5": { "size": "1290x2796", "count": 5 },
+      "iphone_5_5": { "size": "1242x2208", "count": 5 },
+      "ipad_12_9": { "size": "2048x2732", "count": 5 }
+    },
+    "screenshot_ideas": [
+      "1. Gameplay — player clicking on map with city prompt and golden crosshair",
+      "2. Perfect score — confetti explosion with '¡PERFECTO!' feedback",
+      "3. Daily Challenge — 'X players today' counter with share card",
+      "4. 1v1 Duel — split screen showing both players",
+      "5. Results — Final score screen with share options and replay map"
+    ]
+  },
+  "android": {
+    "app_name": "GeoSpeed IQ Challenge",
+    "short_description": "Localiza ciudades del mundo. Velocidad + Precisión = Puntos. ¿Cuánto conoces el planeta?",
+    "category": "Game / Trivia",
+    "content_rating": "Everyone",
+    "screenshots_specs": {
+      "phone": { "size": "1080x1920", "min_count": 4, "max_count": 8 },
+      "tablet_7": { "size": "1200x1920", "count": 4 },
+      "tablet_10": { "size": "1920x1200", "count": 4 }
+    },
+    "feature_graphic": { "size": "1024x500", "format": "PNG or JPEG" },
+    "hi_res_icon": { "size": "512x512", "format": "32-bit PNG" }
+  },
+  "aso_keywords_priority": [
+    "geography game",
+    "world quiz",
+    "city quiz",
+    "map game",
+    "trivia geography",
+    "geoguessr alternative",
+    "world cities game",
+    "geography challenge",
+    "daily geography quiz",
+    "multiplayer geography"
+  ]
+}
