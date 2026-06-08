@@ -60,7 +60,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
             className="text-sm font-bold px-3 py-1.5 rounded-lg border border-border/60 hover:border-border bg-card/50 hover:bg-muted transition-all active:scale-[0.97]"
             aria-label="Volver al menú"
           >
-            ← Volver
+            ← {t('back')}
           </button>
           <h1
             className="text-xl sm:text-2xl font-black flex-1 text-center"
@@ -210,7 +210,7 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
       {/* Main stats grid */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <StatBlock label={t('profile_gamesPlayed')} value={totalGames.toString()} icon="🎮" />
-        <StatBlock label="Récord personal" value={stats.bestScore.toLocaleString()} icon="🏆" highlight />
+        <StatBlock label={t('profile_personalRecord')} value={stats.bestScore.toLocaleString()} icon="🏆" highlight />
         <StatBlock label={t('profile_avgDist')} value={formatDistance(avgDist)} icon="📍" />
         <StatBlock label={t('profile_totalRounds')} value={stats.totalRounds.toLocaleString()} icon="🔄" />
         <StatBlock label={t('profile_totalXP')} value={totalXp.toLocaleString()} icon="⚡" />
@@ -222,9 +222,9 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
         <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
           <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mb-2">{t('profile_byMode')}</p>
           <div className="space-y-2">
-            <ModeBar label="13 Ciudades" count={classicGames} total={totalGames} color="hsl(var(--primary))" />
-            <ModeBar label="60s de Caos" count={taGames} total={totalGames} color="hsl(332 47% 55%)" />
-            <ModeBar label="Desafío Diario" count={dailyGames} total={totalGames} color="hsl(48 96% 53%)" />
+            <ModeBar label={t('profile_mode13')} count={classicGames} total={totalGames} color="hsl(var(--primary))" />
+            <ModeBar label={t('profile_modeChaos')} count={taGames} total={totalGames} color="hsl(332 47% 55%)" />
+            <ModeBar label={t('profile_modeDaily')} count={dailyGames} total={totalGames} color="hsl(48 96% 53%)" />
           </div>
         </div>
       )}
@@ -237,7 +237,7 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
             {bestGame.score.toLocaleString()} pts
           </p>
           <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-            {bestGame.date} · {bestGame.rounds} rondas · {formatDistance(bestGame.avgDistance)} prom.
+            {bestGame.date} · {bestGame.rounds} {t('profile_rounds')} · {formatDistance(bestGame.avgDistance)} {t('profile_avgShort')}
           </p>
         </div>
       )}
@@ -274,6 +274,7 @@ function ModeBar({ label, count, total, color }: { label: string; count: number;
 
 /* ── Levels Tab ── */
 function LevelsTab({ currentLevel }: { currentLevel: PlayerLevel }) {
+  const { t, locale } = useI18n();
   return (
     <div className="space-y-1.5 sm:space-y-2">
       {LEVELS_CONFIG.map((lvl, i) => {
@@ -298,16 +299,16 @@ function LevelsTab({ currentLevel }: { currentLevel: PlayerLevel }) {
                 <span className={`text-xs sm:text-sm font-bold ${isCurrent ? '' : ''}`}
                   style={isCurrent ? { color: 'hsl(var(--primary))' } : {}}
                 >
-                  Nv.{lvlNumber} {lvl.title}
+                  Nv.{lvlNumber} {tLevelTitle(lvl.title, locale)}
                 </span>
                 {isCurrent && (
                   <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary uppercase">
-                    Actual
+                    {t('profile_current')}
                   </span>
                 )}
               </div>
               <p className="text-[9px] sm:text-[10px] text-muted-foreground">
-                {lvl.minXp.toLocaleString()} XP requeridos
+                {lvl.minXp.toLocaleString()} {t('profile_xpRequired')}
               </p>
             </div>
             <div className="shrink-0 w-6 h-6 flex items-center justify-center">
@@ -371,27 +372,27 @@ function HistoryTab({ history }: { history: GameHistoryEntry[] }) {
   }
 
   const typeLabels: Record<string, { label: string; emoji: string }> = {
-    classic: { label: '13 Ciudades', emoji: '🎮' },
-    timeattack: { label: '60s de Caos', emoji: '⏱️' },
-    daily: { label: 'Diario', emoji: '📅' },
+    classic: { label: t('profile_mode13'), emoji: '🎮' },
+    timeattack: { label: t('profile_modeChaos'), emoji: '⏱️' },
+    daily: { label: t('profile_dailyShort'), emoji: '📅' },
   };
 
   return (
     <div className="space-y-1.5 sm:space-y-2">
       {history.map((game, i) => {
-        const t = typeLabels[game.type] || typeLabels.classic;
+        const gt = typeLabels[game.type] || typeLabels.classic;
         return (
           <div key={i} className="flex items-center gap-3 bg-card border border-border rounded-xl p-2.5 sm:p-3">
-            <span className="text-lg sm:text-xl shrink-0">{t.emoji}</span>
+            <span className="text-lg sm:text-xl shrink-0">{gt.emoji}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-1.5">
                 <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>
                   {game.score.toLocaleString()} pts
                 </span>
-                <span className="text-[8px] sm:text-[9px] text-muted-foreground">{t.label}</span>
+                <span className="text-[8px] sm:text-[9px] text-muted-foreground">{gt.label}</span>
               </div>
               <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                {game.rounds} rondas · {formatDistance(game.avgDistance)} prom. · {game.difficulty}
+                {game.rounds} {t('profile_rounds')} · {formatDistance(game.avgDistance)} {t('profile_avgShort')} · {game.difficulty}
               </p>
             </div>
             <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">{game.date}</span>
