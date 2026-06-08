@@ -14,6 +14,7 @@ import ReplayMap from './ReplayMap';
 import { type GameMode } from '@/data/cities';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
+import { tLevelTitle } from '@/lib/gameI18n';
 import { recordGameResult, getContextualOffer, type FrustrationOffer } from '@/lib/frustrationDetector';
 import FrustrationOfferModal from './FrustrationOfferModal';
 
@@ -47,7 +48,7 @@ export default function FinalResultScreen({
   totalRounds = 13,
 }: FinalResultScreenProps) {
   const { user, displayName: authName } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [initials, setInitials] = useState('');
   const [saved, setSaved] = useState(false);
   const [qualifies, setQualifies] = useState(false);
@@ -90,7 +91,7 @@ export default function FinalResultScreen({
     setPreviousBest(stats.bestScore);
     const prevXp = calculateXP();
     updatePlayerStats(totalScore, distances);
-    qualifiesForLeaderboard(totalScore).then(setQualifies);
+    qualifiesForLeaderboard(totalScore, mode).then(setQualifies);
     if (reason === 'complete') playVictory();
 
     // Level up check — play fanfare if player leveled up
@@ -297,7 +298,7 @@ export default function FinalResultScreen({
             <span className="text-lg sm:text-xl">{level.emoji}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between">
-                <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {level.title}</p>
+                <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {tLevelTitle(level.title, locale)}</p>
                 <span className="text-[9px] sm:text-[10px] text-muted-foreground">{level.xp.toLocaleString()} XP</span>
               </div>
               <div className="w-full h-1.5 sm:h-2 bg-background rounded-full mt-1 overflow-hidden relative">

@@ -15,6 +15,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 // useA11y removed — colorblind toggle removed
 import { useI18n, LOCALES } from '@/i18n';
 import { getReferralProgress, claimReferralReward, type ReferralReward } from '@/lib/referralSystem';
+import { tLevelTitle, tBadgeName, tBadgeDesc } from '@/lib/gameI18n';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode) => void;
@@ -526,7 +527,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               <span className="text-xl sm:text-2xl">{playerLevel.emoji}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-1.5 sm:gap-2">
-                  <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{t('home_level')} {playerLevel.level} {playerLevel.title}</span>
+                  <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{t('home_level')} {playerLevel.level} {tLevelTitle(playerLevel.title, locale)}</span>
                   <span className="text-[9px] sm:text-[10px] text-muted-foreground">{playerLevel.xp.toLocaleString()} {t('home_xp')}</span>
                 </div>
                 <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
@@ -554,8 +555,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                     }`}
                   >
                     <span className="text-lg sm:text-xl">{badge.emoji}</span>
-                    <p className="text-[8px] sm:text-[9px] font-bold text-foreground leading-tight">{badge.name}</p>
-                    <p className="text-[7px] sm:text-[8px] text-muted-foreground leading-tight">{badge.description}</p>
+                    <p className="text-[8px] sm:text-[9px] font-bold text-foreground leading-tight">{tBadgeName(badge.id, badge.name, locale)}</p>
+                    <p className="text-[7px] sm:text-[8px] text-muted-foreground leading-tight">{tBadgeDesc(badge.id, badge.description, locale)}</p>
                   </div>
                 ))}
               </div>

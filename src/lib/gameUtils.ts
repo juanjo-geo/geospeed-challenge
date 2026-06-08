@@ -155,9 +155,16 @@ function saveLeaderboardLocal(entry: LeaderboardEntry): void {
   } catch { /* ignore quota errors */ }
 }
 
-export async function qualifiesForLeaderboard(score: number): Promise<boolean> {
-  const board = await getLeaderboard();
-  return board.length < 10 || score > board[board.length - 1].score;
+export async function qualifiesForLeaderboard(score: number, mode?: string): Promise<boolean> {
+  if (score <= 0) return false;
+  try {
+    // Comparar contra el ranking DEL MODO que el jugador ve (no el global mezclado)
+    const board = await getLeaderboard(mode);
+    return board.length < 10 || score > board[board.length - 1].score;
+  } catch {
+    // Si falla la consulta, ser permisivo: mejor permitir guardar que perder el score
+    return true;
+  }
 }
 
 function getLeaderboardLocal(mode?: string): LeaderboardEntry[] {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getPlayerStats, getGameHistory, formatDistance, type GameHistoryEntry } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges, type PlayerLevel, type Badge } from '@/lib/levelSystem';
+import { tLevelTitle, tBadgeName, tBadgeDesc } from '@/lib/gameI18n';
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
 
@@ -27,7 +28,7 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ onBack }: ProfileScreenProps) {
   const { user, displayName } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🌍');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [tab, setTab] = useState<'stats' | 'levels' | 'badges' | 'history'>('stats');
@@ -100,7 +101,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-base">{level.emoji}</span>
                 <span className="text-xs sm:text-sm font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                  Nv.{level.level} {level.title}
+                  Nv.{level.level} {tLevelTitle(level.title, locale)}
                 </span>
               </div>
               {/* XP bar */}
@@ -325,7 +326,7 @@ function LevelsTab({ currentLevel }: { currentLevel: PlayerLevel }) {
 
 /* ── Badges Tab ── */
 function BadgesTab({ badges, unlockedCount }: { badges: Badge[]; unlockedCount: number }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <div>
       <div className="text-center mb-3 sm:mb-4">
@@ -345,8 +346,8 @@ function BadgesTab({ badges, unlockedCount }: { badges: Badge[]; unlockedCount: 
             }`}
           >
             <span className={`text-2xl sm:text-3xl ${badge.unlocked ? 'animate-fade-in' : ''}`}>{badge.emoji}</span>
-            <p className="text-[9px] sm:text-[10px] font-bold text-foreground leading-tight">{badge.name}</p>
-            <p className="text-[7px] sm:text-[8px] text-muted-foreground leading-tight">{badge.description}</p>
+            <p className="text-[9px] sm:text-[10px] font-bold text-foreground leading-tight">{tBadgeName(badge.id, badge.name, locale)}</p>
+            <p className="text-[7px] sm:text-[8px] text-muted-foreground leading-tight">{tBadgeDesc(badge.id, badge.description, locale)}</p>
             {badge.unlocked && (
               <span className="text-[7px] sm:text-[8px] font-bold text-green-400 mt-0.5">{t('profile_unlocked')}</span>
             )}
