@@ -4,7 +4,7 @@
  * Provides a unified interface for payment processing across platforms:
  *  - MockPaymentProvider:      Simulated delay for development / fallback
  *  - RevenueCatProvider:       RevenueCat Purchases.js for mobile app stores (Capacitor/Cordova)
- *  - StripeProvider:           Stripe Checkout redirect for web payments
+ *  - MercadoPagoProvider:      Checkout Pro redirect for web payments (CO/MX/CL)
  *
  * Auto-detects the correct provider based on environment variables and platform.
  */
@@ -20,7 +20,7 @@ export interface PurchaseResult {
 export interface SubscriptionStatus {
   isActive: boolean;
   expiresAt: string | null;
-  source: 'revenuecat' | 'stripe' | 'mock' | null;
+  source: 'revenuecat' | 'mercadopago' | 'mock' | null;
 }
 
 export interface PaymentProvider {
@@ -151,17 +151,14 @@ class RevenueCatProvider implements PaymentProvider {
   }
 }
 
-// ─── Stripe Provider (web payments) ─────────────────────────────────
+// ─── Mercado Pago Provider (web payments — Colombia, México, Chile) ──
 
-class StripeProvider implements PaymentProvider {
+class MercadoPagoProvider implements PaymentProvider {
   private initialized = false;
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-
-    // Stripe.js could be loaded here if needed for Elements:
-    // const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-    console.info('[PaymentProvider] Stripe provider initialized');
+    console.info('[PaymentProvider] Mercado Pago provider initialized');
     this.initialized = true;
   }
 
@@ -169,18 +166,18 @@ class StripeProvider implements PaymentProvider {
     if (!this.initialized) await this.initialize();
 
     try {
-      // Pide a la Edge Function de Supabase que cree la sesión de Stripe Checkout.
+      // Pide a la Edge Function de Supabase que cree la preferencia de pago.
       const { supabase } = await import('@/integrations/supabase/client');
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { productId, userId: user?.id ?? null },
       });
       if (error) return { success: false, error: error.message };
       if (data?.error) return { success: false, error: data.error };
       if (!data?.url) return { success: false, error: 'No se pudo iniciar el pago' };
 
-      // Redirige a la página de pago segura de Stripe
+      // Redirige al checkout de Mercado Pago
       window.location.href = data.url as string;
       return { success: true };
     } catch (err: any) {
@@ -189,26 +186,30 @@ class StripeProvider implements PaymentProvider {
   }
 
   async restorePurchases(): Promise<PurchaseResult> {
-    // Stripe purchases are managed via the customer portal.
-    // Direct the user to the billing portal instead.
-    const portalUrl = import.meta.env.VITE_STRIPE_PORTAL_URL;
-    if (portalUrl) {
-      window.location.href = portalUrl;
-      return { success: true };
-    }
-    return {
-      success: false,
-      error: 'Stripe customer portal not configured — set VITE_STRIPE_PORTAL_URL',
-    };
+    // En web, el estado Pro se valida server-side desde player_data al iniciar sesión.
+    // No hay "restaurar" como en las tiendas; el servidor ya es la fuente de verdad.
+    return { success: true };
   }
 
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {
-    // In production, this would query your backend:
-    // const res = await fetch('/api/subscription-status');
-    // const data = await res.json();
-    // return { isActive: data.active, expiresAt: data.expiresAt, source: 'stripe' };
-
-    return { isActive: false, expiresAt: null, source: null };
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { isActive: false, expiresAt: null, source: null };
+      const { data } = await supabase
+        .from('player_data')
+        .select('premium')
+        .eq('user_id', user.id)
+        .single();
+      const premium = (data?.premium as { isPro?: boolean; proExpiresAt?: string | null }) || null;
+      return {
+        isActive: premium?.isPro === true,
+        expiresAt: premium?.proExpiresAt ?? null,
+        source: premium?.isPro ? 'mercadopago' : null,
+      };
+    } catch {
+      return { isActive: false, expiresAt: null, source: null };
+    }
   }
 }
 
@@ -223,10 +224,11 @@ function detectProvider(): PaymentProvider {
     return new RevenueCatProvider();
   }
 
-  // Stripe for web when configured (modo 'auto' + publishable key presente)
-  if (env.VITE_PAYMENT_MODE === 'auto' && env.VITE_STRIPE_PUBLISHABLE_KEY && !String(env.VITE_STRIPE_PUBLISHABLE_KEY).includes('placeholder')) {
-    console.info('[PaymentProvider] Detected Stripe config → using StripeProvider');
-    return new StripeProvider();
+  // Mercado Pago for web (modo 'auto'). El access token vive solo en el servidor
+  // (Edge Function), así que no requiere variable pública en el frontend.
+  if (env.VITE_PAYMENT_MODE === 'auto') {
+    console.info('[PaymentProvider] PAYMENT_MODE=auto → using MercadoPagoProvider');
+    return new MercadoPagoProvider();
   }
 
   // Default: mock provider for development
