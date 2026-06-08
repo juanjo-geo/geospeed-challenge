@@ -330,9 +330,12 @@ export default function FinalResultScreen({
             boxShadow: '0 6px 24px hsl(var(--primary) / 0.4)',
             animation: 'fade-in-up 0.5s ease-out, pulse 2s ease-in-out 2s infinite',
           }}
-          aria-label="Jugar otra vez inmediatamente"
+          aria-label="Jugar otra vez con las mismas ciudades para aprendértelas"
         >
-          🔄 OTRA VEZ
+          <span className="flex flex-col items-center leading-tight">
+            <span>🔄 OTRA VEZ</span>
+            <span className="text-[10px] sm:text-xs font-bold opacity-80 normal-case">¡Apréndete estas! · mismas ciudades</span>
+          </span>
         </button>
 
         {/* Best round highlight */}

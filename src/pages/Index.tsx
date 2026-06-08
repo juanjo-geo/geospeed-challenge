@@ -160,6 +160,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [showNoLives, setShowNoLives] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [revengeCities, setRevengeCities] = useState<City[] | null>(null);
+  const [replayCities, setReplayCities] = useState<City[] | null>(null);
   const [revengeUsed, setRevengeUsed] = useState(false);
   const [originalScore, setOriginalScore] = useState(0);
   const [originalWorstScores, setOriginalWorstScores] = useState<number[]>([]);
@@ -250,6 +251,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
     setIsTraining(false);
     setIsSpeedDemon(false);
+    setReplayCities(null); // partida nueva: ciudades frescas (no reusar las de "Otra vez")
     setDifficulty(diff);
     setGameMode(mode);
     trackGameStart(mode, diff);
@@ -268,11 +270,33 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setPhase('countdown');
   }, [isMobile]);
 
-  // Detect portrait rotation DURING gameplay → show overlay (game stays mounted)
+  // Back gesture / hardware back button → return to home instead of leaving the app.
+  // Works for Android swipe-back and browser back. (Native Capacitor back button also emits popstate.)
   useEffect(() => {
-    const playPhases: Phase[] = ['playing', 'ta-playing', 'mp-playing', 'daily'];
-    if (!playPhases.includes(phase) || !isMobile) {
-      // Outside gameplay: always hide overlay
+    const inGamePhases: Phase[] = [
+      'countdown', 'playing', 'final', 'onboarding', 'tutorial',
+      'ta-select', 'ta-playing', 'ta-final', 'daily',
+      'mp-lobby', 'mp-waiting', 'mp-playing', 'mp-final', 'mp-spectate',
+      'store', 'profile', 'battlepass',
+    ];
+    if (!inGamePhases.includes(phase)) return;
+    // Push a sentinel entry so the first back press is captured here
+    window.history.pushState({ geospeedGuard: true }, '');
+    const onPop = () => {
+      setPhase('home');
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [phase]);
+
+  // Detect portrait rotation DURING gameplay → show overlay (game stays mounted)
+  // Uses touch detection instead of isMobile so it works on all tablets/phones
+  useEffect(() => {
+    const playPhases: Phase[] = ['countdown', 'playing', 'ta-playing', 'mp-playing', 'daily', 'onboarding'];
+    const isTouch = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+    if (!playPhases.includes(phase) || !isTouch) {
+      // Outside gameplay or desktop: always hide overlay
       setShowRotateOverlay(false);
       return;
     }
@@ -289,7 +313,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       window.removeEventListener('resize', check);
       window.removeEventListener('orientationchange', onOrientationChange);
     };
-  }, [phase, isMobile]);
+  }, [phase]);
 
   const handleGameOver = useCallback((rounds: RoundResult[], reason: 'timeout' | 'complete') => {
     const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
@@ -396,7 +420,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setShowNotifPrompt(false);
   }, []);
 
-  const handlePlayAgain = useCallback(() => { setRevengeCities(null); setChallengeSeed(null); setChallengerScore(null); gameKeyRef.current += 1; setPhase('countdown'); }, []);
+  const handlePlayAgain = useCallback(() => {
+    // "Otra vez" repite las MISMAS ciudades de la última partida (modo aprendizaje)
+    const sameCities = finalRounds.map(r => r.city);
+    setReplayCities(sameCities.length > 0 ? sameCities : null);
+    setRevengeCities(null);
+    setChallengeSeed(null);
+    setChallengerScore(null);
+    gameKeyRef.current += 1;
+    setPhase('countdown');
+  }, [finalRounds]);
   const handleRevenge = useCallback((rounds: RoundResult[]) => {
     // Pick worst 5 rounds (lowest score) — one-time only
     const worst = [...rounds].sort((a, b) => a.totalPoints - b.totalPoints).slice(0, 5);
@@ -406,7 +439,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
+  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => setPhase('profile'), []);
   const handleOpenBattlePass = useCallback(() => setPhase('battlepass'), []);
@@ -895,7 +928,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onGameOver={handleGameOver}
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
-          {...(revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : {})}
+          {...(revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
           {...(challengeSeed !== null ? { seed: challengeSeed } : {})}
         />
       );

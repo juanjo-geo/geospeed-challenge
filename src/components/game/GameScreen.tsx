@@ -97,6 +97,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [streak, setStreak] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [isPageHidden, setIsPageHidden] = useState(false);
   const roundStartRef = useRef(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const scoreElRef = useRef<HTMLParagraphElement>(null);
@@ -124,9 +125,22 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
 
+  // Pause game when app loses focus / user switches apps (mobile)
+  useEffect(() => {
+    const onVisibility = () => setIsPageHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onVisibility);
+    window.addEventListener('focus', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('blur', onVisibility);
+      window.removeEventListener('focus', onVisibility);
+    };
+  }, []);
+
   // Single timer effect — pauses when waiting, portrait, or no city
   useEffect(() => {
-    if (isWaiting || !currentCity || isPortraitMobile) {
+    if (isWaiting || !currentCity || isPortraitMobile || isPageHidden) {
       clearInterval(timerRef.current);
       return;
     }
@@ -148,7 +162,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [currentRound, isWaiting, currentCity, isPortraitMobile]);
+  }, [currentRound, isWaiting, currentCity, isPortraitMobile, isPageHidden]);
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
@@ -511,8 +525,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </svg>
           </div>
 
-          {/* ── Timer ── */}
-          <div className="w-full shrink-0">
+          {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto, p.ej. Samsung S23 FE landscape) */}
+          <div className="w-full shrink-0 sticky bottom-0 z-10 bg-card pt-2 mt-auto">
             <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} />
           </div>
         </div>

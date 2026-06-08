@@ -219,8 +219,8 @@ export default function WorldMapCanvas({
           const country = countries[ci];
           const inContinent = continentCountries.has(country.name);
           if (inContinent) {
-            // Bright subtle highlight
-            ctx.fillStyle = neon ? 'rgba(0,212,170,0.15)' : light ? 'rgba(0,150,255,0.12)' : 'rgba(245,200,66,0.15)';
+            // Brighter highlight — more noticeable hint to lower difficulty
+            ctx.fillStyle = neon ? 'rgba(0,212,170,0.34)' : light ? 'rgba(0,150,255,0.28)' : 'rgba(245,200,66,0.34)';
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;
@@ -232,8 +232,8 @@ export default function WorldMapCanvas({
               if (vis) { ctx.closePath(); ctx.fill(); }
             }
           } else {
-            // Dim non-continent countries
-            ctx.fillStyle = neon ? 'rgba(0,0,0,0.4)' : light ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
+            // Dim non-continent countries more strongly to make the highlighted continent pop
+            ctx.fillStyle = neon ? 'rgba(0,0,0,0.55)' : light ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.42)';
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;

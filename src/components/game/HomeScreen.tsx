@@ -37,6 +37,23 @@ const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string
 
 const MEDALS = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
 
+/**
+ * Normaliza el valor de dificultad guardado (clave actual basic|easy|medium|hard
+ * o un label histórico de versiones previas) al nombre actual que ve el jugador.
+ */
+function difficultyLabel(raw: string, t: (key: string) => string): string {
+  if (!raw) return '';
+  const key = raw.toLowerCase().trim();
+  const aliasMap: Record<string, string> = {
+    basic: 'diff_basic', turista: 'diff_basic', 'básico': 'diff_basic', basico: 'diff_basic', tourist: 'diff_basic',
+    easy: 'diff_easy', rookie: 'diff_easy', intermedio: 'diff_easy',
+    medium: 'diff_medium', crack: 'diff_medium', avanzado: 'diff_medium', medio: 'diff_medium',
+    hard: 'diff_hard', leyenda: 'diff_hard', legend: 'diff_hard', experto: 'diff_hard', expert: 'diff_hard',
+  };
+  const i18nKey = aliasMap[key];
+  return i18nKey ? t(i18nKey) : raw;
+}
+
 const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> = {
   europe:   { level: 2, label: 'Nv.2' },
   asia:     { level: 3, label: 'Nv.3' },
@@ -772,7 +789,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   <span className="w-6 sm:w-7 text-center text-xs sm:text-sm">{MEDALS[i] || `${i + 1}.`}</span>
                   <span className="font-mono font-bold flex-1 text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{entry.initials}</span>
                   <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1 sm:mr-1.5">{MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode}</span>
-                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5 sm:mr-2">{entry.difficulty}</span>
+                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5 sm:mr-2">{difficultyLabel(entry.difficulty, t)}</span>
                   <span className="font-mono font-bold text-xs sm:text-sm">{entry.score.toLocaleString()}</span>
                 </div>
               ))
@@ -807,7 +824,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                     <span className="text-muted-foreground w-[44px] sm:w-[52px] shrink-0">{dateStr}</span>
                     <span className="shrink-0">{entry.type === 'timeattack' ? '⚡' : '🎮'}</span>
                     <span className="text-muted-foreground shrink-0">{modeLabel}</span>
-                    <span className="text-muted-foreground shrink-0">{entry.difficulty}</span>
+                    <span className="text-muted-foreground shrink-0">{difficultyLabel(entry.difficulty, t)}</span>
                     <span className="flex-1" />
                     <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground">{formatDistance(entry.avgDistance)}</span>
                     <span className="font-mono font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{entry.score.toLocaleString()}</span>
