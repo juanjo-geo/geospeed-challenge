@@ -65,6 +65,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const { user, displayName, signOut } = useAuth();
   // colorblind toggle removed
   const { t, locale, setLocale } = useI18n();
+  const [inviteSent, setInviteSent] = useState(false);
   const navigate = useNavigate();
   const stats = getPlayerStats();
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
@@ -628,8 +629,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-320">
             <div className="rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 p-3 sm:p-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="font-black text-xs sm:text-sm text-purple-400">🎁 Invita amigos, gana vidas</p>
-                <span className="text-[10px] sm:text-xs font-mono text-muted-foreground">{ref.count} invitados</span>
+                <p className="font-black text-xs sm:text-sm text-purple-400">{t('ref_title')}</p>
+                <span className="text-[10px] sm:text-xs font-mono text-muted-foreground">{t('ref_invited', { count: ref.count })}</span>
               </div>
               {ref.nextTier && (
                 <div className="mb-2">
@@ -641,7 +642,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                     <div className="h-full rounded-full bg-purple-500 transition-all" style={{ width: `${Math.min(100, (ref.count / ref.nextTier.threshold) * 100)}%` }} />
                   </div>
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-1">
-                    🎯 {ref.nextTier.threshold - ref.count} más → +{ref.nextTier.lives} vidas{ref.nextTier.bonus ? ` + ${ref.nextTier.bonus}` : ''}
+                    {t('ref_more', { remaining: ref.nextTier.threshold - ref.count, lives: ref.nextTier.lives, bonus: ref.nextTier.bonus ? ` + ${ref.nextTier.bonus}` : '' })}
                   </p>
                 </div>
               )}
@@ -651,7 +652,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   className="w-full py-2 rounded-lg font-bold text-xs mb-2 transition-all active:scale-[0.97] animate-pulse"
                   style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)', color: '#fff' }}
                 >
-                  🎉 RECLAMAR: +{ref.claimable.lives} vidas{ref.claimable.bonus ? ` + ${ref.claimable.bonus}` : ''}
+                  {t('ref_claim', { lives: ref.claimable.lives, bonus: ref.claimable.bonus ? ` + ${ref.claimable.bonus}` : '' })}
                 </button>
               )}
               <button
@@ -660,16 +661,26 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   const text = locale === 'en'
                     ? `🌍 Think you know geography? Beat my score on GeoSpeed!`
                     : `🌍 ¿Crees que conoces el mundo? ¡Supera mi score en GeoSpeed!`;
+                  let confirmed = false;
                   if (navigator.share) {
-                    try { await navigator.share({ title: 'GeoSpeed', text, url: ref.link }); } catch (_) {}
+                    try { await navigator.share({ title: 'GeoSpeed', text, url: ref.link }); confirmed = true; } catch (_) {}
                   } else {
-                    await navigator.clipboard?.writeText(`${text}\n${ref.link}`);
+                    try { await navigator.clipboard?.writeText(`${text}\n${ref.link}`); confirmed = true; } catch (_) {}
+                  }
+                  if (confirmed) {
+                    setInviteSent(true);
+                    setTimeout(() => setInviteSent(false), 4000);
                   }
                 }}
                 className="w-full py-2 rounded-lg font-bold text-[10px] sm:text-xs border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 transition-all active:scale-[0.97]"
               >
-                📤 COMPARTIR LINK DE INVITACIÓN
+                {t('ref_share')}
               </button>
+              {inviteSent && (
+                <p className="mt-2 text-center text-[9px] sm:text-[10px] text-emerald-400 animate-fade-in" role="status">
+                  {navigator.share ? t('ref_sent') : t('ref_copied')}
+                </p>
+              )}
             </div>
           </div>
         );

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { useI18n } from '@/i18n';
 import { countries } from '@/data/countries';
 import { getMapBounds } from '@/data/cities';
 
@@ -57,6 +58,7 @@ function pickRandomCities(arr: DemoCity[], count: number): DemoCity[] {
 const DEMO_CITIES = pickRandomCities(ALL_DEMO_CITIES, 6);
 
 export default function AutoDemo() {
+  const { t, locale } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 320, h: 160 });
@@ -157,7 +159,7 @@ export default function AutoDemo() {
       ctx.fillStyle = isNeon ? '#F0A030' : isLight ? '#1a3a4a' : '#f5c842';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(`¿Dónde está ${city.name}?`, w / 2, 6);
+      ctx.fillText(t('demo_whereIs', { city: city.name }), w / 2, 6);
       ctx.globalAlpha = 1;
 
       // Cursor position
@@ -293,7 +295,7 @@ export default function AutoDemo() {
 
     animRef.current = requestAnimationFrame(animate);
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [size]);
+  }, [size, locale, t]);
 
   return (
     <div ref={containerRef} className="w-full">
