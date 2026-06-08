@@ -15,6 +15,10 @@ interface WorldMapCanvasProps {
   highlightContinent?: string | null;
   /** Callback with live lat/lon as cursor moves over the map */
   onCursorMove?: (lat: number, lon: number) => void;
+  /** Equipped pin cosmetic config (fill/stroke/glow/size) */
+  pinConfig?: { fill?: string; stroke?: string; glow?: string; size?: number } | null;
+  /** Equipped trail cosmetic config (color as 'r,g,b' or colors[] for rainbow) */
+  trailConfig?: { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | null;
 }
 
 // ── Continent → country mapping (ISO-style names matching countries.ts) ──
@@ -43,6 +47,8 @@ export default function WorldMapCanvas({
   hintZone,
   highlightContinent,
   onCursorMove,
+  pinConfig,
+  trailConfig,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
@@ -456,7 +462,9 @@ export default function WorldMapCanvas({
 
       // ── Gradient trail line (drawn portion) ──
       // Bold orange-red trail, highly visible against any map theme
-      const trailColor = (distanceKm ?? 0) > 1000 ? '239,68,68' : '234,120,30'; // red if far, deep orange if close
+      // Equipped trail cosmetic overrides the default distance-based color.
+    const equippedTrail = trailConfig?.color;
+    const trailColor = equippedTrail ?? ((distanceKm ?? 0) > 1000 ? '239,68,68' : '234,120,30'); // red if far, deep orange if close
       const steps = Math.max(Math.floor(eased * 80), 2);
       for (let i = 0; i < steps - 1; i++) {
         const t0 = (i / steps) * eased;
@@ -508,13 +516,16 @@ export default function WorldMapCanvas({
         ctx.setLineDash([]);
       }
 
-      // ── User pin (always visible, pulsing ring) ──
+      // ── User pin (always visible, pulsing ring) — uses equipped cosmetic if any ──
       const pulse = 1 + 0.15 * Math.sin(elapsed * 0.004);
-      ctx.fillStyle = neon ? '#00D4AA' : '#4fc3f7';
-      ctx.strokeStyle = neon ? 'rgba(0,212,170,0.35)' : 'rgba(79,195,247,0.3)';
+      const pinFill = pinConfig?.fill ?? (neon ? '#00D4AA' : '#4fc3f7');
+      const pinGlow = pinConfig?.glow ?? (neon ? 'rgba(0,212,170,0.35)' : 'rgba(79,195,247,0.3)');
+      const pinSize = pinConfig?.size ?? 8;
+      ctx.fillStyle = pinFill;
+      ctx.strokeStyle = pinGlow;
       ctx.lineWidth = 3 * pulse;
       ctx.beginPath();
-      ctx.arc(ux, uy, 8 * pulse, 0, Math.PI * 2);
+      ctx.arc(ux, uy, pinSize * pulse, 0, Math.PI * 2);
       ctx.stroke();
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
@@ -631,7 +642,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme]);
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, trailConfig]);
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);

@@ -22,6 +22,7 @@ import { tCategory, tRarity, tCosmeticName, tCosmeticDesc } from '@/lib/gameI18n
 
 interface BattlePassScreenProps {
   onClose: () => void;
+  onOpenStore?: () => void;
 }
 
 const CATEGORY_LABELS: Record<CosmeticCategory, string> = {
@@ -31,7 +32,7 @@ const CATEGORY_LABELS: Record<CosmeticCategory, string> = {
   mapTheme: '🗺️ Mapas',
 };
 
-export default function BattlePassScreen({ onClose }: BattlePassScreenProps) {
+export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScreenProps) {
   const { t: tr, locale } = useI18n();
   const [tab, setTab] = useState<'pass' | 'collection'>('pass');
   const [selectedCategory, setSelectedCategory] = useState<CosmeticCategory>('pin');
@@ -191,10 +192,13 @@ export default function BattlePassScreen({ onClose }: BattlePassScreenProps) {
           </div>
 
           {!isPro && (
-            <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-3 border border-purple-500/30 text-center">
+            <button
+              onClick={() => { playButtonTap(); if (onOpenStore) onOpenStore(); }}
+              className="w-full bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-3 border border-purple-500/30 text-center transition-all active:scale-[0.97] hover:border-purple-400/60"
+            >
               <p className="text-sm font-bold text-purple-300">{tr('bp_goPro')}</p>
               <p className="text-[10px] text-purple-300/70 mt-1">{tr('bp_goProDesc')}</p>
-            </div>
+            </button>
           )}
         </div>
       ) : (

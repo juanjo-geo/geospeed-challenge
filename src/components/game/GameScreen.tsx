@@ -14,6 +14,7 @@ import TimerBar from './TimerBar';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
+import { getEquipped } from '@/lib/cosmetics';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -103,6 +104,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const scoreElRef = useRef<HTMLParagraphElement>(null);
 
   const currentCity = cities[currentRound];
+
+  // Cosméticos equipados (pin + trail) para que se VEAN en el mapa
+  const equippedPin = getEquipped('pin');
+  const equippedTrail = getEquipped('trail');
+  const pinConfig = equippedPin?.config as { fill?: string; stroke?: string; glow?: string; size?: number } | undefined;
+  const trailConfig = equippedTrail?.config as { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | undefined;
 
   // Hint circle: reset on each new round, reveal after 5 s of no click (training only)
   useEffect(() => {
@@ -668,6 +675,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           gameMode={gameMode}
           hintZone={isTraining && !isWaiting && showHint ? { lat: currentCity.lat, lon: currentCity.lon } : null}
           highlightContinent={gameMode === 'world' && !isWaiting ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
+          pinConfig={pinConfig}
+          trailConfig={trailConfig}
         />
 
         {/* Round result — overlay on wide */}

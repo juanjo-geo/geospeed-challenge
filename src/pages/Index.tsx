@@ -641,7 +641,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'battlepass') {
-      return <BattlePassScreen onClose={handleGoHome} />;
+      return <BattlePassScreen onClose={handleGoHome} onOpenStore={handleOpenStore} />;
     }
 
     if (phase === 'profile') {
