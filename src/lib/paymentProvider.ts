@@ -168,18 +168,24 @@ class StripeProvider implements PaymentProvider {
   async purchase(productId: string): Promise<PurchaseResult> {
     if (!this.initialized) await this.initialize();
 
-    const checkoutUrl = import.meta.env.VITE_STRIPE_CHECKOUT_URL;
-    if (!checkoutUrl) {
-      return { success: false, error: 'Stripe not configured — set VITE_STRIPE_CHECKOUT_URL' };
+    try {
+      // Pide a la Edge Function de Supabase que cree la sesión de Stripe Checkout.
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: { productId, userId: user?.id ?? null },
+      });
+      if (error) return { success: false, error: error.message };
+      if (data?.error) return { success: false, error: data.error };
+      if (!data?.url) return { success: false, error: 'No se pudo iniciar el pago' };
+
+      // Redirige a la página de pago segura de Stripe
+      window.location.href = data.url as string;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Error iniciando el pago' };
     }
-
-    // Redirect to Stripe Checkout session
-    // The backend should create the checkout session and return the URL,
-    // or we redirect with product info for the backend to resolve.
-    window.location.href = `${checkoutUrl}?product=${encodeURIComponent(productId)}`;
-
-    // This line is reached only if the redirect hasn't happened yet
-    return { success: true };
   }
 
   async restorePurchases(): Promise<PurchaseResult> {
@@ -217,8 +223,8 @@ function detectProvider(): PaymentProvider {
     return new RevenueCatProvider();
   }
 
-  // Stripe for web when configured
-  if (env.VITE_STRIPE_CHECKOUT_URL) {
+  // Stripe for web when configured (modo 'auto' + publishable key presente)
+  if (env.VITE_PAYMENT_MODE === 'auto' && env.VITE_STRIPE_PUBLISHABLE_KEY && !String(env.VITE_STRIPE_PUBLISHABLE_KEY).includes('placeholder')) {
     console.info('[PaymentProvider] Detected Stripe config → using StripeProvider');
     return new StripeProvider();
   }
