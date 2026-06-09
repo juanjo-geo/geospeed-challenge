@@ -101,21 +101,29 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           ← {t('back')}
         </button>
         <div className="flex items-center gap-1.5">
-          {Array.from({ length: energy.maxLives }).map((_, i) => (
-            <span
-              key={i}
-              className="text-sm sm:text-base"
-              style={{
-                opacity: i < energy.lives ? 1 : 0.2,
-                filter: i < energy.lives ? 'none' : 'grayscale(1)',
-              }}
-            >
-              ❤️
+          {energy.lives > energy.maxLives ? (
+            <span className="flex items-center gap-0.5 text-sm sm:text-base font-bold">
+              ❤️ <span className="font-mono">×{energy.lives}</span>
             </span>
-          ))}
-          <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground ml-1">
-            {energy.lives}/{energy.maxLives}
-          </span>
+          ) : (
+            <>
+              {Array.from({ length: energy.maxLives }).map((_, i) => (
+                <span
+                  key={i}
+                  className="text-sm sm:text-base"
+                  style={{
+                    opacity: i < energy.lives ? 1 : 0.2,
+                    filter: i < energy.lives ? 'none' : 'grayscale(1)',
+                  }}
+                >
+                  ❤️
+                </span>
+              ))}
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground ml-1">
+                {energy.lives}/{energy.maxLives}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
