@@ -121,9 +121,9 @@ const en: Translations = {
   game_trainingPrefix: '🎓 Training',
 
   // ── Time Attack ──
-  ta_title: 'Extreme Time Attack',
+  ta_title: '60s of Chaos',
   ta_subtitle: '60 seconds. Unlimited cities. How many can you get?',
-  ta_timeAttack: '⚡ Time Attack',
+  ta_timeAttack: '⚡ 60s of Chaos',
   ta_cities: 'cities',
   ta_secondsLeft: '{seconds} seconds left',
   ta_start: 'START',

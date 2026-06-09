@@ -33,6 +33,28 @@ export function tLevelTitle(title: string, locale: Locale): string {
   return pick(LEVEL_TITLES[title], title, locale);
 }
 
+// ── Dificultades (clave/valor estable → nombre actual del juego) ──
+const DIFFICULTY: Record<string, Bilingual> = {
+  basic: { es: 'Turista', en: 'Tourist' },
+  easy: { es: 'Rookie', en: 'Rookie' },
+  medium: { es: 'Crack', en: 'Crack' },
+  hard: { es: 'Leyenda', en: 'Legend' },
+};
+
+export function tDifficulty(raw: string, locale: Locale): string {
+  if (!raw) return '';
+  const key = raw.toLowerCase().trim();
+  // alias históricos por si vienen labels viejos guardados
+  const alias: Record<string, string> = {
+    basic: 'basic', turista: 'basic', 'básico': 'basic', basico: 'basic', tourist: 'basic',
+    easy: 'easy', rookie: 'easy', intermedio: 'easy',
+    medium: 'medium', crack: 'medium', avanzado: 'medium', medio: 'medium',
+    hard: 'hard', leyenda: 'hard', legend: 'hard', experto: 'hard', expert: 'hard',
+  };
+  const norm = alias[key];
+  return norm ? pick(DIFFICULTY[norm], raw, locale) : raw;
+}
+
 // ── Badges (por id estable) ──
 const BADGE_NAMES: Record<string, Bilingual> = {
   first: { es: 'Primera partida', en: 'First Game' },

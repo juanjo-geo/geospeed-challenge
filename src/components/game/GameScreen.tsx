@@ -486,7 +486,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Racha y multiplicador ── */}
           {(showStreak || mult) && (
-            <div className="w-full flex flex-col gap-1.5 shrink-0 mb-2">
+            <div className="w-full flex flex-col items-center gap-1.5 shrink-0 mb-2">
               {showStreak && (
                 <div className="text-center animate-score-pop">
                   <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
@@ -755,8 +755,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
-            <div className={`flex flex-col justify-center gap-1.5 rounded-2xl border border-border/80 bg-card/70 p-3 sm:p-4 shadow-2xl backdrop-blur-md ${
-              isPortraitMobile ? 'w-full max-h-[55vh]' : 'max-h-[92%]'
+            <div className={`flex flex-col justify-center gap-1.5 rounded-2xl border border-border/80 bg-card/70 p-3 sm:p-4 shadow-2xl backdrop-blur-md overflow-y-auto ${
+              isPortraitMobile ? 'w-full max-h-[60vh]' : 'max-h-[88vh]'
             }`}>
               {/* Feedback + City combined */}
               <div className="text-center">

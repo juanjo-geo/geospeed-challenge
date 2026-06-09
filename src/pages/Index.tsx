@@ -24,6 +24,12 @@ class PhaseErrorBoundary extends Component<
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[GeoSpeed] Phase render error:', error, info.componentStack);
+    const msg = error?.message || '';
+    const isChunkError = /dynamically imported module|Failed to fetch|Importing a module script failed|error loading dynamically/i.test(msg);
+    if (isChunkError && !sessionStorage.getItem('geospeed_chunk_reloaded')) {
+      sessionStorage.setItem('geospeed_chunk_reloaded', '1');
+      window.location.reload();
+    }
   }
   render() {
     if (this.state.error) {
@@ -54,18 +60,39 @@ class PhaseErrorBoundary extends Component<
 }
 
 // ── Lazy loads (loaded on demand per phase) ──
-const GameScreen = lazy(() => import('@/components/game/GameScreen'));
-const ProfileScreen = lazy(() => import('@/components/game/ProfileScreen'));
-const FinalResultScreen = lazy(() => import('@/components/game/FinalResultScreen'));
-const MultiplayerLobby = lazy(() => import('@/components/game/MultiplayerLobby'));
-const WaitingRoom = lazy(() => import('@/components/game/WaitingRoom'));
-const MultiplayerResultScreen = lazy(() => import('@/components/game/MultiplayerResultScreen'));
-const TimeAttackScreen = lazy(() => import('@/components/game/TimeAttackScreen'));
-const TutorialOverlay = lazy(() => import('@/components/game/TutorialOverlay'));
-const OnboardingGame = lazy(() => import('@/components/game/OnboardingGame'));
-const StoreScreen = lazy(() => import('@/components/game/StoreScreen'));
-const BattlePassScreen = lazy(() => import('@/components/game/BattlePassScreen'));
-const SpectatorScreen = lazy(() => import('@/components/game/SpectatorScreen'));
+// Envuelve los imports dinámicos: si falla cargar un chunk (típico tras un nuevo
+// deploy en que los .js viejos con hash ya no existen), recarga la página UNA vez
+// para traer la versión nueva, en vez de romper con "Failed to fetch module".
+function lazyWithReload<T extends { default: React.ComponentType<any> }>(factory: () => Promise<T>) {
+  return lazy(async () => {
+    try {
+      return await factory();
+    } catch (err) {
+      const msg = (err as Error)?.message || '';
+      const isChunkError = /dynamically imported module|Failed to fetch|Importing a module script failed|error loading dynamically/i.test(msg);
+      const alreadyReloaded = sessionStorage.getItem('geospeed_chunk_reloaded');
+      if (isChunkError && !alreadyReloaded) {
+        sessionStorage.setItem('geospeed_chunk_reloaded', '1');
+        window.location.reload();
+        // Devolver una promesa que nunca resuelve mientras recarga
+        return await new Promise<T>(() => {});
+      }
+      throw err;
+    }
+  });
+}
+const GameScreen = lazyWithReload(() => import('@/components/game/GameScreen'));
+const ProfileScreen = lazyWithReload(() => import('@/components/game/ProfileScreen'));
+const FinalResultScreen = lazyWithReload(() => import('@/components/game/FinalResultScreen'));
+const MultiplayerLobby = lazyWithReload(() => import('@/components/game/MultiplayerLobby'));
+const WaitingRoom = lazyWithReload(() => import('@/components/game/WaitingRoom'));
+const MultiplayerResultScreen = lazyWithReload(() => import('@/components/game/MultiplayerResultScreen'));
+const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
+const TutorialOverlay = lazyWithReload(() => import('@/components/game/TutorialOverlay'));
+const OnboardingGame = lazyWithReload(() => import('@/components/game/OnboardingGame'));
+const StoreScreen = lazyWithReload(() => import('@/components/game/StoreScreen'));
+const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePassScreen'));
+const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
@@ -145,6 +172,9 @@ export interface DeepLinkProps {
 }
 
 const Index = ({ deepLink }: DeepLinkProps = {}) => {
+  // Si llegamos a montar bien, limpiar el flag de recarga por chunk viejo (permite
+  // que un futuro deploy vuelva a auto-recargar si hace falta).
+  useEffect(() => { try { sessionStorage.removeItem('geospeed_chunk_reloaded'); } catch {} }, []);
   const { t } = useI18n();
   const isMobile = useIsMobile();
   const routeParams = useParams<{ date?: string; seed?: string; code?: string }>();

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getPlayerStats, getGameHistory, formatDistance, type GameHistoryEntry } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges, type PlayerLevel, type Badge } from '@/lib/levelSystem';
-import { tLevelTitle, tBadgeName, tBadgeDesc } from '@/lib/gameI18n';
+import { tLevelTitle, tBadgeName, tBadgeDesc, tDifficulty } from '@/lib/gameI18n';
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
 
@@ -361,7 +361,7 @@ function BadgesTab({ badges, unlockedCount }: { badges: Badge[]; unlockedCount: 
 
 /* ── History Tab ── */
 function HistoryTab({ history }: { history: GameHistoryEntry[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   if (history.length === 0) {
     return (
       <div className="text-center py-8 sm:py-12">
@@ -392,7 +392,7 @@ function HistoryTab({ history }: { history: GameHistoryEntry[] }) {
                 <span className="text-[8px] sm:text-[9px] text-muted-foreground">{gt.label}</span>
               </div>
               <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                {game.rounds} {t('profile_rounds')} · {formatDistance(game.avgDistance)} {t('profile_avgShort')} · {game.difficulty}
+                {game.rounds} {t('profile_rounds')} · {formatDistance(game.avgDistance)} {t('profile_avgShort')} · {tDifficulty(game.difficulty, locale)}
               </p>
             </div>
             <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">{game.date}</span>

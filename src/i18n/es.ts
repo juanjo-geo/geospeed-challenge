@@ -19,7 +19,7 @@ const es = {
   home_profile: '📊 Perfil',
   home_store: '⭐ Tienda',
   home_offline: 'Sin conexión',
-  home_offlineDesc: '— Puedes jugar Clásico y Contrareloj. El ranking se sincronizará al reconectar.',
+  home_offlineDesc: '— Puedes jugar Clásico y 60s de Caos. El ranking se sincronizará al reconectar.',
   home_howToPlay: '¿Cómo se juega?',
   home_howToPlayDesc: 'Aparece una ciudad, tocá el mapa donde creés que está. Cuanto más cerca, más puntos.',
   home_speedMultiplier: 'Multiplicador de velocidad',
@@ -119,9 +119,9 @@ const es = {
   game_trainingPrefix: '🎓 Entrenamiento',
 
   // ── Time Attack ──
-  ta_title: 'Contrareloj Extremo',
+  ta_title: '60s de Caos',
   ta_subtitle: '60 segundos. Ciudades infinitas. ¿Cuántas aciertas?',
-  ta_timeAttack: '⚡ Contrareloj',
+  ta_timeAttack: '⚡ 60s de Caos',
   ta_cities: 'ciudades',
   ta_secondsLeft: '{seconds} segundos restantes',
   ta_start: 'INICIAR',
