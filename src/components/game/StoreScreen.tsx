@@ -38,6 +38,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         return;
       }
 
+      // Si abrió un checkout externo (Mercado Pago web), NO acreditar en cliente:
+      // el webhook del servidor acredita tras el pago real. Aquí solo redirige.
+      if (result.redirecting) {
+        return;
+      }
+
+      // (Solo proveedores nativos que confirman en el cliente, p.ej. RevenueCat)
       // Payment succeeded — apply the entitlement locally
       if (product.type === 'lives') {
         purchaseLives(product.id);

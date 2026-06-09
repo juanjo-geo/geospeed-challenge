@@ -276,6 +276,8 @@ const es = {
   store_proActivated: 'GeoSpeed Pro activado',
   store_proYearlyActivated: 'GeoSpeed Pro Anual activado',
   store_proLifetimeActivated: 'GeoSpeed Pro para siempre activado',
+  store_restorePurchases: 'Restaurar compras',
+  store_noPurchasesToRestore: 'No hay compras para restaurar',
   store_purchaseError: 'Error al procesar la compra',
   store_proDesc: 'La experiencia completa sin límites',
   store_infiniteLives: 'Vidas infinitas',

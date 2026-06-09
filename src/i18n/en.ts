@@ -278,6 +278,8 @@ const en: Translations = {
   store_proActivated: 'GeoSpeed Pro activated',
   store_proYearlyActivated: 'GeoSpeed Pro Yearly activated',
   store_proLifetimeActivated: 'GeoSpeed Pro Lifetime activated',
+  store_restorePurchases: 'Restore Purchases',
+  store_noPurchasesToRestore: 'No purchases to restore',
   store_purchaseError: 'Error processing purchase',
   store_proDesc: 'The full experience without limits',
   store_infiniteLives: 'Unlimited lives',

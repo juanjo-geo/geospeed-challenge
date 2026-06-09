@@ -13,6 +13,8 @@
 
 export interface PurchaseResult {
   success: boolean;
+  /** true si la compra abrió un checkout externo (web) y NO debe acreditarse en cliente */
+  redirecting?: boolean;
   transactionId?: string;
   error?: string;
 }
@@ -177,9 +179,10 @@ class MercadoPagoProvider implements PaymentProvider {
       if (data?.error) return { success: false, error: data.error };
       if (!data?.url) return { success: false, error: 'No se pudo iniciar el pago' };
 
-      // Redirige al checkout de Mercado Pago
+      // Redirige al checkout de Mercado Pago. La acreditación la hace el webhook
+      // del servidor tras el pago real — el cliente NO debe acreditar nada aquí.
       window.location.href = data.url as string;
-      return { success: true };
+      return { success: true, redirecting: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Error iniciando el pago' };
     }

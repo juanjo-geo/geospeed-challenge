@@ -102,7 +102,7 @@ import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
-import { syncAfterGame } from '@/lib/cloudSync';
+import { syncAfterGame, pullFromCloud, setLocalData } from '@/lib/cloudSync';
 import { checkStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
@@ -175,6 +175,32 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Si llegamos a montar bien, limpiar el flag de recarga por chunk viejo (permite
   // que un futuro deploy vuelva a auto-recargar si hace falta).
   useEffect(() => { try { sessionStorage.removeItem('geospeed_chunk_reloaded'); } catch {} }, []);
+
+  // Al volver del checkout de Mercado Pago, traer de la nube lo que el webhook acreditó
+  // (vidas / Pro). El cliente NUNCA acredita pagos por sí mismo.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('purchase');
+    if (!status) return;
+    // Limpiar el parámetro de la URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('purchase');
+    window.history.replaceState({}, '', url.pathname);
+    if (status === 'success') {
+      // Reintentar la sincronización un par de veces: el webhook puede tardar unos segundos
+      let tries = 0;
+      const trySync = async () => {
+        tries++;
+        const cloud = await pullFromCloud();
+        if (cloud) {
+          if (cloud.energy) setLocalData('geospeed_energy', cloud.energy);
+          if (cloud.premium) setLocalData('geospeed_premium', cloud.premium);
+        }
+        if (tries < 4) setTimeout(trySync, 2500);
+      };
+      trySync();
+    }
+  }, []);
   const { t } = useI18n();
   const isMobile = useIsMobile();
   const routeParams = useParams<{ date?: string; seed?: string; code?: string }>();
