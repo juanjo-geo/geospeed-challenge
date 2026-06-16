@@ -330,7 +330,7 @@ const en: Translations = {
   wc_modeName: 'World Challenge',
   wc_homeButton: 'World Challenge',
   wc_homeDesc: 'Locate the home country of football stars',
-  wc_tagline: 'Locate where each star is from',
+  wc_tagline: 'Do you know where these players are from?',
   wc_question: 'Which country is {player} from?',
   wc_selectDifficulty: 'Choose your level',
   wc_start: 'PLAY',

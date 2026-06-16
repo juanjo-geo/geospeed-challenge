@@ -328,7 +328,7 @@ const es = {
   wc_modeName: 'Desafío Mundial',
   wc_homeButton: 'Desafío Mundial',
   wc_homeDesc: 'Ubica el país de las estrellas del fútbol',
-  wc_tagline: 'Ubica el país de origen de cada estrella',
+  wc_tagline: '¿Sabes de dónde son estos jugadores?',
   wc_question: '¿De qué país es {player}?',
   wc_selectDifficulty: 'Elige tu nivel',
   wc_start: 'JUGAR',

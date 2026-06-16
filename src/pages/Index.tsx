@@ -352,7 +352,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   useEffect(() => {
     // 'countdown' excluido a propósito: la cuenta regresiva (3-2-1-GO) se muestra primero;
     // el overlay 'gira el teléfono' aparece después, al entrar a la fase de juego real.
-    const playPhases: Phase[] = ['playing', 'ta-playing', 'mp-playing', 'daily', 'onboarding'];
+    const playPhases: Phase[] = ['playing', 'ta-playing', 'mp-playing', 'daily', 'onboarding', 'wc-playing'];
     const isTouch = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
     if (!playPhases.includes(phase) || !isTouch) {
       // Outside gameplay or desktop: always hide overlay
