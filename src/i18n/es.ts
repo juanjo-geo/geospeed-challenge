@@ -334,6 +334,7 @@ const es = {
   wc_start: 'JUGAR',
   wc_round: 'Ronda {round}/{total}',
   wc_band_exact: '¡Exacto!',
+  wc_goal: '¡GOOOL!',
   wc_band_neighbor: '¡Vecino!',
   wc_band_continent: 'Mismo continente',
   wc_band_far: 'Lejos...',

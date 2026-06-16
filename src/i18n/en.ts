@@ -336,6 +336,7 @@ const en: Translations = {
   wc_start: 'PLAY',
   wc_round: 'Round {round}/{total}',
   wc_band_exact: 'Exact!',
+  wc_goal: 'GOOOAL!',
   wc_band_neighbor: 'Neighbor!',
   wc_band_continent: 'Same continent',
   wc_band_far: 'Far...',

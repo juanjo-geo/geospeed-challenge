@@ -17,6 +17,8 @@ interface WorldMapCanvasProps {
   onCursorMove?: (lat: number, lon: number) => void;
   /** Equipped pin cosmetic config (fill/stroke/glow/size) */
   pinConfig?: { fill?: string; stroke?: string; glow?: string; size?: number } | null;
+  /** Si se define, dibuja este emoji como pin del usuario (ej. balón ⚽ del modo Mundial) */
+  pinEmoji?: string | null;
   /** Equipped trail cosmetic config (color as 'r,g,b' or colors[] for rainbow) */
   trailConfig?: { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | null;
 }
@@ -48,6 +50,7 @@ export default function WorldMapCanvas({
   highlightContinent,
   onCursorMove,
   pinConfig,
+  pinEmoji,
   trailConfig,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -527,12 +530,20 @@ export default function WorldMapCanvas({
       ctx.beginPath();
       ctx.arc(ux, uy, pinSize * pulse, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(ux, uy, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      if (pinEmoji) {
+        // Pin temático (ej. balón ⚽): dibuja el emoji centrado en el punto tocado.
+        ctx.font = `${Math.round((pinSize + 6) * pulse)}px system-ui`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pinEmoji, ux, uy);
+      } else {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ux, uy, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
 
       // Show correct pin and distance label only when line is complete
       if (progress >= 1) {
@@ -642,7 +653,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, trailConfig]);
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig]);
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);

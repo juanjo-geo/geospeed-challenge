@@ -836,7 +836,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 <div key={i} className="flex items-center px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border-b border-border last:border-0" role="row">
                   <span className="w-6 sm:w-7 text-center text-xs sm:text-sm">{MEDALS[i] || `${i + 1}.`}</span>
                   <span className="font-mono font-bold flex-1 text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{entry.initials}</span>
-                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1 sm:mr-1.5">{MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode}</span>
+                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1 sm:mr-1.5">{(entry.mode === 'mundial' ? '⚽' : MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode)}</span>
                   <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5 sm:mr-2">{difficultyLabel(entry.difficulty, t)}</span>
                   <span className="font-mono font-bold text-xs sm:text-sm">{entry.score.toLocaleString()}</span>
                 </div>
@@ -866,7 +866,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border max-h-[300px] sm:max-h-[350px] overflow-y-auto">
               {history.map((entry: GameHistoryEntry, i: number) => {
                 const dateStr = new Date(entry.date).toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
-                const modeLabel = MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode;
+                const modeLabel = (entry.mode === 'mundial' ? '⚽' : MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode);
                 return (
                   <div key={i} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs">
                     <span className="text-muted-foreground w-[44px] sm:w-[52px] shrink-0">{dateStr}</span>
