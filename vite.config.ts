@@ -18,4 +18,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      // @revenuecat/purchases-capacitor es un plugin NATIVO (Capacitor), solo se usa en la app móvil.
+      // En la web nunca se ejecuta (PaymentProvider.load() no se llama), así que lo marcamos externo
+      // para que el build de Vite/Rollup no intente resolverlo y falle.
+      external: ["@revenuecat/purchases-capacitor"],
+    },
+  },
 }));

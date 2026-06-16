@@ -91,7 +91,7 @@ class RevenueCatProvider implements PaymentProvider {
   /** Carga el plugin nativo bajo demanda. En web nunca se llama. */
   private async load(): Promise<any> {
     if (this.rc) return this.rc;
-    this.rc = await import('@revenuecat/purchases-capacitor');
+    this.rc = await import(/* @vite-ignore */ '@revenuecat/purchases-capacitor');
     return this.rc;
   }
 
