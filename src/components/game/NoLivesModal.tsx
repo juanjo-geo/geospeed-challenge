@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getEnergy, formatRegenTime } from '@/lib/energySystem';
-import { showRewardedAd } from '@/lib/adSystem';
+import { showRewardedAd, isAdAvailable } from '@/lib/adSystem';
 import { rewardAdWatched, isPro, STORE_PRODUCTS } from '@/lib/premiumSystem';
 import { useI18n } from '@/i18n';
 
@@ -97,8 +97,8 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
 
         {/* ── Action buttons (hidden when life restored) ── */}
         {!lifeRestored && <div className="flex flex-col gap-2 sm:gap-2.5 mb-3 sm:mb-4">
-          {/* Rewarded ad button (only for free users) */}
-          {!userIsPro && (
+          {/* Rewarded ad button (solo free users y si hay anuncios disponibles) */}
+          {!userIsPro && isAdAvailable() && (
             <button
               onClick={handleWatchAd}
               disabled={watchingAd}

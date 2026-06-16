@@ -36,6 +36,15 @@ type AdResult = 'completed' | 'skipped' | 'error' | 'blocked';
 let adProviderReady = false;
 let useRealAds = false;
 
+// ¿Corre dentro de la app nativa (Capacitor)? Ahí vivirá AdMob en el futuro.
+function isNativePlatform(): boolean {
+  return typeof window !== 'undefined' && Boolean((window as any).Capacitor);
+}
+// ¿Estamos en build de desarrollo? Solo entonces se permite el overlay placeholder.
+function isDevBuild(): boolean {
+  try { return Boolean((import.meta as any).env?.DEV); } catch { return false; }
+}
+
 declare global {
   interface Window {
     adsbygoogle: Array<Record<string, unknown>>;
@@ -100,8 +109,10 @@ export async function showInterstitial(): Promise<AdResult> {
     return showAdSenseInterstitial();
   }
 
-  // Dev placeholder
-  return showDevOverlay('interstitial');
+  // Sin proveedor real: en producción NO mostrar placeholder (molesta al usuario).
+  // En nativo, aquí entrará AdMob en el futuro. En dev mostramos el overlay para probar.
+  if (isDevBuild()) return showDevOverlay('interstitial');
+  return 'blocked';
 }
 
 /**
@@ -181,7 +192,11 @@ export async function showRewardedAd(): Promise<AdResult> {
     return showAdSenseRewarded();
   }
 
-  return showDevOverlay('rewarded');
+  // Sin proveedor real: en dev mostramos placeholder para probar el flujo; en
+  // producción (web sin AdSense) no hay anuncio que ofrecer → 'blocked'.
+  // En la app nativa, aquí entrará el rewarded de AdMob.
+  if (isDevBuild()) return showDevOverlay('rewarded');
+  return 'blocked';
 }
 
 async function showAdSenseRewarded(): Promise<AdResult> {
@@ -298,4 +313,19 @@ function showDevOverlay(type: 'interstitial' | 'rewarded'): Promise<AdResult> {
  */
 export function isAdReady(): boolean {
   return adProviderReady && !isPro();
+}
+
+/**
+ * ¿Hay realmente un anuncio que mostrar al usuario?
+ * - Web con AdSense configurado → sí
+ * - App nativa (AdMob, futuro) → sí
+ * - Build de desarrollo (placeholder) → sí
+ * - Web de producción SIN AdSense → no (para no ofrecer botones que no hacen nada)
+ */
+export function isAdAvailable(): boolean {
+  if (isPro()) return false;
+  if (useRealAds && (ADSENSE_SLOT_REWARDED || ADSENSE_SLOT_INTERSTITIAL)) return true;
+  if (isNativePlatform()) return true;
+  if (isDevBuild()) return true;
+  return false;
 }

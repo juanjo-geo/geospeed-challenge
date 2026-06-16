@@ -14,6 +14,7 @@ import TimerBar from './TimerBar';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
+import { getEquipped } from '@/lib/cosmetics';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -97,11 +98,18 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [streak, setStreak] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [isPageHidden, setIsPageHidden] = useState(false);
   const roundStartRef = useRef(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const scoreElRef = useRef<HTMLParagraphElement>(null);
 
   const currentCity = cities[currentRound];
+
+  // Cosméticos equipados (pin + trail) para que se VEAN en el mapa
+  const equippedPin = getEquipped('pin');
+  const equippedTrail = getEquipped('trail');
+  const pinConfig = equippedPin?.config as { fill?: string; stroke?: string; glow?: string; size?: number } | undefined;
+  const trailConfig = equippedTrail?.config as { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | undefined;
 
   // Hint circle: reset on each new round, reveal after 5 s of no click (training only)
   useEffect(() => {
@@ -124,9 +132,22 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
 
+  // Pause game when app loses focus / user switches apps (mobile)
+  useEffect(() => {
+    const onVisibility = () => setIsPageHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onVisibility);
+    window.addEventListener('focus', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('blur', onVisibility);
+      window.removeEventListener('focus', onVisibility);
+    };
+  }, []);
+
   // Single timer effect — pauses when waiting, portrait, or no city
   useEffect(() => {
-    if (isWaiting || !currentCity || isPortraitMobile) {
+    if (isWaiting || !currentCity || isPortraitMobile || isPageHidden) {
       clearInterval(timerRef.current);
       return;
     }
@@ -148,7 +169,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [currentRound, isWaiting, currentCity, isPortraitMobile]);
+  }, [currentRound, isWaiting, currentCity, isPortraitMobile, isPageHidden]);
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
@@ -465,7 +486,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Racha y multiplicador ── */}
           {(showStreak || mult) && (
-            <div className="w-full flex flex-col gap-1.5 shrink-0 mb-2">
+            <div className="w-full flex flex-col items-center gap-1.5 shrink-0 mb-2">
               {showStreak && (
                 <div className="text-center animate-score-pop">
                   <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
@@ -511,8 +532,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </svg>
           </div>
 
-          {/* ── Timer ── */}
-          <div className="w-full shrink-0">
+          {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto, p.ej. Samsung S23 FE landscape) */}
+          <div className="w-full shrink-0 sticky bottom-0 z-10 bg-card pt-2 mt-auto">
             <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} />
           </div>
         </div>
@@ -654,6 +675,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           gameMode={gameMode}
           hintZone={isTraining && !isWaiting && showHint ? { lat: currentCity.lat, lon: currentCity.lon } : null}
           highlightContinent={gameMode === 'world' && !isWaiting ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
+          pinConfig={pinConfig}
+          trailConfig={trailConfig}
         />
 
         {/* Round result — overlay on wide */}
@@ -732,8 +755,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
-            <div className={`flex flex-col justify-center gap-1.5 rounded-2xl border border-border/80 bg-card/70 p-3 sm:p-4 shadow-2xl backdrop-blur-md ${
-              isPortraitMobile ? 'w-full max-h-[55vh]' : 'max-h-[92%]'
+            <div className={`flex flex-col justify-center gap-1.5 rounded-2xl border border-border/80 bg-card/70 p-3 sm:p-4 shadow-2xl backdrop-blur-md overflow-y-auto ${
+              isPortraitMobile ? 'w-full max-h-[60vh]' : 'max-h-[88vh]'
             }`}>
               {/* Feedback + City combined */}
               <div className="text-center">

@@ -12,6 +12,7 @@ import Index from "./pages/Index.tsx";
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const Support = lazy(() => import("./pages/Support.tsx"));
+const Terms = lazy(() => import("./pages/Terms.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 /** Thin wrapper that extracts route params and forwards them to Index as props */
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/terms" element={<Terms />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

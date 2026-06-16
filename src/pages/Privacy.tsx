@@ -406,6 +406,7 @@ const Privacy = () => {
         {/* Footer */}
         <div className="mt-8 flex justify-center gap-6 text-sm text-[#d4d4c8]/40">
           <Link to="/" className="hover:text-[#f5c842]">Inicio / Home</Link>
+          <Link to="/terms" className="hover:text-[#f5c842]">Terminos / Terms</Link>
           <Link to="/support" className="hover:text-[#f5c842]">Soporte / Support</Link>
         </div>
       </div>

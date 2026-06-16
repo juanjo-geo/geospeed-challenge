@@ -17,6 +17,7 @@ export interface FeatureFlags {
   max_lives: number;
   enable_gamepad: boolean;
   enable_onboarding: boolean;
+  world_challenge_event: boolean;
   ab_group: 'control' | 'variant_a' | 'variant_b';
 }
 
@@ -36,6 +37,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   max_lives: 5,
   enable_gamepad: true,
   enable_onboarding: true,
+  world_challenge_event: false, // activar durante Mundial/Copa para destacar el modo
   ab_group: 'control', // overridden per-user below
 };
 

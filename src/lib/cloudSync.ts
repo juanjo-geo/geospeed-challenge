@@ -130,7 +130,7 @@ function getLocalData(key: string): unknown {
   }
 }
 
-function setLocalData(key: string, value: unknown): void {
+export function setLocalData(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch { /* ignore */ }

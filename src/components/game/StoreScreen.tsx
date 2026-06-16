@@ -33,11 +33,20 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       const result = await paymentProvider.purchase(product.id);
 
       if (!result.success) {
-        // Payment provider returned an error — show it and bail
-        setPurchaseMessage(result.error || t('store_purchaseError'));
+        // Si el usuario canceló, no mostramos error.
+        if (!result.cancelled) {
+          setPurchaseMessage(result.error || t('store_purchaseError'));
+        }
         return;
       }
 
+      // Si abrió un checkout externo (Mercado Pago web), NO acreditar en cliente:
+      // el webhook del servidor acredita tras el pago real. Aquí solo redirige.
+      if (result.redirecting) {
+        return;
+      }
+
+      // (Solo proveedores nativos que confirman en el cliente, p.ej. RevenueCat)
       // Payment succeeded — apply the entitlement locally
       if (product.type === 'lives') {
         purchaseLives(product.id);
@@ -73,8 +82,14 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         // Check if the restore revealed an active subscription
         const status = await paymentProvider.getSubscriptionStatus();
         if (status.isActive) {
-          // Re-activate Pro locally based on restored subscription
-          activatePro('subscription', 365);
+          // Re-activar Pro local según lo restaurado: sin fecha = lifetime;
+          // con fecha = suscripción hasta esa fecha.
+          if (status.expiresAt) {
+            const days = Math.max(1, Math.ceil((new Date(status.expiresAt).getTime() - Date.now()) / 86400000));
+            await activatePro('subscription', days);
+          } else {
+            await activatePro('lifetime');
+          }
           setProStatus(getProStatus());
           setPurchaseMessage(t('store_proActivated'));
         } else {
@@ -101,21 +116,29 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           ← {t('back')}
         </button>
         <div className="flex items-center gap-1.5">
-          {Array.from({ length: energy.maxLives }).map((_, i) => (
-            <span
-              key={i}
-              className="text-sm sm:text-base"
-              style={{
-                opacity: i < energy.lives ? 1 : 0.2,
-                filter: i < energy.lives ? 'none' : 'grayscale(1)',
-              }}
-            >
-              ❤️
+          {energy.lives > energy.maxLives ? (
+            <span className="flex items-center gap-0.5 text-sm sm:text-base font-bold">
+              ❤️ <span className="font-mono">×{energy.lives}</span>
             </span>
-          ))}
-          <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground ml-1">
-            {energy.lives}/{energy.maxLives}
-          </span>
+          ) : (
+            <>
+              {Array.from({ length: energy.maxLives }).map((_, i) => (
+                <span
+                  key={i}
+                  className="text-sm sm:text-base"
+                  style={{
+                    opacity: i < energy.lives ? 1 : 0.2,
+                    filter: i < energy.lives ? 'none' : 'grayscale(1)',
+                  }}
+                >
+                  ❤️
+                </span>
+              ))}
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground ml-1">
+                {energy.lives}/{energy.maxLives}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
