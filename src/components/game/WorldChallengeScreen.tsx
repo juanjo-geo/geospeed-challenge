@@ -11,12 +11,13 @@ import {
 import {
   playClick, playGood, playBad, playMedium,
   playGameOver, playRoundTransition, playTick, playTimeExpired, playButtonTap,
-  playVictory, playStreak,
+  playVictory, playStreak, playGo,
 } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticCelebration } from '@/lib/haptics';
 import { fireGoldBurst, fireRedBurst, fireCelebration, fireDistanceReveal } from '@/lib/confetti';
 import { fireScoreFly, fireMultiplierFeedback, fireStreakBorder, fireRoundFlash } from '@/lib/juiceAnimations';
-import { getMultiplier, haversineDistance, addGameHistory, updatePlayerStats, qualifiesForLeaderboard, addToLeaderboard } from '@/lib/gameUtils';
+import { getMultiplier, haversineDistance, formatDistance, addGameHistory, updatePlayerStats, qualifiesForLeaderboard, addToLeaderboard } from '@/lib/gameUtils';
+import { useIsPortraitMobile } from '@/hooks/use-mobile';
 import { useI18n } from '@/i18n';
 import { announce } from './ScreenReaderAnnouncer';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -41,8 +42,11 @@ interface Feedback {
   correctCountry: string;
   tappedCountry: string | null;
   points: number;
+  basePoints: number;
   multLabel: string;
   multEmoji: string;
+  timeUsed: number;
+  distanceKm: number | null;
   streak: number;
 }
 
@@ -53,10 +57,24 @@ const BAND_COLOR: Record<TerritoryBand, string> = {
   far: 'text-orange-400',
   ocean: 'text-red-500',
 };
+const BAND_EMOJI: Record<TerritoryBand, string> = {
+  exact: '⚽', neighbor: '🥅', continent: '🧤', far: '🟨', ocean: '🟥',
+};
 const BAND_I18N: Record<TerritoryBand, string> = {
   exact: 'wc_band_exact', neighbor: 'wc_band_neighbor', continent: 'wc_band_continent',
   far: 'wc_band_far', ocean: 'wc_band_ocean',
 };
+const WC_DIFF_KEY: Record<Difficulty, string> = {
+  basic: 'wc_diff_basic', easy: 'wc_diff_easy', medium: 'wc_diff_medium', hard: 'wc_diff_hard',
+};
+
+function streakKey(streak: number): string | null {
+  if (streak >= 7) return 'wc_streak_7';
+  if (streak >= 5) return 'wc_streak_5';
+  if (streak >= 3) return 'wc_streak_3';
+  if (streak >= 2) return 'wc_streak_2';
+  return null;
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -69,6 +87,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenProps) {
   const { t } = useI18n();
+  const isPortraitMobile = useIsPortraitMobile();
 
   const [stage, setStage] = useState<Stage>('select');
   const [difficulty, setDifficulty] = useState<Difficulty>('basic');
@@ -87,13 +106,13 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
   const [initials, setInitials] = useState('');
   const [qualifies, setQualifies] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [shared, setShared] = useState(false);
 
   const roundStartRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const resultsRef = useRef<WorldRoundResult[]>([]);
   const scoreRef = useRef(0);
   const clickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
-  // Refs para el guardado-al-salir (evita perder el score si no tocan "Guardar")
   const qualifiesRef = useRef(false);
   const submittedRef = useRef(false);
   const initialsRef = useRef('');
@@ -104,8 +123,8 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
   const current = roster[roundIdx];
   const showStreak = streak >= 2;
   const streakPct = streak >= 2 ? Math.min(60, (streak - 1) * 10) : 0;
+  const topStreakName = streakKey(streak);
 
-  // ── Lanzar partida tras elegir dificultad ──
   const startGame = useCallback((d: Difficulty) => {
     const pool = shuffle(getPlayersByDifficulty(d)).slice(0, TOTAL_ROUNDS);
     setRoster(pool);
@@ -121,14 +140,16 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     setIsAnimating(false);
     setSubmitted(false);
     setQualifies(false);
+    setShared(false);
     setCountdown(3);
     setStage('countdown');
   }, []);
 
-  // ── Cuenta regresiva 3-2-1 ──
+  // Cuenta regresiva 3-2-1 (silbato de inicio en el GO)
   useEffect(() => {
     if (stage !== 'countdown') return;
     if (countdown <= 0) {
+      playGo();
       setStage('playing');
       return;
     }
@@ -137,14 +158,12 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     return () => clearTimeout(id);
   }, [stage, countdown]);
 
-  // ── Inicio de cada ronda: reiniciar timer ──
   useEffect(() => {
     if (stage !== 'playing') return;
     setTimeLeft(MAX_TIME);
     roundStartRef.current = Date.now();
   }, [stage, roundIdx]);
 
-  // ── Temporizador por ronda ──
   useEffect(() => {
     if (stage !== 'playing' || isAnimating) return;
     timerRef.current = setInterval(() => {
@@ -175,7 +194,7 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
       rounds: rounds.length,
       difficulty,
       mode: WC_MODE,
-      avgDistance: exactCount, // reutilizado: nº de aciertos exactos
+      avgDistance: exactCount,
       type: 'classic',
     });
     qualifiesForLeaderboard(finalScore, WC_MODE).then(setQualifies).catch(() => setQualifies(false));
@@ -201,8 +220,6 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     const res = scoreWorldRound(current.country, lat, lon, timeUsed, streak);
     resultsRef.current.push(res);
     const mult = getMultiplier(timeUsed);
-
-    // Distancia aproximada click → centro del país correcto (para la línea + etiqueta del mapa)
     const centroid = getCountryCentroid(current.country);
     const dist = centroid ? haversineDistance(lat, lon, centroid.lat, centroid.lon) : null;
 
@@ -218,8 +235,11 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
       correctCountry: current.country,
       tappedCountry: res.tappedCountry,
       points: res.totalPoints,
+      basePoints: res.basePoints,
       multLabel: mult.label,
       multEmoji: mult.emoji,
+      timeUsed,
+      distanceKm: dist,
       streak: res.newStreak,
     });
     setIsAnimating(true);
@@ -227,9 +247,7 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     const playerName = current.name;
     const scoreTo = { x: Math.min(window.innerWidth - 40, window.innerWidth * 0.9), y: 40 };
 
-    // ── Feedback sensorial por banda (juice con sabor a fútbol) ──
     if (res.band === 'exact') {
-      // ¡GOOOL! — celebración grande + fanfarria
       playVictory(); hapticCelebration();
       fireCelebration(from);
     } else if (res.band === 'neighbor') {
@@ -242,7 +260,6 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
       fireRedBurst(from);
     }
 
-    // ── Animaciones tipo Clásico: vuelo de puntos, flash de ronda, multiplicador y racha ──
     if (res.totalPoints > 0) {
       setTimeout(() => fireScoreFly(res.totalPoints, from, scoreTo), 300);
     }
@@ -253,7 +270,6 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     if (res.newStreak >= 2) {
       setTimeout(() => { fireStreakBorder(res.newStreak); playStreak(); }, 380);
     }
-    // "Al otro lado del mundo": revelado dramático de distancia cuando el país está lejísimos
     if ((res.band === 'far' || res.band === 'ocean') && dist != null && dist >= 4000) {
       setTimeout(() => fireDistanceReveal(dist), 420);
     }
@@ -281,7 +297,6 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     }, FEEDBACK_MS);
   }, [stage, isAnimating, current, streak, score, roundIdx, roster.length, finishGame, t]);
 
-  // ── Guardado al ranking ──
   const submitScore = useCallback(async (ovScore?: number, ovInitials?: string) => {
     if (submittedRef.current) return;
     const ini = ((ovInitials ?? initialsRef.current) || 'YOU').toUpperCase().slice(0, 3) || 'YOU';
@@ -292,12 +307,20 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     await addToLeaderboard({ initials: ini, score: sc, difficulty, mode: WC_MODE, date: new Date().toISOString().split('T')[0] });
   }, [difficulty]);
 
-  /** Garantiza el guardado al abandonar la pantalla final (aunque no toquen "Guardar"). */
   const ensureSubmitted = useCallback(() => {
-    if (qualifiesRef.current && !submittedRef.current) {
-      void submitScore();
-    }
+    if (qualifiesRef.current && !submittedRef.current) void submitScore();
   }, [submitScore]);
+
+  const shareResult = useCallback(async () => {
+    const text = t('wc_shareText', { score });
+    const url = window.location.origin;
+    try {
+      if (navigator.share) await navigator.share({ title: 'GeoSpeed', text, url });
+      else await navigator.clipboard?.writeText(`${text}\n${url}`);
+      setShared(true);
+      setTimeout(() => setShared(false), 3000);
+    } catch { /* cancelado */ }
+  }, [t, score]);
 
   useEffect(() => {
     try { setInitials((localStorage.getItem('geospeed_initials') || '').toUpperCase().slice(0, 3)); } catch { /* ignore */ }
@@ -319,11 +342,11 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
               <button
                 key={d}
                 onClick={() => { playButtonTap(); setDifficulty(d); }}
-                className={`py-2 rounded-lg text-xs sm:text-sm font-bold border-2 transition-all active:scale-[0.97] ${
+                className={`py-2 px-1 rounded-lg text-[11px] sm:text-xs font-bold border-2 transition-all active:scale-[0.97] leading-tight ${
                   difficulty === d ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-muted-foreground/40'
                 }`}
               >
-                {t(`diff_${d}` as never)}
+                {t(WC_DIFF_KEY[d] as never)}
               </button>
             ))}
           </div>
@@ -349,7 +372,7 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
         <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 animate-fade-in">
-          {BALL} {t('wc_modeName')} — {t(`diff_${difficulty}` as never)}
+          {BALL} {t('wc_modeName')} — {t(WC_DIFF_KEY[difficulty] as never)}
         </p>
         <div className="font-black font-mono text-7xl sm:text-8xl md:text-9xl animate-countdown-zoom" style={{ color: 'hsl(var(--primary))' }}>
           {isGo ? 'GO!' : countdown}
@@ -393,7 +416,14 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
           )}
           {submitted && <p className="my-3 text-emerald-400 text-sm" role="status">🏆 {t('save')} ✓</p>}
 
-          <div className="flex gap-2 sm:gap-3 mt-4">
+          <button
+            onClick={shareResult}
+            className="w-full mb-2 py-2.5 rounded-lg font-bold text-xs sm:text-sm border-2 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 transition-all active:scale-[0.97]"
+          >
+            {shared ? '✓' : `${BALL} ${t('share')}`}
+          </button>
+
+          <div className="flex gap-2 sm:gap-3 mt-2">
             <button onClick={() => { playButtonTap(); ensureSubmitted(); setStage('select'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]">
               {t('wc_playAgain')}
             </button>
@@ -411,9 +441,10 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
   }
 
   // stage === 'playing'
+  const fbStreakName = feedback ? streakKey(feedback.streak) : null;
   return (
     <div className="fixed inset-0 z-40 flex flex-col game-bg">
-      {/* Barra superior: ronda, pregunta, racha, score */}
+      {/* Barra superior: ronda, pregunta (+ era), racha, score */}
       <div className="shrink-0 px-3 py-2 flex items-center gap-3 border-b border-border/60">
         <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
           {t('wc_round', { round: roundIdx + 1, total: roster.length })}
@@ -422,10 +453,16 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
           <p className="text-sm sm:text-base font-black truncate" style={{ color: 'hsl(var(--primary))' }}>
             {BALL} {current ? t('wc_question', { player: current.name }) : ''}
           </p>
+          {current?.era && (
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground -mt-0.5">
+              {t(`wc_era_${current.era}` as never)}
+            </p>
+          )}
         </div>
         {showStreak && (
-          <span className="text-[10px] sm:text-xs font-black text-orange-400 shrink-0">
+          <span className="text-[10px] sm:text-xs font-black text-orange-400 shrink-0 text-right leading-tight">
             🔥×{streak}{streakPct > 0 && <span className="ml-0.5 opacity-80">+{streakPct}%</span>}
+            {topStreakName && <span className="block text-[8px] sm:text-[9px]">{t(topStreakName as never)}</span>}
           </span>
         )}
         <span className="text-sm sm:text-base font-mono font-black shrink-0" style={{ color: 'hsl(var(--primary))' }}>
@@ -438,7 +475,7 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
         <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={!isAnimating} compact />
       </div>
 
-      {/* Mapa */}
+      {/* Mapa + tinte de cancha */}
       <div className="relative flex-1 min-h-0">
         <WorldMapCanvas
           onMapClick={handleMapClick}
@@ -450,29 +487,55 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
           highlightContinent={!isAnimating && current ? (COUNTRY_CONTINENT[current.country] ?? null) : null}
           pinEmoji={BALL}
         />
+        {/* Tinte verde sutil tipo cancha (solo este modo) */}
+        <div className="absolute inset-0 pointer-events-none z-[5]" style={{ background: 'radial-gradient(120% 85% at 50% 50%, transparent 58%, rgba(22,163,74,0.13))' }} />
 
-        {/* Panel de feedback — estilo similar a los otros modos (banda, puntos, multiplicador, racha) */}
+        {/* Panel de feedback — al costado (landscape) o abajo (portrait), como el Clásico, sin chocar con las animaciones de arriba */}
         {feedback && (
-          <div className="absolute inset-x-0 top-3 flex justify-center pointer-events-none z-10 animate-fade-in-up px-3">
-            <div className="bg-card/95 backdrop-blur-md border border-border rounded-xl px-4 py-2.5 text-center shadow-2xl max-w-[92%]">
-              <p className={`text-xl sm:text-2xl font-black ${BAND_COLOR[feedback.band]}`} style={{ fontFamily: 'Impact, system-ui' }}>
-                {BALL} {feedback.band === 'exact' ? t('wc_goal') : t(BAND_I18N[feedback.band] as never)}
-                {feedback.points > 0 ? ` +${feedback.points.toLocaleString()}` : ''}
-              </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-                {t('wc_correctWas', { country: feedback.correctCountry })}
-                {feedback.tappedCountry && feedback.tappedCountry !== feedback.correctCountry
-                  ? ` · ${t('wc_youTapped', { country: feedback.tappedCountry })}`
-                  : ''}
-              </p>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <span className="text-xs sm:text-sm font-mono font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                  {feedback.multEmoji} {feedback.multLabel}
+          <div
+            className={`absolute z-20 flex animate-slide-in-right ${
+              isPortraitMobile ? 'inset-x-0 bottom-0 justify-center pb-2 px-2 items-end' : 'inset-y-0 right-0 items-center pr-2'
+            }`}
+            role="dialog"
+          >
+            <div className={`flex flex-col justify-center gap-2 rounded-2xl border border-border/80 bg-card/85 p-4 shadow-2xl backdrop-blur-md overflow-y-auto ${
+              isPortraitMobile ? 'w-full max-w-md max-h-[58vh]' : 'w-[clamp(18rem,40vw,28rem)] max-h-[92%]'
+            }`}>
+              <div className="text-center">
+                <span className="text-4xl sm:text-5xl block animate-record-pop" style={{ filter: 'drop-shadow(0 0 10px currentColor)' }}>
+                  {BAND_EMOJI[feedback.band]}
                 </span>
-                {feedback.streak >= 2 && (
-                  <span className="text-xs sm:text-sm font-black text-orange-400">🔥×{feedback.streak}</span>
+                <p className={`mt-1 text-xl sm:text-2xl font-black ${BAND_COLOR[feedback.band]}`} style={{ fontFamily: 'Impact, system-ui' }}>
+                  {feedback.band === 'exact' ? t('wc_goal') : t(BAND_I18N[feedback.band] as never)}
+                </p>
+                {fbStreakName && (
+                  <p className="mt-0.5 animate-score-pop text-sm font-black text-orange-400">🔥 {t(fbStreakName as never)} ×{feedback.streak}</p>
                 )}
+                <div className="border-t border-border/50 mt-2 pt-2">
+                  <h3 className="text-lg sm:text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{feedback.correctCountry}</h3>
+                  {feedback.tappedCountry && feedback.tappedCountry !== feedback.correctCountry && (
+                    <p className="text-xs text-muted-foreground">{t('wc_youTapped', { country: feedback.tappedCountry })}</p>
+                  )}
+                </div>
               </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-muted/50 p-2 text-center">
+                  <p className="text-[9px] uppercase text-muted-foreground">{feedback.multEmoji}</p>
+                  <p className="font-mono text-sm font-bold">{feedback.multLabel}</p>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-2 text-center">
+                  <p className="text-[9px] uppercase text-muted-foreground">{t('game_time')}</p>
+                  <p className="font-mono text-sm font-bold">{feedback.timeUsed}s</p>
+                </div>
+                <div className="rounded-xl p-2 text-center border" style={{ background: 'hsl(var(--primary) / 0.12)', borderColor: 'hsl(var(--primary) / 0.35)' }}>
+                  <p className="text-[9px] uppercase font-bold" style={{ color: 'hsl(var(--primary))' }}>{t('game_total')}</p>
+                  <p className="font-mono text-base font-black" style={{ color: 'hsl(var(--primary))' }}>{feedback.points.toLocaleString()}</p>
+                </div>
+              </div>
+              {feedback.distanceKm != null && (
+                <p className="text-center text-[10px] text-muted-foreground">{formatDistance(feedback.distanceKm)}</p>
+              )}
             </div>
           </div>
         )}
