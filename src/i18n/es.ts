@@ -323,6 +323,31 @@ const es = {
   sr_announceResult: '{feedback}. {city}, {country}. Distancia: {distance} kilómetros. {points} puntos. Ronda {round} de {total}.',
   sr_announceGameOver: 'Partida terminada. Puntuación total: {score} puntos. {rounds} rondas completadas. Distancia promedio: {avg} kilómetros.',
   sr_timeAttackResult: '{city}. {distance} kilómetros. +{points} puntos. {time} segundos restantes.',
+
+  // ── Desafío Mundial (módulo Mundial) ──
+  wc_modeName: 'Desafío Mundial',
+  wc_homeButton: 'Desafío Mundial',
+  wc_homeDesc: 'Ubica el país de las estrellas del fútbol',
+  wc_tagline: 'Ubica el país de origen de cada estrella',
+  wc_question: '¿De qué país es {player}?',
+  wc_selectDifficulty: 'Elige tu nivel',
+  wc_start: 'JUGAR',
+  wc_round: 'Ronda {round}/{total}',
+  wc_band_exact: '¡Exacto!',
+  wc_band_neighbor: '¡Vecino!',
+  wc_band_continent: 'Mismo continente',
+  wc_band_far: 'Lejos...',
+  wc_band_ocean: 'Fuera del mapa',
+  wc_correctWas: 'Era {country}',
+  wc_youTapped: 'Tocaste {country}',
+  wc_finalTitle: '¡Desafío completado!',
+  wc_finalTimeout: '¡Se acabó el tiempo!',
+  wc_exactCount: '{n} exactos',
+  wc_playAgain: 'Jugar de nuevo',
+  wc_banner: '🏆 Desafío Mundial',
+  sr_worldChallengeResult: '{player} es de {country}. {band}. {points} puntos. Ronda {round} de {total}.',
+  wc_eventLive: '🔴 EN VIVO',
+  wc_eventFomo: '¡Solo durante el evento — juega ya!',
 } as const;
 
 export type TranslationKey = keyof typeof es;

@@ -721,27 +721,21 @@ export function playMedium() {
   unlockAudio();
   const variation = pick([0, 1, 2]);
 
-  // Más "juicy" que antes: aciertos regulares ahora suben (no decaen) y llevan
-  // un brillo sutil, para que el modo clásico se sienta tan satisfactorio como
-  // Campo de Tiro. Sigue siendo claramente inferior a playGood/playPerfect.
   if (variation === 0) {
-    // Rising whole-tone pair + soft shimmer
-    const base = vary(466, 0.08); // ~A#4
-    playTone(base, 0.12, 'sine', 0.10);
-    setTimeout(() => playTone(base * 1.122, 0.18, 'sine', 0.11), 80); // up a whole tone
-    setTimeout(() => playCoinBell(vary(2400, 0.1), 0.10, 0.022), 130); // gentle sparkle
+    // Flat two-note — not exciting, not punishing
+    const base = vary(440, 0.1);
+    playTone(base, 0.12, 'triangle', 0.08);
+    setTimeout(() => playTone(base * 0.94, 0.18, 'triangle', 0.07), 80); // slight drop
   } else if (variation === 1) {
-    // Warm tone that lifts into a soft bell
-    const base = vary(440, 0.08); // A4
-    playTone(base, 0.16, 'sine', 0.10, { detune: vary(0, 10) });
-    setTimeout(() => playTone(base * 1.19, 0.16, 'triangle', 0.09), 90); // up a minor third
-    setTimeout(() => playCoinBell(vary(2100, 0.1), 0.10, 0.02), 150);
+    // Single warm tone with wobble
+    const base = vary(392, 0.1); // G4
+    playTone(base, 0.2, 'sine', 0.09, { detune: vary(0, 15) });
+    setTimeout(() => playImpact(vary(150, 0.1), 0.06, 0.04), 50);
   } else {
-    // Quick two-step lift with a light pop
-    const base = vary(494, 0.08); // B4
-    playTone(base, 0.11, 'sine', 0.10);
-    setTimeout(() => playTone(base * 1.122, 0.16, 'sine', 0.10), 70);
-    setTimeout(() => playImpact(vary(220, 0.1), 0.05, 0.03), 110);
+    // Quick descending pair
+    const base = vary(500, 0.1);
+    playTone(base, 0.1, 'triangle', 0.08);
+    setTimeout(() => playTone(base * 0.84, 0.15, 'triangle', 0.07), 70);
   }
 }
 

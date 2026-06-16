@@ -11,6 +11,7 @@ import EnergyBar from './EnergyBar';
 // ThemeToggle removed — neon-only mode
 import AutoDemo from './AutoDemo';
 import { playButtonTap } from '@/lib/sounds';
+import { getFlag } from '@/lib/featureFlags';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 // useA11y removed — colorblind toggle removed
 import { useI18n, LOCALES } from '@/i18n';
@@ -22,6 +23,7 @@ interface HomeScreenProps {
   onMultiplayer: () => void;
   onTimeAttack: () => void;
   onDailyChallenge: () => void;
+  onWorldChallenge: () => void;
   onStartTraining: () => void;
   onSpeedDemon?: () => void;
   onOpenStore?: () => void;
@@ -62,7 +64,7 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
   africa:   { level: 5, label: 'Nv.5' },
 };
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile, onOpenBattlePass }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile, onOpenBattlePass }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
   // colorblind toggle removed
   const { t, locale, setLocale } = useI18n();
@@ -622,6 +624,40 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </button>
         </div>
       </div>
+
+      {/* ── Desafío Mundial (módulo Mundial) ── */}
+      {(() => {
+        const wcEvent = getFlag('world_challenge_event');
+        return (
+          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
+            <button
+              onClick={() => { playButtonTap(); onWorldChallenge(); }}
+              className={`w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                wcEvent
+                  ? 'border-emerald-400 bg-gradient-to-r from-emerald-500/20 to-green-500/15 animate-pulse-glow-subtle'
+                  : 'border-emerald-500/50 hover:border-emerald-500 bg-gradient-to-r from-emerald-500/10 to-green-500/10'
+              }`}
+              aria-label={t('wc_modeName')}
+            >
+              <span className="text-xl sm:text-2xl shrink-0">⚽</span>
+              <div className="text-left flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-xs sm:text-sm text-emerald-400">{t('wc_banner')}</span>
+                  {wcEvent && (
+                    <span className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-500/90 text-white animate-pulse">
+                      {t('wc_eventLive')}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
+                  {wcEvent ? t('wc_eventFomo') : t('wc_homeDesc')}
+                </div>
+              </div>
+              <span className="text-[10px] sm:text-xs font-mono text-emerald-400/70 shrink-0">▶</span>
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ── Referral — Invita amigos ── */}
       {!isNewPlayer && (() => {

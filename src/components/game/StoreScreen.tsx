@@ -38,13 +38,6 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         return;
       }
 
-      // Si abrió un checkout externo (Mercado Pago web), NO acreditar en cliente:
-      // el webhook del servidor acredita tras el pago real. Aquí solo redirige.
-      if (result.redirecting) {
-        return;
-      }
-
-      // (Solo proveedores nativos que confirman en el cliente, p.ej. RevenueCat)
       // Payment succeeded — apply the entitlement locally
       if (product.type === 'lives') {
         purchaseLives(product.id);
@@ -108,29 +101,21 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           ← {t('back')}
         </button>
         <div className="flex items-center gap-1.5">
-          {energy.lives > energy.maxLives ? (
-            <span className="flex items-center gap-0.5 text-sm sm:text-base font-bold">
-              ❤️ <span className="font-mono">×{energy.lives}</span>
+          {Array.from({ length: energy.maxLives }).map((_, i) => (
+            <span
+              key={i}
+              className="text-sm sm:text-base"
+              style={{
+                opacity: i < energy.lives ? 1 : 0.2,
+                filter: i < energy.lives ? 'none' : 'grayscale(1)',
+              }}
+            >
+              ❤️
             </span>
-          ) : (
-            <>
-              {Array.from({ length: energy.maxLives }).map((_, i) => (
-                <span
-                  key={i}
-                  className="text-sm sm:text-base"
-                  style={{
-                    opacity: i < energy.lives ? 1 : 0.2,
-                    filter: i < energy.lives ? 'none' : 'grayscale(1)',
-                  }}
-                >
-                  ❤️
-                </span>
-              ))}
-              <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground ml-1">
-                {energy.lives}/{energy.maxLives}
-              </span>
-            </>
-          )}
+          ))}
+          <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground ml-1">
+            {energy.lives}/{energy.maxLives}
+          </span>
         </div>
       </div>
 

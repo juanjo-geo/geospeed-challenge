@@ -14,7 +14,6 @@ import ReplayMap from './ReplayMap';
 import { type GameMode } from '@/data/cities';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
-import { tLevelTitle } from '@/lib/gameI18n';
 import { recordGameResult, getContextualOffer, type FrustrationOffer } from '@/lib/frustrationDetector';
 import FrustrationOfferModal from './FrustrationOfferModal';
 
@@ -48,7 +47,7 @@ export default function FinalResultScreen({
   totalRounds = 13,
 }: FinalResultScreenProps) {
   const { user, displayName: authName } = useAuth();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [initials, setInitials] = useState('');
   const [saved, setSaved] = useState(false);
   const [qualifies, setQualifies] = useState(false);
@@ -91,7 +90,7 @@ export default function FinalResultScreen({
     setPreviousBest(stats.bestScore);
     const prevXp = calculateXP();
     updatePlayerStats(totalScore, distances);
-    qualifiesForLeaderboard(totalScore, mode).then(setQualifies);
+    qualifiesForLeaderboard(totalScore).then(setQualifies);
     if (reason === 'complete') playVictory();
 
     // Level up check — play fanfare if player leveled up
@@ -298,7 +297,7 @@ export default function FinalResultScreen({
             <span className="text-lg sm:text-xl">{level.emoji}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between">
-                <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {tLevelTitle(level.title, locale)}</p>
+                <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {level.title}</p>
                 <span className="text-[9px] sm:text-[10px] text-muted-foreground">{level.xp.toLocaleString()} XP</span>
               </div>
               <div className="w-full h-1.5 sm:h-2 bg-background rounded-full mt-1 overflow-hidden relative">
@@ -331,12 +330,9 @@ export default function FinalResultScreen({
             boxShadow: '0 6px 24px hsl(var(--primary) / 0.4)',
             animation: 'fade-in-up 0.5s ease-out, pulse 2s ease-in-out 2s infinite',
           }}
-          aria-label="Jugar otra vez con las mismas ciudades para aprendértelas"
+          aria-label="Jugar otra vez inmediatamente"
         >
-          <span className="flex flex-col items-center leading-tight">
-            <span>🔄 OTRA VEZ</span>
-            <span className="text-[10px] sm:text-xs font-bold opacity-80 normal-case">¡Apréndete estas! · mismas ciudades</span>
-          </span>
+          🔄 OTRA VEZ
         </button>
 
         {/* Best round highlight */}

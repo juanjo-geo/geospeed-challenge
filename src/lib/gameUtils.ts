@@ -82,40 +82,19 @@ export async function getLeaderboard(mode?: string, period: LeaderboardPeriod = 
 
     const { data, error } = await query;
     if (error) throw error;
-    const cloud: LeaderboardEntry[] = (data || []).map(row => ({
+    return (data || []).map(row => ({
       initials: row.initials,
       score: row.score,
       difficulty: row.difficulty,
       mode: row.mode || 'world',
       date: row.created_at.split('T')[0],
     }));
-    // Mezclar con entradas locales (por si submit-score falló pero se guardó local)
-    return mergeLeaderboards(cloud, getLeaderboardLocal(), mode);
   } catch {
-    return getLeaderboardLocal(mode);
+    try { return JSON.parse(localStorage.getItem('geospeed_leaderboard') || '[]'); } catch { return []; }
   }
-}
-
-/** Combina dos listas de leaderboard, deduplica por iniciales+score y ordena desc */
-function mergeLeaderboards(a: LeaderboardEntry[], b: LeaderboardEntry[], mode?: string): LeaderboardEntry[] {
-  const all = [...a, ...b].filter(e => !mode || (e.mode || 'world') === mode);
-  const seen = new Set<string>();
-  const unique: LeaderboardEntry[] = [];
-  for (const e of all) {
-    const key = `${e.initials}|${e.score}|${e.mode || 'world'}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push(e);
-  }
-  unique.sort((x, y) => y.score - x.score);
-  return unique.slice(0, 10);
 }
 
 export async function addToLeaderboard(entry: LeaderboardEntry): Promise<boolean> {
-  // 1) Guardar SIEMPRE en local primero — así el score nunca se pierde aunque la nube falle
-  saveLeaderboardLocal(entry);
-
-  // 2) Intentar enviar a la nube (best-effort)
   try {
     const body: Record<string, unknown> = {
       initials: entry.initials,
@@ -128,51 +107,25 @@ export async function addToLeaderboard(entry: LeaderboardEntry): Promise<boolean
     const { data, error } = await supabase.functions.invoke('submit-score', { body });
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
-  } catch (e) {
-    // La nube falló pero el score ya quedó local; el ranking lo mostrará igual
-    console.warn('[leaderboard] submit-score falló, guardado solo local:', e);
-  }
 
-  // 3) Confirmar que la entrada está presente (nube o local)
-  const board = await getLeaderboard(entry.mode);
-  return board.some(e => e.initials === entry.initials && e.score === entry.score);
-}
-
-/** Guarda una entrada en el leaderboard local (dedup + top 10) */
-function saveLeaderboardLocal(entry: LeaderboardEntry): void {
-  try {
+    const board = await getLeaderboard();
+    return board.some(e => e.initials === entry.initials && e.score === entry.score);
+  } catch {
     const board = getLeaderboardLocal();
     board.push(entry);
     board.sort((a, b) => b.score - a.score);
-    const seen = new Set<string>();
-    const unique = board.filter(e => {
-      const k = `${e.initials}|${e.score}|${e.mode || 'world'}`;
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-    localStorage.setItem('geospeed_leaderboard', JSON.stringify(unique.slice(0, 50)));
-  } catch { /* ignore quota errors */ }
-}
-
-export async function qualifiesForLeaderboard(score: number, mode?: string): Promise<boolean> {
-  if (score <= 0) return false;
-  try {
-    // Comparar contra el ranking DEL MODO que el jugador ve (no el global mezclado)
-    const board = await getLeaderboard(mode);
-    return board.length < 10 || score > board[board.length - 1].score;
-  } catch {
-    // Si falla la consulta, ser permisivo: mejor permitir guardar que perder el score
-    return true;
+    localStorage.setItem('geospeed_leaderboard', JSON.stringify(board.slice(0, 10)));
+    return board.slice(0, 10).some(e => e.initials === entry.initials && e.score === entry.score);
   }
 }
 
-function getLeaderboardLocal(mode?: string): LeaderboardEntry[] {
-  try {
-    const all: LeaderboardEntry[] = JSON.parse(localStorage.getItem('geospeed_leaderboard') || '[]');
-    const filtered = mode ? all.filter(e => (e.mode || 'world') === mode) : all;
-    return filtered.sort((a, b) => b.score - a.score).slice(0, 10);
-  } catch { return []; }
+export async function qualifiesForLeaderboard(score: number): Promise<boolean> {
+  const board = await getLeaderboard();
+  return board.length < 10 || score > board[board.length - 1].score;
+}
+
+function getLeaderboardLocal(): LeaderboardEntry[] {
+  try { return JSON.parse(localStorage.getItem('geospeed_leaderboard') || '[]'); } catch { return []; }
 }
 
 // --- Player Stats (localStorage — personal) ---

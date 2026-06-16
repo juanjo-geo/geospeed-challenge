@@ -88,6 +88,7 @@ const MultiplayerLobby = lazyWithReload(() => import('@/components/game/Multipla
 const WaitingRoom = lazyWithReload(() => import('@/components/game/WaitingRoom'));
 const MultiplayerResultScreen = lazyWithReload(() => import('@/components/game/MultiplayerResultScreen'));
 const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
+const WorldChallengeScreen = lazyWithReload(() => import('@/components/game/WorldChallengeScreen'));
 const TutorialOverlay = lazyWithReload(() => import('@/components/game/TutorialOverlay'));
 const OnboardingGame = lazyWithReload(() => import('@/components/game/OnboardingGame'));
 const StoreScreen = lazyWithReload(() => import('@/components/game/StoreScreen'));
@@ -119,7 +120,7 @@ import {
   startNotificationLoop,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily';
+type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -500,6 +501,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => setPhase('profile'), []);
+  const handleWorldChallenge = useCallback(() => { gameKeyRef.current += 1; setPhase('wc-playing'); }, []);
   const handleOpenBattlePass = useCallback(() => setPhase('battlepass'), []);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
@@ -830,6 +832,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       );
     }
 
+    if (phase === 'wc-playing') {
+      return (
+        <WorldChallengeScreen
+          key={`wc-${gameKeyRef.current}`}
+          onExit={handleGoHome}
+        />
+      );
+    }
+
     if (phase === 'ta-playing') {
       return (
         <TimeAttackScreen
@@ -1012,7 +1023,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} />
     );
   };
 

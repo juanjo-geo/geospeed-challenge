@@ -17,12 +17,9 @@ import {
 } from '@/lib/cosmetics';
 import { getProStatus } from '@/lib/premiumSystem';
 import { playButtonTap, playLevelUp, playShareSuccess } from '@/lib/sounds';
-import { useI18n } from '@/i18n';
-import { tCategory, tRarity, tCosmeticName, tCosmeticDesc } from '@/lib/gameI18n';
 
 interface BattlePassScreenProps {
   onClose: () => void;
-  onOpenStore?: () => void;
 }
 
 const CATEGORY_LABELS: Record<CosmeticCategory, string> = {
@@ -32,8 +29,7 @@ const CATEGORY_LABELS: Record<CosmeticCategory, string> = {
   mapTheme: '🗺️ Mapas',
 };
 
-export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScreenProps) {
-  const { t: tr, locale } = useI18n();
+export default function BattlePassScreen({ onClose }: BattlePassScreenProps) {
   const [tab, setTab] = useState<'pass' | 'collection'>('pass');
   const [selectedCategory, setSelectedCategory] = useState<CosmeticCategory>('pin');
   const [, setRefresh] = useState(0);
@@ -68,7 +64,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
           onClick={() => { playButtonTap(); onClose(); }}
           className="text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg border border-border/60 hover:border-border bg-card/50 active:scale-[0.97]"
         >
-          ← {tr('back')}
+          ← Volver
         </button>
         <h1 className="text-base sm:text-lg font-bold" style={{ color: '#f5c842' }}>
           🏆 Battle Pass
@@ -88,7 +84,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                 : 'bg-card/50 text-muted-foreground border border-border/30'
             }`}
           >
-            {t === 'pass' ? tr('bp_tabPass') : tr('bp_tabCollection')}
+            {t === 'pass' ? '🎖️ Pase de Batalla' : '🎒 Colección'}
           </button>
         ))}
       </div>
@@ -98,11 +94,11 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
           {/* Progress bar */}
           <div className="bg-card/60 rounded-xl p-3 border border-border/30">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-bold text-foreground">{tr('bp_level')} {bpLevel.level}</span>
+              <span className="text-sm font-bold text-foreground">Nivel {bpLevel.level}</span>
               <span className="text-xs text-muted-foreground">
                 {bpLevel.xpForNext > 0
                   ? `${bpLevel.xpInLevel.toLocaleString()} / ${bpLevel.xpForNext.toLocaleString()} XP`
-                  : tr('bp_max')}
+                  : '¡MAX!'}
               </span>
             </div>
             <div className="h-3 rounded-full bg-border/30 overflow-hidden">
@@ -115,7 +111,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
               />
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              {tr('bp_season')} {bp.seasonId} · {tr('bp_totalXp')}: {bpLevel.totalXP.toLocaleString()}
+              Temporada {bp.seasonId} · XP total: {bpLevel.totalXP.toLocaleString()}
             </p>
           </div>
 
@@ -155,7 +151,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                         cosmetic={freeCosmetic}
                         reached={reached}
                         claimed={freeClaimed || isUnlocked(freeCosmetic.id)}
-                        label={tr('bp_free')}
+                        label="GRATIS"
                       />
                     ) : (
                       <span className="text-[10px] text-muted-foreground/50">—</span>
@@ -170,7 +166,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                           cosmetic={premCosmetic}
                           reached={reached}
                           claimed={premClaimed || isUnlocked(premCosmetic.id)}
-                          label={tr('bp_pro')}
+                          label="PRO"
                           isPremium
                         />
                         {reached && isPro && !premClaimed && !isUnlocked(premCosmetic.id) && (
@@ -178,7 +174,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                             onClick={() => handleClaimPremium(lvl.level)}
                             className="absolute -top-1 -right-1 bg-[#f5c842] text-[#0A0E18] text-[8px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
                           >
-                            {tr('bp_claimShort')}
+                            RECLAMAR
                           </button>
                         )}
                       </div>
@@ -192,13 +188,10 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
           </div>
 
           {!isPro && (
-            <button
-              onClick={() => { playButtonTap(); if (onOpenStore) onOpenStore(); }}
-              className="w-full bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-3 border border-purple-500/30 text-center transition-all active:scale-[0.97] hover:border-purple-400/60"
-            >
-              <p className="text-sm font-bold text-purple-300">{tr('bp_goPro')}</p>
-              <p className="text-[10px] text-purple-300/70 mt-1">{tr('bp_goProDesc')}</p>
-            </button>
+            <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-3 border border-purple-500/30 text-center">
+              <p className="text-sm font-bold text-purple-300">⭐ Hazte Pro</p>
+              <p className="text-[10px] text-purple-300/70 mt-1">Desbloquea las recompensas premium del pase de batalla</p>
+            </div>
           )}
         </div>
       ) : (
@@ -216,7 +209,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                     : 'bg-card/50 text-muted-foreground border border-border/30'
                 }`}
               >
-                {tCategory(cat, CATEGORY_LABELS[cat], locale)}
+                {CATEGORY_LABELS[cat]}
               </button>
             ))}
           </div>
@@ -240,7 +233,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                 >
                   {equipped && (
                     <span className="absolute top-1.5 right-1.5 text-[8px] font-bold bg-[#f5c842] text-[#0A0E18] px-1.5 py-0.5 rounded-full">
-                      {tr('bp_equipped')}
+                      EQUIPADO
                     </span>
                   )}
 
@@ -248,8 +241,8 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                     <span className="text-2xl">{cosmetic.emoji}</span>
                   </div>
 
-                  <p className="text-xs font-bold text-foreground text-center">{tCosmeticName(cosmetic.id, cosmetic.name, locale)}</p>
-                  <p className="text-[9px] text-muted-foreground text-center mt-0.5">{tCosmeticDesc(cosmetic.id, cosmetic.description, locale)}</p>
+                  <p className="text-xs font-bold text-foreground text-center">{cosmetic.name}</p>
+                  <p className="text-[9px] text-muted-foreground text-center mt-0.5">{cosmetic.description}</p>
 
                   <div className="flex justify-center mt-1.5">
                     <span
@@ -260,7 +253,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                         border: `1px solid ${RARITY_COLORS[cosmetic.rarity]}40`,
                       }}
                     >
-                      {tRarity(cosmetic.rarity, RARITY_LABELS[cosmetic.rarity], locale)}
+                      {RARITY_LABELS[cosmetic.rarity]}
                     </span>
                   </div>
 
@@ -269,7 +262,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                       onClick={() => handleEquip(cosmetic.id)}
                       className="w-full mt-2 py-1 rounded-lg text-[10px] font-bold bg-[#f5c842]/20 text-[#f5c842] border border-[#f5c842]/30 active:scale-[0.97]"
                     >
-                      {tr('bp_equip')}
+                      Equipar
                     </button>
                   )}
 
@@ -302,13 +295,12 @@ function RewardPill({ cosmetic, reached, claimed, label, isPremium }: {
   label: string;
   isPremium?: boolean;
 }) {
-  const { locale } = useI18n();
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-sm">{claimed ? cosmetic.emoji : '❓'}</span>
       <div className="min-w-0">
         <p className={`text-[10px] font-bold truncate ${claimed ? 'text-foreground' : 'text-muted-foreground/50'}`}>
-          {claimed ? tCosmeticName(cosmetic.id, cosmetic.name, locale) : '???'}
+          {claimed ? cosmetic.name : '???'}
         </p>
         <span
           className="text-[7px] font-bold px-1 py-0.5 rounded"

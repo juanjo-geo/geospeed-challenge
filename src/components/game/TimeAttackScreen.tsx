@@ -293,8 +293,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             </svg>
           </div>
 
-          {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto) */}
-          <div className="w-full shrink-0 sticky bottom-0 z-10 bg-card pt-2 mt-auto">
+          {/* ── Timer ── */}
+          <div className="w-full shrink-0">
             <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">{t('game_timeLeft')}</p>
             <div className={`text-center text-3xl font-mono font-black mb-1.5 ${isLow ? 'text-red-400 animate-pulse' : 'text-foreground'}`} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
               {globalTime}s

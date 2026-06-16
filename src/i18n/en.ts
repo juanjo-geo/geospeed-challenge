@@ -325,6 +325,31 @@ const en: Translations = {
   sr_announceResult: '{feedback}. {city}, {country}. Distance: {distance} kilometers. {points} points. Round {round} of {total}.',
   sr_announceGameOver: 'Game over. Total score: {score} points. {rounds} rounds completed. Average distance: {avg} kilometers.',
   sr_timeAttackResult: '{city}. {distance} kilometers. +{points} points. {time} seconds remaining.',
+
+  // ── World Challenge (Mundial module) ──
+  wc_modeName: 'World Challenge',
+  wc_homeButton: 'World Challenge',
+  wc_homeDesc: 'Locate the home country of football stars',
+  wc_tagline: 'Locate where each star is from',
+  wc_question: 'Which country is {player} from?',
+  wc_selectDifficulty: 'Choose your level',
+  wc_start: 'PLAY',
+  wc_round: 'Round {round}/{total}',
+  wc_band_exact: 'Exact!',
+  wc_band_neighbor: 'Neighbor!',
+  wc_band_continent: 'Same continent',
+  wc_band_far: 'Far...',
+  wc_band_ocean: 'Off the map',
+  wc_correctWas: 'It was {country}',
+  wc_youTapped: 'You tapped {country}',
+  wc_finalTitle: 'Challenge complete!',
+  wc_finalTimeout: 'Time\'s up!',
+  wc_exactCount: '{n} exact',
+  wc_playAgain: 'Play again',
+  wc_banner: '🏆 World Challenge',
+  sr_worldChallengeResult: '{player} is from {country}. {band}. {points} points. Round {round} of {total}.',
+  wc_eventLive: '🔴 LIVE',
+  wc_eventFomo: 'Event only — play now!',
 };
 
 export default en;
