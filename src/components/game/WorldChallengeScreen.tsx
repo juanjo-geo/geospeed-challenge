@@ -112,6 +112,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   const [qualifies, setQualifies] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [shared, setShared] = useState(false);
+  // Al entrar a Mundial: a veces balón ⚽, a veces copa 🏆 en el Pacífico
+  const [pacificDecor] = useState<'ball' | 'trophy'>(() => (Math.random() < 0.5 ? 'trophy' : 'ball'));
 
   const roundStartRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -506,6 +508,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
           highlightContinent={!isAnimating && current ? (COUNTRY_CONTINENT[current.country] ?? null) : null}
           pinEmoji={BALL}
           fieldGreen
+          pacificDecor={pacificDecor}
         />
 
         {/* Panel de feedback — al costado (landscape) o abajo (portrait), como el Clásico, sin chocar con las animaciones de arriba */}

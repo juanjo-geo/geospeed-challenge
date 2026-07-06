@@ -16,7 +16,7 @@ import { getSharedAudioContext } from '@/lib/sounds';
 export type MusicTrack = 'on' | 'none';
 
 const TRACK_SRC = '/music/track-menu.mp3';
-const BASE_VOLUME = 0.13; // ganancia base (0-1); bajada adicional
+const BASE_VOLUME = 0.085; // ganancia base (0-1); -35% adicional
 const FADE_DURATION = 800; // ms
 
 // ── Estado singleton global ──

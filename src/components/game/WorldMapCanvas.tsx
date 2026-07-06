@@ -21,6 +21,8 @@ interface WorldMapCanvasProps {
   pinEmoji?: string | null;
   /** Pinta el fondo (mar y bordes) de verde grama, para el modo Mundial. */
   fieldGreen?: boolean;
+  /** Decoración del Pacífico en modo Mundial: balón o copa (aleatorio al entrar). */
+  pacificDecor?: 'ball' | 'trophy';
   /** Equipped trail cosmetic config (color as 'r,g,b' or colors[] for rainbow) */
   trailConfig?: { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | null;
 }
@@ -54,6 +56,7 @@ export default function WorldMapCanvas({
   pinConfig,
   pinEmoji,
   fieldGreen,
+  pacificDecor,
   trailConfig,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -64,15 +67,17 @@ export default function WorldMapCanvas({
   const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 2));
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
 
-  // Balón PNG decorativo del modo Mundial (Pacífico sur) — reemplaza al emoji ⚽
-  const mundialBallRef = useRef<HTMLImageElement | null>(null);
-  const [mundialBallReady, setMundialBallReady] = useState(false);
+  // Decoración PNG del Mundial (Pacífico sur): balón o copa según pacificDecor
+  const decorImgRef = useRef<HTMLImageElement | null>(null);
+  const [decorReady, setDecorReady] = useState(false);
   useEffect(() => {
-    if (!fieldGreen || mundialBallRef.current) return;
+    if (!fieldGreen) return;
+    const src = pacificDecor === 'trophy' ? '/mundial-cup.png' : '/mundial-ball.png';
+    setDecorReady(false);
     const img = new Image();
-    img.onload = () => { mundialBallRef.current = img; setMundialBallReady(true); };
-    img.src = '/mundial-ball.png';
-  }, [fieldGreen]);
+    img.onload = () => { decorImgRef.current = img; setDecorReady(true); };
+    img.src = src;
+  }, [fieldGreen, pacificDecor]);
 
   // ── Pinch-to-zoom state ──
   const [pinchZoom, setPinchZoom] = useState(1);
@@ -377,17 +382,26 @@ export default function WorldMapCanvas({
       ], Math.max(10, Math.round(w / 70)));
     }
 
-    // Balón de fútbol decorativo en el Pacífico sur — solo modo Mundial (PNG; emoji de respaldo)
+    // Decoración del Pacífico sur — solo modo Mundial (balón o copa PNG; emoji de respaldo)
     if (fieldGreen) {
       const c0 = geoToPixel(-140, -36);
       const size = Math.max(50, Math.min(w, h) * 0.26);
-      const ball = mundialBallRef.current;
-      if (ball && mundialBallReady) {
-        const ar = ball.naturalHeight / ball.naturalWidth || 1;
-        const dw = size, dh = size * ar;
+      const img = decorImgRef.current;
+      if (img && decorReady && img.naturalWidth > 0) {
+        const ar = img.naturalHeight / img.naturalWidth || 1;
+        let dw: number, dh: number;
+        if (pacificDecor === 'trophy') {
+          // La copa es alta y angosta: fijamos su ALTURA a la del balón para que NO sea
+          // más grande que el balón, manteniendo su proporción (sin deformar).
+          dh = size * 0.92;
+          dw = dh / ar;
+        } else {
+          dw = size;
+          dh = size * ar;
+        }
         ctx.save();
         ctx.globalAlpha = 0.92;
-        ctx.drawImage(ball, c0.x - dw / 2, c0.y - dh / 2, dw, dh);
+        ctx.drawImage(img, c0.x - dw / 2, c0.y - dh / 2, dw, dh);
         ctx.restore();
       } else {
         ctx.save();
@@ -399,7 +413,7 @@ export default function WorldMapCanvas({
         ctx.restore();
       }
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen, mundialBallReady]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen, pacificDecor, decorReady]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
