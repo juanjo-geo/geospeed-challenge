@@ -898,64 +898,60 @@ export function playShareSuccess() {
 
 // ── Sonidos del modo Desafío Mundial (fútbol) ─────────────────────────────
 
-/** Silbato de árbitro — dos toques agudos con warble. */
+/** Silbato de árbitro — dos toques agudos, fuertes y con pitch ascendente. */
 export function playWhistle() {
   unlockAudio();
   const c = getCtx();
   if (!c) return;
-  const toot = (delay: number, dur: number) => {
+  const chirp = (delay: number, dur: number) => {
     try {
       const osc = c.createOscillator();
       const g = c.createGain();
-      const lfo = c.createOscillator();
-      const lfoGain = c.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = vary(3100, 0.04);
-      lfo.frequency.value = 30;          // warble del silbato
-      lfoGain.gain.value = 150;
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc.frequency);
-      const peak = vary(vol(0.09), 0.2);
+      osc.type = 'triangle';
       const t0 = c.currentTime + delay;
+      osc.frequency.setValueAtTime(vary(2100, 0.03), t0);
+      osc.frequency.linearRampToValueAtTime(vary(2650, 0.03), t0 + dur);
+      const peak = vary(vol(0.22), 0.12);
       g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.015);
+      g.gain.setValueAtTime(peak, t0 + dur - 0.04);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
       osc.connect(g);
       g.connect(getOutputNode(c));
       osc.start(t0);
-      lfo.start(t0);
       osc.stop(t0 + dur + 0.03);
-      lfo.stop(t0 + dur + 0.03);
     } catch (_) { /* ignore */ }
   };
-  toot(0, 0.15);
-  toot(0.2, 0.3);
+  chirp(0, 0.16);
+  chirp(0.22, 0.34);
 }
 
-/** Vuvuzela — zumbido grave estilo estadio. */
+/** Vuvuzela — zumbido grave, largo y buzzy (dos sawtooth desafinados = "beating"). */
 export function playVuvuzela() {
   unlockAudio();
   const c = getCtx();
   if (!c) return;
   try {
-    const osc = c.createOscillator();
+    const t0 = c.currentTime;
+    const dur = 1.3;
     const g = c.createGain();
     const lp = c.createBiquadFilter();
-    osc.type = 'sawtooth';
-    osc.frequency.value = vary(233, 0.02);   // ~B♭3
     lp.type = 'lowpass';
-    lp.frequency.value = 1100;
-    const peak = vary(vol(0.06), 0.15);
-    const t0 = c.currentTime;
-    const dur = 0.6;
+    lp.frequency.value = 1400;
+    const peak = vary(vol(0.11), 0.1);
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.07);
-    g.gain.setValueAtTime(peak, t0 + dur - 0.12);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.08);
+    g.gain.setValueAtTime(peak, t0 + dur - 0.2);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(lp);
     lp.connect(g);
     g.connect(getOutputNode(c));
-    osc.start(t0);
-    osc.stop(t0 + dur + 0.05);
+    [233, 234.6].forEach((f) => {
+      const o = c.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = vary(f, 0.004);
+      o.connect(lp);
+      o.start(t0);
+      o.stop(t0 + dur + 0.05);
+    });
   } catch (_) { /* ignore */ }
 }

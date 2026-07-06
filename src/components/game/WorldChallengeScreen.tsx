@@ -155,6 +155,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   // Cuenta regresiva 3-2-1 (silbato de inicio en el GO)
   useEffect(() => {
     if (stage !== 'countdown') return;
+    if (isPortraitMobile) return; // espera a que giren el teléfono antes de contar
     if (countdown <= 0) {
       playWhistle();
       setStage('playing');
@@ -163,7 +164,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
     playRoundTransition();
     const id = setTimeout(() => setCountdown((c) => c - 1), 800);
     return () => clearTimeout(id);
-  }, [stage, countdown]);
+  }, [stage, countdown, isPortraitMobile]);
 
   useEffect(() => {
     if (stage !== 'playing') return;
@@ -172,7 +173,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   }, [stage, roundIdx]);
 
   useEffect(() => {
-    if (stage !== 'playing' || isAnimating) return;
+    if (stage !== 'playing' || isAnimating || isPortraitMobile) return; // pausa el timer en vertical
     timerRef.current = setInterval(() => {
       setTimeLeft((tl) => {
         if (tl <= 1) {
@@ -186,7 +187,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
     }, 1000);
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, isAnimating, roundIdx]);
+  }, [stage, isAnimating, roundIdx, isPortraitMobile]);
 
   const finishGame = useCallback((reason: 'complete' | 'timeout', finalScore: number) => {
     clearInterval(timerRef.current);

@@ -151,9 +151,9 @@ export default function WorldMapCanvas({
     if (fieldGreen) {
       // Modo Mundial: fondo verde grama (estadio)
       const grass = ctx.createLinearGradient(0, 0, 0, h);
-      grass.addColorStop(0, '#2f9e44');
-      grass.addColorStop(0.5, '#2b8a3e');
-      grass.addColorStop(1, '#216e30');
+      grass.addColorStop(0, '#1c4a30');
+      grass.addColorStop(0.5, '#163a26');
+      grass.addColorStop(1, '#102c1c');
       ctx.fillStyle = grass;
     } else if (light) {
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
@@ -1013,7 +1013,7 @@ export default function WorldMapCanvas({
   const crosshairCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23f5c842' stroke-width='1.5' opacity='0.7'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23f5c842' opacity='0.9'/%3E%3Cline x1='16' y1='0' x2='16' y2='10' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='16' y1='22' x2='16' y2='32' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='0' y1='16' x2='10' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='22' y1='16' x2='32' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3C/svg%3E") 16 16, crosshair`;
 
   const oceanBg = fieldGreen
-    ? 'linear-gradient(180deg, #2f9e44 0%, #2b8a3e 50%, #216e30 100%)'
+    ? 'linear-gradient(180deg, #1c4a30 0%, #163a26 50%, #102c1c 100%)'
     : theme === 'light'
     ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
     : theme === 'neon'

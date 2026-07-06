@@ -72,6 +72,7 @@ function startMusic() {
   const audio = getAudio();
   if (isPlaying && !audio.paused) { if (!isMuted) fadeTo(BASE_VOLUME); return; }
   isPlaying = true;
+  audio.muted = isMuted;
   audio.volume = 0;
   const p = audio.play();
   if (p) p.catch(() => {
@@ -130,10 +131,10 @@ function setMuted(muted: boolean) {
   } catch (_) {}
 
   const audio = getAudio();
+  audio.muted = muted; // silencio garantizado sin pausar (los SFX ya son independientes vía audioSession)
   if (muted) {
-    // NO pausar: pausar el <audio> desactiva la sesión de audio de iOS y mata los SFX.
-    // Lo dejamos sonando a volumen 0 para que la sesión siga activa.
-    fadeTo(0);
+    stopFade();
+    audio.volume = 0;
   } else if (isPlaying) {
     audio.volume = 0;
     const p = audio.play();

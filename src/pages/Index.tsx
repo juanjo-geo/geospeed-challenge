@@ -837,7 +837,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         <WorldChallengeScreen
           key={`wc-${gameKeyRef.current}`}
           onExit={handleGoHome}
-          onNoLives={() => { setShowNoLives(true); handleGoHome(); }}
+          onNoLives={() => setShowNoLives(true)}
         />
       );
     }
