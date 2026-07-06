@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import { getPlayerStats, getGameHistory, formatDistance, type GameHistoryEntry } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges, type PlayerLevel, type Badge } from '@/lib/levelSystem';
@@ -56,7 +57,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
         {/* Header with back button + logo */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <button
-            onClick={onBack}
+            onClick={() => { playButtonTap(); onBack(); }}
             className="text-sm font-bold px-3 py-1.5 rounded-lg border border-border/60 hover:border-border bg-card/50 hover:bg-muted transition-all active:scale-[0.97]"
             aria-label="Volver al menú"
           >

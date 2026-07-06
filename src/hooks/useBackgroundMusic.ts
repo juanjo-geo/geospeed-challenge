@@ -12,7 +12,7 @@ import { getSharedAudioContext } from '@/lib/sounds';
 export type MusicTrack = 'on' | 'none';
 
 const TRACK_SRC = '/music/track-menu.mp3';
-const BASE_VOLUME = 0.6; // ganancia base (0-1); iOS la respeta vía Web Audio
+const BASE_VOLUME = 0.42; // ganancia base (0-1); iOS la respeta vía Web Audio (bajado ~30%)
 const FADE_DURATION = 800; // ms
 
 // ── Global singleton state ──
@@ -73,6 +73,19 @@ function setLevel(v: number) {
     catch (_) { musicGain.gain.value = vol; }
   } else {
     getAudio().volume = vol; // fallback escritorio (iOS ignora)
+  }
+}
+
+/** Reanuda el audio tras bloqueo/desbloqueo del móvil (iOS suspende el contexto). */
+function wakeAudio() {
+  ensureRouting();
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+  const audio = getAudio();
+  if (isPlaying && audio.paused) {
+    const p = audio.play();
+    if (p) p.catch(() => {});
   }
 }
 
@@ -164,6 +177,7 @@ function stopMusic() {
 }
 
 function setMuted(muted: boolean) {
+  wakeAudio();
   isMuted = muted;
   try {
     localStorage.setItem('geospeed_music_muted', muted ? 'true' : 'false');
@@ -194,8 +208,7 @@ function installVisibilityHandler() {
     if (document.hidden) {
       if (!audio.paused) audio.pause();
     } else if (isPlaying) {
-      const p = audio.play();
-      if (p) p.catch(() => {});
+      wakeAudio();
     }
   });
 }

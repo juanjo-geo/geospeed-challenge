@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { playButtonTap } from '@/lib/sounds';
 import {
   STORE_PRODUCTS,
   getProStatus,
@@ -110,7 +111,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       {/* Header — extra top padding for Dynamic Island / notch */}
       <div className="flex items-center justify-between px-4 sm:px-6 pt-[env(safe-area-inset-top,12px)] pb-3 sm:pb-4 border-b border-border/50" style={{ paddingTop: 'max(env(safe-area-inset-top, 12px), 48px)' }}>
         <button
-          onClick={onClose}
+          onClick={() => { playButtonTap(); onClose(); }}
           className="text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg border border-border/60 hover:border-border bg-card/50 active:scale-[0.97]"
         >
           ← {t('back')}

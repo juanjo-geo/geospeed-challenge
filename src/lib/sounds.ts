@@ -198,6 +198,12 @@ function installGlobalListeners(): void {
         ctx.resume().catch(() => {});
       }
     });
+    // Al volver de bloqueo/segundo plano, reanudar el contexto (además del focus)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    });
   }
 }
 
