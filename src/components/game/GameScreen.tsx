@@ -521,10 +521,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           )}
 
           {/* ── Mascota (reacciona a los resultados) ── */}
-          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[72px] pointer-events-none select-none py-1">
+          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[44px] pointer-events-none select-none py-1">
             <Mascot
               state={mascotState}
-              className={`w-20 sm:w-24 md:w-28 drop-shadow-[0_6px_16px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-7 sm:w-8 md:w-10 drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 
