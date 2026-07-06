@@ -11,6 +11,7 @@ import { getPlayerLevel, checkLevelUp, calculateXP } from '@/lib/levelSystem';
 import { fireCelebration } from '@/lib/confetti';
 import { hapticCelebration } from '@/lib/haptics';
 import RoundBreakdown from './RoundBreakdown';
+import Mascot, { type MascotState } from './Mascot';
 import ReplayMap from './ReplayMap';
 import { type GameMode } from '@/data/cities';
 import { announce } from './ScreenReaderAnnouncer';
@@ -140,6 +141,7 @@ export default function FinalResultScreen({
   }), [onPlayAgain, onGoHome]));
 
   const isNewRecord = totalScore > previousBest && previousBest > 0;
+  const mascotResult: MascotState = (isNewRecord || avgDistance < 800) ? 'celebrate' : 'wink';
   const scoreDelta = previousBest > 0 ? totalScore - previousBest : 0;
   const level = getPlayerLevel();
 
@@ -215,20 +217,16 @@ export default function FinalResultScreen({
 
         {reason === 'timeout' && (
           <div className="text-center mb-3 sm:mb-4">
-            <span className="text-3xl sm:text-4xl block animate-record-pop" role="img" aria-label={t('final_timeout')}>⏰</span>
-            <p className="text-red-400 font-bold mt-1 sm:mt-2 text-sm sm:text-base">{t('final_timeout')}</p>
+            <Mascot state={mascotResult} className="w-20 sm:w-24 mx-auto" />
+            <p className="text-red-400 font-bold mt-1 sm:mt-2 text-sm sm:text-base">⏰ {t('final_timeout')}</p>
           </div>
         )}
         {reason === 'complete' && (
           <div className="text-center mb-3 sm:mb-4">
-            <span
-              className={`text-3xl sm:text-5xl block ${isNewRecord ? 'animate-record-pop' : 'animate-fade-in'}`}
-              role="img"
-              aria-label="Felicidades"
-              style={isNewRecord ? { filter: 'drop-shadow(0 0 16px hsl(44 91% 61% / 0.7))' } : {}}
-            >
-              {isNewRecord ? '🏆' : '🎉'}
-            </span>
+            <div className="relative inline-block">
+              {isNewRecord && <span className="absolute -top-1 -right-2 text-xl sm:text-2xl animate-record-pop">🏆</span>}
+              <Mascot state={mascotResult} className={`w-24 sm:w-28 mx-auto ${isNewRecord ? 'drop-shadow-[0_0_16px_hsl(44_91%_61%/0.7)]' : ''}`} />
+            </div>
             <p
               className={`font-black mt-1 sm:mt-2 text-sm sm:text-base ${isNewRecord ? 'text-glow' : ''}`}
               style={{ color: 'hsl(var(--primary))' }}

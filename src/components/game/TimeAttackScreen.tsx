@@ -8,6 +8,7 @@ import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 import CountdownIntro from './CountdownIntro';
+import Mascot, { type MascotState } from './Mascot';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
@@ -50,6 +51,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const isPortraitMobile = useIsPortraitMobile();
   const [cities] = useState(() => getRandomCities(difficulty, POOL_SIZE, gameMode));
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [score, setScore] = useState(0);
   const [globalTime, setGlobalTime] = useState(GLOBAL_TIME);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -129,6 +131,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
   useEffect(() => {
     roundStartRef.current = Date.now();
+    setMascotState('idle');
   }, [currentIdx]);
 
   // Throttled cursor coordinate update
@@ -150,6 +153,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     const basePoints = calculateBasePoints(distance);
     const mult = getMultiplier(timeUsed);
     const totalPoints = Math.round(basePoints * mult.value);
+    setMascotState(distance >= 2000 ? 'sad' : distance < 300 ? 'celebrate' : 'wink');
 
     roundsRef.current.push({ city: currentCity, distance, totalPoints, timeUsed });
     setTimeout(() => {
@@ -296,33 +300,19 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             <p className="text-lg font-mono font-bold leading-none">{roundsRef.current.length}</p>
           </div>
 
-          {/* ── Last round feedback ── */}
-          {lastPoints !== null && (
-            <div className={`w-full text-center py-1.5 px-2 rounded-lg font-bold text-sm shrink-0 transition-all mb-2 ${
-              lastPoints >= 500 ? `${palette.good.twBgSoft} ${palette.good.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
-            }`}>
-              {lastPoints >= 500 ? '🎯' : '😬'} +{lastPoints.toLocaleString()}
-            </div>
-          )}
-
-          {/* ── Compass decoration ── */}
-          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[60px] pointer-events-none select-none">
-            <svg viewBox="0 0 100 100" className="w-20 sm:w-24 opacity-[0.06]" fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="50" cy="50" r="46" />
-              <circle cx="50" cy="50" r="40" />
-              <circle cx="50" cy="50" r="2" fill="currentColor" />
-              <line x1="50" y1="4" x2="50" y2="14" strokeWidth="1.2" />
-              <line x1="50" y1="86" x2="50" y2="96" strokeWidth="1.2" />
-              <line x1="4" y1="50" x2="14" y2="50" strokeWidth="1.2" />
-              <line x1="86" y1="50" x2="96" y2="50" strokeWidth="1.2" />
-              <line x1="17.6" y1="17.6" x2="22.8" y2="22.8" />
-              <line x1="77.2" y1="17.6" x2="82.4" y2="22.8" />
-              <line x1="17.6" y1="82.4" x2="22.8" y2="77.2" />
-              <line x1="77.2" y1="82.4" x2="82.4" y2="77.2" />
-              <polygon points="50,10 45,50 55,50" fill="currentColor" opacity="0.5" stroke="none" />
-              <polygon points="50,90 45,50 55,50" fill="currentColor" opacity="0.2" stroke="none" />
-              <text x="50" y="22" textAnchor="middle" fontSize="7" fill="currentColor" stroke="none" fontWeight="bold" opacity="0.7">N</text>
-            </svg>
+          {/* ── Feedback + mascota (una fila) ── */}
+          <div className="w-full flex items-center justify-center gap-2.5 shrink-0 mb-2 min-h-[46px]">
+            {lastPoints !== null && (
+              <div className={`text-center py-1.5 px-2.5 rounded-lg font-bold text-sm ${
+                lastPoints >= 500 ? `${palette.good.twBgSoft} ${palette.good.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
+              }`}>
+                {lastPoints >= 500 ? '🎯' : '😬'} +{lastPoints.toLocaleString()}
+              </div>
+            )}
+            <Mascot
+              state={mascotState}
+              className={`w-9 sm:w-10 md:w-11 shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+            />
           </div>
 
           {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto) */}

@@ -26,6 +26,7 @@ import TimerBar from './TimerBar';
 import Button3D from '@/components/ui/Button3D';
 import CountUp from '@/components/ui/CountUp';
 import CountdownIntro from './CountdownIntro';
+import Mascot, { type MascotState } from './Mascot';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -115,6 +116,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   const [shared, setShared] = useState(false);
   // Al entrar a Mundial: a veces balón ⚽, a veces copa 🏆 en el Pacífico
   const [pacificDecor, setPacificDecor] = useState<'ball' | 'trophy'>(() => (Math.random() < 0.5 ? 'trophy' : 'ball'));
+  const [mascotState, setMascotState] = useState<MascotState>('idle');
+  useEffect(() => { setMascotState('idle'); }, [roundIdx]);
 
   const roundStartRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -239,6 +242,12 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
     scoreRef.current = newScore;
     setScore(newScore);
     setStreak(res.newStreak);
+    setMascotState(
+      res.band === 'far' || res.band === 'ocean' ? 'sad'
+        : res.newStreak >= 3 ? 'fire'
+        : res.band === 'exact' ? 'celebrate'
+        : 'wink'
+    );
     setUserClick({ lat, lon });
     setCorrectLoc(centroid);
     setDistanceKm(dist);
@@ -483,6 +492,10 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
         <span className="text-sm sm:text-base font-mono font-black shrink-0" style={{ color: 'hsl(var(--primary))' }}>
           <CountUp value={score} />
         </span>
+        <Mascot
+          state={mascotState}
+          className={`w-8 sm:w-9 md:w-10 shrink-0 select-none pointer-events-none drop-shadow-[0_3px_8px_rgba(240,160,48,0.4)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+        />
       </div>
 
       {/* Timer */}
