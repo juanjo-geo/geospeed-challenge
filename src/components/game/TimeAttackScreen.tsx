@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import CountUp from '@/components/ui/CountUp';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
-import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
+import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
@@ -94,8 +94,13 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           }
           return 0;
         }
-        if (prev <= 4) { playHeartbeat(); hapticTick(); }
-        else if (prev <= 6) { playTick(prev); hapticTick(); }
+        if (prev <= 10) {
+          playStressBeat(prev); // tensión creciente en los últimos 10s
+          hapticTick();
+          if (prev <= 3) playHeartbeat(); // latido de clímax en el final
+        } else if (prev <= 12) {
+          playTick(prev); hapticTick();
+        }
         return prev - 1;
       });
     }, 1000);
@@ -170,6 +175,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
   const timePercent = (globalTime / GLOBAL_TIME) * 100;
   const isLow = globalTime <= 10;
+  // Contador: color por presión — 30s amarillo, 20s naranja, 10s rojo
+  const timeColor = globalTime <= 10 ? '#ef4444' : globalTime <= 20 ? '#f97316' : globalTime <= 30 ? '#facc15' : 'hsl(var(--foreground))';
   const isWide = layoutMode === 'wide';
 
   // Same grid layout as GameScreen — guarantees canvas gets defined height
@@ -199,7 +206,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             <p className="text-[10px] text-muted-foreground">🌍 {currentCity.country}</p>
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] text-muted-foreground">{roundsRef.current.length} {t('ta_cities')}</span>
-              <span className={`font-mono font-bold text-sm ${globalTime <= 10 ? 'text-red-400 animate-pulse' : ''}`}>
+              <span className={`font-mono font-bold ${globalTime <= 10 ? 'animate-pulse' : ''}`} style={{ fontSize: '1.05rem', color: timeColor }}>
                 ⏱ {globalTime}s
               </span>
             </div>
@@ -297,7 +304,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto) */}
           <div className="w-full shrink-0 sticky bottom-0 z-10 bg-card pt-2 mt-auto">
             <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">{t('game_timeLeft')}</p>
-            <div className={`text-center text-3xl font-mono font-black mb-1.5 ${isLow ? 'text-red-400 animate-pulse' : 'text-foreground'}`} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
+            <div className={`text-center font-mono font-black mb-1.5 ${isLow ? 'animate-pulse' : ''}`} style={{ fontSize: '2.25rem', color: timeColor }} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
               {globalTime}s
             </div>
             <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
@@ -350,7 +357,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
               <div className="mt-1.5">
                 <div className="mb-1 flex items-center justify-between text-[10px] font-mono">
                   <span className="text-muted-foreground">⏱ TIEMPO</span>
-                  <span className={isLow ? 'font-bold text-destructive animate-pulse' : 'font-bold text-foreground'} aria-live="polite">
+                  <span className={`font-bold ${isLow ? 'animate-pulse' : ''}`} style={{ fontSize: '1.05rem', color: timeColor }} aria-live="polite">
                     {globalTime}s
                   </span>
                 </div>

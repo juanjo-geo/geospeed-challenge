@@ -154,12 +154,11 @@ function doUnlock(): void {
       unlocked = true;
     }
 
-    // Keepalive: un <audio> silencioso en loop mantiene activa la sesión de audio de iOS,
-    // así los efectos (Web Audio) suenan aunque la música esté muteada o pausada.
-    try {
-      const warm = getWarmAudio();
-      if (warm.paused) { const wp = warm.play(); if (wp) wp.catch(() => {}); }
-    } catch (_) { /* ignore */ }
+    // NO usar <audio> keepalive: iOS lo publica como "Now Playing" en la pantalla de
+    // bloqueo; si el usuario lo pausa desde ahí, tumba la sesión de audio y ni la música
+    // ni los efectos se restauran al volver al juego. Con audioSession.type='playback'
+    // (arriba) + ctx.resume() en cada gesto basta para los SFX, sin widget de bloqueo.
+    if (warmAudioEl && !warmAudioEl.paused) { try { warmAudioEl.pause(); } catch (_) { /* ignore */ } }
   } catch (_) { /* ignore */ }
 }
 
@@ -988,5 +987,95 @@ export function playVuvuzela() {
       o.start(t0);
       o.stop(t0 + dur + 0.05);
     });
+  } catch (_) { /* ignore */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 20. ACORDEÓN — Swoosh alargado para abrir/cerrar paneles (ranking, historial…)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playAccordion(open: boolean = true) {
+  unlockAudio();
+  const c = getCtx();
+  if (!c) return;
+  try {
+    const dur = 0.34;
+    const now = c.currentTime;
+    // Swoosh: ruido por bandpass cuya frecuencia barre hacia arriba (abrir) o abajo (cerrar)
+    const bufferSize = Math.floor(c.sampleRate * dur);
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource();
+    src.buffer = buffer;
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.value = 1.3;
+    const fStart = open ? 520 : 2600;
+    const fEnd = open ? 2600 : 520;
+    bp.frequency.setValueAtTime(fStart, now);
+    bp.frequency.exponentialRampToValueAtTime(fEnd, now + dur);
+    const ng = c.createGain();
+    ng.gain.setValueAtTime(0.001, now);
+    ng.gain.linearRampToValueAtTime(vary(vol(0.055), 0.15), now + 0.05);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    src.connect(bp); bp.connect(ng); ng.connect(getOutputNode(c));
+    src.start();
+    // Glide tonal suave debajo → le da musicalidad al swoosh
+    const osc = c.createOscillator();
+    const og = c.createGain();
+    osc.type = 'sine';
+    const tStart = open ? 320 : 760;
+    const tEnd = open ? 760 : 320;
+    osc.frequency.setValueAtTime(tStart, now);
+    osc.frequency.exponentialRampToValueAtTime(tEnd, now + dur);
+    og.gain.setValueAtTime(0.001, now);
+    og.gain.linearRampToValueAtTime(vary(vol(0.045), 0.15), now + 0.06);
+    og.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.connect(og); og.connect(getOutputNode(c));
+    osc.start(); osc.stop(now + dur);
+  } catch (_) { /* ignore */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 21. ESTRÉS — Pulso de tensión creciente (Caos: últimos 10 segundos)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function playStressBeat(secondsLeft: number) {
+  unlockAudio();
+  const c = getCtx();
+  if (!c) return;
+  try {
+    const now = c.currentTime;
+    // urgencia: 0 en el segundo 10 → ~1 cerca del 0
+    const urgency = Math.max(0, Math.min(1, (10 - secondsLeft) / 10));
+    // Pulso grave tenso (sawtooth con caída de tono) filtrado
+    const base = 118 + urgency * 70;
+    const dur = 0.24;
+    const gv = 0.10 + urgency * 0.07;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(base * 1.5, now);
+    osc.frequency.exponentialRampToValueAtTime(base, now + dur);
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 650 + urgency * 550;
+    g.gain.setValueAtTime(0.001, now);
+    g.gain.linearRampToValueAtTime(vary(vol(gv), 0.1), now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.connect(lp); lp.connect(g); g.connect(getOutputNode(c));
+    osc.start(); osc.stop(now + dur);
+    // Overtono disonante (chirrido de alarma) en los últimos 5 s
+    if (secondsLeft <= 5) {
+      const osc2 = c.createOscillator();
+      const g2 = c.createGain();
+      osc2.type = 'square';
+      osc2.frequency.value = vary(base * 5.4, 0.02);
+      g2.gain.setValueAtTime(vary(vol(0.028 + urgency * 0.025), 0.1), now);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      osc2.connect(g2); g2.connect(getOutputNode(c));
+      osc2.start(); osc2.stop(now + 0.14);
+    }
   } catch (_) { /* ignore */ }
 }

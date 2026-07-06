@@ -10,7 +10,7 @@ import { checkStreak, claimDailyReward, getStreakAtRisk, protectStreak, type Str
 import EnergyBar from './EnergyBar';
 // ThemeToggle removed — neon-only mode
 import AutoDemo from './AutoDemo';
-import { playButtonTap } from '@/lib/sounds';
+import { playButtonTap, playAccordion } from '@/lib/sounds';
 import { getFlag } from '@/lib/featureFlags';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 // useA11y removed — colorblind toggle removed
@@ -255,7 +255,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       {/* ── Cómo se juega (toggle + collapsible onboarding) ── */}
       <div className={`w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-150 ${isNewPlayer ? 'mb-3 sm:mb-4' : 'mb-1.5 sm:mb-2'}`}>
         <button
-          onClick={() => setShowHowToPlay(prev => !prev)}
+          onClick={() => { playAccordion(!showHowToPlay); setShowHowToPlay(prev => !prev); }}
           className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl border border-border bg-card/60 text-[11px] sm:text-xs font-bold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all active:scale-[0.97]"
         >
           <span>{showHowToPlay ? '▴' : '❓'}</span>
@@ -776,7 +776,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       {/* ── Collapsible Ranking ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-400">
         <button
-          onClick={() => setShowRanking(prev => !prev)}
+          onClick={() => { playAccordion(!showRanking); setShowRanking(prev => !prev); }}
           className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl border border-border bg-card/50 text-xs sm:text-sm font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.97]"
           aria-expanded={showRanking}
           aria-controls="ranking-panel"
@@ -853,7 +853,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       {history.length > 0 && (
         <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mt-2 sm:mt-3 animate-fade-in-up animation-delay-400">
           <button
-            onClick={() => setShowHistory(prev => !prev)}
+            onClick={() => { playAccordion(!showHistory); setShowHistory(prev => !prev); }}
             className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl border border-border bg-card/50 text-xs sm:text-sm font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.97]"
             aria-expanded={showHistory}
             aria-controls="history-panel"
