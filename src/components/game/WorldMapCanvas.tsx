@@ -370,7 +370,7 @@ export default function WorldMapCanvas({
     // Balón de fútbol (emoji) grande, decorativo en el Pacífico sur — solo modo Mundial
     if (fieldGreen) {
       const c0 = geoToPixel(-140, -36);
-      const size = Math.max(60, Math.min(w, h) * 0.32);
+      const size = Math.max(50, Math.min(w, h) * 0.26);
       ctx.save();
       ctx.globalAlpha = 0.82;
       ctx.font = `${Math.round(size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;

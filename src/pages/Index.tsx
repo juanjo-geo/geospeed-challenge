@@ -1129,28 +1129,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 /** Pure overlay — no internal orientation detection (parent controls visibility via state) */
 function RotateOverlay({ t }: { t: (key: string) => string }) {
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center min-h-[100dvh] gap-6 game-bg">
-      <div className="animate-bounce" style={{ animationDuration: '2s' }}>
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="4" y="2" width="16" height="20" rx="2" />
-          <line x1="12" y1="18" x2="12" y2="18.01" />
-        </svg>
-      </div>
-      <div className="relative w-20 h-20">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="animate-[spin_3s_ease-in-out_infinite]" style={{ transformOrigin: 'center' }}>
-          <path d="M7.5 21L3 12l4.5-9h9L21 12l-4.5 9z" opacity="0" />
-          <polyline points="15 3 21 3 21 9" />
-          <path d="M21 3l-7 7" />
-        </svg>
-      </div>
-      <div className="text-center px-8">
-        <p className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
-          {t('rotate_title')}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t('rotate_desc')}
-        </p>
-      </div>
+    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center min-h-[100dvh] game-bg text-center px-6">
+      <div className="text-5xl mb-4 animate-bounce">🔄📱</div>
+      <p className="text-lg sm:text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{t('rotate_title')}</p>
+      <p className="text-xs sm:text-sm text-muted-foreground mt-2">{t('rotate_desc')}</p>
     </div>
   );
 }

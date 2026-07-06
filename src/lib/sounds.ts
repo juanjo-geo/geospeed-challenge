@@ -932,7 +932,7 @@ export function playWhistle() {
       lfo.connect(lfoGain);
       lfoGain.connect(osc.frequency);
       lfoGain.connect(osc2.frequency);
-      const peak = vary(vol(0.16), 0.1);
+      const peak = vary(vol(0.22), 0.1);
       g.gain.setValueAtTime(0.0001, t0);
       g.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);
       g.gain.setValueAtTime(peak, t0 + dur - 0.03);
@@ -961,7 +961,7 @@ export function playVuvuzela() {
     const lp = c.createBiquadFilter();
     lp.type = 'lowpass';
     lp.frequency.value = 1400;
-    const peak = vary(vol(0.11), 0.1);
+    const peak = vary(vol(0.16), 0.1);
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(peak, t0 + 0.08);
     g.gain.setValueAtTime(peak, t0 + dur - 0.2);

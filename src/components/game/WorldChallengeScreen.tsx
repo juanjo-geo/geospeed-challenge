@@ -155,7 +155,6 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   // Cuenta regresiva 3-2-1 (silbato de inicio en el GO)
   useEffect(() => {
     if (stage !== 'countdown') return;
-    if (isPortraitMobile) return; // espera a que giren el teléfono antes de contar
     if (countdown <= 0) {
       playWhistle();
       setStage('playing');
@@ -390,7 +389,6 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
     const isGo = countdown === 0;
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
-        {isPortraitMobile && rotateOverlay}
         <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 animate-fade-in">
           {BALL} {t('wc_modeName')} — {t(WC_DIFF_KEY[difficulty] as never)}
         </p>

@@ -11,7 +11,7 @@ import { useEffect, useCallback, useState } from 'react';
 export type MusicTrack = 'on' | 'none';
 
 const TRACK_SRC = '/music/track-menu.mp3';
-const BASE_VOLUME = 0.15; // Bajado 20% (era 0.19) para que los SFX resalten mas
+const BASE_VOLUME = 0.08; // Muy sutil: los SFX deben resaltar por encima
 const FADE_DURATION = 800; // ms
 
 // ── Global singleton state ──
