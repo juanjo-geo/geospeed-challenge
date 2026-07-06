@@ -19,6 +19,8 @@ interface WorldMapCanvasProps {
   pinConfig?: { fill?: string; stroke?: string; glow?: string; size?: number } | null;
   /** Si se define, dibuja este emoji como pin del usuario (ej. balón ⚽ del modo Mundial) */
   pinEmoji?: string | null;
+  /** Pinta el fondo (mar y bordes) de verde grama, para el modo Mundial. */
+  fieldGreen?: boolean;
   /** Equipped trail cosmetic config (color as 'r,g,b' or colors[] for rainbow) */
   trailConfig?: { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | null;
 }
@@ -51,6 +53,7 @@ export default function WorldMapCanvas({
   onCursorMove,
   pinConfig,
   pinEmoji,
+  fieldGreen,
   trailConfig,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -145,7 +148,14 @@ export default function WorldMapCanvas({
     const MAP_PALETTE = neon ? MAP_PALETTE_NEON : light ? MAP_PALETTE_LIGHT : MAP_PALETTE_DARK;
 
     // Ocean fills the ENTIRE canvas (no letterbox gaps)
-    if (light) {
+    if (fieldGreen) {
+      // Modo Mundial: fondo verde grama (estadio)
+      const grass = ctx.createLinearGradient(0, 0, 0, h);
+      grass.addColorStop(0, '#2f9e44');
+      grass.addColorStop(0.5, '#2b8a3e');
+      grass.addColorStop(1, '#216e30');
+      ctx.fillStyle = grass;
+    } else if (light) {
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
       oceanGrad.addColorStop(0, '#C8E8F4');
       oceanGrad.addColorStop(0.4, '#B0D8EC');
@@ -356,7 +366,7 @@ export default function WorldMapCanvas({
         { name: 'MAR\nCARIBE', lat: 18, lon: -72 },
       ], Math.max(10, Math.round(w / 70)));
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
@@ -1002,7 +1012,9 @@ export default function WorldMapCanvas({
   // ── Custom crosshair cursor (Phase 4) ──
   const crosshairCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23f5c842' stroke-width='1.5' opacity='0.7'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23f5c842' opacity='0.9'/%3E%3Cline x1='16' y1='0' x2='16' y2='10' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='16' y1='22' x2='16' y2='32' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='0' y1='16' x2='10' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='22' y1='16' x2='32' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3C/svg%3E") 16 16, crosshair`;
 
-  const oceanBg = theme === 'light'
+  const oceanBg = fieldGreen
+    ? 'linear-gradient(180deg, #2f9e44 0%, #2b8a3e 50%, #216e30 100%)'
+    : theme === 'light'
     ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
     : theme === 'neon'
       ? 'linear-gradient(180deg, #0A0E18 0%, #0C1020 50%, #080C16 100%)'

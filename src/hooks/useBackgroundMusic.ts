@@ -70,12 +70,7 @@ function fadeTo(targetVol: number, onDone?: () => void) {
 
 function startMusic() {
   const audio = getAudio();
-  if (isMuted) {
-    audio.load();
-    isPlaying = true;
-    return;
-  }
-  if (isPlaying && !audio.paused) return;
+  if (isPlaying && !audio.paused) { if (!isMuted) fadeTo(BASE_VOLUME); return; }
   isPlaying = true;
   audio.volume = 0;
   const p = audio.play();
@@ -83,7 +78,9 @@ function startMusic() {
     // Autoplay blocked — retry on first user gesture
     installPlayRetry();
   });
-  fadeTo(BASE_VOLUME);
+  // Mantener el <audio> sonando (en mute, a volumen 0) preserva la sesión de audio de iOS,
+  // así los efectos de sonido (Web Audio) siguen funcionando aunque la música esté en mute.
+  if (!isMuted) fadeTo(BASE_VOLUME);
 }
 
 let retryInstalled = false;
@@ -91,13 +88,13 @@ function installPlayRetry() {
   if (retryInstalled || typeof document === 'undefined') return;
   retryInstalled = true;
   const retry = () => {
-    if (!isPlaying || isMuted) return;
+    if (!isPlaying) return;
     const audio = getAudio();
     if (audio.paused) {
       audio.volume = 0;
       const p = audio.play();
       if (p) p.then(() => {
-        fadeTo(BASE_VOLUME);
+        if (!isMuted) fadeTo(BASE_VOLUME);
         removeRetry();
       }).catch(() => {});
     } else {
@@ -134,7 +131,9 @@ function setMuted(muted: boolean) {
 
   const audio = getAudio();
   if (muted) {
-    fadeTo(0, () => { audio.pause(); });
+    // NO pausar: pausar el <audio> desactiva la sesión de audio de iOS y mata los SFX.
+    // Lo dejamos sonando a volumen 0 para que la sesión siga activa.
+    fadeTo(0);
   } else if (isPlaying) {
     audio.volume = 0;
     const p = audio.play();
@@ -157,7 +156,7 @@ function installVisibilityHandler() {
     const audio = getAudio();
     if (document.hidden) {
       if (!audio.paused) audio.pause();
-    } else if (isPlaying && !isMuted) {
+    } else if (isPlaying) {
       const p = audio.play();
       if (p) p.catch(() => {});
     }

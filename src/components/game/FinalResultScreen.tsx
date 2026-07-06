@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { type RoundResult } from './GameScreen';
+import CountUp from '@/components/ui/CountUp';
 import { formatDistance, qualifiesForLeaderboard, addToLeaderboard, updatePlayerStats, getPlayerStats, getLeaderboard } from '@/lib/gameUtils';
 import { playVictory, playLevelUp, playRevengeActivate, playShareSuccess, playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
@@ -244,7 +245,7 @@ export default function FinalResultScreen({
             style={{ color: 'hsl(var(--primary))' }}
             aria-live="polite"
           >
-            {totalScore.toLocaleString()}
+            <CountUp value={totalScore} durationMs={900} />
           </p>
           {previousBest > 0 && (
             <p className={`text-xs sm:text-sm font-bold mt-1 ${isNewRecord ? 'text-green-400' : scoreDelta >= 0 ? 'text-muted-foreground' : 'text-red-400'}`}>
@@ -444,7 +445,7 @@ export default function FinalResultScreen({
               <span className="text-lg font-black text-muted-foreground">VS</span>
               <div>
                 <p className="text-[9px] text-muted-foreground">Tú</p>
-                <p className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>{totalScore.toLocaleString()}</p>
+                <p className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}><CountUp value={totalScore} durationMs={900} /></p>
               </div>
             </div>
             <p className="font-bold text-xs mt-2" style={{ color: totalScore > challengerScore ? '#22c55e' : totalScore === challengerScore ? 'hsl(var(--primary))' : '#ef4444' }}>

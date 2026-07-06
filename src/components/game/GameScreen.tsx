@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useUltraWide } from '@/hooks/useUltraWide';
 import WorldMapCanvas from './WorldMapCanvas';
+import CountUp from '@/components/ui/CountUp';
 import TimerBar from './TimerBar';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
@@ -380,7 +381,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </div>
             <div className="text-right shrink-0">
               <span className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
-                {score.toLocaleString()}
+                <CountUp value={score} />
               </span>
             </div>
           </div>
@@ -453,7 +454,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               style={{ color: 'hsl(var(--primary))' }}
               aria-live="polite"
             >
-              {score.toLocaleString()}
+              <CountUp value={score} />
             </p>
             {floatPoints !== null && (
               <span className={`absolute left-1/2 -top-1 -translate-x-1/2 font-bold pointer-events-none ${
@@ -569,7 +570,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 <div className="relative shrink-0 text-center min-w-[3.5rem]">
                   <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">{t('game_score')}</p>
                   <p className={`text-base font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
-                    {score.toLocaleString()}
+                    <CountUp value={score} />
                   </p>
                   {floatPoints !== null && (
                     <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-green-400 animate-float-up whitespace-nowrap pointer-events-none">

@@ -501,7 +501,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => setPhase('profile'), []);
-  const handleWorldChallenge = useCallback(() => { gameKeyRef.current += 1; setPhase('wc-playing'); }, []);
+  const handleWorldChallenge = useCallback(() => { unlockAudio(); gameKeyRef.current += 1; setPhase('wc-playing'); }, []);
   const handleOpenBattlePass = useCallback(() => setPhase('battlepass'), []);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
@@ -837,6 +837,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         <WorldChallengeScreen
           key={`wc-${gameKeyRef.current}`}
           onExit={handleGoHome}
+          onNoLives={() => { setShowNoLives(true); handleGoHome(); }}
         />
       );
     }

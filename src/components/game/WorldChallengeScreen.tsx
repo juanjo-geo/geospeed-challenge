@@ -11,17 +11,20 @@ import {
 import {
   playClick, playGood, playBad, playMedium,
   playGameOver, playRoundTransition, playTick, playTimeExpired, playButtonTap,
-  playVictory, playStreak, playGo,
+  playVictory, playStreak, playWhistle, playVuvuzela,
 } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticCelebration } from '@/lib/haptics';
 import { fireGoldBurst, fireRedBurst, fireCelebration, fireDistanceReveal } from '@/lib/confetti';
 import { fireScoreFly, fireMultiplierFeedback, fireStreakBorder, fireRoundFlash } from '@/lib/juiceAnimations';
 import { getMultiplier, haversineDistance, formatDistance, addGameHistory, updatePlayerStats, qualifiesForLeaderboard, addToLeaderboard } from '@/lib/gameUtils';
+import { consumeLife } from '@/lib/energySystem';
 import { useIsPortraitMobile } from '@/hooks/use-mobile';
 import { useI18n } from '@/i18n';
 import { announce } from './ScreenReaderAnnouncer';
 import WorldMapCanvas from './WorldMapCanvas';
 import TimerBar from './TimerBar';
+import Button3D from '@/components/ui/Button3D';
+import CountUp from '@/components/ui/CountUp';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -35,6 +38,8 @@ type Stage = 'select' | 'countdown' | 'playing' | 'over';
 interface WorldChallengeScreenProps {
   /** Volver al home. */
   onExit: () => void;
+  /** Sin vidas: el padre muestra el modal y saca al usuario. */
+  onNoLives: () => void;
 }
 
 interface Feedback {
@@ -85,7 +90,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenProps) {
+export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallengeScreenProps) {
   const { t } = useI18n();
   const isPortraitMobile = useIsPortraitMobile();
 
@@ -126,6 +131,8 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
   const topStreakName = streakKey(streak);
 
   const startGame = useCallback((d: Difficulty) => {
+    // Cada partida consume una vida (igual que los demás modos)
+    if (!consumeLife()) { onNoLives(); return; }
     const pool = shuffle(getPlayersByDifficulty(d)).slice(0, TOTAL_ROUNDS);
     setRoster(pool);
     setRoundIdx(0);
@@ -143,13 +150,13 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     setShared(false);
     setCountdown(3);
     setStage('countdown');
-  }, []);
+  }, [onNoLives]);
 
   // Cuenta regresiva 3-2-1 (silbato de inicio en el GO)
   useEffect(() => {
     if (stage !== 'countdown') return;
     if (countdown <= 0) {
-      playGo();
+      playWhistle();
       setStage('playing');
       return;
     }
@@ -197,13 +204,14 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
       avgDistance: exactCount,
       type: 'classic',
     });
-    qualifiesForLeaderboard(finalScore, WC_MODE).then(setQualifies).catch(() => setQualifies(false));
+    qualifiesForLeaderboard(finalScore).then(setQualifies).catch(() => setQualifies(false));
     setStage('over');
   }, [difficulty]);
 
   const handleTimeout = useCallback(() => {
     if (stage !== 'playing') return;
     playTimeExpired();
+    playWhistle();
     hapticError();
     finishGame('timeout', scoreRef.current);
   }, [stage, finishGame]);
@@ -248,7 +256,7 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
     const scoreTo = { x: Math.min(window.innerWidth - 40, window.innerWidth * 0.9), y: 40 };
 
     if (res.band === 'exact') {
-      playVictory(); hapticCelebration();
+      playVictory(); playVuvuzela(); hapticCelebration();
       fireCelebration(from);
     } else if (res.band === 'neighbor') {
       playGood(); hapticSuccess();
@@ -354,13 +362,13 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
             <button onClick={onExit} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]">
               {t('back').toUpperCase()}
             </button>
-            <button
+            <Button3D
+              variant="primary"
               onClick={() => { playButtonTap(); startGame(difficulty); }}
-              className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              className="flex-1 text-xs sm:text-sm"
             >
               {t('wc_start')} {BALL}
-            </button>
+            </Button3D>
           </div>
         </div>
       </div>
@@ -391,7 +399,7 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
             {BALL} {endReason === 'timeout' ? t('wc_finalTimeout') : t('wc_finalTitle')}
           </h2>
           <p className="text-5xl sm:text-6xl font-mono font-black my-4" style={{ color: 'hsl(var(--primary))' }}>
-            {score.toLocaleString()}
+            <CountUp value={score} />
           </p>
           <p className="text-sm text-muted-foreground mb-1">{BALL} {t('wc_exactCount', { n: exactCount })} · {rounds.length}/{TOTAL_ROUNDS}</p>
 
@@ -405,13 +413,13 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
                 maxLength={3}
                 className="w-20 text-center font-mono font-black text-lg py-2 rounded-lg bg-background border-2 border-primary/50 uppercase tracking-widest"
               />
-              <button
+              <Button3D
+                variant="primary"
                 onClick={() => submitScore()}
-                className="py-2 px-4 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                className="text-sm"
               >
                 {t('save')}
-              </button>
+              </Button3D>
             </div>
           )}
           {submitted && <p className="my-3 text-emerald-400 text-sm" role="status">🏆 {t('save')} ✓</p>}
@@ -427,13 +435,13 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
             <button onClick={() => { playButtonTap(); ensureSubmitted(); setStage('select'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]">
               {t('wc_playAgain')}
             </button>
-            <button
+            <Button3D
+              variant="primary"
               onClick={() => { playButtonTap(); ensureSubmitted(); onExit(); }}
-              className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              className="flex-1 text-xs sm:text-sm"
             >
               {t('back').toUpperCase()}
-            </button>
+            </Button3D>
           </div>
         </div>
       </div>
@@ -466,7 +474,7 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
           </span>
         )}
         <span className="text-sm sm:text-base font-mono font-black shrink-0" style={{ color: 'hsl(var(--primary))' }}>
-          {score.toLocaleString()}
+          <CountUp value={score} />
         </span>
       </div>
 
@@ -486,9 +494,8 @@ export default function WorldChallengeScreen({ onExit }: WorldChallengeScreenPro
           gameMode="world"
           highlightContinent={!isAnimating && current ? (COUNTRY_CONTINENT[current.country] ?? null) : null}
           pinEmoji={BALL}
+          fieldGreen
         />
-        {/* Tinte verde sutil tipo cancha (solo este modo) */}
-        <div className="absolute inset-0 pointer-events-none z-[5]" style={{ background: 'radial-gradient(120% 85% at 50% 50%, transparent 58%, rgba(22,163,74,0.13))' }} />
 
         {/* Panel de feedback — al costado (landscape) o abajo (portrait), como el Clásico, sin chocar con las animaciones de arriba */}
         {feedback && (

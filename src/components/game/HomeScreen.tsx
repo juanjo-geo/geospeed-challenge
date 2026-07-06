@@ -418,11 +418,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-200">
         <button
           onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
-          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:scale-[0.96] shadow-xl hover:shadow-2xl hover:scale-[1.03] hover:brightness-110"
+          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:translate-y-[5px] active:scale-[0.99] shadow-xl hover:shadow-2xl hover:scale-[1.03] hover:brightness-110 transition-transform"
           style={{
             background: 'linear-gradient(135deg, #E53E3E 0%, #DD6B20 50%, #D69E2E 100%)',
             color: '#fff',
-            boxShadow: '0 4px 24px rgba(229,62,62,0.4), 0 0 60px rgba(221,107,32,0.2), 0 0 0 1px rgba(229,62,62,0.3)',
+            boxShadow: '0 6px 0 rgba(120,72,16,0.95), 0 10px 24px rgba(229,62,62,0.4), 0 0 60px rgba(221,107,32,0.2)',
           }}
           aria-label={`Jugar ahora — ${DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.label}, ${MODE_CONFIG.find(m => m.key === selectedMode)?.label}`}
         >

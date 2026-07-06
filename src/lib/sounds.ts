@@ -111,6 +111,13 @@ function getWarmAudio(): HTMLAudioElement {
 function doUnlock(): void {
   unlockAttempts++;
 
+  // iOS 16.4+: forzar categoría 'playback' para que los efectos (Web Audio) suenen
+  // aunque el switch físico de silencio del iPhone esté activado (como hacen los juegos).
+  try {
+    const ns = navigator as unknown as { audioSession?: { type: string } };
+    if (ns.audioSession) ns.audioSession.type = 'playback';
+  } catch (_) { /* no soportado */ }
+
   // Note: HTML Audio warm element (Strategy 1) removed entirely.
   // It caused audible DAC pop/click on iPhone when starting/stopping.
   // ctx.resume() alone (Strategy 2) is sufficient for iOS 15+.
@@ -806,6 +813,7 @@ export function playLevelUp() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playButtonTap() {
+  unlockAudio();
   const c = getCtx();
   if (!c) return;
   try {
@@ -886,4 +894,68 @@ export function playShareSuccess() {
     setTimeout(() => playTone(base * 1.5, 0.15, 'sine', 0.09), 60);
     setTimeout(() => playCoinBell(vary(3200, 0.1), 0.12, 0.03), 100);
   }, 120);
+}
+
+// ── Sonidos del modo Desafío Mundial (fútbol) ─────────────────────────────
+
+/** Silbato de árbitro — dos toques agudos con warble. */
+export function playWhistle() {
+  unlockAudio();
+  const c = getCtx();
+  if (!c) return;
+  const toot = (delay: number, dur: number) => {
+    try {
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      const lfo = c.createOscillator();
+      const lfoGain = c.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = vary(3100, 0.04);
+      lfo.frequency.value = 30;          // warble del silbato
+      lfoGain.gain.value = 150;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      const peak = vary(vol(0.09), 0.2);
+      const t0 = c.currentTime + delay;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g);
+      g.connect(getOutputNode(c));
+      osc.start(t0);
+      lfo.start(t0);
+      osc.stop(t0 + dur + 0.03);
+      lfo.stop(t0 + dur + 0.03);
+    } catch (_) { /* ignore */ }
+  };
+  toot(0, 0.15);
+  toot(0.2, 0.3);
+}
+
+/** Vuvuzela — zumbido grave estilo estadio. */
+export function playVuvuzela() {
+  unlockAudio();
+  const c = getCtx();
+  if (!c) return;
+  try {
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    const lp = c.createBiquadFilter();
+    osc.type = 'sawtooth';
+    osc.frequency.value = vary(233, 0.02);   // ~B♭3
+    lp.type = 'lowpass';
+    lp.frequency.value = 1100;
+    const peak = vary(vol(0.06), 0.15);
+    const t0 = c.currentTime;
+    const dur = 0.6;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.07);
+    g.gain.setValueAtTime(peak, t0 + dur - 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(lp);
+    lp.connect(g);
+    g.connect(getOutputNode(c));
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  } catch (_) { /* ignore */ }
 }
