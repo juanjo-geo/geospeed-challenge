@@ -305,6 +305,15 @@ export default function AutoDemo() {
         ctx.globalAlpha = 1;
       }
 
+      // Tagline velocidad + precisión — al pie del mapa (sobre el polo sur)
+      ctx.globalAlpha = 0.92;
+      ctx.font = `bold ${Math.max(10, w / 30)}px system-ui`;
+      ctx.fillStyle = isNeon ? '#F0A030' : isLight ? '#1a3a4a' : '#f5c842';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(t('demo_tagline'), w / 2, h - 4);
+      ctx.globalAlpha = 1;
+
       animRef.current = requestAnimationFrame(animate);
     };
 
@@ -319,9 +328,6 @@ export default function AutoDemo() {
         className="w-full rounded-xl border-2 border-primary/30 pointer-events-none"
         style={{ height: size.h }}
       />
-      <p className="mt-1.5 text-center text-[11px] sm:text-xs font-black tracking-wide" style={{ color: 'hsl(var(--primary))' }}>
-        {t('demo_tagline')}
-      </p>
     </div>
   );
 }

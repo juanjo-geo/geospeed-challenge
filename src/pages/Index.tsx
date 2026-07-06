@@ -6,6 +6,7 @@ import { checkIncomingReferral } from '@/lib/referralSystem';
 import { recordInstallDate, checkRetention } from '@/lib/retentionTracker';
 import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { type RoundResult } from '@/components/game/GameScreen';
+import CountdownIntro from '@/components/game/CountdownIntro';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 
 // ── Eager loads (critical path — always needed) ──
@@ -295,7 +296,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       setCountdown(prev => {
         if (prev <= 0) {
           clearInterval(interval);
-          setPhase('playing');
+          const next = countdownNextRef.current;
+          countdownNextRef.current = 'playing'; // reset para la próxima cuenta
+          setPhase(next);
           return 0;
         }
         if (prev === 1) {
@@ -313,6 +316,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [phase]);
 
   const pendingStartRef = useRef<{ diff: Difficulty; mode: GameMode } | null>(null);
+  const countdownNextRef = useRef<Phase>('playing'); // a qué fase saltar tras la cuenta regresiva
 
   const handleSelectDifficulty = useCallback((diff: Difficulty, mode: GameMode) => {
     unlockAudio(); // Pre-unlock audio on user gesture so sounds work on mobile
@@ -541,7 +545,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (!consumeLife()) { setShowNoLives(true); return; }
     setDifficulty('medium');
     setGameMode('world');
-    setPhase('daily');
+    setIsTraining(false);
+    setIsSpeedDemon(false);
+    gameKeyRef.current += 1;
+    countdownNextRef.current = 'daily'; // el Diario ahora muestra la cuenta regresiva primero
+    setPhase('countdown');
   }, []);
 
   const [isSpeedDemon, setIsSpeedDemon] = useState(false);
@@ -741,41 +749,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     // 'rotate' phase is no longer used — handled via overlay (showRotateOverlay)
 
     if (phase === 'countdown') {
-      const isGo = countdown === 0;
       return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
-          {/* Logo pequeño */}
-          <img src="/logo.png" alt="GeoSpeed" className="w-12 sm:w-14 md:w-16 object-contain mb-3 sm:mb-4 animate-fade-in" />
-
-          <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 sm:mb-4 animate-fade-in">
-            {isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 5s/city' : `${modeLabel} — ${diffLabel}`}
-          </p>
-
-          <div className="relative flex items-center justify-center">
-            {/* Expanding ring on GO */}
-            {isGo && (
-              <div
-                className="absolute w-24 h-24 rounded-full border-4 animate-ring-expand"
-                style={{ borderColor: 'hsl(var(--primary))' }}
-              />
-            )}
-
-            <div
-              key={countdown}
-              className={`font-black font-mono ${isGo
-                ? 'text-8xl sm:text-9xl md:text-[10rem] animate-go-impact'
-                : 'text-7xl sm:text-8xl md:text-9xl animate-countdown-zoom'
-              }`}
-              style={{ color: 'hsl(var(--primary))' }}
-            >
-              {isGo ? 'GO!' : countdown}
-            </div>
-          </div>
-
-          <p className="text-muted-foreground mt-4 sm:mt-6 text-xs sm:text-sm animate-fade-in">
-            {isGo ? t('countdown_go') : t('countdown_ready')}
-          </p>
-        </div>
+        <CountdownIntro
+          count={countdown}
+          label={isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 5s/city' : `${modeLabel} — ${diffLabel}`}
+        />
       );
     }
 

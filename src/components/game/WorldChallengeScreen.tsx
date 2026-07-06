@@ -11,7 +11,7 @@ import {
 import {
   playClick, playGood, playBad, playMedium,
   playGameOver, playRoundTransition, playTick, playTimeExpired, playButtonTap,
-  playVictory, playStreak, playWhistle, playVuvuzela,
+  playVictory, playStreak, playWhistle, playVuvuzela, playCountdown, playGo,
 } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticCelebration } from '@/lib/haptics';
 import { fireGoldBurst, fireRedBurst, fireCelebration, fireDistanceReveal } from '@/lib/confetti';
@@ -25,6 +25,7 @@ import WorldMapCanvas from './WorldMapCanvas';
 import TimerBar from './TimerBar';
 import Button3D from '@/components/ui/Button3D';
 import CountUp from '@/components/ui/CountUp';
+import CountdownIntro from './CountdownIntro';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -113,7 +114,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   const [submitted, setSubmitted] = useState(false);
   const [shared, setShared] = useState(false);
   // Al entrar a Mundial: a veces balón ⚽, a veces copa 🏆 en el Pacífico
-  const [pacificDecor] = useState<'ball' | 'trophy'>(() => (Math.random() < 0.5 ? 'trophy' : 'ball'));
+  const [pacificDecor, setPacificDecor] = useState<'ball' | 'trophy'>(() => (Math.random() < 0.5 ? 'trophy' : 'ball'));
 
   const roundStartRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -150,20 +151,21 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
     setSubmitted(false);
     setQualifies(false);
     setShared(false);
+    setPacificDecor(Math.random() < 0.5 ? 'trophy' : 'ball'); // re-sortea balón/copa cada partida
     setCountdown(3);
     setStage('countdown');
   }, [onNoLives]);
 
-  // Cuenta regresiva 3-2-1 (silbato de inicio en el GO)
+  // Cuenta regresiva 3-2-1-GO unificada (igual que el Clásico) + silbato de arranque
   useEffect(() => {
     if (stage !== 'countdown') return;
     if (countdown <= 0) {
-      playWhistle();
-      setStage('playing');
-      return;
+      const id = setTimeout(() => setStage('playing'), 700); // muestra "GO!" un momento
+      return () => clearTimeout(id);
     }
-    playRoundTransition();
-    const id = setTimeout(() => setCountdown((c) => c - 1), 800);
+    if (countdown === 1) { playGo(); playWhistle(); }
+    else playCountdown();
+    const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(id);
   }, [stage, countdown, isPortraitMobile]);
 
@@ -388,16 +390,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   }
 
   if (stage === 'countdown') {
-    const isGo = countdown === 0;
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
-        <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 animate-fade-in">
-          {BALL} {t('wc_modeName')} — {t(WC_DIFF_KEY[difficulty] as never)}
-        </p>
-        <div key={countdown} className="font-black font-mono text-7xl sm:text-8xl md:text-9xl animate-countdown-zoom" style={{ color: 'hsl(var(--primary))' }}>
-          {isGo ? 'GO!' : countdown}
-        </div>
-      </div>
+      <CountdownIntro count={countdown} label={`${BALL} ${t('wc_modeName')} — ${t(WC_DIFF_KEY[difficulty] as never)}`} />
     );
   }
 

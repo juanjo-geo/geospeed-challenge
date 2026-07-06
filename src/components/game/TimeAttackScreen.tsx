@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import CountUp from '@/components/ui/CountUp';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
-import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat } from '@/lib/sounds';
+import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat, playCountdown, playGo } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
+import CountdownIntro from './CountdownIntro';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
@@ -63,6 +64,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const roundsRef = useRef<TimeAttackResult['rounds']>([]);
   const gameOverRef = useRef(false);
   const lastClickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
+  const [taStarted, setTaStarted] = useState(false); // arranca tras la cuenta regresiva
+  const [countdown, setCountdown] = useState(3);
 
   const currentCity = cities[currentIdx % cities.length];
 
@@ -71,9 +74,25 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const onGameOverRef = useRef(onGameOver);
   useEffect(() => { onGameOverRef.current = onGameOver; }, [onGameOver]);
 
-  // Global countdown timer — pauses when portrait on mobile
+  // Cuenta regresiva 3-2-1-GO antes de arrancar (igual que el Clásico)
   useEffect(() => {
-    if (isPortraitMobile) {
+    if (taStarted) return;
+    if (countdown <= 0) {
+      const id = setTimeout(() => setTaStarted(true), 700);
+      return () => clearTimeout(id);
+    }
+    if (countdown === 1) playGo();
+    else playCountdown();
+    const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [taStarted, countdown]);
+
+  // Al arrancar de verdad, reinicia el cronómetro de la 1ª ronda (no contar la cuenta regresiva)
+  useEffect(() => { if (taStarted) roundStartRef.current = Date.now(); }, [taStarted]);
+
+  // Global countdown timer — pauses when portrait on mobile / antes de arrancar
+  useEffect(() => {
+    if (isPortraitMobile || !taStarted) {
       clearInterval(globalTimerRef.current);
       return;
     }
@@ -105,7 +124,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       });
     }, 1000);
     return () => clearInterval(globalTimerRef.current);
-  }, [isPortraitMobile]);
+  }, [isPortraitMobile, taStarted]);
 
   useEffect(() => {
     roundStartRef.current = Date.now();
@@ -172,6 +191,10 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   }, [isAnimating, currentCity]);
 
   if (!currentCity) return null;
+
+  if (!taStarted) {
+    return <CountdownIntro count={countdown} label={`⚡ ${t('ta_timeAttack')}`} />;
+  }
 
   const timePercent = (globalTime / GLOBAL_TIME) * 100;
   const isLow = globalTime <= 10;
