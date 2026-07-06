@@ -311,7 +311,7 @@ export default function AutoDemo() {
       ctx.fillStyle = isNeon ? '#F0A030' : isLight ? '#1a3a4a' : '#f5c842';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      ctx.fillText(t('demo_tagline'), w / 2, h - 4);
+      ctx.fillText(t('demo_tagline'), w / 2, h - Math.max(16, w / 22));
       ctx.globalAlpha = 1;
 
       animRef.current = requestAnimationFrame(animate);
@@ -325,7 +325,7 @@ export default function AutoDemo() {
     <div ref={containerRef} className="w-full">
       <canvas
         ref={canvasRef}
-        className="w-full rounded-xl border-2 border-primary/30 pointer-events-none"
+        className="w-full rounded-xl border border-primary/40 pointer-events-none"
         style={{ height: size.h }}
       />
     </div>

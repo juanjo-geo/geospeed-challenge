@@ -225,7 +225,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           className={`object-contain ${isNewPlayer ? 'w-20 sm:w-28 md:w-36' : 'w-14 sm:w-20'}`}
         />
         <h1
-          className={`font-black tracking-tight leading-none mt-0 ${isNewPlayer ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-2xl sm:text-3xl md:text-5xl'}`}
+          className={`font-black tracking-tight leading-none mt-0 ${isNewPlayer ? 'text-6xl sm:text-7xl md:text-8xl' : 'text-5xl sm:text-6xl md:text-7xl'}`}
           style={{
             fontFamily: 'Impact, system-ui',
             background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
@@ -244,13 +244,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       >
         {t('home_tagline')}
       </p>
-
-      {/* ── Auto-playing demo — visual tutorial (only for new players above the fold) ── */}
-      {isNewPlayer && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
-          <AutoDemo />
-        </div>
-      )}
 
       {/* ── Cómo se juega (toggle + collapsible onboarding) ── */}
       <div className={`w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-150 ${isNewPlayer ? 'mb-3 sm:mb-4' : 'mb-1.5 sm:mb-2'}`}>
@@ -346,6 +339,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           )}
         </div>
       </div>
+
+      {/* ── Auto-demo — después de "cómo se juega" (nuevos; los recurrentes lo tienen abajo) ── */}
+      {isNewPlayer && (
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
+          <AutoDemo />
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════
           JUGADOR RECURRENTE — layout completo

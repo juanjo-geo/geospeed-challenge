@@ -77,6 +77,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   // Cuenta regresiva 3-2-1-GO antes de arrancar (igual que el Clásico)
   useEffect(() => {
     if (taStarted) return;
+    if (isPortraitMobile) return; // no arrancar la cuenta mientras se pide girar el teléfono
     if (countdown <= 0) {
       const id = setTimeout(() => setTaStarted(true), 700);
       return () => clearTimeout(id);
@@ -85,7 +86,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     else playCountdown();
     const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(id);
-  }, [taStarted, countdown]);
+  }, [taStarted, countdown, isPortraitMobile]);
 
   // Al arrancar de verdad, reinicia el cronómetro de la 1ª ronda (no contar la cuenta regresiva)
   useEffect(() => { if (taStarted) roundStartRef.current = Date.now(); }, [taStarted]);
@@ -193,7 +194,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   if (!currentCity) return null;
 
   if (!taStarted) {
-    return <CountdownIntro count={countdown} label={`⚡ ${t('ta_timeAttack')}`} />;
+    return isPortraitMobile ? null : <CountdownIntro count={countdown} label={`⚡ ${t('ta_timeAttack')}`} />;
   }
 
   const timePercent = (globalTime / GLOBAL_TIME) * 100;
