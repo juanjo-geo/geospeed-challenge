@@ -206,7 +206,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             <p className="text-[10px] text-muted-foreground">🌍 {currentCity.country}</p>
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] text-muted-foreground">{roundsRef.current.length} {t('ta_cities')}</span>
-              <span className={`font-mono font-bold ${globalTime <= 10 ? 'animate-pulse' : ''}`} style={{ fontSize: '1.05rem', color: timeColor }}>
+              <span className={`font-mono font-bold tabular-nums inline-block ${globalTime <= 10 ? 'animate-pulse' : ''}`} style={{ fontSize: '1.05rem', lineHeight: 1, color: timeColor }}>
                 ⏱ {globalTime}s
               </span>
             </div>
@@ -304,7 +304,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto) */}
           <div className="w-full shrink-0 sticky bottom-0 z-10 bg-card pt-2 mt-auto">
             <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">{t('game_timeLeft')}</p>
-            <div className={`text-center font-mono font-black mb-1.5 ${isLow ? 'animate-pulse' : ''}`} style={{ fontSize: '2.25rem', color: timeColor }} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
+            <div className={`text-center font-mono font-black mb-1.5 tabular-nums ${isLow ? 'animate-pulse' : ''}`} style={{ fontSize: '2.25rem', lineHeight: 1.1, color: timeColor }} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
               {globalTime}s
             </div>
             <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
@@ -357,7 +357,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
               <div className="mt-1.5">
                 <div className="mb-1 flex items-center justify-between text-[10px] font-mono">
                   <span className="text-muted-foreground">⏱ TIEMPO</span>
-                  <span className={`font-bold ${isLow ? 'animate-pulse' : ''}`} style={{ fontSize: '1.05rem', color: timeColor }} aria-live="polite">
+                  <span className={`font-bold tabular-nums inline-block ${isLow ? 'animate-pulse' : ''}`} style={{ fontSize: '1.05rem', lineHeight: 1, color: timeColor }} aria-live="polite">
                     {globalTime}s
                   </span>
                 </div>

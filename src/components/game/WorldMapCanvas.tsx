@@ -64,6 +64,16 @@ export default function WorldMapCanvas({
   const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 2));
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
 
+  // Balón PNG decorativo del modo Mundial (Pacífico sur) — reemplaza al emoji ⚽
+  const mundialBallRef = useRef<HTMLImageElement | null>(null);
+  const [mundialBallReady, setMundialBallReady] = useState(false);
+  useEffect(() => {
+    if (!fieldGreen || mundialBallRef.current) return;
+    const img = new Image();
+    img.onload = () => { mundialBallRef.current = img; setMundialBallReady(true); };
+    img.src = '/mundial-ball.png';
+  }, [fieldGreen]);
+
   // ── Pinch-to-zoom state ──
   const [pinchZoom, setPinchZoom] = useState(1);
   const [pinchOrigin, setPinchOrigin] = useState({ x: 50, y: 50 });
@@ -367,19 +377,29 @@ export default function WorldMapCanvas({
       ], Math.max(10, Math.round(w / 70)));
     }
 
-    // Balón de fútbol (emoji) grande, decorativo en el Pacífico sur — solo modo Mundial
+    // Balón de fútbol decorativo en el Pacífico sur — solo modo Mundial (PNG; emoji de respaldo)
     if (fieldGreen) {
       const c0 = geoToPixel(-140, -36);
       const size = Math.max(50, Math.min(w, h) * 0.26);
-      ctx.save();
-      ctx.globalAlpha = 0.82;
-      ctx.font = `${Math.round(size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('⚽', c0.x, c0.y);
-      ctx.restore();
+      const ball = mundialBallRef.current;
+      if (ball && mundialBallReady) {
+        const ar = ball.naturalHeight / ball.naturalWidth || 1;
+        const dw = size, dh = size * ar;
+        ctx.save();
+        ctx.globalAlpha = 0.92;
+        ctx.drawImage(ball, c0.x - dw / 2, c0.y - dh / 2, dw, dh);
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.globalAlpha = 0.82;
+        ctx.font = `${Math.round(size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('⚽', c0.x, c0.y);
+        ctx.restore();
+      }
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen, mundialBallReady]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.

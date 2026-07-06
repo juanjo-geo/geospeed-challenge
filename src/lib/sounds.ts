@@ -111,12 +111,9 @@ function getWarmAudio(): HTMLAudioElement {
 function doUnlock(): void {
   unlockAttempts++;
 
-  // iOS 16.4+: forzar categoría 'playback' para que los efectos (Web Audio) suenen
-  // aunque el switch físico de silencio del iPhone esté activado (como hacen los juegos).
-  try {
-    const ns = navigator as unknown as { audioSession?: { type: string } };
-    if (ns.audioSession) ns.audioSession.type = 'playback';
-  } catch (_) { /* no soportado */ }
+  // NO forzamos audioSession.type='playback': hacía que iOS publicara el control
+  // "Now Playing" en la pantalla de bloqueo y, al pausarlo desde ahí, tumbaba el audio
+  // sin recuperarse dentro del juego. El juego respeta el switch de silencio del iPhone.
 
   // Note: HTML Audio warm element (Strategy 1) removed entirely.
   // It caused audible DAC pop/click on iPhone when starting/stopping.
@@ -999,38 +996,42 @@ export function playAccordion(open: boolean = true) {
   const c = getCtx();
   if (!c) return;
   try {
-    const dur = 0.34;
+    const dur = 0.44; // alargado
     const now = c.currentTime;
-    // Swoosh: ruido por bandpass cuya frecuencia barre hacia arriba (abrir) o abajo (cerrar)
+    // Whoosh sobrio: ruido suavizado (sin agudos ásperos) por lowpass que barre
+    // lentamente. Sin tono melódico, para que no suene "de juguete".
     const bufferSize = Math.floor(c.sampleRate * dur);
     const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    let last = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const wn = Math.random() * 2 - 1;
+      last = (last + 0.025 * wn) / 1.025; // filtro paso-bajo → ruido suave (tipo aire)
+      data[i] = last * 3.2;
+    }
     const src = c.createBufferSource();
     src.buffer = buffer;
-    const bp = c.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.Q.value = 1.3;
-    const fStart = open ? 520 : 2600;
-    const fEnd = open ? 2600 : 520;
-    bp.frequency.setValueAtTime(fStart, now);
-    bp.frequency.exponentialRampToValueAtTime(fEnd, now + dur);
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.Q.value = 0.6;
+    const fStart = open ? 280 : 1300;
+    const fEnd = open ? 1300 : 280;
+    lp.frequency.setValueAtTime(fStart, now);
+    lp.frequency.exponentialRampToValueAtTime(fEnd, now + dur);
     const ng = c.createGain();
     ng.gain.setValueAtTime(0.001, now);
-    ng.gain.linearRampToValueAtTime(vary(vol(0.055), 0.15), now + 0.05);
+    ng.gain.linearRampToValueAtTime(vary(vol(0.05), 0.08), now + 0.09);
     ng.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    src.connect(bp); bp.connect(ng); ng.connect(getOutputNode(c));
+    src.connect(lp); lp.connect(ng); ng.connect(getOutputNode(c));
     src.start();
-    // Glide tonal suave debajo → le da musicalidad al swoosh
+    // Cuerpo grave sutil (no melódico) → le da peso y seriedad al swoosh
     const osc = c.createOscillator();
     const og = c.createGain();
     osc.type = 'sine';
-    const tStart = open ? 320 : 760;
-    const tEnd = open ? 760 : 320;
-    osc.frequency.setValueAtTime(tStart, now);
-    osc.frequency.exponentialRampToValueAtTime(tEnd, now + dur);
+    osc.frequency.setValueAtTime(open ? 165 : 210, now);
+    osc.frequency.linearRampToValueAtTime(open ? 140 : 130, now + dur);
     og.gain.setValueAtTime(0.001, now);
-    og.gain.linearRampToValueAtTime(vary(vol(0.045), 0.15), now + 0.06);
+    og.gain.linearRampToValueAtTime(vary(vol(0.03), 0.08), now + 0.11);
     og.gain.exponentialRampToValueAtTime(0.001, now + dur);
     osc.connect(og); og.connect(getOutputNode(c));
     osc.start(); osc.stop(now + dur);
