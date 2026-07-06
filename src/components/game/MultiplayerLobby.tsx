@@ -197,7 +197,7 @@ export default function MultiplayerLobby({ onRoomReady, onBack, onSpectate }: Mu
             onClick={handleCreate}
             disabled={loading}
             className="w-full py-3 rounded-lg font-bold text-base transition-all active:scale-[0.97] disabled:opacity-50"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
+            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
           >
             {loading ? 'CREANDO...' : '🎯 CONFIRMAR Y CREAR'}
           </button>
@@ -223,7 +223,7 @@ export default function MultiplayerLobby({ onRoomReady, onBack, onSpectate }: Mu
             onClick={handleJoin}
             disabled={loading}
             className="w-full py-3 rounded-lg font-bold text-base transition-all active:scale-[0.97] disabled:opacity-50"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
+            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
           >
             {loading ? 'BUSCANDO...' : '🚀 ENTRAR A LA SALA'}
           </button>

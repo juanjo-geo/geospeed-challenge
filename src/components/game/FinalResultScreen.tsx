@@ -383,7 +383,7 @@ export default function FinalResultScreen({
               onClick={handleSave}
               disabled={initials.length !== 3 || saving}
               className="px-5 sm:px-6 py-2 rounded-lg font-bold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
             >
               {saving ? t('final_saved') : t('final_saveScore')}
             </button>

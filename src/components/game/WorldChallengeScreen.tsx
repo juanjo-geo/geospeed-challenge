@@ -337,6 +337,16 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
 
   // ───────────────────────── RENDER ─────────────────────────
 
+  // Overlay de "gira el teléfono" — solo durante la cuenta regresiva y el juego (no en el panel de inicio),
+  // para que el orden sea igual a los demás modos.
+  const rotateOverlay = (
+    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center game-bg text-center px-6">
+      <div className="text-5xl mb-4 animate-bounce">🔄📱</div>
+      <p className="text-lg sm:text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{t('rotate_title')}</p>
+      <p className="text-xs sm:text-sm text-muted-foreground mt-2">{t('rotate_desc')}</p>
+    </div>
+  );
+
   if (stage === 'select') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 overflow-y-auto game-bg">
@@ -380,6 +390,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
     const isGo = countdown === 0;
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] game-bg overflow-hidden">
+        {isPortraitMobile && rotateOverlay}
         <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 animate-fade-in">
           {BALL} {t('wc_modeName')} — {t(WC_DIFF_KEY[difficulty] as never)}
         </p>
@@ -453,6 +464,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   const fbStreakName = feedback ? streakKey(feedback.streak) : null;
   return (
     <div className="fixed inset-0 z-40 flex flex-col game-bg">
+      {isPortraitMobile && rotateOverlay}
       {/* Barra superior: ronda, pregunta (+ era), racha, score */}
       <div className="shrink-0 px-3 py-2 flex items-center gap-3 border-b border-border/60">
         <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">

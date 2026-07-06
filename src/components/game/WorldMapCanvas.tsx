@@ -367,40 +367,16 @@ export default function WorldMapCanvas({
       ], Math.max(10, Math.round(w / 70)));
     }
 
-    // Balón estilo Trionda (Mundial 2026): esfera blanca + 3 pétalos curvos tricolor — solo modo Mundial
+    // Balón de fútbol (emoji) grande, decorativo en el Pacífico sur — solo modo Mundial
     if (fieldGreen) {
       const c0 = geoToPixel(-140, -36);
-      const R = Math.max(40, Math.min(w, h) * 0.175);
+      const size = Math.max(60, Math.min(w, h) * 0.32);
       ctx.save();
-      ctx.translate(c0.x, c0.y);
-      ctx.globalAlpha = 0.85;
-      // esfera blanca base
-      ctx.beginPath();
-      ctx.arc(0, 0, R, 0, Math.PI * 2);
-      ctx.fillStyle = '#f4f7f9';
-      ctx.fill();
-      // 3 pétalos curvos en pinwheel (azul, rojo, verde)
-      const triColors = ['#2b8cff', '#ff3b5c', '#25c26a'];
-      for (let i = 0; i < 3; i++) {
-        ctx.save();
-        ctx.rotate((i * 2 * Math.PI) / 3);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(R * 0.10, -R * 0.62, R * 0.62, -R * 0.60);
-        ctx.quadraticCurveTo(R * 0.98, -R * 0.30, R * 0.86, R * 0.16);
-        ctx.quadraticCurveTo(R * 0.42, R * 0.10, 0, 0);
-        ctx.closePath();
-        ctx.fillStyle = triColors[i];
-        ctx.fill();
-        ctx.restore();
-      }
-      // contorno
-      ctx.globalAlpha = 0.9;
-      ctx.beginPath();
-      ctx.arc(0, 0, R, 0, Math.PI * 2);
-      ctx.lineWidth = Math.max(2, R * 0.03);
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-      ctx.stroke();
+      ctx.globalAlpha = 0.82;
+      ctx.font = `${Math.round(size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⚽', c0.x, c0.y);
       ctx.restore();
     }
   }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen]);

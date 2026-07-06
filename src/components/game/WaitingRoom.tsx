@@ -107,7 +107,7 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
             onClick={handleReady}
             disabled={ready}
             className="w-full py-3.5 rounded-xl font-bold text-lg transition-all active:scale-[0.97] disabled:opacity-50 animate-fade-in"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
+            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
           >
             {ready ? 'ESPERANDO AL RIVAL...' : `${t('mp_markReady')} 🎯`}
           </button>

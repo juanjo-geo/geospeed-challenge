@@ -98,8 +98,8 @@ function getWarmAudio(): HTMLAudioElement {
     warmAudioEl = new Audio(SILENT_WAV_LONG);
     warmAudioEl.setAttribute('playsinline', '');
     warmAudioEl.setAttribute('preload', 'auto');
-    warmAudioEl.loop = false;
-    warmAudioEl.volume = 0;
+    warmAudioEl.loop = true;   // loop continuo = keepalive de la sesión de audio iOS
+    warmAudioEl.volume = 0.02; // contenido silencioso; loop mantiene viva la sesión para los SFX
   }
   return warmAudioEl;
 }
@@ -153,6 +153,13 @@ function doUnlock(): void {
     if (ctx.state === 'running') {
       unlocked = true;
     }
+
+    // Keepalive: un <audio> silencioso en loop mantiene activa la sesión de audio de iOS,
+    // así los efectos (Web Audio) suenan aunque la música esté muteada o pausada.
+    try {
+      const warm = getWarmAudio();
+      if (warm.paused) { const wp = warm.play(); if (wp) wp.catch(() => {}); }
+    } catch (_) { /* ignore */ }
   } catch (_) { /* ignore */ }
 }
 
