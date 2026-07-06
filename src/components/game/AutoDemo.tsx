@@ -70,6 +70,9 @@ function buildDemoSet(): DemoCity[] {
   return pickRandomCities([...hits, fail], 6);
 }
 
+// Bounds recortados: sin océano vacío bajo ~-55 (el marco pega al mapa)
+const DEMO_BOUNDS = { latMin: -56, latMax: 80, lonMin: -180, lonMax: 180 };
+
 const DEMO_CITIES = buildDemoSet();
 
 export default function AutoDemo() {
@@ -86,8 +89,7 @@ export default function AutoDemo() {
     const ro = new ResizeObserver(entries => {
       const { width } = entries[0].contentRect;
       if (width > 0) {
-        const b = getMapBounds('world');
-        const aspect = (b.latMax - b.latMin) / (b.lonMax - b.lonMin);
+        const aspect = (DEMO_BOUNDS.latMax - DEMO_BOUNDS.latMin) / (DEMO_BOUNDS.lonMax - DEMO_BOUNDS.lonMin);
         setSize({ w: Math.floor(width), h: Math.floor(width * aspect) });
       }
     });
@@ -101,7 +103,7 @@ export default function AutoDemo() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const bounds = getMapBounds('world');
+    const bounds = DEMO_BOUNDS;
     const lonRange = bounds.lonMax - bounds.lonMin;
     const latRange = bounds.latMax - bounds.latMin;
     const CYCLE_MS = 5000;

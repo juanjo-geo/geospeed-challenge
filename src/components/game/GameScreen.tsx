@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useUltraWide } from '@/hooks/useUltraWide';
 import WorldMapCanvas from './WorldMapCanvas';
+import Mascot, { type MascotState } from './Mascot';
 import CountUp from '@/components/ui/CountUp';
 import TimerBar from './TimerBar';
 import { useA11y } from '@/contexts/AccessibilityContext';
@@ -97,6 +98,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [scorePop, setScorePop] = useState(false);
   const [floatPoints, setFloatPoints] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
+  const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [showHint, setShowHint] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [isPageHidden, setIsPageHidden] = useState(false);
@@ -259,6 +261,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     // Resilient streak: threshold 1500km, fail = halve (not reset), cap x1.60
     const newStreak = distance < 1500 ? streak + 1 : Math.max(0, Math.floor(streak / 2));
     setStreak(newStreak);
+    // Reacción emocional de la mascota (juice Capa 6)
+    setMascotState(
+      distance >= 2000 ? 'sad'
+        : newStreak >= 3 ? 'fire'
+        : distance < 300 ? 'celebrate'
+        : 'wink'
+    );
 
     // Streak bonus: +10% per level starting at streak ≥ 2, capped at x1.60
     const streakBonus = newStreak >= 2 ? Math.min(1.6, 1 + (newStreak - 1) * 0.10) : 1;
@@ -322,6 +331,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const fb = getRoundFeedback(distance, palette, t);
     announce(t('sr_announceResult', { feedback: fb.phrase, city: currentCity.name, country: currentCity.country, distance: Math.round(distance), points: totalPoints, round: currentRound + 1, total: totalRounds }));
   }, [isWaiting, currentCity, onRoundComplete, t]);
+
+  useEffect(() => { setMascotState('idle'); }, [currentRound]);
 
   if (!currentCity) return null;
 
@@ -509,28 +520,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </div>
           )}
 
-          {/* ── Compass decoration ── */}
-          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[60px] pointer-events-none select-none">
-            <svg viewBox="0 0 100 100" className="w-20 sm:w-24 opacity-[0.06]" fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="50" cy="50" r="46" />
-              <circle cx="50" cy="50" r="40" />
-              <circle cx="50" cy="50" r="2" fill="currentColor" />
-              {/* Cardinal ticks */}
-              <line x1="50" y1="4" x2="50" y2="14" strokeWidth="1.2" />
-              <line x1="50" y1="86" x2="50" y2="96" strokeWidth="1.2" />
-              <line x1="4" y1="50" x2="14" y2="50" strokeWidth="1.2" />
-              <line x1="86" y1="50" x2="96" y2="50" strokeWidth="1.2" />
-              {/* Intercardinal ticks */}
-              <line x1="17.6" y1="17.6" x2="22.8" y2="22.8" />
-              <line x1="77.2" y1="17.6" x2="82.4" y2="22.8" />
-              <line x1="17.6" y1="82.4" x2="22.8" y2="77.2" />
-              <line x1="77.2" y1="82.4" x2="82.4" y2="77.2" />
-              {/* North needle */}
-              <polygon points="50,10 45,50 55,50" fill="currentColor" opacity="0.5" stroke="none" />
-              <polygon points="50,90 45,50 55,50" fill="currentColor" opacity="0.2" stroke="none" />
-              {/* N label */}
-              <text x="50" y="22" textAnchor="middle" fontSize="7" fill="currentColor" stroke="none" fontWeight="bold" opacity="0.7">N</text>
-            </svg>
+          {/* ── Mascota (reacciona a los resultados) ── */}
+          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[72px] pointer-events-none select-none py-1">
+            <Mascot
+              state={mascotState}
+              className={`w-20 sm:w-24 md:w-28 drop-shadow-[0_6px_16px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+            />
           </div>
 
           {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto, p.ej. Samsung S23 FE landscape) */}
