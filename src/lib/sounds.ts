@@ -227,6 +227,12 @@ export function unlockAudio(): void {
   doUnlock();
 }
 
+/** Contexto de audio compartido (para enrutar la música por Web Audio en iOS). */
+export function getSharedAudioContext(): AudioContext | null {
+  unlockAudio();
+  return getCtx();
+}
+
 /**
  * Get the AudioContext for sound playback.
  * If context is dead or suspended, attempts recovery.

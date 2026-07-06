@@ -2,16 +2,17 @@
 // GeoSpeed — Background Music System (single track)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// One continuous track that plays from splash through all phases.
-// Volume at 25% of pre-mastered MP3 (~3.75% effective).
-// Mute persisted in localStorage. Pauses when tab hidden, resumes on focus.
+// En iOS `audio.volume` se IGNORA, por eso enrutamos la música por Web Audio
+// (GainNode) para controlar volumen y mute. Mutear = ganancia 0 SIN pausar el
+// <audio>, lo que mantiene viva la sesión de audio de iOS y NO afecta los SFX.
 
 import { useEffect, useCallback, useState } from 'react';
+import { getSharedAudioContext } from '@/lib/sounds';
 
 export type MusicTrack = 'on' | 'none';
 
 const TRACK_SRC = '/music/track-menu.mp3';
-const BASE_VOLUME = 0.6; // El archivo MP3 ya viene bajado 65%; esto solo afecta escritorio (iOS ignora volume)
+const BASE_VOLUME = 0.6; // ganancia base (0-1); iOS la respeta vía Web Audio
 const FADE_DURATION = 800; // ms
 
 // ── Global singleton state ──
@@ -19,6 +20,11 @@ let audioEl: HTMLAudioElement | null = null;
 let isPlaying = false;
 let isMuted = false;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
+
+// Web Audio routing
+let musicGain: GainNode | null = null;
+let musicSource: MediaElementAudioSourceNode | null = null;
+let audioCtx: AudioContext | null = null;
 
 try {
   isMuted = localStorage.getItem('geospeed_music_muted') === 'true';
@@ -28,12 +34,46 @@ function getAudio(): HTMLAudioElement {
   if (!audioEl) {
     audioEl = new Audio();
     audioEl.loop = true;
-    audioEl.volume = 0;
+    audioEl.volume = 1; // el volumen real lo controla la ganancia de Web Audio
     audioEl.preload = 'auto';
     audioEl.setAttribute('playsinline', '');
     audioEl.src = TRACK_SRC;
   }
   return audioEl;
+}
+
+/** Enruta el <audio> por Web Audio (una sola vez). */
+function ensureRouting(): boolean {
+  if (musicGain) return true;
+  try {
+    const ctx = getSharedAudioContext();
+    if (!ctx) return false;
+    audioCtx = ctx;
+    const audio = getAudio();
+    musicSource = ctx.createMediaElementSource(audio);
+    musicGain = ctx.createGain();
+    musicGain.gain.value = 0;
+    musicSource.connect(musicGain);
+    musicGain.connect(ctx.destination);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function currentLevel(): number {
+  if (musicGain) return musicGain.gain.value;
+  return getAudio().volume;
+}
+
+function setLevel(v: number) {
+  const vol = Math.max(0, Math.min(1, v));
+  if (musicGain && audioCtx) {
+    try { musicGain.gain.setValueAtTime(vol, audioCtx.currentTime); }
+    catch (_) { musicGain.gain.value = vol; }
+  } else {
+    getAudio().volume = vol; // fallback escritorio (iOS ignora)
+  }
 }
 
 function stopFade() {
@@ -44,12 +84,12 @@ function stopFade() {
 }
 
 function fadeTo(targetVol: number, onDone?: () => void) {
-  const audio = getAudio();
   stopFade();
-  const startVol = audio.volume;
+  ensureRouting();
+  const startVol = currentLevel();
   const diff = targetVol - startVol;
   if (Math.abs(diff) < 0.01) {
-    audio.volume = targetVol;
+    setLevel(targetVol);
     onDone?.();
     return;
   }
@@ -59,10 +99,10 @@ function fadeTo(targetVol: number, onDone?: () => void) {
   fadeInterval = setInterval(() => {
     step++;
     const eased = 1 - Math.pow(1 - step / steps, 2);
-    audio.volume = Math.max(0, Math.min(1, startVol + diff * eased));
+    setLevel(startVol + diff * eased);
     if (step >= steps) {
       stopFade();
-      audio.volume = targetVol;
+      setLevel(targetVol);
       onDone?.();
     }
   }, stepTime);
@@ -70,17 +110,15 @@ function fadeTo(targetVol: number, onDone?: () => void) {
 
 function startMusic() {
   const audio = getAudio();
+  ensureRouting();
   if (isPlaying && !audio.paused) { if (!isMuted) fadeTo(BASE_VOLUME); return; }
   isPlaying = true;
-  audio.muted = isMuted;
-  audio.volume = 0;
+  setLevel(0);
   const p = audio.play();
   if (p) p.catch(() => {
-    // Autoplay blocked — retry on first user gesture
     installPlayRetry();
   });
-  // Mantener el <audio> sonando (en mute, a volumen 0) preserva la sesión de audio de iOS,
-  // así los efectos de sonido (Web Audio) siguen funcionando aunque la música esté en mute.
+  ensureRouting();
   if (!isMuted) fadeTo(BASE_VOLUME);
 }
 
@@ -91,8 +129,9 @@ function installPlayRetry() {
   const retry = () => {
     if (!isPlaying) return;
     const audio = getAudio();
+    ensureRouting();
     if (audio.paused) {
-      audio.volume = 0;
+      setLevel(0);
       const p = audio.play();
       if (p) p.then(() => {
         if (!isMuted) fadeTo(BASE_VOLUME);
@@ -129,16 +168,13 @@ function setMuted(muted: boolean) {
   try {
     localStorage.setItem('geospeed_music_muted', muted ? 'true' : 'false');
   } catch (_) {}
-
   const audio = getAudio();
-  audio.muted = muted; // silencio garantizado sin pausar (los SFX ya son independientes vía audioSession)
+  ensureRouting();
   if (muted) {
-    stopFade();
-    audio.volume = 0;
+    // Ganancia a 0 pero el <audio> SIGUE reproduciendo → mantiene la sesión iOS, no toca los SFX.
+    fadeTo(0);
   } else if (isPlaying) {
-    audio.volume = 0;
-    const p = audio.play();
-    if (p) p.catch(() => {});
+    if (audio.paused) { const p = audio.play(); if (p) p.catch(() => {}); }
     fadeTo(BASE_VOLUME);
   }
 }
@@ -169,15 +205,6 @@ installVisibilityHandler();
 // React Hook
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * Single-track background music.
- *
- * Usage:
- *   const { toggle, muted } = useBackgroundMusic('on');
- *
- * Pass 'on' to start playing (from splash onward).
- * Music continues uninterrupted across all phases.
- */
 export function useBackgroundMusic(initialTrack: MusicTrack = 'none') {
   const [mutedState, setMutedState] = useState(isMuted);
 
