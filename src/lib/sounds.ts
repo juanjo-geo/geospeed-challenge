@@ -111,9 +111,14 @@ function getWarmAudio(): HTMLAudioElement {
 function doUnlock(): void {
   unlockAttempts++;
 
-  // NO forzamos audioSession.type='playback': hacía que iOS publicara el control
-  // "Now Playing" en la pantalla de bloqueo y, al pausarlo desde ahí, tumbaba el audio
-  // sin recuperarse dentro del juego. El juego respeta el switch de silencio del iPhone.
+  // iOS 16.4+: 'playback' hace que efectos y música suenen aunque el switch físico de
+  // silencio del iPhone esté activado (como los juegos). Sí muestra el control en la
+  // pantalla de bloqueo, pero lo DOMAMOS con navigator.mediaSession (useBackgroundMusic):
+  // pausarlo desde ahí ya NO tumba el audio, se recupera solo al volver al juego.
+  try {
+    const ns = navigator as unknown as { audioSession?: { type: string } };
+    if (ns.audioSession) ns.audioSession.type = 'playback';
+  } catch (_) { /* no soportado */ }
 
   // Note: HTML Audio warm element (Strategy 1) removed entirely.
   // It caused audible DAC pop/click on iPhone when starting/stopping.

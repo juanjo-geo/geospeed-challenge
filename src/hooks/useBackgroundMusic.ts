@@ -28,6 +28,8 @@ let gain: GainNode | null = null;
 let isPlaying = false;
 let isMuted = false;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
+let systemPaused = false;   // el usuario pausó desde el control de la pantalla de bloqueo
+let mediaSessionSet = false;
 
 try {
   isMuted = localStorage.getItem('geospeed_music_muted') === 'true';
@@ -147,6 +149,46 @@ function revive() {
       });
     }
   }
+  // Si el usuario pausó desde el bloqueo, al volver restauramos la música.
+  if (systemPaused && !isMuted) { systemPaused = false; fadeTo(BASE_VOLUME); }
+  markPlaying();
+}
+
+/** Marca a iOS que estamos "reproduciendo" (estado del control del bloqueo). */
+function markPlaying() {
+  try {
+    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+      (navigator as unknown as { mediaSession: { playbackState: string } }).mediaSession.playbackState = 'playing';
+    }
+  } catch (_) {}
+}
+
+/**
+ * Doma el control de la pantalla de bloqueo: al pausar NO se tumba el audio.
+ * Pausar = baja la música (el contexto y los efectos siguen vivos); al volver
+ * al juego o dar play, la música se restaura sola.
+ */
+function setupMediaSession() {
+  if (mediaSessionSet || typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+  mediaSessionSet = true;
+  try {
+    const ms = (navigator as unknown as { mediaSession: any }).mediaSession;
+    try {
+      const MM = (window as unknown as { MediaMetadata?: any }).MediaMetadata;
+      if (MM) ms.metadata = new MM({ title: 'GeoSpeed IQ Challenge', artist: 'GeoSpeed' });
+    } catch (_) {}
+    ms.setActionHandler('play', () => {
+      systemPaused = false;
+      revive();
+      if (!isMuted) fadeTo(BASE_VOLUME);
+      try { ms.playbackState = 'playing'; } catch (_) {}
+    });
+    ms.setActionHandler('pause', () => {
+      systemPaused = true;
+      fadeTo(0); // baja la música pero NO detiene el source ni el contexto → efectos intactos
+      try { ms.playbackState = 'paused'; } catch (_) {}
+    });
+  } catch (_) {}
 }
 
 function startMusic() {
@@ -161,6 +203,8 @@ function startMusic() {
     startSource();
     if (source) {
       if (!isMuted) fadeTo(BASE_VOLUME);
+      setupMediaSession();
+      markPlaying();
     } else {
       installPlayRetry();
     }
