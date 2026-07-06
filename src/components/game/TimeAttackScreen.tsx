@@ -426,10 +426,11 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           <div className={`absolute left-1/2 z-10 -translate-x-1/2 px-4 py-2 text-sm font-bold shadow-lg animate-fade-in rounded-xl ${isCompact ? 'top-[6rem]' : 'top-3'} ${
             flash === 'good' ? `${palette.good.twBg}/90 text-white` : `${palette.bad.twBg}/90 text-white`
           }`} role="status">
-            {flash === 'good' ? `🎯 +${lastPoints?.toLocaleString()}` : `😬 +${lastPoints?.toLocaleString()}`}
-            {lastDistance !== null && (
-              <span className="text-xs ml-2 opacity-80">({formatDistance(lastDistance)})</span>
-            )}
+            <div className="text-center leading-tight">
+              <div className="text-sm sm:text-base font-black">{flash === 'good' ? '🎯' : '😬'} {currentCity.name}</div>
+              <div className="text-[10px] sm:text-xs opacity-80">{currentCity.country}</div>
+              <div className="text-xs sm:text-sm font-bold mt-0.5">+{lastPoints?.toLocaleString()}{lastDistance !== null ? ` · ${formatDistance(lastDistance)}` : ''}</div>
+            </div>
           </div>
         )}
       </div>

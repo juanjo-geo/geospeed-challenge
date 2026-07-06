@@ -162,7 +162,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-wrap">
           {onOpenProfile && stats.gamesPlayed > 0 && (
             <button
-              onClick={onOpenProfile}
+              onClick={() => { playButtonTap(); onOpenProfile?.(); }}
               className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-all active:scale-[0.97]"
               aria-label="Mi perfil"
             >
@@ -171,7 +171,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           )}
           {onOpenStore && (
             <button
-              onClick={onOpenStore}
+              onClick={() => { playButtonTap(); onOpenStore?.(); }}
               className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-all active:scale-[0.97]"
               aria-label="Abrir tienda"
             >
@@ -180,7 +180,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           )}
           {onOpenBattlePass && (
             <button
-              onClick={onOpenBattlePass}
+              onClick={() => { playButtonTap(); onOpenBattlePass?.(); }}
               className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-[#f5c842]/40 text-[#f5c842] hover:bg-[#f5c842]/10 transition-all active:scale-[0.97]"
               aria-label="Battle Pass"
             >
@@ -313,7 +313,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
           {/* Botón entrenamiento */}
           <button
-            onClick={onStartTraining}
+            onClick={() => { playButtonTap(); onStartTraining(); }}
             className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 mt-2 sm:mt-3 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
           >
             {t('home_training').toUpperCase()}
@@ -352,7 +352,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             return (
               <button
                 key={m.key}
-                onClick={() => !isLocked && setSelectedMode(m.key)}
+                onClick={() => { if (!isLocked) { playButtonTap(); setSelectedMode(m.key); } }}
                 role="radio"
                 aria-checked={isSelected}
                 disabled={!!isLocked}
@@ -364,6 +364,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                     : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                 }`}
               >
+                {isSelected && !isLocked && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: '#F0A030', color: '#0A0E18' }}>✓</span>
+                )}
                 <span className="text-lg sm:text-xl md:text-2xl">{isLocked ? '🔒' : m.emoji}</span>
                 <span className={`text-[9px] sm:text-[11px] md:text-sm font-bold leading-tight text-center ${isLocked ? 'text-muted-foreground' : isSelected ? 'text-primary' : 'text-foreground'}`}>
                   {t(`mode_${m.key}` as any) || m.label}
@@ -387,7 +390,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             return (
               <button
                 key={d.key}
-                onClick={() => !isLocked && setSelectedDifficulty(d.key)}
+                onClick={() => { if (!isLocked) { playButtonTap(); setSelectedDifficulty(d.key); } }}
                 role="radio"
                 aria-checked={isSelected}
                 disabled={isLocked}
@@ -518,6 +521,132 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       )}
 
+      {/* ── Desafío Mundial (módulo Mundial) ── */}
+      {(() => {
+        const wcEvent = getFlag('world_challenge_event');
+        return (
+          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
+            <button
+              onClick={() => { playButtonTap(); onWorldChallenge(); }}
+              className={`w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                wcEvent
+                  ? 'border-emerald-400 bg-gradient-to-r from-emerald-500/20 to-green-500/15 animate-pulse-glow-subtle'
+                  : 'border-emerald-500/50 hover:border-emerald-500 bg-gradient-to-r from-emerald-500/10 to-green-500/10'
+              }`}
+              aria-label={t('wc_modeName')}
+            >
+              <span className="text-xl sm:text-2xl shrink-0">⚽</span>
+              <div className="text-left flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-xs sm:text-sm text-emerald-400">{t('wc_banner')}</span>
+                  {wcEvent && (
+                    <span className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-500/90 text-white animate-pulse">
+                      {t('wc_eventLive')}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
+                  {wcEvent ? t('wc_eventFomo') : t('wc_homeDesc')}
+                </div>
+              </div>
+              <span className="text-[10px] sm:text-xs font-mono text-emerald-400/70 shrink-0">▶</span>
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* ── Contrareloj + Speed Demon + Duelo ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-3 gap-1.5 sm:gap-2">
+        <button
+          onClick={() => { playButtonTap(); onTimeAttack(); }}
+          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
+          aria-label="Modo Blitz"
+        >
+          <span className="text-base sm:text-lg shrink-0">⚡</span>
+          <div className="text-left min-w-0">
+            <div className="font-bold text-[9px] sm:text-[11px] text-red-400">{t('home_timeAttack')}</div>
+            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_timeAttackDesc')}</div>
+          </div>
+        </button>
+        {(() => {
+          const speedLocked = playerLevel.level < 5;
+          return (
+            <button
+              onClick={() => !speedLocked && onSpeedDemon?.()}
+              disabled={speedLocked}
+              className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
+                speedLocked
+                  ? 'border-border bg-card/50 opacity-50 cursor-not-allowed'
+                  : 'border-fuchsia-500/40 hover:border-fuchsia-500 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 hover:shadow-[0_0_20px_hsl(292_84%_60%/0.2)]'
+              }`}
+              aria-label="Speed Demon Mode"
+            >
+              <span className="text-base sm:text-lg shrink-0">{speedLocked ? '🔒' : '👹'}</span>
+              <div className="text-left min-w-0">
+                <div className={`font-bold text-[9px] sm:text-[11px] ${speedLocked ? 'text-muted-foreground' : 'text-fuchsia-400'}`}>{t('home_speedDemon') || 'SPEED DEMON'}</div>
+                <div className="text-[7px] sm:text-[9px] text-muted-foreground">{speedLocked ? 'Nv.5' : (t('home_speedDemonDesc') || '5s · 30 ciudades')}</div>
+              </div>
+            </button>
+          );
+        })()}
+        <button
+          onClick={() => { playButtonTap(); onMultiplayer(); }}
+          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
+          aria-label="Modo duelo 1 contra 1"
+        >
+          <span className="text-base sm:text-lg shrink-0">🎮</span>
+          <div className="text-left min-w-0">
+            <div className="font-bold text-[9px] sm:text-[11px] text-primary">{t('home_duel')}</div>
+            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_duelDesc')}</div>
+          </div>
+        </button>
+      </div>
+
+      {/* ── Desafío Diario ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
+        <div className="w-full flex items-center gap-0 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 animate-pulse-glow-subtle">
+          <button
+            onClick={() => { playButtonTap(); onDailyChallenge(); }}
+            className="flex-1 flex items-center gap-2 sm:gap-3 p-3 sm:p-4 active:scale-[0.97] transition-transform"
+            aria-label="Desafío diario"
+          >
+            <span className="text-xl sm:text-2xl shrink-0">📅</span>
+            <div className="text-left flex-1 min-w-0">
+              <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
+              <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
+                {dailyPlayers > 0
+                  ? `🔥 ${dailyPlayers} ${dailyPlayers === 1 ? 'persona jugó' : 'personas jugaron'} hoy`
+                  : t('home_dailyChallengeDesc')
+                }
+              </div>
+            </div>
+            <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
+              {new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' })}
+            </span>
+          </button>
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              const today = new Date().toISOString().split('T')[0];
+              const url = `${window.location.origin}/daily/${today}`;
+              const text = locale === 'en'
+                ? `🌍 GeoSpeed Daily Challenge (${new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' })}). Same cities for everyone — can you beat me?`
+                : `🌍 Desafío Diario GeoSpeed (${new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}). Mismas ciudades para todos — ¿puedes superarme?`;
+              if (navigator.share) {
+                try { await navigator.share({ title: 'GeoSpeed Daily', text, url }); } catch (_) {}
+              } else {
+                await navigator.clipboard?.writeText(`${text}\n${url}`);
+              }
+            }}
+            className="shrink-0 px-3 py-3 sm:px-4 border-l border-amber-500/30 hover:bg-amber-500/10 active:scale-90 transition-all"
+            aria-label="Compartir desafío diario"
+            title="Compartir link del desafío"
+          >
+            <span className="text-sm">🔗</span>
+          </button>
+        </div>
+      </div>
+
       {/* ── Level badge + Badges ── */}
       {stats.gamesPlayed > 0 && (() => {
         const unlockedCount = badges.filter(b => b.unlocked).length;
@@ -579,85 +708,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <StatCard label={t('home_statsAvgDist')} value={`${avgDist.toLocaleString()} km`} />
         </div>
       )}
-
-      {/* ── Desafío Diario ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
-        <div className="w-full flex items-center gap-0 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 animate-pulse-glow-subtle">
-          <button
-            onClick={onDailyChallenge}
-            className="flex-1 flex items-center gap-2 sm:gap-3 p-3 sm:p-4 active:scale-[0.97] transition-transform"
-            aria-label="Desafío diario"
-          >
-            <span className="text-xl sm:text-2xl shrink-0">📅</span>
-            <div className="text-left flex-1 min-w-0">
-              <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
-              <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                {dailyPlayers > 0
-                  ? `🔥 ${dailyPlayers} ${dailyPlayers === 1 ? 'persona jugó' : 'personas jugaron'} hoy`
-                  : t('home_dailyChallengeDesc')
-                }
-              </div>
-            </div>
-            <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
-              {new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' })}
-            </span>
-          </button>
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              const today = new Date().toISOString().split('T')[0];
-              const url = `${window.location.origin}/daily/${today}`;
-              const text = locale === 'en'
-                ? `🌍 GeoSpeed Daily Challenge (${new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' })}). Same cities for everyone — can you beat me?`
-                : `🌍 Desafío Diario GeoSpeed (${new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}). Mismas ciudades para todos — ¿puedes superarme?`;
-              if (navigator.share) {
-                try { await navigator.share({ title: 'GeoSpeed Daily', text, url }); } catch (_) {}
-              } else {
-                await navigator.clipboard?.writeText(`${text}\n${url}`);
-              }
-            }}
-            className="shrink-0 px-3 py-3 sm:px-4 border-l border-amber-500/30 hover:bg-amber-500/10 active:scale-90 transition-all"
-            aria-label="Compartir desafío diario"
-            title="Compartir link del desafío"
-          >
-            <span className="text-sm">🔗</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Desafío Mundial (módulo Mundial) ── */}
-      {(() => {
-        const wcEvent = getFlag('world_challenge_event');
-        return (
-          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
-            <button
-              onClick={() => { playButtonTap(); onWorldChallenge(); }}
-              className={`w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                wcEvent
-                  ? 'border-emerald-400 bg-gradient-to-r from-emerald-500/20 to-green-500/15 animate-pulse-glow-subtle'
-                  : 'border-emerald-500/50 hover:border-emerald-500 bg-gradient-to-r from-emerald-500/10 to-green-500/10'
-              }`}
-              aria-label={t('wc_modeName')}
-            >
-              <span className="text-xl sm:text-2xl shrink-0">⚽</span>
-              <div className="text-left flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-black text-xs sm:text-sm text-emerald-400">{t('wc_banner')}</span>
-                  {wcEvent && (
-                    <span className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-500/90 text-white animate-pulse">
-                      {t('wc_eventLive')}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                  {wcEvent ? t('wc_eventFomo') : t('wc_homeDesc')}
-                </div>
-              </div>
-              <span className="text-[10px] sm:text-xs font-mono text-emerald-400/70 shrink-0">▶</span>
-            </button>
-          </div>
-        );
-      })()}
 
       {/* ── Referral — Invita amigos ── */}
       {!isNewPlayer && (() => {
@@ -722,53 +772,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
         );
       })()}
-
-      {/* ── Contrareloj + Speed Demon + Duelo ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-3 gap-1.5 sm:gap-2">
-        <button
-          onClick={onTimeAttack}
-          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
-          aria-label="Modo Blitz"
-        >
-          <span className="text-base sm:text-lg shrink-0">⚡</span>
-          <div className="text-left min-w-0">
-            <div className="font-bold text-[9px] sm:text-[11px] text-red-400">{t('home_timeAttack')}</div>
-            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_timeAttackDesc')}</div>
-          </div>
-        </button>
-        {(() => {
-          const speedLocked = playerLevel.level < 5;
-          return (
-            <button
-              onClick={() => !speedLocked && onSpeedDemon?.()}
-              disabled={speedLocked}
-              className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                speedLocked
-                  ? 'border-border bg-card/50 opacity-50 cursor-not-allowed'
-                  : 'border-fuchsia-500/40 hover:border-fuchsia-500 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 hover:shadow-[0_0_20px_hsl(292_84%_60%/0.2)]'
-              }`}
-              aria-label="Speed Demon Mode"
-            >
-              <span className="text-base sm:text-lg shrink-0">{speedLocked ? '🔒' : '👹'}</span>
-              <div className="text-left min-w-0">
-                <div className={`font-bold text-[9px] sm:text-[11px] ${speedLocked ? 'text-muted-foreground' : 'text-fuchsia-400'}`}>{t('home_speedDemon') || 'SPEED DEMON'}</div>
-                <div className="text-[7px] sm:text-[9px] text-muted-foreground">{speedLocked ? 'Nv.5' : (t('home_speedDemonDesc') || '5s · 30 ciudades')}</div>
-              </div>
-            </button>
-          );
-        })()}
-        <button
-          onClick={onMultiplayer}
-          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
-          aria-label="Modo duelo 1 contra 1"
-        >
-          <span className="text-base sm:text-lg shrink-0">🎮</span>
-          <div className="text-left min-w-0">
-            <div className="font-bold text-[9px] sm:text-[11px] text-primary">{t('home_duel')}</div>
-            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_duelDesc')}</div>
-          </div>
-        </button>
-      </div>
 
       {/* ── Collapsible Ranking ── */}
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-400">

@@ -11,7 +11,7 @@ import { useEffect, useCallback, useState } from 'react';
 export type MusicTrack = 'on' | 'none';
 
 const TRACK_SRC = '/music/track-menu.mp3';
-const BASE_VOLUME = 0.08; // Muy sutil: los SFX deben resaltar por encima
+const BASE_VOLUME = 0.6; // El archivo MP3 ya viene bajado 65%; esto solo afecta escritorio (iOS ignora volume)
 const FADE_DURATION = 800; // ms
 
 // ── Global singleton state ──
