@@ -27,7 +27,7 @@ interface DemoCity {
   emoji: string;
 }
 
-const ALL_DEMO_CITIES: DemoCity[] = [
+const HIT_CITIES: DemoCity[] = [
   { name: 'París', lat: 48.86, lon: 2.35, clickLat: 47.5, clickLon: 4.2, score: 800, emoji: '🔥' },
   { name: 'Tokio', lat: 35.68, lon: 139.69, clickLat: 36.5, clickLon: 137.0, score: 1000, emoji: '🎯' },
   { name: 'Buenos Aires', lat: -34.6, lon: -58.38, clickLat: -32.0, clickLon: -56.0, score: 500, emoji: '👏' },
@@ -55,7 +55,22 @@ function pickRandomCities(arr: DemoCity[], count: number): DemoCity[] {
   return copy.slice(0, count);
 }
 
-const DEMO_CITIES = pickRandomCities(ALL_DEMO_CITIES, 6);
+// Ciudades "falladas": el click cae al otro lado del mundo → arco largo + puntaje bajo
+const FAIL_CITIES: DemoCity[] = [
+  { name: 'Tokio', lat: 35.68, lon: 139.69, clickLat: -34.6, clickLon: -58.38, score: 50, emoji: '🌍' },
+  { name: 'Nueva York', lat: 40.71, lon: -74.01, clickLat: 22.0, clickLon: 88.0, score: 50, emoji: '🌍' },
+  { name: 'El Cairo', lat: 30.04, lon: 31.24, clickLat: -40.0, clickLon: -71.0, score: 50, emoji: '🌍' },
+  { name: 'Sídney', lat: -33.87, lon: 151.21, clickLat: 45.0, clickLon: -100.0, score: 50, emoji: '🌍' },
+];
+
+// Garantiza que aparezca UNA ciudad fallada (arco al otro lado del mundo) por sesión
+function buildDemoSet(): DemoCity[] {
+  const hits = pickRandomCities(HIT_CITIES, 5);
+  const fail = FAIL_CITIES[Math.floor(Math.random() * FAIL_CITIES.length)];
+  return pickRandomCities([...hits, fail], 6);
+}
+
+const DEMO_CITIES = buildDemoSet();
 
 export default function AutoDemo() {
   const { t, locale } = useI18n();
@@ -155,7 +170,7 @@ export default function AutoDemo() {
       // City name label (top)
       const nameAlpha = cycleT < 0.1 ? cycleT / 0.1 : cycleT > fadeStart ? Math.max(0, 1 - (cycleT - fadeStart) / (1 - fadeStart)) : 1;
       ctx.globalAlpha = nameAlpha;
-      ctx.font = `bold ${Math.max(11, w / 28)}px system-ui`;
+      ctx.font = `bold ${Math.max(15, w / 20)}px system-ui`;
       ctx.fillStyle = isNeon ? '#F0A030' : isLight ? '#1a3a4a' : '#f5c842';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -280,8 +295,8 @@ export default function AutoDemo() {
           const scoreAlpha = dotAlpha * (scoreT < 0.3 ? scoreT / 0.3 : 1);
 
           ctx.globalAlpha = scoreAlpha;
-          ctx.font = `bold ${Math.max(13, w / 22) * popScale}px system-ui`;
-          ctx.fillStyle = isNeon ? '#00D4AA' : '#22c55e';
+          ctx.font = `bold ${Math.max(17, w / 15) * popScale}px system-ui`;
+          ctx.fillStyle = city.score >= 500 ? (isNeon ? '#00D4AA' : '#22c55e') : '#ef4444';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(`${city.emoji} +${city.score}`, (ux + cx) / 2, (uy + cy) / 2 + yOff - 10);
@@ -301,9 +316,12 @@ export default function AutoDemo() {
     <div ref={containerRef} className="w-full">
       <canvas
         ref={canvasRef}
-        className="w-full rounded-xl border border-border/50 pointer-events-none"
+        className="w-full rounded-xl border-2 border-primary/30 pointer-events-none"
         style={{ height: size.h }}
       />
+      <p className="mt-1.5 text-center text-[11px] sm:text-xs font-black tracking-wide" style={{ color: 'hsl(var(--primary))' }}>
+        {t('demo_tagline')}
+      </p>
     </div>
   );
 }

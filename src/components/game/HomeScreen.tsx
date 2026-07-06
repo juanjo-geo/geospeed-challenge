@@ -258,8 +258,19 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           onClick={() => { playAccordion(!showHowToPlay); setShowHowToPlay(prev => !prev); }}
           className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl border border-border bg-card/60 text-[11px] sm:text-xs font-bold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all active:scale-[0.97]"
         >
-          <span>{showHowToPlay ? '▴' : '❓'}</span>
-          {showHowToPlay ? t('home_hideInstructions') : t('home_howToPlay')}
+          {showHowToPlay ? (
+            t('home_hideInstructions')
+          ) : (() => {
+            const txt = t('home_howToPlay');
+            const lead = txt.startsWith('¿') ? '¿' : '';
+            const tail = txt.endsWith('?') ? '?' : '';
+            const core = txt.slice(lead.length, txt.length - tail.length);
+            return (
+              <span>
+                <span className="text-red-500 font-black">{lead}</span>{core}<span className="text-red-500 font-black">{tail}</span>
+              </span>
+            );
+          })()}
         </button>
 
         <div className={`overflow-hidden transition-all duration-500 ease-out ${showHowToPlay ? 'max-h-[1200px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}>
@@ -841,6 +852,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   <span className="font-mono font-bold flex-1 text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{entry.initials}</span>
                   <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1 sm:mr-1.5">{(entry.mode === 'mundial' ? '⚽' : MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode)}</span>
                   <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5 sm:mr-2">{difficultyLabel(entry.difficulty, t)}</span>
+                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground/70 mr-1.5 sm:mr-2">{entry.date ? new Date(entry.date + 'T00:00:00').toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' }) : ''}</span>
                   <span className="font-mono font-bold text-xs sm:text-sm">{entry.score.toLocaleString()}</span>
                 </div>
               ))

@@ -224,6 +224,16 @@ export function isPro(): boolean {
   return getProStatus().isPro;
 }
 
+/** Resetea el estado Pro local (para pruebas: limpiar un Pro falso del modo mock). */
+export function resetPro(): void {
+  const state = getState();
+  state.isPro = false;
+  state.proExpiresAt = null;
+  state.proSource = null;
+  saveState(state);
+  _serverProCache = { isPro: false, checkedAt: Date.now() };
+}
+
 // ─── Purchase handlers ──────────────────────────────────────────────
 // These are called after successful payment verification.
 // In production, the server validates the payment and then calls these.

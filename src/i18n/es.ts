@@ -243,6 +243,7 @@ const es = {
   profile_dailyShort: 'Diario',
   profile_pts: 'pts',
   demo_whereIs: '¿Dónde está {city}?',
+  demo_tagline: '⚡ Velocidad + 🎯 Precisión = más puntos',
   tutorial_practiceDesc: '¿Dónde está París? Toca el mapa.',
   tutorial_next: 'Siguiente',
   tutorial_start: '¡Empezar!',

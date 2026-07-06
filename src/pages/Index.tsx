@@ -97,7 +97,7 @@ const SpectatorScreen = lazyWithReload(() => import('@/components/game/Spectator
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
-import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
+import { incrementGameCounter, shouldShowInterstitial, resetPro } from '@/lib/premiumSystem';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
@@ -238,9 +238,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('vidas') === 'geo') {
-        addLives(20);
-        params.delete('vidas');
+      let changed = false;
+      if (params.get('vidas') === 'geo') { addLives(20); params.delete('vidas'); changed = true; }
+      if (params.get('nopro') === 'geo') { resetPro(); params.delete('nopro'); changed = true; }
+      if (changed) {
         const q = params.toString();
         window.history.replaceState({}, '', window.location.pathname + (q ? `?${q}` : ''));
       }

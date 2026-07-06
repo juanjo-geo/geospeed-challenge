@@ -403,15 +403,8 @@ export default function WorldMapCanvas({
         ctx.globalAlpha = 0.92;
         ctx.drawImage(img, c0.x - dw / 2, c0.y - dh / 2, dw, dh);
         ctx.restore();
-      } else {
-        ctx.save();
-        ctx.globalAlpha = 0.82;
-        ctx.font = `${Math.round(size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('⚽', c0.x, c0.y);
-        ctx.restore();
       }
+      // sin fallback emoji: evita ver el "balón antiguo"; el PNG carga en milisegundos
     }
   }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen, pacificDecor, decorReady]);
 
