@@ -246,6 +246,7 @@ const en: Translations = {
   profile_pts: 'pts',
   demo_whereIs: 'Where is {city}?',
   demo_tagline: '⚡ Speed + 🎯 Precision = more points',
+  demo_otherSideWorld: 'Halfway across the world! 🌍',
   tutorial_practiceDesc: 'Where is Paris? Tap the map.',
   tutorial_next: 'Next',
   tutorial_start: 'Let\'s go!',

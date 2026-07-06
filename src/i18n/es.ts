@@ -244,6 +244,7 @@ const es = {
   profile_pts: 'pts',
   demo_whereIs: '¿Dónde está {city}?',
   demo_tagline: '⚡ Velocidad + 🎯 Precisión = más puntos',
+  demo_otherSideWorld: '¡Al otro lado del mundo! 🌍',
   tutorial_practiceDesc: '¿Dónde está París? Toca el mapa.',
   tutorial_next: 'Siguiente',
   tutorial_start: '¡Empezar!',

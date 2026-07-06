@@ -85,7 +85,11 @@ export default function AutoDemo() {
     if (!el) return;
     const ro = new ResizeObserver(entries => {
       const { width } = entries[0].contentRect;
-      if (width > 0) setSize({ w: Math.floor(width), h: Math.floor(width * 0.5) });
+      if (width > 0) {
+        const b = getMapBounds('world');
+        const aspect = (b.latMax - b.latMin) / (b.lonMax - b.lonMin);
+        setSize({ w: Math.floor(width), h: Math.floor(width * aspect) });
+      }
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -176,6 +180,18 @@ export default function AutoDemo() {
       ctx.textBaseline = 'top';
       ctx.fillText(t('demo_whereIs', { city: city.name }), w / 2, 6);
       ctx.globalAlpha = 1;
+
+      // Mensaje "¡Al otro lado del mundo!" cuando la localización falla (arco largo)
+      if (city.score <= 50 && cycleT >= arcDrawEnd) {
+        const mAlpha = cycleT > fadeStart ? Math.max(0, 1 - (cycleT - fadeStart) / (1 - fadeStart)) : 1;
+        ctx.globalAlpha = mAlpha;
+        ctx.font = `bold ${Math.max(11, w / 26)}px system-ui`;
+        ctx.fillStyle = '#ef4444';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(t('demo_otherSideWorld'), w / 2, 6 + Math.max(15, w / 20) + 3);
+        ctx.globalAlpha = 1;
+      }
 
       // Cursor position
       const ux = toX(city.clickLon);
@@ -325,7 +341,7 @@ export default function AutoDemo() {
     <div ref={containerRef} className="w-full">
       <canvas
         ref={canvasRef}
-        className="w-full rounded-xl border border-primary/40 pointer-events-none"
+        className="w-full rounded-xl border-2 border-[#f5c842]/60 pointer-events-none"
         style={{ height: size.h }}
       />
     </div>

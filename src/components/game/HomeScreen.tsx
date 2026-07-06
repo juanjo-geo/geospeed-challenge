@@ -340,12 +340,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       </div>
 
-      {/* ── Auto-demo — después de "cómo se juega" (nuevos; los recurrentes lo tienen abajo) ── */}
-      {isNewPlayer && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
-          <AutoDemo />
-        </div>
-      )}
+      {/* ── Auto-demo — justo después de "¿Cómo se juega?", antes de las modalidades ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
+        <AutoDemo />
+      </div>
 
       {/* ══════════════════════════════════════════
           JUGADOR RECURRENTE — layout completo
@@ -450,11 +448,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           <span className="relative">{t('home_playNow') || 'JUGAR AHORA'}</span>
           <span className="relative text-xl">▶</span>
         </button>
-      </div>
-
-      {/* ── Auto-demo for returning players ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-250">
-        <AutoDemo />
       </div>
 
       {/* ── Daily streak reward popup ── */}
