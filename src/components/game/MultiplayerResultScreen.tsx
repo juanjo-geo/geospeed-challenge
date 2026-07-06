@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import CountUp from '@/components/ui/CountUp';
 import { type GameRoom, fetchRoom, setupFinishedBroadcast } from '@/lib/multiplayerUtils';
 import { MODE_CONFIG } from '@/data/cities';
 import { useI18n } from '@/i18n';
@@ -120,7 +121,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
                 {pollTimedOut ? 'El rival no respondió' : t('mp_result_waiting')}
               </h1>
               <p className="text-muted-foreground text-sm mt-2">
-                Tu puntuación: <span className="font-bold" style={{ color: 'hsl(var(--primary))' }}>{myScore.toLocaleString()}</span>
+                Tu puntuación: <span className="font-bold" style={{ color: 'hsl(var(--primary))' }}><CountUp value={myScore} /></span>
               </p>
               {pollTimedOut ? (
                 <p className="text-muted-foreground text-xs mt-1">Parece que el rival abandonó la partida</p>
@@ -150,7 +151,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
               <p className="font-bold text-foreground text-lg">{myName} <span className="text-xs text-muted-foreground">({t('mp_result_you')})</span></p>
               <p className="text-[10px] text-green-400">✓ {t('mp_result_finished')}</p>
             </div>
-            <p className="text-3xl font-mono font-black" style={{ color: 'hsl(var(--primary))' }}>{myScore.toLocaleString()}</p>
+            <p className="text-3xl font-mono font-black" style={{ color: 'hsl(var(--primary))' }}><CountUp value={myScore} /></p>
           </div>
 
           {/* Opponent row */}
@@ -166,7 +167,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
               }
             </div>
             <p className="text-3xl font-mono font-black" style={{ color: 'hsl(var(--primary))' }}>
-              {opponentFinished ? opponentScore.toLocaleString() : '…'}
+              {opponentFinished ? <CountUp value={opponentScore} /> : '…'}
             </p>
           </div>
         </div>
@@ -183,7 +184,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
             <button
               onClick={onPlayAgain}
               className="flex-1 py-3 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
             >
               {opponentFinished ? 'REVANCHA 🔄' : 'NUEVA PARTIDA 🔄'}
             </button>

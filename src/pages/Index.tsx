@@ -48,7 +48,7 @@ class PhaseErrorBoundary extends Component<
           <button
             onClick={() => { this.setState({ error: null }); this.props.onReset(); }}
             className="px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.97]"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
           >
             ← VOLVER AL INICIO
           </button>
@@ -835,7 +835,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               <button
                 onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
               >
                 {t('ta_start')} ⚡
               </button>
@@ -921,7 +921,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
             </div>
 
             <div className="flex gap-2 sm:gap-3">
-              <button onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+              <button onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}>
                 REINTENTAR ⚡
               </button>
               <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted">
@@ -1089,7 +1089,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               <button
                 onClick={handleNotifAccept}
                 className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
               >
                 Sí, activar
               </button>

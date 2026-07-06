@@ -151,7 +151,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <button
               onClick={() => navigate('/auth')}
               className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-[0.97] btn-glow whitespace-nowrap"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
               aria-label="Iniciar sesión"
             >
               {t('home_signIn').toUpperCase()}

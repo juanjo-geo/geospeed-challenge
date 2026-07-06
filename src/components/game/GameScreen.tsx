@@ -736,7 +736,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <button
                 onClick={advanceRound}
                 className="w-full rounded-xl py-3 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
                 aria-label={t('game_next') + ', ' + t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               >
                 {t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
@@ -804,7 +804,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <button
                 onClick={advanceRound}
                 className="w-full py-2 sm:py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-[0.97] btn-glow"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 0 hsl(var(--primary) / 0.45)' }}
               >
                 {t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               </button>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import CountUp from '@/components/ui/CountUp';
 import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
@@ -191,7 +192,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
               <span className="text-sm font-black truncate">📍 {currentCity.name}</span>
             </div>
             <span className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
-              {score.toLocaleString()}
+              <CountUp value={score} />
             </span>
           </div>
           <div className="flex items-center justify-between">
@@ -254,7 +255,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
             <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
             <p className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
-              {score.toLocaleString()}
+              <CountUp value={score} />
             </p>
           </div>
 
@@ -341,7 +342,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
                 <div className="relative shrink-0 text-center min-w-[3.5rem]">
                   <p className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">{t('game_score')}</p>
                   <p className={`text-lg font-mono font-bold leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
-                    {score.toLocaleString()}
+                    <CountUp value={score} />
                   </p>
                 </div>
               </div>

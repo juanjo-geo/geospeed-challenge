@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CountUp from '@/components/ui/CountUp';
 import { type GameRoom, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { MODE_CONFIG } from '@/data/cities';
@@ -115,7 +116,7 @@ export default function SpectatorScreen({ roomId, onBack }: SpectatorScreenProps
                 className="font-mono font-black text-2xl mt-1"
                 style={isFinished && hostWins && !tie ? { color: 'hsl(var(--primary))' } : {}}
               >
-                {room.host_score.toLocaleString()}
+                <CountUp value={room.host_score} />
               </p>
               <div className="mt-1.5">
                 {room.host_finished ? (
@@ -141,7 +142,7 @@ export default function SpectatorScreen({ roomId, onBack }: SpectatorScreenProps
                 className="font-mono font-black text-2xl mt-1"
                 style={isFinished && !hostWins && !tie ? { color: 'hsl(var(--primary))' } : {}}
               >
-                {room.guest_score.toLocaleString()}
+                <CountUp value={room.guest_score} />
               </p>
               <div className="mt-1.5">
                 {!room.guest_name ? (
