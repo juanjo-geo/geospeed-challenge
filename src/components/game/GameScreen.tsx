@@ -496,35 +496,33 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </div>
           </div>
 
-          {/* ── Racha y multiplicador ── */}
-          {(showStreak || mult) && (
-            <div className="w-full flex flex-col items-center gap-1.5 shrink-0 mb-2">
-              {showStreak && (
-                <div className="text-center animate-score-pop">
-                  <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
-                    🔥×{streak}{streakPct > 0 && <span className="ml-0.5 text-[10px] opacity-80">+{streakPct}%</span>}
-                  </span>
-                </div>
-              )}
-              {mult && (
-                <div className="text-center">
-                  <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
-                    mult.value >= 1.5 ? `${palette.good.twBgSoft} ${palette.good.twBorder} ${palette.good.tw}`
-                    : mult.value >= 1.0 ? `${palette.medium.twBgSoft} ${palette.medium.twBorder} ${palette.medium.tw}`
-                    : `${palette.bad.twBgSoft} ${palette.bad.twBorder} ${palette.bad.tw}`
-                  }`}>
-                    {mult.emoji} {mult.label}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Mascota (reacciona a los resultados) ── */}
-          <div className="w-full flex-1 flex items-center justify-center shrink-0 min-h-[44px] pointer-events-none select-none py-1">
+          {/* ── Racha, multiplicador y mascota (en una sola fila) ── */}
+          <div className="w-full flex items-center justify-center gap-2.5 shrink-0 mb-2 min-h-[46px]">
+            {(showStreak || mult) && (
+              <div className="flex flex-col items-center gap-1.5">
+                {showStreak && (
+                  <div className="text-center animate-score-pop">
+                    <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
+                      🔥×{streak}{streakPct > 0 && <span className="ml-0.5 text-[10px] opacity-80">+{streakPct}%</span>}
+                    </span>
+                  </div>
+                )}
+                {mult && (
+                  <div className="text-center">
+                    <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
+                      mult.value >= 1.5 ? `${palette.good.twBgSoft} ${palette.good.twBorder} ${palette.good.tw}`
+                      : mult.value >= 1.0 ? `${palette.medium.twBgSoft} ${palette.medium.twBorder} ${palette.medium.tw}`
+                      : `${palette.bad.twBgSoft} ${palette.bad.twBorder} ${palette.bad.tw}`
+                    }`}>
+                      {mult.emoji} {mult.label}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             <Mascot
               state={mascotState}
-              className={`w-7 sm:w-8 md:w-10 drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-9 sm:w-10 md:w-11 shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 
