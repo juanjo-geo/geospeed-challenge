@@ -1,10 +1,27 @@
-import { useState, useEffect } from 'react';
-import { getEnergy, formatRegenTime } from '@/lib/energySystem';
+import { useState, useEffect, useRef } from 'react';
+import { getEnergy, formatRegenTime, addLives } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
 
 export default function EnergyBar() {
   const { t } = useI18n();
   const [energy, setEnergy] = useState(getEnergy());
+  const [refillFlash, setRefillFlash] = useState(false);
+  const tapRef = useRef({ count: 0, last: 0 });
+  // Gesto secreto de PRUEBA: 5 toques rápidos en el medidor → +20 vidas (funciona en la app instalada).
+  const handleSecretTap = () => {
+    const now = Date.now();
+    const st = tapRef.current;
+    if (now - st.last > 1200) st.count = 0;
+    st.last = now;
+    st.count += 1;
+    if (st.count >= 5) {
+      st.count = 0;
+      addLives(20);
+      setEnergy(getEnergy());
+      setRefillFlash(true);
+      setTimeout(() => setRefillFlash(false), 1500);
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => setEnergy(getEnergy()), 1000);
@@ -15,7 +32,7 @@ export default function EnergyBar() {
   const showCompact = energy.lives > energy.maxLives;
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 relative" onClick={handleSecretTap}>
       {showCompact ? (
         <span className="flex items-center gap-0.5 text-base font-bold">
           ❤️ <span className="font-mono text-sm">×{energy.lives}</span>
@@ -42,6 +59,7 @@ export default function EnergyBar() {
           {t('energy_nextRegenIn', { time: formatRegenTime(energy.nextRegenMs) })}
         </span>
       )}
+      {refillFlash && <span className="absolute -top-4 left-0 text-[10px] font-bold text-emerald-400 animate-fade-in">+20 ❤️</span>}
     </div>
   );
 }
