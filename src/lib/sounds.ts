@@ -898,32 +898,48 @@ export function playShareSuccess() {
 
 // ── Sonidos del modo Desafío Mundial (fútbol) ─────────────────────────────
 
-/** Silbato de árbitro — dos toques agudos, fuertes y con pitch ascendente. */
+/** Silbato de árbitro real — tono fijo agudo con trino rápido (el "priiii"), dos toques. */
 export function playWhistle() {
   unlockAudio();
   const c = getCtx();
   if (!c) return;
-  const chirp = (delay: number, dur: number) => {
+  const toot = (delay: number, dur: number) => {
     try {
-      const osc = c.createOscillator();
-      const g = c.createGain();
-      osc.type = 'triangle';
       const t0 = c.currentTime + delay;
-      osc.frequency.setValueAtTime(vary(2100, 0.03), t0);
-      osc.frequency.linearRampToValueAtTime(vary(2650, 0.03), t0 + dur);
-      const peak = vary(vol(0.22), 0.12);
+      const osc = c.createOscillator();
+      const osc2 = c.createOscillator();
+      const g = c.createGain();
+      const bp = c.createBiquadFilter();
+      const lfo = c.createOscillator();     // trino (la "pepa" del silbato)
+      const lfoGain = c.createGain();
+      osc.type = 'square';
+      osc.frequency.value = vary(2350, 0.015);   // tono FIJO (no desliza)
+      osc2.type = 'square';
+      osc2.frequency.value = vary(3150, 0.015);
+      bp.type = 'bandpass';
+      bp.frequency.value = 2750;
+      bp.Q.value = 1.8;
+      lfo.type = 'sine';
+      lfo.frequency.value = 34;                   // velocidad del trino
+      lfoGain.gain.value = 190;                   // profundidad del trino (Hz)
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      lfoGain.connect(osc2.frequency);
+      const peak = vary(vol(0.16), 0.1);
       g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.015);
-      g.gain.setValueAtTime(peak, t0 + dur - 0.04);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);
+      g.gain.setValueAtTime(peak, t0 + dur - 0.03);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(g);
+      osc.connect(bp);
+      osc2.connect(bp);
+      bp.connect(g);
       g.connect(getOutputNode(c));
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.03);
+      osc.start(t0); osc2.start(t0); lfo.start(t0);
+      osc.stop(t0 + dur + 0.02); osc2.stop(t0 + dur + 0.02); lfo.stop(t0 + dur + 0.02);
     } catch (_) { /* ignore */ }
   };
-  chirp(0, 0.16);
-  chirp(0.22, 0.34);
+  toot(0, 0.2);
+  toot(0.26, 0.32);
 }
 
 /** Vuvuzela — zumbido grave, largo y buzzy (dos sawtooth desafinados = "beating"). */
