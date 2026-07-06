@@ -383,7 +383,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
         <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest mb-3 animate-fade-in">
           {BALL} {t('wc_modeName')} — {t(WC_DIFF_KEY[difficulty] as never)}
         </p>
-        <div className="font-black font-mono text-7xl sm:text-8xl md:text-9xl animate-countdown-zoom" style={{ color: 'hsl(var(--primary))' }}>
+        <div key={countdown} className="font-black font-mono text-7xl sm:text-8xl md:text-9xl animate-countdown-zoom" style={{ color: 'hsl(var(--primary))' }}>
           {isGo ? 'GO!' : countdown}
         </div>
       </div>

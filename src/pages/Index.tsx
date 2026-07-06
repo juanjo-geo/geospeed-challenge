@@ -234,6 +234,19 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // ── Background music — single track, always on from splash ──
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
 
+  // Recarga de vidas para PRUEBAS: abrir el juego con ?vidas=geo da 20 vidas de bono y limpia el parámetro.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('vidas') === 'geo') {
+        addLives(20);
+        params.delete('vidas');
+        const q = params.toString();
+        window.history.replaceState({}, '', window.location.pathname + (q ? `?${q}` : ''));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   // Initialize ads on mount
   useEffect(() => { initAds(); initAnalytics(); initFeatureFlags(); checkIncomingReferral(); resetSessionFrustration(); recordInstallDate(); checkRetention(); }, []);
 

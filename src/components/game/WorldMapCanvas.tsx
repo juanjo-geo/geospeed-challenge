@@ -366,6 +366,45 @@ export default function WorldMapCanvas({
         { name: 'MAR\nCARIBE', lat: 18, lon: -72 },
       ], Math.max(10, Math.round(w / 70)));
     }
+
+    // Balón de fútbol decorativo (contorno) en el Pacífico — solo modo Mundial
+    if (fieldGreen) {
+      const c0 = geoToPixel(-150, -8);
+      const R = Math.max(26, Math.min(w, h) * 0.085);
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(1.5, R * 0.05);
+      // esfera
+      ctx.beginPath();
+      ctx.arc(c0.x, c0.y, R, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.stroke();
+      // pentágono central
+      const pr = R * 0.36;
+      const penta: { x: number; y: number }[] = [];
+      for (let i = 0; i < 5; i++) {
+        const ang = -Math.PI / 2 + i * ((2 * Math.PI) / 5);
+        penta.push({ x: c0.x + Math.cos(ang) * pr, y: c0.y + Math.sin(ang) * pr });
+      }
+      ctx.beginPath();
+      penta.forEach((pt, i) => (i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(16,38,24,0.55)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.stroke();
+      // costuras del pentágono hacia el borde
+      penta.forEach((pt) => {
+        const ang = Math.atan2(pt.y - c0.y, pt.x - c0.x);
+        ctx.beginPath();
+        ctx.moveTo(pt.x, pt.y);
+        ctx.lineTo(c0.x + Math.cos(ang) * R, c0.y + Math.sin(ang) * R);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
   }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen]);
 
   // Resize handler — observes the outer container and tracks its raw size.
