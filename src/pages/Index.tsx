@@ -119,6 +119,7 @@ import {
   scheduleStreakWarning,
   scheduleLivesRegenerated,
   startNotificationLoop,
+  subscribeToPush,
 } from '@/lib/notifications';
 
 type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
@@ -484,7 +485,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [phase]);
 
   const handleNotifAccept = useCallback(async () => {
-    await requestPermission();
+    const granted = await requestPermission();
+    if (granted) subscribeToPush();
     setShowNotifPrompt(false);
     // Schedule immediately if granted
     if (getPermission() === 'granted') {

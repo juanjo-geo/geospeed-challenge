@@ -308,35 +308,6 @@ export default function FinalResultScreen({
           </div>
         )}
 
-        {/* Level progress — animated XP bar */}
-        <div className="bg-muted/50 rounded-lg p-2.5 sm:p-3 mb-4 sm:mb-5">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-lg sm:text-xl">{level.emoji}</span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline justify-between">
-                <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>Nv.{level.level} {tLevelTitle(level.title, locale)}</p>
-                <span className="text-[9px] sm:text-[10px] text-muted-foreground">{level.xp.toLocaleString()} XP</span>
-              </div>
-              <div className="w-full h-1.5 sm:h-2 bg-background rounded-full mt-1 overflow-hidden relative">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${xpAnimProgress}%`,
-                    background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))',
-                    transition: 'width 1.5s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: '0 0 8px hsl(var(--primary) / 0.5)',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          {totalScore > 0 && (
-            <p className="text-center text-[9px] sm:text-[10px] font-bold mt-1.5 animate-fade-in" style={{ color: 'hsl(var(--primary))' }}>
-              {t('final_xpGained', { xp: totalScore.toLocaleString() })}
-            </p>
-          )}
-        </div>
-
         {/* INSTANT REPLAY — prominent CTA */}
         <button
           onClick={() => { playButtonTap(); onPlayAgain(); }}
@@ -362,16 +333,6 @@ export default function FinalResultScreen({
             <p className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>
               {bestRound.city.name} — {bestRound.totalPoints.toLocaleString()} pts ({formatDistance(bestRound.distance)})
             </p>
-          </div>
-        )}
-
-        {/* Replay map — shows all clicks on the world map */}
-        {rounds.length > 0 && (
-          <div className="mb-3 sm:mb-4">
-            <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider text-center mb-1.5">
-              Mapa de la partida
-            </p>
-            <ReplayMap rounds={rounds} gameMode={(mode as GameMode) || 'world'} />
           </div>
         )}
 

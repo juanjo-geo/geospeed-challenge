@@ -207,7 +207,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
             {/* Oferta con urgencia — countdown al fin del día */}
             <div className="text-center mb-2.5 sm:mb-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[10px] sm:text-xs font-bold text-primary animate-pulse-glow-subtle">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm sm:text-base font-bold text-primary animate-pulse-glow-subtle">
                 ⏳ {t('store_offerEndsIn')} <span className="font-mono tabular-nums">{formatCountdown(offerMs)}</span>
               </span>
             </div>

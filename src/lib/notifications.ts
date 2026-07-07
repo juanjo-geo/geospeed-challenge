@@ -10,6 +10,8 @@
 // Uses Notification API + service worker registration.
 // Permission is requested explicitly via UI, never auto-prompted.
 
+import { supabase } from '@/integrations/supabase/client';
+
 const PERMISSION_KEY = 'geospeed_notif_asked';
 const SCHEDULE_KEY = 'geospeed_notif_schedules';
 
@@ -182,5 +184,63 @@ export function stopNotificationLoop(): void {
   if (checkInterval) {
     clearInterval(checkInterval);
     checkInterval = null;
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WEB PUSH real (llega con la app cerrada) — requiere claves VAPID + backend
+// ═══════════════════════════════════════════════════════════════════════════
+
+const VAPID_PUBLIC = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_VAPID_PUBLIC_KEY;
+
+function urlBase64ToUint8Array(base64: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(b64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+/**
+ * Suscribe al usuario a Web Push y guarda la suscripción en Supabase
+ * (tabla push_subscriptions). Llamar tras conceder permiso.
+ * No hace nada si falta VITE_VAPID_PUBLIC_KEY (aún no configurado).
+ */
+export async function subscribeToPush(): Promise<boolean> {
+  try {
+    if (!supportsNotifications() || typeof window === 'undefined' || !('PushManager' in window)) return false;
+    if (!VAPID_PUBLIC) { console.info('[push] Falta VITE_VAPID_PUBLIC_KEY — suscripción omitida'); return false; }
+    if (getPermission() !== 'granted') return false;
+
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+      });
+    }
+    const json = sub.toJSON();
+    if (!json.endpoint) return false;
+
+    let userId: string | null = null;
+    try { const { data } = await supabase.auth.getUser(); userId = data.user?.id ?? null; } catch (_) {}
+
+    await supabase.from('push_subscriptions').upsert(
+      {
+        endpoint: json.endpoint,
+        p256dh: json.keys?.p256dh ?? null,
+        auth: json.keys?.auth ?? null,
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'endpoint' },
+    );
+    return true;
+  } catch (e) {
+    console.warn('[push] Suscripción falló', e);
+    return false;
   }
 }
