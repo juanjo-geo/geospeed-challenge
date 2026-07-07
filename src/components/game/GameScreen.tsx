@@ -21,7 +21,7 @@ import { getEquipped } from '@/lib/cosmetics';
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const TRAINING_ROUNDS = 6;
-const AUTO_ADVANCE_SECONDS = 2;
+const AUTO_ADVANCE_SECONDS = 4;
 
 /** Quick continent guess from lat/lon — used for map highlight hint */
 function getContinentFromCoords(lat: number, lon: number): string | null {

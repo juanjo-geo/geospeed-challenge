@@ -317,7 +317,6 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
           {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto) */}
           <div className="w-full shrink-0 sticky bottom-0 z-10 bg-card pt-2 mt-auto">
-            <p className="text-xs text-center text-foreground/50 font-semibold uppercase tracking-widest mb-1">{t('game_timeLeft')}</p>
             <div className="text-center font-mono font-black mb-1.5 tabular-nums" style={{ fontSize: '2.25rem', lineHeight: 1.1, color: timeColor }} aria-live="polite" aria-label={t('ta_secondsLeft', { seconds: globalTime })}>
               {globalTime}s
             </div>
