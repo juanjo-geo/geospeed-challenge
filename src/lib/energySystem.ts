@@ -106,6 +106,15 @@ export function addLives(count: number) {
   saveState(state);
 }
 
+/** PRUEBAS: vacía todas las vidas (regenerables + bonus) para probar el modal "sin vidas". */
+export function drainLives() {
+  const state = getState();
+  state.lives = 0;
+  state.bonusLives = 0;
+  state.lastRegenTimestamp = Date.now(); // arranca la regeneración desde ahora
+  saveState(state);
+}
+
 export function formatRegenTime(ms: number): string {
   const totalSec = Math.ceil(ms / 1000);
   const min = Math.floor(totalSec / 60);

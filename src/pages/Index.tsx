@@ -97,7 +97,7 @@ const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePa
 const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
-import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
+import { consumeLife, getEnergy, addLives, drainLives } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial, resetPro } from '@/lib/premiumSystem';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { addBattlePassXP } from '@/lib/cosmetics';
@@ -242,6 +242,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       let changed = false;
       if (params.get('vidas') === 'geo') { addLives(20); params.delete('vidas'); changed = true; }
       if (params.get('nopro') === 'geo') { resetPro(); params.delete('nopro'); changed = true; }
+      if (params.get('test') === 'sinvidas') { drainLives(); resetPro(); params.delete('test'); changed = true; }
       if (changed) {
         const q = params.toString();
         window.history.replaceState({}, '', window.location.pathname + (q ? `?${q}` : ''));

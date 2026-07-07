@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { getEnergy, formatRegenTime, addLives } from '@/lib/energySystem';
+import { getEnergy, formatRegenTime, addLives, drainLives } from '@/lib/energySystem';
+import { resetPro } from '@/lib/premiumSystem';
 import { useI18n } from '@/i18n';
 
 export default function EnergyBar() {
@@ -7,6 +8,19 @@ export default function EnergyBar() {
   const [energy, setEnergy] = useState(getEnergy());
   const [refillFlash, setRefillFlash] = useState(false);
   const tapRef = useRef({ count: 0, last: 0 });
+  const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [drainFlash, setDrainFlash] = useState(false);
+  // Gesto secreto de PRUEBA: mantener presionado ~1s → vacía vidas + quita Pro (para probar el modal "sin vidas").
+  const startHold = () => {
+    holdRef.current = setTimeout(() => {
+      drainLives();
+      resetPro();
+      setEnergy(getEnergy());
+      setDrainFlash(true);
+      setTimeout(() => setDrainFlash(false), 1600);
+    }, 1000);
+  };
+  const cancelHold = () => { if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null; } };
   // Gesto secreto de PRUEBA: 5 toques rápidos en el medidor → +20 vidas (funciona en la app instalada).
   const handleSecretTap = () => {
     const now = Date.now();
@@ -32,7 +46,7 @@ export default function EnergyBar() {
   const showCompact = energy.lives > energy.maxLives;
 
   return (
-    <div className="flex items-center gap-1.5 relative" onClick={handleSecretTap}>
+    <div className="flex items-center gap-1.5 relative" onClick={handleSecretTap} onPointerDown={startHold} onPointerUp={cancelHold} onPointerLeave={cancelHold} onPointerCancel={cancelHold}>
       {showCompact ? (
         <span className="flex items-center gap-0.5 text-base font-bold">
           ❤️ <span className="font-mono text-sm">×{energy.lives}</span>
@@ -60,6 +74,7 @@ export default function EnergyBar() {
         </span>
       )}
       {refillFlash && <span className="absolute -top-4 left-0 text-[10px] font-bold text-emerald-400 animate-fade-in">+20 ❤️</span>}
+      {drainFlash && <span className="absolute -top-4 left-0 whitespace-nowrap text-[10px] font-bold text-red-400 animate-fade-in">0 ❤️ · sin Pro</span>}
     </div>
   );
 }
