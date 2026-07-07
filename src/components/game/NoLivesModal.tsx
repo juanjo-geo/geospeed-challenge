@@ -60,7 +60,9 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in px-3">
       <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
         <div className="flex justify-center mb-2 sm:mb-3">
-          <Mascot state={lifeRestored ? 'celebrate' : 'sad'} className="w-16 sm:w-20" />
+          <div className={lifeRestored ? '' : 'animate-mascot-sway'}>
+            <Mascot state={lifeRestored ? 'celebrate' : 'sad'} className="w-16 sm:w-20" />
+          </div>
         </div>
         <h2 className="text-lg sm:text-xl font-black mb-1.5 sm:mb-2" style={{ color: 'hsl(var(--primary))' }}>
           {lifeRestored ? '¡Vida restaurada!' : t('lives_noLives')}
@@ -101,6 +103,11 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
         {/* ── Action buttons (hidden when life restored) ── */}
         {!lifeRestored && <div className="flex flex-col gap-2 sm:gap-2.5 mb-3 sm:mb-4">
           {/* Rewarded ad button (solo free users y si hay anuncios disponibles) */}
+          {!userIsPro && isAdAvailable() && (
+            <p className="text-[11px] sm:text-xs font-black text-amber-400 animate-bounce-soft -mb-0.5">
+              👇 {t('lives_watchAdHint')}
+            </p>
+          )}
           {!userIsPro && isAdAvailable() && (
             <button
               onClick={handleWatchAd}

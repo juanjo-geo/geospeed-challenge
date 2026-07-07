@@ -248,6 +248,7 @@ const es = {
   final_proUpsellTitle: '¡Con Pro juegas sin límite!',
   final_proUpsellDesc: 'Vidas infinitas · Sin anuncios · Battle Pass',
   store_offerEndsIn: 'Oferta de hoy termina en',
+  lives_watchAdHint: 'Mira un anuncio y sigue jugando',
   tutorial_practiceDesc: '¿Dónde está París? Toca el mapa.',
   tutorial_next: 'Siguiente',
   tutorial_start: '¡Empezar!',

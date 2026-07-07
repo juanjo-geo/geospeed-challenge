@@ -506,3 +506,15 @@
   50%      { transform: translateY(-4px); }
 }
 .animate-mascot-float { animation: mascot-float 3s ease-in-out infinite; }
+
+/* ── Mascota suplicante (modal sin vidas) ── */
+@keyframes mascot-sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50%      { transform: rotate(4deg); }
+}
+.animate-mascot-sway { animation: mascot-sway 1.5s ease-in-out infinite; }
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.animate-bounce-soft { animation: bounce-soft 1s ease-in-out infinite; }

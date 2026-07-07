@@ -275,17 +275,17 @@ export default function FinalResultScreen({
         </div>
 
         {/* ── Upsell Pro en el pico emocional (buena partida / récord) ── */}
-        {!userIsPro && onOpenStore && (isNewRecord || avgDistance < 800) && (
+        {!userIsPro && onOpenStore && (isNewRecord || avgDistance < 1500 || (rankPosition !== null && rankPosition <= 10)) && (
           <button
             onClick={() => { playButtonTap(); onOpenStore(); }}
-            className="w-full flex items-center gap-2.5 rounded-xl p-2.5 sm:p-3 mb-3 sm:mb-4 border-2 border-primary/40 bg-gradient-to-r from-primary/15 to-primary/5 hover:from-primary/25 transition-all active:scale-[0.98] animate-pulse-glow-subtle text-left"
+            className="w-full flex items-center gap-3.5 rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4 border-2 border-primary/40 bg-gradient-to-r from-primary/15 to-primary/5 hover:from-primary/25 transition-all active:scale-[0.98] animate-pulse-glow-subtle text-left"
           >
-            <Mascot state="celebrate" className="w-11 sm:w-12 shrink-0" />
+            <Mascot state="celebrate" className="w-16 sm:w-20 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="font-black text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>⭐ {t('final_proUpsellTitle')}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('final_proUpsellDesc')}</p>
+              <p className="font-black text-sm sm:text-lg" style={{ color: 'hsl(var(--primary))' }}>⭐ {t('final_proUpsellTitle')}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{t('final_proUpsellDesc')}</p>
             </div>
-            <span className="text-primary font-black text-lg shrink-0">›</span>
+            <span className="text-primary font-black text-2xl sm:text-3xl shrink-0">›</span>
           </button>
         )}
 

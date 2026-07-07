@@ -250,6 +250,7 @@ const en: Translations = {
   final_proUpsellTitle: 'Go unlimited with Pro!',
   final_proUpsellDesc: 'Infinite lives · No ads · Battle Pass',
   store_offerEndsIn: "Today's offer ends in",
+  lives_watchAdHint: 'Watch an ad and keep playing',
   tutorial_practiceDesc: 'Where is Paris? Tap the map.',
   tutorial_next: 'Next',
   tutorial_start: 'Let\'s go!',
