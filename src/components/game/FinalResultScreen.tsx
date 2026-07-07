@@ -3,6 +3,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { type RoundResult } from './GameScreen';
 import CountUp from '@/components/ui/CountUp';
 import { formatDistance, qualifiesForLeaderboard, addToLeaderboard, updatePlayerStats, getPlayerStats, getLeaderboard } from '@/lib/gameUtils';
+import { isPro } from '@/lib/premiumSystem';
 import { playVictory, playLevelUp, playRevengeActivate, playShareSuccess, playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import { shareResult } from '@/lib/shareCard';
@@ -142,6 +143,7 @@ export default function FinalResultScreen({
 
   const isNewRecord = totalScore > previousBest && previousBest > 0;
   const mascotResult: MascotState = (isNewRecord || avgDistance < 800) ? 'celebrate' : 'wink';
+  const userIsPro = isPro();
   const scoreDelta = previousBest > 0 ? totalScore - previousBest : 0;
   const level = getPlayerLevel();
 
@@ -271,6 +273,21 @@ export default function FinalResultScreen({
             <p className="font-mono font-bold text-xs sm:text-sm md:text-base">×{bestMultiplier}</p>
           </div>
         </div>
+
+        {/* ── Upsell Pro en el pico emocional (buena partida / récord) ── */}
+        {!userIsPro && onOpenStore && (isNewRecord || avgDistance < 800) && (
+          <button
+            onClick={() => { playButtonTap(); onOpenStore(); }}
+            className="w-full flex items-center gap-2.5 rounded-xl p-2.5 sm:p-3 mb-3 sm:mb-4 border-2 border-primary/40 bg-gradient-to-r from-primary/15 to-primary/5 hover:from-primary/25 transition-all active:scale-[0.98] animate-pulse-glow-subtle text-left"
+          >
+            <Mascot state="celebrate" className="w-11 sm:w-12 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="font-black text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>⭐ {t('final_proUpsellTitle')}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('final_proUpsellDesc')}</p>
+            </div>
+            <span className="text-primary font-black text-lg shrink-0">›</span>
+          </button>
+        )}
 
         {/* Social comparison */}
         {rankPosition !== null && rankTotal > 0 && (

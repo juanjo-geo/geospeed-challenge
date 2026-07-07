@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { playButtonTap } from '@/lib/sounds';
 import {
   STORE_PRODUCTS,
@@ -11,6 +11,18 @@ import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
 import { paymentProvider } from '@/lib/paymentProvider';
 
+function msUntilEndOfDay(): number {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+  return end.getTime() - now.getTime();
+}
+function formatCountdown(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+}
+
 interface StoreScreenProps {
   onClose: () => void;
 }
@@ -22,6 +34,11 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const [offerMs, setOfferMs] = useState(() => msUntilEndOfDay());
+  useEffect(() => {
+    const id = setInterval(() => setOfferMs(msUntilEndOfDay()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const liveProducts = STORE_PRODUCTS.filter(p => p.type === 'lives');
   const proProducts = STORE_PRODUCTS.filter(p => p.type !== 'lives');
@@ -188,6 +205,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               ))}
             </div>
 
+            {/* Oferta con urgencia — countdown al fin del día */}
+            <div className="text-center mb-2.5 sm:mb-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[10px] sm:text-xs font-bold text-primary animate-pulse-glow-subtle">
+                ⏳ {t('store_offerEndsIn')} <span className="font-mono tabular-nums">{formatCountdown(offerMs)}</span>
+              </span>
+            </div>
+
             {/* Pro products */}
             <div className="flex flex-col gap-2">
               {proProducts.map(product => (
@@ -197,7 +221,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   disabled={purchasing === product.id}
                   className={`relative w-full flex items-center gap-3 p-3 sm:p-4 rounded-xl border-2 transition-all active:scale-[0.97] ${
                     product.highlight
-                      ? 'border-primary bg-primary/10 hover:bg-primary/15 shadow-lg'
+                      ? 'border-primary bg-primary/10 hover:bg-primary/15 shadow-lg animate-pulse-glow-subtle'
                       : 'border-border bg-card/80 hover:border-primary/50 hover:bg-card'
                   } ${purchasing === product.id ? 'opacity-60' : ''}`}
                 >

@@ -3,6 +3,7 @@ import { getEnergy, formatRegenTime } from '@/lib/energySystem';
 import { showRewardedAd, isAdAvailable } from '@/lib/adSystem';
 import { rewardAdWatched, isPro, STORE_PRODUCTS } from '@/lib/premiumSystem';
 import { useI18n } from '@/i18n';
+import Mascot from './Mascot';
 
 interface NoLivesModalProps {
   onClose: () => void;
@@ -58,7 +59,9 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in px-3">
       <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
-        <span className="text-4xl sm:text-5xl block mb-3 sm:mb-4">{lifeRestored ? '💚' : '💔'}</span>
+        <div className="flex justify-center mb-2 sm:mb-3">
+          <Mascot state={lifeRestored ? 'celebrate' : 'sad'} className="w-16 sm:w-20" />
+        </div>
         <h2 className="text-lg sm:text-xl font-black mb-1.5 sm:mb-2" style={{ color: 'hsl(var(--primary))' }}>
           {lifeRestored ? '¡Vida restaurada!' : t('lives_noLives')}
         </h2>
@@ -102,7 +105,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
             <button
               onClick={handleWatchAd}
               disabled={watchingAd}
-              className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-[0.97] bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-[0.97] bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl disabled:opacity-50 animate-pulse-glow-subtle"
             >
               {watchingAd ? (
                 <>
