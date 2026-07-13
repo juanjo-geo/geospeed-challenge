@@ -64,7 +64,7 @@ export default function WorldMapCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   // Raw container size tracked by ResizeObserver
   const [containerSize, setContainerSize] = useState({ w: 800, h: 450 });
-  const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 2));
+  const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 3));
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
 
   // Decoración PNG del Mundial (Pacífico sur): balón o copa según pacificDecor
@@ -1148,7 +1148,7 @@ function MiniMap({ gameMode }: { gameMode: GameMode }) {
     if (!ctx) return;
     const w = canvas.width;
     const h = canvas.height;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
