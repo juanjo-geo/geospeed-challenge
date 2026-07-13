@@ -105,7 +105,7 @@ import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackS
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
 import { syncAfterGame, pullFromCloud, setLocalData } from '@/lib/cloudSync';
-import { checkStreak } from '@/lib/dailyStreak';
+import { checkStreak, resetStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
 import { useI18n } from '@/i18n';
@@ -244,6 +244,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       if (params.get('vidas') === 'geo') { addLives(20); params.delete('vidas'); changed = true; }
       if (params.get('nopro') === 'geo') { resetPro(); params.delete('nopro'); changed = true; }
       if (params.get('test') === 'sinvidas') { drainLives(); resetPro(); params.delete('test'); changed = true; }
+      if (params.get('cofre') === 'geo') { resetStreak(); params.delete('cofre'); changed = true; }
       if (changed) {
         const q = params.toString();
         window.history.replaceState({}, '', window.location.pathname + (q ? `?${q}` : ''));
