@@ -412,10 +412,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
           {/* ── Logo ── */}
-          <div className="w-full flex items-center justify-center gap-2.5 pb-2.5 mb-2.5 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-[50px] sm:w-[60px] object-contain" />
+          <div className="w-full flex items-center justify-center gap-2 pb-2 mb-2 border-b border-border/50 shrink-0">
+            <img src="/logo.png" alt="GeoSpeed" className="w-9 sm:w-11 object-contain" />
             <span
-              className="text-2xl sm:text-3xl font-black tracking-tight"
+              className="text-lg sm:text-2xl font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
@@ -439,12 +439,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           )}
 
           {/* ── Ciudad a encontrar ── */}
-          <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
+          <div className="w-full shrink-0 mb-2 rounded-xl px-2.5 py-2 border border-primary/25 bg-primary/10 text-center">
+            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
               {t('game_find')}
             </p>
             <p
-              className="text-base font-black leading-tight text-center"
+              className="text-sm sm:text-base font-black leading-tight text-center"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
               aria-labelledby="city-label"
             >
@@ -459,10 +459,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Puntuación ── */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
+            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
             <p
               ref={scoreElRef}
-              className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
+              className={`text-xl sm:text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
               style={{ color: 'hsl(var(--primary))' }}
               aria-live="polite"
             >
@@ -479,8 +479,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Progreso de rondas ── */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_round')}</p>
-            <p className="text-lg font-mono font-bold leading-none">
+            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_round')}</p>
+            <p className="text-base font-mono font-bold leading-none">
               {currentRound + 1}<span className="text-foreground/40 text-base">/{totalRounds}</span>
             </p>
             <div className="mt-2 flex flex-wrap justify-center gap-1">
@@ -523,7 +523,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             )}
             <Mascot
               state={mascotState}
-              className={`w-9 sm:w-10 md:w-11 shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-8 sm:w-9 md:w-10 shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 

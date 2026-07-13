@@ -251,9 +251,9 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
         >
           {/* ── Logo ── */}
           <div className="w-full flex items-center justify-center gap-2.5 pb-2.5 mb-2.5 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-10 sm:w-12 object-contain" />
+            <img src="/logo.png" alt="GeoSpeed" className="w-9 sm:w-11 object-contain" />
             <span
-              className="text-xl sm:text-2xl font-black tracking-tight"
+              className="text-lg sm:text-xl font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
@@ -276,11 +276,11 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
           {/* ── Ciudad a encontrar ── */}
           <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
+            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
               {t('game_find')}
             </p>
             <p
-              className="text-base font-black leading-tight text-center"
+              className="text-sm sm:text-base font-black leading-tight text-center"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
             >
               {currentCity.name}
@@ -289,16 +289,16 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
           {/* ── Puntuación ── */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
-            <p className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
+            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
+            <p className={`text-xl sm:text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
               <CountUp value={score} />
             </p>
           </div>
 
           {/* ── Ciudades completadas ── */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('ta_cities')}</p>
-            <p className="text-lg font-mono font-bold leading-none">{roundsRef.current.length}</p>
+            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('ta_cities')}</p>
+            <p className="text-base font-mono font-bold leading-none">{roundsRef.current.length}</p>
           </div>
 
           {/* ── Feedback + mascota (una fila) ── */}
@@ -312,7 +312,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             )}
             <Mascot
               state={mascotState}
-              className={`w-9 sm:w-10 md:w-11 shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-8 sm:w-9 md:w-10 shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 
