@@ -192,7 +192,7 @@ export function stopNotificationLoop(): void {
 // WEB PUSH real (llega con la app cerrada) — requiere claves VAPID + backend
 // ═══════════════════════════════════════════════════════════════════════════
 
-const VAPID_PUBLIC = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_VAPID_PUBLIC_KEY;
+const VAPID_PUBLIC = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
