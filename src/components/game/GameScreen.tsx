@@ -99,6 +99,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [floatPoints, setFloatPoints] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [mascotState, setMascotState] = useState<MascotState>('idle');
+  const [failShake, setFailShake] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [isPageHidden, setIsPageHidden] = useState(false);
@@ -294,7 +295,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       // Tier C: Medium (<3000km) — neutral feedback
       else if (distance < 3000) { playMedium(); hapticTap(); }
       // Tier D: Far (3000km+) — bad sound + red burst
-      else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); }
+      else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
       // Tier F: Epic fail (>5000km) — cinematic distance reveal (delays feedback panel)
       if (distance >= 5000) {
         setTimeout(() => { setDistanceRevealActive(true); fireDistanceReveal(distance); }, 400);
@@ -374,7 +375,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   return (
     <div
-      className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${isTimerUrgent ? 'vignette-urgent' : ''} ${isTimerCritical ? 'animate-screen-shake' : ''}`}
+      className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${isTimerUrgent ? 'vignette-urgent' : ''} ${(isTimerCritical || failShake) ? 'animate-screen-shake' : ''}`}
       role="main"
       aria-label="Pantalla de juego"
       data-game-container

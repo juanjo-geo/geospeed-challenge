@@ -117,6 +117,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   // Al entrar a Mundial: a veces balón ⚽, a veces copa 🏆 en el Pacífico
   const [pacificDecor, setPacificDecor] = useState<'ball' | 'trophy'>(() => (Math.random() < 0.5 ? 'trophy' : 'ball'));
   const [mascotState, setMascotState] = useState<MascotState>('idle');
+  const [failShake, setFailShake] = useState(false);
   useEffect(() => { setMascotState('idle'); }, [roundIdx]);
 
   const roundStartRef = useRef(0);
@@ -279,6 +280,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
     } else {
       playBad(); hapticError();
       fireRedBurst(from);
+      setFailShake(true); setTimeout(() => setFailShake(false), 450);
     }
 
     if (res.totalPoints > 0) {
@@ -466,7 +468,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
   // stage === 'playing'
   const fbStreakName = feedback ? streakKey(feedback.streak) : null;
   return (
-    <div className="fixed inset-0 z-40 flex flex-col game-bg">
+    <div className={`fixed inset-0 z-40 flex flex-col game-bg ${failShake ? 'animate-screen-shake' : ''}`}>
       {isPortraitMobile && rotateOverlay}
       {/* Barra superior: ronda, pregunta (+ era), racha, score */}
       <div className="shrink-0 px-3 py-2 flex items-center gap-3 border-b border-border/60">

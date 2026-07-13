@@ -67,6 +67,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
   const gameOverRef = useRef(false);
   const lastClickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
   const [taStarted, setTaStarted] = useState(false); // arranca tras la cuenta regresiva
+  const [failShake, setFailShake] = useState(false);
   const [countdown, setCountdown] = useState(3);
 
   const currentCity = cities[currentIdx % cities.length];
@@ -166,7 +167,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       // Tier C: Medium (<3000km)
       else if (distance < 3000) { playMedium(); hapticTap(); }
       // Tier D: Far — red burst
-      else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); }
+      else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
       // Tier F: Epic fail (>5000km) — cinematic distance reveal
       if (distance >= 5000) { setTimeout(() => fireDistanceReveal(distance), 400); }
       // Speed bonus sound
@@ -217,7 +218,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
       : 'grid grid-cols-[clamp(22rem,30vw,28rem)_minmax(0,1fr)]';
 
   return (
-    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${globalTime <= 5 && !isAnimating ? 'vignette-urgent' : ''} ${globalTime <= 3 && !isAnimating ? 'animate-screen-shake' : ''}`} role="main" aria-label="Modo contrareloj" data-game-container>
+    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${globalTime <= 5 && !isAnimating ? 'vignette-urgent' : ''} ${(failShake || (globalTime <= 3 && !isAnimating)) ? 'animate-screen-shake' : ''}`} role="main" aria-label="Modo contrareloj" data-game-container>
       {/* Portrait top bar — stacked vertical layout */}
       {isPortraitMobile && (
         <div className="bg-card/95 backdrop-blur-md border-b border-border px-3 py-2 flex flex-col gap-1 shrink-0 z-20">

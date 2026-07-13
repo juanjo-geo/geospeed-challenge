@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { type GameRoom, subscribeToRoom, setPlayerReady } from '@/lib/multiplayerUtils';
+import { useState, useEffect, useRef } from 'react';
+import { type GameRoom, subscribeToRoom, setPlayerReady, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { MODE_CONFIG } from '@/data/cities';
 import { useI18n } from '@/i18n';
@@ -18,16 +18,27 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
   const { t } = useI18n();
   const [room, setRoom] = useState<GameRoom>(initialRoom);
   const [ready, setReady] = useState(false);
+  const startedRef = useRef(false);
 
   useEffect(() => {
-    const channel = subscribeToRoom(initialRoom.id, (updated) => {
-      setRoom(updated);
-      // Both players ready → start game
-      if (updated.host_ready && updated.guest_ready) {
-        onGameStart(updated);
+    const maybeStart = (r: GameRoom) => {
+      setRoom(r);
+      // Ambos listos → iniciar la partida (una sola vez)
+      if (!startedRef.current && r.host_ready && r.guest_ready) {
+        startedRef.current = true;
+        onGameStart(r);
       }
-    });
-    return () => { supabase.removeChannel(channel); };
+    };
+    // 1) Realtime (rápido cuando la replicación está activa)
+    const channel = subscribeToRoom(initialRoom.id, maybeStart);
+    // 2) Polling de respaldo sobre la vista pública — funciona aunque Realtime
+    //    esté bloqueado por RLS (el anon no puede leer la tabla base game_rooms).
+    const poll = setInterval(async () => {
+      if (startedRef.current) return;
+      const r = await fetchRoom(initialRoom.id);
+      if (r) maybeStart(r);
+    }, 2000);
+    return () => { supabase.removeChannel(channel); clearInterval(poll); };
   }, [initialRoom.id, onGameStart]);
 
   const handleReady = async () => {

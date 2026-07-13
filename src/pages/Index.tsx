@@ -262,10 +262,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const mpPhaseActive = phase === 'mp-playing' || phase === 'mp-final';
   useEffect(() => {
     if (!mpPhaseActive || !mpRoom) return;
-    const channel = subscribeToRoom(mpRoom.id, (updated) => {
-      // Merge DB update with local state — preserve MY score/finished if I already
-      // finished (optimistic update), so a race with the opponent's DB write
-      // doesn't reset my score to 0.
+    // Merge DB update with local state — preserve MY score/finished if I already
+    // finished (optimistic update), so no race resets my score to 0.
+    const applyUpdate = (updated: GameRoom) => {
       setMpRoom(prev => {
         if (!prev) return updated;
         const myScoreKey = mpIsHost ? 'host_score' : 'guest_score';
@@ -273,17 +272,17 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         const iAlreadyFinished = prev[myFinishedKey];
         return {
           ...updated,
-          // Keep my local score/finished if I already finished
-          ...(iAlreadyFinished ? {
-            [myScoreKey]: prev[myScoreKey],
-            [myFinishedKey]: true,
-          } : {}),
+          ...(iAlreadyFinished ? { [myScoreKey]: prev[myScoreKey], [myFinishedKey]: true } : {}),
         };
       });
-    });
-    // Use removeChannel for proper cleanup — unsubscribe() alone leaves the
-    // channel in Supabase's internal registry, blocking future resubscriptions.
-    return () => { supabase.removeChannel(channel); };
+    };
+    const channel = subscribeToRoom(mpRoom.id, applyUpdate);
+    // Polling de respaldo (Realtime bloqueado por RLS sobre la tabla base game_rooms)
+    const poll = setInterval(async () => {
+      const r = await fetchRoom(mpRoom.id);
+      if (r) applyUpdate(r);
+    }, 2000);
+    return () => { supabase.removeChannel(channel); clearInterval(poll); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mpRoom?.id, mpPhaseActive]);
 
