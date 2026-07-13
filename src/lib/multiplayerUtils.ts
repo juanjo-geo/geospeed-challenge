@@ -140,8 +140,14 @@ async function invokeRoomUpdate(roomId: string, action: string, payload?: Record
   return true;
 }
 
-export async function setPlayerReady(roomId: string, isHost: boolean): Promise<boolean> {
-  return invokeRoomUpdate(roomId, 'set_ready');
+export async function setPlayerReady(roomId: string, _isHost: boolean): Promise<boolean> {
+  // Reintenta ante fallos transitorios (igual que updateRoomScore)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const ok = await invokeRoomUpdate(roomId, 'set_ready');
+    if (ok) return true;
+    if (attempt < 3) await new Promise(r => setTimeout(r, 800));
+  }
+  return false;
 }
 
 export async function updateRoomStatus(roomId: string, status: string): Promise<boolean> {

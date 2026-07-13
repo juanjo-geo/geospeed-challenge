@@ -43,7 +43,8 @@ export default function WaitingRoom({ room: initialRoom, isHost, onGameStart, on
 
   const handleReady = async () => {
     setReady(true);
-    await setPlayerReady(room.id, isHost);
+    const ok = await setPlayerReady(room.id, isHost);
+    if (!ok) setReady(false); // falló → dejar re-tocar "Listo"
   };
 
   const modeLabel = MODE_CONFIG.find(m => m.key === room.mode)?.label || room.mode;

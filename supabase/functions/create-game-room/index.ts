@@ -53,6 +53,10 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Generamos el host_secret aquí (no dependemos del DEFAULT ni del REVOKE de la
+    // columna) y lo devolvemos GARANTIZADO, para que el anfitrión pueda autenticar
+    // sus acciones (marcar "listo", etc.). Simétrico con el guest_secret del join.
+    const hostSecret = crypto.randomUUID();
     const { data, error } = await supabase
       .from("game_rooms")
       .insert({
@@ -62,6 +66,7 @@ Deno.serve(async (req) => {
         mode,
         seed,
         status: "waiting",
+        host_secret: hostSecret,
       })
       .select()
       .single();
@@ -74,8 +79,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Return room data including host_secret (only accessible via service role)
-    return new Response(JSON.stringify(data), {
+    // Devolvemos el host_secret explícito, garantizado, junto con la fila de la sala.
+    return new Response(JSON.stringify({ ...data, host_secret: hostSecret }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
