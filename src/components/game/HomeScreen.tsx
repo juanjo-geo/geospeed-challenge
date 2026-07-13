@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatDistance } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
 import { getEnergy } from '@/lib/energySystem';
+import DailyChestModal from './DailyChestModal';
 import { checkStreak, claimDailyReward, getStreakAtRisk, protectStreak, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
 // ThemeToggle removed — neon-only mode
@@ -450,42 +451,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </button>
       </div>
 
-      {/* ── Daily streak reward popup ── */}
+      {/* ── Cofre diario (recompensa variable con juice) ── */}
       {streakReward && !streakDismissed && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up">
-          <div className="bg-gradient-to-r from-orange-500/15 to-amber-500/10 border-2 border-orange-500/40 rounded-xl p-3 sm:p-4 text-center relative overflow-hidden">
-            <button
-              onClick={() => {
-                claimDailyReward();
-                setStreakDismissed(true);
-              }}
-              className="absolute top-2 right-2 text-[10px] text-muted-foreground hover:text-foreground"
-            >✕</button>
-            <span className="text-2xl sm:text-3xl block mb-1">🔥</span>
-            <p className="font-black text-sm sm:text-base text-orange-400">
-              {streakReward.day === 1 ? t('home_streakDaysSingular', { count: String(streakReward.day) }) : t('home_streakDaysPlural', { count: String(streakReward.day) })}
-            </p>
-            {streakReward.lives > 0 && (
-              <p className="text-xs sm:text-sm text-foreground mt-1">
-                {streakReward.lives === 1 ? t('home_streakBonusLives', { lives: String(streakReward.lives) }) : t('home_streakBonusLivesPlural', { lives: String(streakReward.lives) })}
-              </p>
-            )}
-            {streakReward.badge && (
-              <p className="text-[10px] sm:text-xs text-amber-400 mt-0.5 font-bold">
-                🏅 Badge "{streakReward.badge}"
-              </p>
-            )}
-            <button
-              onClick={() => {
-                claimDailyReward();
-                setStreakDismissed(true);
-              }}
-              className="mt-2 px-4 py-1.5 rounded-lg font-bold text-xs bg-orange-500 text-white active:scale-[0.97] transition-all"
-            >
-              {t('home_claimReward')}
-            </button>
-          </div>
-        </div>
+        <DailyChestModal
+          reward={streakReward}
+          onOpen={() => claimDailyReward()}
+          onClose={() => setStreakDismissed(true)}
+        />
       )}
 
       {/* ── Streak at risk — FOMO banner ── */}
