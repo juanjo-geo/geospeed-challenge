@@ -82,6 +82,8 @@ export default function WorldMapCanvas({
   // ── Pinch-to-zoom state ──
   const [pinchZoom, setPinchZoom] = useState(1);
   const [pinchOrigin, setPinchOrigin] = useState({ x: 50, y: 50 });
+  const [pan, setPan] = useState({ x: 0, y: 0 }); // desplazamiento del mapa (px), con dos dedos
+  const lastMidRef = useRef<{ x: number; y: number } | null>(null);
   const pinchStartDist = useRef(0);
   const pinchStartZoom = useRef(1);
   const pinchResetTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -800,6 +802,7 @@ export default function WorldMapCanvas({
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       pinchStartDist.current = Math.sqrt(dx * dx + dy * dy);
       pinchStartZoom.current = pinchZoom;
+      lastMidRef.current = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
       // Set origin as midpoint of the two fingers
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
@@ -820,6 +823,20 @@ export default function WorldMapCanvas({
       const dist = Math.sqrt(dx * dx + dy * dy);
       const newZoom = Math.min(4, Math.max(1, pinchStartZoom.current * (dist / pinchStartDist.current)));
       setPinchZoom(newZoom);
+      // Paneo: mover el mapa según cuánto se desplazó el punto medio de los dedos
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      if (lastMidRef.current) {
+        const ddx = midX - lastMidRef.current.x;
+        const ddy = midY - lastMidRef.current.y;
+        const maxX = (newZoom - 1) * dimensions.w * 0.55;
+        const maxY = (newZoom - 1) * dimensions.h * 0.55;
+        setPan(p => ({
+          x: Math.max(-maxX, Math.min(maxX, p.x + ddx)),
+          y: Math.max(-maxY, Math.min(maxY, p.y + ddy)),
+        }));
+      }
+      lastMidRef.current = { x: midX, y: midY };
     }
   };
 
@@ -834,11 +851,13 @@ export default function WorldMapCanvas({
 
   const handleTouchEnd = useCallback(() => {
     pinchStartDist.current = 0;
+    lastMidRef.current = null;
     // Auto-reset zoom after 5s of no interaction
     if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
     pinchResetTimer.current = setTimeout(() => {
       setPinchZoom(1);
       setPinchOrigin({ x: 50, y: 50 });
+      setPan({ x: 0, y: 0 });
     }, 5000);
   }, []);
 
@@ -860,6 +879,7 @@ export default function WorldMapCanvas({
     pinchResetTimer.current = setTimeout(() => {
       setPinchZoom(1);
       setPinchOrigin({ x: 50, y: 50 });
+      setPan({ x: 0, y: 0 });
     }, 5000);
   };
 
@@ -883,10 +903,10 @@ export default function WorldMapCanvas({
     // Inverse of CSS scale transform: logicalPos = (visualPos - origin) / zoom + origin
     const originX = rect.width * pinchOrigin.x / 100;
     const originY = rect.height * pinchOrigin.y / 100;
-    const adjustedX = (x - originX) / pinchZoom + originX;
-    const adjustedY = (y - originY) / pinchZoom + originY;
+    const adjustedX = (x - originX - pan.x) / pinchZoom + originX;
+    const adjustedY = (y - originY - pan.y) / pinchZoom + originY;
     onMapClick(yToLat(adjustedY), xToLon(adjustedX), e.clientX, e.clientY);
-  }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin]);
+  }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin, pan]);
 
   // ── Cursor coordinate tracking ──
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -897,10 +917,10 @@ export default function WorldMapCanvas({
     const y = e.clientY - rect.top;
     const originX = rect.width * pinchOrigin.x / 100;
     const originY = rect.height * pinchOrigin.y / 100;
-    const adjustedX = (x - originX) / pinchZoom + originX;
-    const adjustedY = (y - originY) / pinchZoom + originY;
+    const adjustedX = (x - originX - pan.x) / pinchZoom + originX;
+    const adjustedY = (y - originY - pan.y) / pinchZoom + originY;
     onCursorMove(yToLat(adjustedY), xToLon(adjustedX));
-  }, [onCursorMove, xToLon, yToLat, pinchZoom, pinchOrigin]);
+  }, [onCursorMove, xToLon, yToLat, pinchZoom, pinchOrigin, pan]);
 
   // ── ZOOM BOMB — Smooth cinematic camera flight to result ──
   // Phase 1: Gentle zoom to user click (0-600ms)
@@ -1085,9 +1105,9 @@ export default function WorldMapCanvas({
           // Combine auto-zoom (result) and pinch zoom (user)
           // When zoomBombActiveRef is true, rAF drives the canvas directly via DOM —
           // do NOT set transform/origin here or React will overwrite rAF values.
-          ...(pinchZoom > 1
+          ...((pinchZoom > 1 || pan.x !== 0 || pan.y !== 0)
             ? {
-                transform: `scale(${pinchZoom})`,
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${pinchZoom})`,
                 transformOrigin: `${pinchOrigin.x}% ${pinchOrigin.y}%`,
                 transition: 'transform 0.1s ease-out',
               }
