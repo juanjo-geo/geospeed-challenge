@@ -250,10 +250,10 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           style={{ containerType: 'inline-size', paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
           {/* ── Logo ── */}
-          <div className="w-full flex items-center justify-center gap-2.5 pb-2.5 mb-2.5 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-[15cqi] max-w-[52px] object-contain" />
+          <div className="w-full flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pb-2 mb-2 border-b border-border/50 shrink-0">
+            <img src="/logo.png" alt="GeoSpeed" className="w-[37cqi] max-w-[100px] object-contain" />
             <span
-              className="text-[9cqi] font-black tracking-tight"
+              className="text-[22cqi] font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
@@ -275,12 +275,12 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
           </div>
 
           {/* ── Ciudad a encontrar ── */}
-          <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
-            <p className="text-[4cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
+          <div className="w-full shrink-0 mb-2 rounded-xl px-[6.7cqi] py-[5.4cqi] border border-primary/25 bg-primary/10 text-center">
+            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
               {t('game_find')}
             </p>
             <p
-              className="text-[6.2cqi] font-black leading-tight text-center"
+              className="text-[15.5cqi] font-black leading-tight text-center"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
             >
               {currentCity.name}
@@ -289,16 +289,16 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
 
           {/* ── Puntuación ── */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-[4cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
-            <p className={`text-[8cqi] font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
+            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
+            <p className={`text-[20cqi] font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`} style={{ color: 'hsl(var(--primary))' }} aria-live="polite">
               <CountUp value={score} />
             </p>
           </div>
 
           {/* ── Ciudades completadas ── */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-[4cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('ta_cities')}</p>
-            <p className="text-[6cqi] font-mono font-bold leading-none">{roundsRef.current.length}</p>
+            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('ta_cities')}</p>
+            <p className="text-[15cqi] font-mono font-bold leading-none">{roundsRef.current.length}</p>
           </div>
 
           {/* ── Feedback + mascota (una fila) ── */}
@@ -312,7 +312,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             )}
             <Mascot
               state={mascotState}
-              className={`w-[16cqi] max-w-[48px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-[48cqi] max-w-[130px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 

@@ -32,7 +32,7 @@ export default function TimerBar({ timeLeft, maxTime, isRunning, compact = false
         >{timeLeft}s</span>
       </div>
       <div
-        className={`w-full rounded-full bg-muted overflow-hidden transition-shadow duration-500 ${compact ? 'h-2' : 'h-2.5'} ${isUrgent ? 'timer-danger-glow' : ''}`}
+        className={`w-full rounded-full bg-muted overflow-hidden transition-shadow duration-500 ${compact ? 'h-2' : 'h-3'} ${isUrgent ? 'timer-danger-glow' : ''}`}
       >
         <div
           ref={barRef}
