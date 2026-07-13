@@ -1109,7 +1109,8 @@ export default function WorldMapCanvas({
             ? {
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${pinchZoom})`,
                 transformOrigin: `${pinchOrigin.x}% ${pinchOrigin.y}%`,
-                transition: 'transform 0.1s ease-out',
+                transition: 'none', // seguir los dedos al instante (sin titileo); la transición suave queda para el reset
+                willChange: 'transform',
               }
             : zoomBombActiveRef.current
               ? {} // rAF owns transform — React must not touch it
