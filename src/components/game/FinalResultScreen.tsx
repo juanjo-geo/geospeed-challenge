@@ -326,6 +326,14 @@ export default function FinalResultScreen({
           </span>
         </button>
 
+        {/* Regresar al menú — navegación principal, junto a "Otra vez" */}
+        <button
+          onClick={() => { playButtonTap(); onGoHome(); }}
+          className="w-full py-3 sm:py-3.5 rounded-xl font-black text-sm sm:text-base transition-all active:scale-[0.97] mb-4 sm:mb-5 border-2 border-primary/45 bg-primary/8 text-foreground hover:bg-primary/15 flex items-center justify-center gap-2"
+        >
+          🏠 {t('final_home')}
+        </button>
+
         {/* Best round highlight */}
         {bestRound && bestRound.totalPoints >= 300 && (
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-2.5 sm:p-3 mb-3 sm:mb-4 text-center">
@@ -377,7 +385,7 @@ export default function FinalResultScreen({
             onClick={handleShare}
             disabled={sharing || sharingVideo}
             className="flex-1 py-2.5 sm:py-3 md:py-3.5 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(332 47% 45%))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.35)' }}
+            style={{ background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }}
             aria-label={t('final_share')}
           >
             {sharing ? `⏳ ${t('final_sharing')}` : `📸 ${t('final_share')}`}
@@ -387,7 +395,7 @@ export default function FinalResultScreen({
               onClick={handleShareVideo}
               disabled={sharing || sharingVideo}
               className="py-2.5 sm:py-3 md:py-3.5 px-4 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)', color: '#fff', boxShadow: '0 4px 20px rgba(124, 58, 237, 0.35)' }}
+              style={{ background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }}
               aria-label="Compartir video"
             >
               {sharingVideo ? '⏳' : '🎬'}
@@ -399,11 +407,7 @@ export default function FinalResultScreen({
           <button
             onClick={() => { playRevengeActivate(); onRevenge(rounds); }}
             className="w-full py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3"
-            style={{
-              background: 'linear-gradient(135deg, hsl(0 72% 50%), hsl(25 95% 53%))',
-              color: '#fff',
-              boxShadow: '0 4px 20px hsla(0, 72%, 50%, 0.35)',
-            }}
+            style={{ background: 'hsl(0 72% 50% / 0.12)', color: 'hsl(0 72% 62%)', border: '1px solid hsl(0 72% 50% / 0.28)' }}
           >
             🔥 REVANCHA — Mejora tus 5 peores
           </button>
@@ -435,24 +439,12 @@ export default function FinalResultScreen({
           <button
             onClick={() => { playShareSuccess(); onShareChallenge?.(); }}
             className="w-full py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3"
-            style={{
-              background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
-              color: '#fff',
-              boxShadow: '0 4px 20px rgba(124, 58, 237, 0.35)',
-            }}
+            style={{ background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', border: '1px solid hsl(var(--primary) / 0.28)' }}
           >
             ⚔️ RETA A UN AMIGO
           </button>
         )}
 
-        <div className="flex gap-2 sm:gap-3">
-          <button
-            onClick={() => { playButtonTap(); onGoHome(); }}
-            className="flex-1 py-2 sm:py-2.5 md:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted"
-          >
-            {t('final_home')}
-          </button>
-        </div>
 
         {/* Registration nudge — show after first game if not logged in */}
         {!user && (

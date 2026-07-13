@@ -905,8 +905,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               <button onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}>
                 REINTENTAR ⚡
               </button>
-              <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted">
-                MENÚ
+              <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-black text-xs sm:text-sm border-2 border-primary/45 bg-primary/8 text-foreground transition-all active:scale-[0.97] hover:bg-primary/15">
+                🏠 Regresar al menú
               </button>
             </div>
           </div>

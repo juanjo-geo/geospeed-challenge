@@ -443,22 +443,25 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
 
           <button
             onClick={shareResult}
-            className="w-full mb-2 py-2.5 rounded-lg font-bold text-xs sm:text-sm border-2 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 transition-all active:scale-[0.97]"
+            className="w-full mb-2 py-2 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground hover:bg-muted transition-all active:scale-[0.97]"
           >
             {shared ? '✓' : `${BALL} ${t('share')}`}
           </button>
 
           <div className="flex gap-2 sm:gap-3 mt-2">
-            <button onClick={() => { playButtonTap(); ensureSubmitted(); setStage('select'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]">
-              {t('wc_playAgain')}
-            </button>
             <Button3D
               variant="primary"
-              onClick={() => { playButtonTap(); ensureSubmitted(); onExit(); }}
+              onClick={() => { playButtonTap(); ensureSubmitted(); setStage('select'); }}
               className="flex-1 text-xs sm:text-sm"
             >
-              {t('back').toUpperCase()}
+              {t('wc_playAgain')}
             </Button3D>
+            <button
+              onClick={() => { playButtonTap(); ensureSubmitted(); onExit(); }}
+              className="flex-1 py-2.5 sm:py-3 rounded-lg font-black text-xs sm:text-sm border-2 border-primary/45 bg-primary/8 text-foreground transition-all hover:bg-primary/15 active:scale-[0.97]"
+            >
+              🏠 Regresar al menú
+            </button>
           </div>
         </div>
       </div>

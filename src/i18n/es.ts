@@ -138,7 +138,7 @@ const es = {
   final_previousBest: 'Anterior: {score}',
   final_beatBy: '+{delta} puntos',
   final_playAgain: 'JUGAR DE NUEVO',
-  final_home: 'INICIO',
+  final_home: 'Regresar al menú',
   final_share: 'Compartir resultado',
   final_sharing: 'Compartiendo...',
   final_enterInitials: 'Tus iniciales (3 letras)',

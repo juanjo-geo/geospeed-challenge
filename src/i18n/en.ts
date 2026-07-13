@@ -140,7 +140,7 @@ const en: Translations = {
   final_previousBest: 'Previous: {score}',
   final_beatBy: '+{delta} points',
   final_playAgain: 'PLAY AGAIN',
-  final_home: 'HOME',
+  final_home: 'Back to menu',
   final_share: 'Share result',
   final_sharing: 'Sharing...',
   final_enterInitials: 'Your initials (3 letters)',

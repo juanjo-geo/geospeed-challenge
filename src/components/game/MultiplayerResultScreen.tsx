@@ -176,17 +176,17 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
         {opponentFinished || pollTimedOut ? (
           <div className="flex gap-3">
             <button
-              onClick={onGoHome}
-              className="flex-1 py-3 rounded-lg font-bold text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]"
-            >
-              INICIO
-            </button>
-            <button
               onClick={onPlayAgain}
               className="flex-1 py-3 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
               style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
             >
               {opponentFinished ? 'REVANCHA 🔄' : 'NUEVA PARTIDA 🔄'}
+            </button>
+            <button
+              onClick={onGoHome}
+              className="flex-1 py-3 rounded-lg font-black text-sm border-2 border-primary/45 bg-primary/8 text-foreground transition-all hover:bg-primary/15 active:scale-[0.97]"
+            >
+              🏠 Regresar al menú
             </button>
           </div>
         ) : (
