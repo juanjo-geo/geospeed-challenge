@@ -214,8 +214,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     : isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(22rem,28vw,28rem)_minmax(0,1fr)]'
-      : 'grid grid-cols-[clamp(22rem,30vw,28rem)_minmax(0,1fr)]';
+      ? 'grid grid-cols-[clamp(13rem,22vw,21rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(13rem,24vw,21rem)_minmax(0,1fr)]';
 
   return (
     <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${globalTime <= 5 && !isAnimating ? 'vignette-urgent' : ''} ${(failShake || (globalTime <= 3 && !isAnimating)) ? 'animate-screen-shake' : ''}`} role="main" aria-label="Modo contrareloj" data-game-container>

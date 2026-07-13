@@ -370,8 +370,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     : isCompact
     ? 'flex flex-col'
     : isWide
-      ? 'grid grid-cols-[clamp(22rem,28vw,28rem)_minmax(0,1fr)]'
-      : 'grid grid-cols-[clamp(22rem,30vw,28rem)_minmax(0,1fr)]'; // medium: sidebar + map
+      ? 'grid grid-cols-[clamp(13rem,22vw,21rem)_minmax(0,1fr)]'
+      : 'grid grid-cols-[clamp(13rem,24vw,21rem)_minmax(0,1fr)]'; // medium: sidebar + map
 
   return (
     <div
