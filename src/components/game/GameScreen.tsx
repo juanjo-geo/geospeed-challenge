@@ -409,13 +409,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       {hasSidebar && (
         <div
           className="flex min-h-0 flex-col gap-0 border-r border-border/60 bg-card overflow-y-auto overflow-x-hidden scrollbar-hidden"
-          style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+          style={{ containerType: 'inline-size', paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
           {/* ── Logo ── */}
           <div className="w-full flex items-center justify-center gap-2 pb-2 mb-2 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-9 sm:w-11 object-contain" />
+            <img src="/logo.png" alt="GeoSpeed" className="w-[15cqi] max-w-[52px] object-contain" />
             <span
-              className="text-lg sm:text-2xl font-black tracking-tight"
+              className="text-[9cqi] font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
@@ -440,11 +440,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Ciudad a encontrar ── */}
           <div className="w-full shrink-0 mb-2 rounded-xl px-2.5 py-2 border border-primary/25 bg-primary/10 text-center">
-            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
+            <p className="text-[4cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5" id="city-label">
               {t('game_find')}
             </p>
             <p
-              className="text-sm sm:text-base font-black leading-tight text-center"
+              className="text-[6.2cqi] font-black leading-tight text-center"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
               aria-labelledby="city-label"
             >
@@ -459,10 +459,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Puntuación ── */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
+            <p className="text-[4cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_score')}</p>
             <p
               ref={scoreElRef}
-              className={`text-xl sm:text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
+              className={`text-[8cqi] font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
               style={{ color: 'hsl(var(--primary))' }}
               aria-live="polite"
             >
@@ -479,8 +479,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ── Progreso de rondas ── */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-[10px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_round')}</p>
-            <p className="text-base font-mono font-bold leading-none">
+            <p className="text-[4cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_round')}</p>
+            <p className="text-[6cqi] font-mono font-bold leading-none">
               {currentRound + 1}<span className="text-foreground/40 text-base">/{totalRounds}</span>
             </p>
             <div className="mt-2 flex flex-wrap justify-center gap-1">
@@ -503,14 +503,14 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <div className="flex flex-col items-center gap-1.5">
                 {showStreak && (
                   <div className="text-center animate-score-pop">
-                    <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
+                    <span className="inline-block rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[4cqi] font-bold text-orange-400">
                       🔥×{streak}{streakPct > 0 && <span className="ml-0.5 text-[10px] opacity-80">+{streakPct}%</span>}
                     </span>
                   </div>
                 )}
                 {mult && (
                   <div className="text-center">
-                    <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold ${
+                    <span className={`inline-block rounded-full border px-2 py-0.5 text-[4cqi] font-bold ${
                       mult.value >= 1.5 ? `${palette.good.twBgSoft} ${palette.good.twBorder} ${palette.good.tw}`
                       : mult.value >= 1.0 ? `${palette.medium.twBgSoft} ${palette.medium.twBorder} ${palette.medium.tw}`
                       : `${palette.bad.twBgSoft} ${palette.bad.twBorder} ${palette.bad.tw}`
@@ -523,7 +523,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             )}
             <Mascot
               state={mascotState}
-              className={`w-8 sm:w-9 md:w-10 shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-[16cqi] max-w-[48px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 
