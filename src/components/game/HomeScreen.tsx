@@ -78,6 +78,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('basic');
   const [rankingMode, setRankingMode] = useState<string>('all');
   const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
+  const [rankingDifficulty, setRankingDifficulty] = useState<string>('all');
   const [showRanking, setShowRanking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMoreModes, setShowMoreModes] = useState(false);
@@ -114,9 +115,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
   useEffect(() => {
     if (showRanking) {
-      getLeaderboard(rankingMode === 'all' ? undefined : rankingMode, rankingPeriod).then(setLeaderboard);
+      getLeaderboard(rankingMode === 'all' ? undefined : rankingMode, rankingPeriod, rankingDifficulty === 'all' ? undefined : rankingDifficulty).then(setLeaderboard);
     }
-  }, [rankingMode, rankingPeriod, showRanking]);
+  }, [rankingMode, rankingPeriod, rankingDifficulty, showRanking]);
 
   return (
     <main
@@ -802,6 +803,24 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 }`}
               >
                 {m.label}
+              </button>
+            ))}
+          </div>
+          {/* Difficulty filter */}
+          <div className="grid grid-cols-5 gap-1 sm:gap-1.5 mb-2 sm:mb-3 w-full" role="tablist" aria-label="Filtrar ranking por dificultad">
+            {['all', 'basic', 'easy', 'medium', 'hard'].map(dk => (
+              <button
+                key={dk}
+                onClick={() => setRankingDifficulty(dk)}
+                role="tab"
+                aria-selected={rankingDifficulty === dk}
+                className={`flex-1 px-0.5 sm:px-1 py-1 sm:py-1.5 rounded-md text-[8px] sm:text-[10px] font-bold whitespace-nowrap transition-all active:scale-[0.97] ${
+                  rankingDifficulty === dk
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {dk === 'all' ? t('home_rankingAll') : difficultyLabel(dk, t)}
               </button>
             ))}
           </div>

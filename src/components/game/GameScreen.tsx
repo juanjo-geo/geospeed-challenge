@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
-import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
+import { haversineDistance, calculateBasePoints, getMultiplier, getDifficultyMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
@@ -272,7 +272,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
     // Streak bonus: +10% per level starting at streak ≥ 2, capped at x1.60
     const streakBonus = newStreak >= 2 ? Math.min(1.6, 1 + (newStreak - 1) * 0.10) : 1;
-    const totalPoints = Math.round(basePoints * mult.value * streakBonus);
+    const totalPoints = Math.round(basePoints * mult.value * streakBonus * getDifficultyMultiplier(difficulty));
 
     const result: RoundResult = {
       city: currentCity,
@@ -338,6 +338,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   if (!currentCity) return null;
 
   const mult = lastResult ? getMultiplier(lastResult.timeUsed) : null;
+  const diffMult = getDifficultyMultiplier(difficulty);
   const feedback = lastResult ? getRoundFeedback(lastResult.distance, palette, t) : null;
   const showStreak = streak >= 2;
   const streakPct = streak >= 2 ? Math.min(60, (streak - 1) * 10) : 0;
@@ -473,6 +474,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 floatPoints >= 1000 ? 'text-sm text-green-400 animate-float-up-big' : 'text-xs text-green-400 animate-float-up'
               }`}>
                 +{floatPoints.toLocaleString()}{floatPoints >= 1000 ? ' 🔥' : ''}
+              </span>
+            )}
+            {diffMult > 1 && (
+              <span className="mt-1.5 inline-block rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[7cqi] font-bold leading-none" style={{ color: 'hsl(var(--primary))' }}>
+                🎯 ×{diffMult} <span className="opacity-70">dif.</span>
               </span>
             )}
           </div>

@@ -94,7 +94,7 @@ export default function FinalResultScreen({
     setPreviousBest(stats.bestScore);
     const prevXp = calculateXP();
     updatePlayerStats(totalScore, distances);
-    qualifiesForLeaderboard(totalScore, mode).then(setQualifies);
+    qualifiesForLeaderboard(totalScore, mode, difficulty).then(setQualifies);
     if (reason === 'complete') playVictory();
 
     // Level up check — play fanfare if player leveled up

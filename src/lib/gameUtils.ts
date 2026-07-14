@@ -40,6 +40,18 @@ export function formatDistance(km: number): string {
   return `${Math.round(km).toLocaleString()} km`;
 }
 
+// ── Multiplicador de puntaje por dificultad ──
+// Premia jugar en niveles más difíciles: el puntaje final se multiplica por esto.
+export const DIFFICULTY_MULTIPLIER: Record<string, number> = {
+  basic: 1.0,
+  easy: 1.1,
+  medium: 1.25,
+  hard: 1.5,
+};
+export function getDifficultyMultiplier(difficulty: string): number {
+  return DIFFICULTY_MULTIPLIER[difficulty] ?? 1.0;
+}
+
 export interface LeaderboardEntry {
   initials: string;
   score: number;
@@ -60,7 +72,7 @@ export interface PlayerStats {
 
 export type LeaderboardPeriod = 'all' | 'week' | 'month';
 
-export async function getLeaderboard(mode?: string, period: LeaderboardPeriod = 'all'): Promise<LeaderboardEntry[]> {
+export async function getLeaderboard(mode?: string, period: LeaderboardPeriod = 'all', difficulty?: string): Promise<LeaderboardEntry[]> {
   try {
     let query = supabase
       .from('leaderboard')
@@ -68,6 +80,7 @@ export async function getLeaderboard(mode?: string, period: LeaderboardPeriod = 
       .order('score', { ascending: false })
       .limit(10);
     if (mode) query = query.eq('mode', mode);
+    if (difficulty) query = query.eq('difficulty', difficulty);
 
     // Time-period filter
     if (period === 'week') {
@@ -90,15 +103,15 @@ export async function getLeaderboard(mode?: string, period: LeaderboardPeriod = 
       date: row.created_at.split('T')[0],
     }));
     // Mezclar con entradas locales (por si submit-score falló pero se guardó local)
-    return mergeLeaderboards(cloud, getLeaderboardLocal(), mode);
+    return mergeLeaderboards(cloud, getLeaderboardLocal(), mode, difficulty);
   } catch {
-    return getLeaderboardLocal(mode);
+    return getLeaderboardLocal(mode, difficulty);
   }
 }
 
 /** Combina dos listas de leaderboard, deduplica por iniciales+score y ordena desc */
-function mergeLeaderboards(a: LeaderboardEntry[], b: LeaderboardEntry[], mode?: string): LeaderboardEntry[] {
-  const all = [...a, ...b].filter(e => !mode || (e.mode || 'world') === mode);
+function mergeLeaderboards(a: LeaderboardEntry[], b: LeaderboardEntry[], mode?: string, difficulty?: string): LeaderboardEntry[] {
+  const all = [...a, ...b].filter(e => (!mode || (e.mode || 'world') === mode) && (!difficulty || e.difficulty === difficulty));
   const seen = new Set<string>();
   const unique: LeaderboardEntry[] = [];
   for (const e of all) {
@@ -155,11 +168,11 @@ function saveLeaderboardLocal(entry: LeaderboardEntry): void {
   } catch { /* ignore quota errors */ }
 }
 
-export async function qualifiesForLeaderboard(score: number, mode?: string): Promise<boolean> {
+export async function qualifiesForLeaderboard(score: number, mode?: string, difficulty?: string): Promise<boolean> {
   if (score <= 0) return false;
   try {
     // Comparar contra el ranking DEL MODO que el jugador ve (no el global mezclado)
-    const board = await getLeaderboard(mode);
+    const board = await getLeaderboard(mode, 'all', difficulty);
     return board.length < 10 || score > board[board.length - 1].score;
   } catch {
     // Si falla la consulta, ser permisivo: mejor permitir guardar que perder el score
@@ -167,10 +180,10 @@ export async function qualifiesForLeaderboard(score: number, mode?: string): Pro
   }
 }
 
-function getLeaderboardLocal(mode?: string): LeaderboardEntry[] {
+function getLeaderboardLocal(mode?: string, difficulty?: string): LeaderboardEntry[] {
   try {
     const all: LeaderboardEntry[] = JSON.parse(localStorage.getItem('geospeed_leaderboard') || '[]');
-    const filtered = mode ? all.filter(e => (e.mode || 'world') === mode) : all;
+    const filtered = all.filter(e => (!mode || (e.mode || 'world') === mode) && (!difficulty || e.difficulty === difficulty));
     return filtered.sort((a, b) => b.score - a.score).slice(0, 10);
   } catch { return []; }
 }

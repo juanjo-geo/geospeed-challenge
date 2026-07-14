@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import CountUp from '@/components/ui/CountUp';
-import { haversineDistance, calculateBasePoints, getMultiplier, formatDistance } from '@/lib/gameUtils';
+import { haversineDistance, calculateBasePoints, getMultiplier, getDifficultyMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat, playCountdown, playGo } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
@@ -153,7 +153,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     const basePoints = calculateBasePoints(distance);
     const mult = getMultiplier(timeUsed);
-    const totalPoints = Math.round(basePoints * mult.value);
+    const totalPoints = Math.round(basePoints * mult.value * getDifficultyMultiplier(difficulty));
     setMascotState(distance >= 2000 ? 'sad' : distance < 300 ? 'celebrate' : 'wink');
 
     roundsRef.current.push({ city: currentCity, distance, totalPoints, timeUsed });
