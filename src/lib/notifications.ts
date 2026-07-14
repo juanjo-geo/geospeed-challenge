@@ -210,9 +210,9 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
  */
 export async function subscribeToPush(): Promise<boolean> {
   try {
-    if (!supportsNotifications() || typeof window === 'undefined' || !('PushManager' in window)) return false;
-    if (!VAPID_PUBLIC) { console.info('[push] Falta VITE_VAPID_PUBLIC_KEY — suscripción omitida'); return false; }
-    if (getPermission() !== 'granted') return false;
+    if (!supportsNotifications() || typeof window === 'undefined' || !('PushManager' in window)) { alert('DEBUG push: este navegador/PWA no soporta Push (¿abriste desde el ícono instalado?)'); return false; }
+    if (!VAPID_PUBLIC) { alert('DEBUG push: falta la llave VAPID en el build (versión vieja en caché)'); return false; }
+    if (getPermission() !== 'granted') { alert('DEBUG push: permiso no concedido (' + getPermission() + ')'); return false; }
 
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
@@ -238,9 +238,10 @@ export async function subscribeToPush(): Promise<boolean> {
       },
       { onConflict: 'endpoint' },
     );
+    alert('DEBUG push: ¡suscrito OK! revisa la tabla push_subscriptions');
     return true;
   } catch (e) {
-    console.warn('[push] Suscripción falló', e);
+    alert('DEBUG push: error al suscribir → ' + ((e as Error)?.message || String(e)));
     return false;
   }
 }
