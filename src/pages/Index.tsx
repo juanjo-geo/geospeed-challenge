@@ -97,15 +97,15 @@ const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePa
 const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
-import { consumeLife, getEnergy, addLives, drainLives } from '@/lib/energySystem';
-import { incrementGameCounter, shouldShowInterstitial, resetPro } from '@/lib/premiumSystem';
+import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
+import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
 import { syncAfterGame, pullFromCloud, setLocalData } from '@/lib/cloudSync';
-import { checkStreak, resetStreak } from '@/lib/dailyStreak';
+import { checkStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
 import { useI18n } from '@/i18n';
@@ -235,22 +235,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   // ── Background music — single track, always on from splash ──
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
-
-  // Recarga de vidas para PRUEBAS: abrir el juego con ?vidas=geo da 20 vidas de bono y limpia el parámetro.
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      let changed = false;
-      if (params.get('vidas') === 'geo') { addLives(20); params.delete('vidas'); changed = true; }
-      if (params.get('nopro') === 'geo') { resetPro(); params.delete('nopro'); changed = true; }
-      if (params.get('test') === 'sinvidas') { drainLives(); resetPro(); params.delete('test'); changed = true; }
-      if (params.get('cofre') === 'geo') { resetStreak(); params.delete('cofre'); changed = true; }
-      if (changed) {
-        const q = params.toString();
-        window.history.replaceState({}, '', window.location.pathname + (q ? `?${q}` : ''));
-      }
-    } catch { /* ignore */ }
-  }, []);
 
   // Initialize ads on mount
   useEffect(() => { initAds(); initAnalytics(); initFeatureFlags(); checkIncomingReferral(); resetSessionFrustration(); recordInstallDate(); checkRetention(); }, []);
