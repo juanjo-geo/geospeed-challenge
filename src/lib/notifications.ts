@@ -210,9 +210,9 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
  */
 export async function subscribeToPush(): Promise<boolean> {
   try {
-    if (!supportsNotifications() || typeof window === 'undefined' || !('PushManager' in window)) { alert('DEBUG push: este navegador/PWA no soporta Push (¿abriste desde el ícono instalado?)'); return false; }
-    if (!VAPID_PUBLIC) { alert('DEBUG push: falta la llave VAPID en el build (versión vieja en caché)'); return false; }
-    if (getPermission() !== 'granted') { alert('DEBUG push: permiso no concedido (' + getPermission() + ')'); return false; }
+    if (!supportsNotifications() || typeof window === 'undefined' || !('PushManager' in window)) return false;
+    if (!VAPID_PUBLIC) { console.info('[push] Falta VITE_VAPID_PUBLIC_KEY — suscripción omitida'); return false; }
+    if (getPermission() !== 'granted') return false;
 
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
@@ -238,11 +238,10 @@ export async function subscribeToPush(): Promise<boolean> {
       },
       { onConflict: 'endpoint' },
     );
-    if (upErr) { alert('DEBUG push: GUARDAR falló → ' + upErr.message + ' | code: ' + ((upErr as { code?: string }).code || '?')); return false; }
-    alert('DEBUG push: ¡suscrito y GUARDADO OK!');
+    if (upErr) { console.warn('[push] Guardar suscripción falló', upErr); return false; }
     return true;
   } catch (e) {
-    alert('DEBUG push: error al suscribir → ' + ((e as Error)?.message || String(e)));
+    console.warn('[push] Suscripción falló', e);
     return false;
   }
 }
