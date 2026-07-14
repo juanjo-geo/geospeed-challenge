@@ -457,6 +457,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // ── Notifications: start check loop + schedule after each game ──
   useEffect(() => {
     startNotificationLoop();
+    // Reintenta guardar la suscripción push en cada apertura (idempotente) si ya hay permiso —
+    // cubre el caso en que el permiso se concedió pero el guardado en BD falló una vez.
+    if (getPermission() === 'granted') subscribeToPush();
   }, []);
 
   // After a game ends, schedule contextual notifications + offer permission

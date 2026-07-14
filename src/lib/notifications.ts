@@ -228,7 +228,7 @@ export async function subscribeToPush(): Promise<boolean> {
     let userId: string | null = null;
     try { const { data } = await supabase.auth.getUser(); userId = data.user?.id ?? null; } catch (_) {}
 
-    await supabase.from('push_subscriptions').upsert(
+    const { error: upErr } = await supabase.from('push_subscriptions').upsert(
       {
         endpoint: json.endpoint,
         p256dh: json.keys?.p256dh ?? null,
@@ -238,7 +238,8 @@ export async function subscribeToPush(): Promise<boolean> {
       },
       { onConflict: 'endpoint' },
     );
-    alert('DEBUG push: ¡suscrito OK! revisa la tabla push_subscriptions');
+    if (upErr) { alert('DEBUG push: GUARDAR falló → ' + upErr.message + ' | code: ' + ((upErr as { code?: string }).code || '?')); return false; }
+    alert('DEBUG push: ¡suscrito y GUARDADO OK!');
     return true;
   } catch (e) {
     alert('DEBUG push: error al suscribir → ' + ((e as Error)?.message || String(e)));
