@@ -129,8 +129,10 @@ function doUnlock(): void {
     const Cls = getAudioCtxClass();
     if (!Cls) return;
 
-    // If context is closed (dead), destroy and recreate
-    if (ctx && ctx.state === 'closed') {
+    // Si el contexto está muerto (closed) o iOS lo dejó 'interrupted' (p.ej. tras una
+    // notificación push o llamada), destruir y recrear — resume() solo no lo revive.
+    if (ctx && (ctx.state === 'closed' || (ctx.state as string) === 'interrupted')) {
+      try { ctx.close(); } catch (_) { /* ignore */ }
       ctx = null;
     }
 
@@ -246,7 +248,8 @@ export function getSharedAudioContext(): AudioContext | null {
  * Returns null only if WebAudio is completely unavailable.
  */
 function getCtx(): AudioContext | null {
-  if (!ctx || ctx.state === 'closed') {
+  if (!ctx || ctx.state === 'closed' || (ctx.state as string) === 'interrupted') {
+    if (ctx) { try { ctx.close(); } catch (_) { /* ignore */ } }
     try {
       const Cls = getAudioCtxClass();
       if (!Cls) return null;

@@ -265,6 +265,17 @@ function installVisibilityHandler() {
   if (typeof window !== 'undefined') {
     window.addEventListener('focus', () => { if (isPlaying) revive(); });
   }
+  // Recuperación tras interrupción de iOS (notificación push, llamada, Siri): si el
+  // contexto compartido se recreó o la música quedó muda, reconstruir el grafo en el
+  // próximo gesto del usuario (cada toque en el mapa durante la partida cuenta).
+  const onGesture = () => {
+    if (!isPlaying) return;
+    const c = getSharedAudioContext(); // reanuda/recrea el contexto en sounds.ts
+    if (c !== ctx || !source || (c && c.state !== 'running')) revive();
+  };
+  ['pointerdown', 'touchstart'].forEach((e) =>
+    document.addEventListener(e, onGesture, { capture: true, passive: true }),
+  );
 }
 installVisibilityHandler();
 

@@ -415,7 +415,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
     ? 'flex flex-col'
     : isCompact
     ? 'flex flex-col'
-    : 'grid grid-cols-[clamp(22rem,28vw,28rem)_minmax(0,1fr)]';
+    : 'grid grid-cols-[clamp(13rem,24vw,21rem)_minmax(0,1fr)]';
 
   return (
     <div
@@ -462,13 +462,13 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
       {!isCompact && !isPortraitMobile && (
         <div
           className="flex min-h-0 flex-col gap-0 border-r border-border/60 bg-card overflow-y-auto overflow-x-hidden scrollbar-hidden"
-          style={{ paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+          style={{ containerType: 'inline-size', paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
           {/* Logo */}
-          <div className="w-full flex items-center justify-center gap-2.5 pb-2.5 mb-2.5 border-b border-border/50 shrink-0">
-            <img src="/logo.png" alt="GeoSpeed" className="w-[50px] sm:w-[60px] object-contain" />
+          <div className="w-full flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pb-2 mb-2 border-b border-border/50 shrink-0">
+            <img src="/logo.png" alt="GeoSpeed" className="w-[37cqi] max-w-[100px] object-contain" />
             <span
-              className="text-2xl sm:text-3xl font-black tracking-tight"
+              className="text-[22cqi] font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
                 background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
@@ -490,12 +490,12 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           </div>
 
           {/* City to find */}
-          <div className="w-full shrink-0 mb-2 rounded-xl px-3 py-3 border border-primary/25 bg-primary/10 text-center">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
+          <div className="w-full shrink-0 mb-2 rounded-xl px-[6.7cqi] py-[5.4cqi] border border-primary/25 bg-primary/10 text-center">
+            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1.5">
               {isEn ? 'FIND' : 'ENCUENTRA'}
             </p>
             <p
-              className="text-lg font-black leading-tight text-center"
+              className="text-[15.5cqi] font-black leading-tight text-center"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word' }}
             >
               {currentCity.name}
@@ -507,11 +507,11 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
 
           {/* Score */}
           <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">
+            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">
               {isEn ? 'SCORE' : 'PUNTOS'}
             </p>
             <p
-              className={`text-2xl font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
+              className={`text-[20cqi] font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
               style={{ color: 'hsl(var(--primary))' }}
             >
               {score.toLocaleString()}
@@ -520,10 +520,10 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
 
           {/* Step indicator */}
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">
+            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">
               {isEn ? 'ROUND' : 'RONDA'}
             </p>
-            <p className="text-lg font-mono font-bold leading-none">
+            <p className="text-[15cqi] font-mono font-bold leading-none">
               {currentRound + 1}<span className="text-foreground/40 text-base">/{TOTAL_ROUNDS}</span>
             </p>
             {/* Big step dots */}
