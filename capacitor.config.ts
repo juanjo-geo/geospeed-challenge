@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.geospeed.challenge',
-  appName: 'GeoSpeed IQ Challenge',
+  appName: 'GeoSpeed Challenge',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
