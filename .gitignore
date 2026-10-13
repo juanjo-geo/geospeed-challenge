@@ -25,3 +25,12 @@ dist-ssr
 
 .vercel
 .env*.local
+
+# Supabase CLI local state
+supabase/.temp/
+
+# Capturas locales (no van al repo)
+screenshots/
+
+# Temporales de Vite
+vite.config.ts.timestamp-*
