@@ -1,188 +1,125 @@
-# GeoSpeed IQ Challenge — Project Memory
+# GeoSpeed Challenge — Project Memory
 
 ## Owner
-JuanJo Grimar (juanjogrimar@gmail.com) — Senior Manager BPO, Colombia. 550 people under management. Focused on profitability and AI/automation. This project started academic but is transitioning to a monetizable product.
+JuanJo Grimar (juanjogrimar@gmail.com) — Senior Manager BPO, Colombia. 550 people under management. Focused on profitability and AI/automation. Started academic, now a monetizable product.
 
 ## What Is GeoSpeed
-Geography quiz game: locate cities on an interactive world map combining speed + precision. Tagline: "How well do you know the world?" Dark premium aesthetic (#07130a bg, #f5c842 gold accents). Optimized for mobile landscape + desktop.
+Geography quiz game: locate cities (or a footballer's country) on an interactive world map combining speed + precision. Tagline: "How well do you know the world?" Dark premium aesthetic (#07130a bg, #f5c842 gold). Optimized for mobile landscape + desktop. App name: **GeoSpeed Challenge** (store listing still says "GeoSpeed IQ Challenge").
 
 ## Tech Stack
-- **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
-- **Rendering:** Canvas 2D (WorldMapCanvas.tsx) — custom map, no Google Maps API
-- **Backend:** Supabase (auth, DB, Edge Functions, Realtime for multiplayer)
-- **Hosting:** Vercel (free tier, CDN global)
-- **Payments:** RevenueCat (mobile IAP) + Stripe (web) via paymentProvider.ts
-- **Analytics:** Google Analytics GA4 via analytics.ts
-- **Ads:** AdMob/AdSense via adSystem.ts (rewarded + interstitial)
-- **Native:** Capacitor (iOS + Android) — capacitor.config.ts ready
-- **A/B Testing:** Feature flags via Supabase (featureFlags.ts)
+- **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS. Bilingual ES/EN via `src/i18n/`.
+- **Rendering:** Canvas 2D (`WorldMapCanvas.tsx`), custom map, no Google Maps API. Two-finger pan + zoom, 3x Retina resolution.
+- **Backend:** Supabase (auth, DB, Edge Functions, Realtime + polling fallback for duels, web push).
+- **Hosting:** Vercel (free tier), auto-deploy from GitHub `main`.
+- **Payments:** `paymentProvider.ts` picks the provider by platform: **Mercado Pago** on web (Stripe does NOT operate in Colombia; Edge Functions `mercadopago-checkout` / `mercadopago-webhook`) and **RevenueCat / Google Play Billing** inside the native app (Google rejects Mercado Pago for digital goods in the APK). Mock provider for dev.
+- **Analytics:** GA4 via `analytics.ts`. **Ads:** `adSystem.ts` (web overlay today; native AdMob plugin NOT yet installed).
+- **Native:** Capacitor 8 (`android/` committed, generated with `npx cap add android`). iOS not started.
+- **A/B Testing:** feature flags in Supabase (`featureFlags.ts`).
 
-## Game Modes (5)
-1. **Classic:** 13 rounds, 15s timer per round. Time runs out = game over.
-2. **Time Attack:** 60s global clock, infinite cities, max accuracy.
-3. **1v1 Duel:** Real-time multiplayer via Supabase Realtime. 5-char room codes.
-4. **Daily Challenge:** Deterministic seed (YYYY-MM-DD), same cities for everyone worldwide.
-5. **Regional:** Each mode playable in World, Europe, Asia, Americas, Africa.
+## Game Modes
+1. **Clásico:** 13 rounds, 15s per round (`GameScreen.tsx`). Time out = game over.
+2. **60s de Caos (Time Attack):** 60s global clock, infinite cities (`TimeAttackScreen.tsx`).
+3. **Duelo 1v1:** real-time via Supabase Realtime with polling fallback, 5-char room codes, spectator mode, emoji chat.
+4. **Desafío Diario:** deterministic seed (YYYY-MM-DD), same cities worldwide.
+5. **Mundial:** given a footballer's name, tap their country (`WorldChallengeScreen.tsx`, `worldChallenge.ts`, `src/data/players.ts`, `countryAdjacency.ts`). Scoring by territory bands: exact 1000 / neighbour 600 / same continent 300 / other continent 50 / ocean 0. Spec in `docs/GeoSpeed_Modulo_Mundial_Spec.md`.
+6. **Regional:** every mode playable in World, Europe, Asia, Americas, Africa.
 
-## Scoring System
-- <50km: 1000pts | 50-200km: 800 | 200-500km: 500 | 500-1000km: 300 | 1000-2000km: 100 | >2000km: 50 | >8000km: 0
-- Speed multiplier: <4s = x2, 4-9s = x1, >9s = x0.5
+**Difficulties** (`DIFFICULTY_MULTIPLIER` in `gameUtils.ts`): basic Turista x1.0 · easy Rookie x1.1 · medium Crack x1.25 · hard Leyenda x1.5. Mundial labels: Suplente / Titular / Crack / Balón de Oro. Rankings are per difficulty.
+
+## Scoring (real formulas)
+- Distance: `max(0, 1000 × (1 − d/7000)^1.5)` → 50km=989, 500km=832, 2000km=366, 7000km+=0.
+- Speed multiplier: `clamp(0.4, 2.2 − t×0.13, 2.2)` → 1s=x2.07, 5s=x1.55, 10s=x0.90, 14s+=x0.40.
+- Streak bonus: +10% per level from streak ≥2, cap x1.60. Miss (>1500km) halves the streak instead of resetting it.
+- Final score × difficulty multiplier.
 
 ## Key Architecture Files
 
-### Pages
-- `src/pages/Index.tsx` — Main game orchestrator (phases: home, game, results, store, etc.)
-- `src/pages/Privacy.tsx` — Privacy policy (ES/EN), required by App Store/Play
-- `src/pages/Support.tsx` — FAQ + contact, required by App Store/Play
-- `src/pages/Auth.tsx` — Supabase auth page
+### Pages (`src/pages/`)
+`Index.tsx` (orchestrator: home, game, results, store, profile…), `Auth.tsx`, `Privacy.tsx`, `Terms.tsx`, `Support.tsx`, `NotFound.tsx`.
 
-### Core Game Components
-- `src/components/game/GameScreen.tsx` — Main gameplay (uses useGamepad + useUltraWide)
-- `src/components/game/WorldMapCanvas.tsx` — Canvas 2D map renderer
-- `src/components/game/HomeScreen.tsx` — Mode selection, stats, ranking
-- `src/components/game/FinalResultScreen.tsx` — End-of-game scores + share
-- `src/components/game/OnboardingGame.tsx` — 3 guided rounds (Paris, Tokyo, NY) with progressive hints
-- `src/components/game/StoreScreen.tsx` — IAP store (uses paymentProvider)
-- `src/components/game/NoLivesModal.tsx` — Rewarded ad + purchase + Pro upsell
-- `src/components/game/BattlePassScreen.tsx` — Seasonal cosmetics
-- `src/components/game/TimeAttackScreen.tsx` — 60s mode
-- `src/components/game/MultiplayerLobby.tsx` — 1v1 matchmaking
-- `src/components/game/FrustrationOfferModal.tsx` — Smart rage-quit intervention
+### Game components (`src/components/game/`)
+- `GameScreen.tsx` (Clásico), `TimeAttackScreen.tsx`, `WorldChallengeScreen.tsx`, `WorldMapCanvas.tsx`, `GameLayout.tsx` (fluid sidebar with container queries / cqi), `FloatingHUD.tsx`, `TimerBar.tsx`, `EnergyBar.tsx`.
+- `HomeScreen.tsx`, `ProfileScreen.tsx`, `FinalResultScreen.tsx`, `RoundBreakdown.tsx`, `ReplayMap.tsx`.
+- **Juice:** `Mascot.tsx` (5 reactive states: idle / celebrate / on fire / sad / wink, images in `public/`, sources in `mascot/`), `CountdownIntro.tsx` (3-2-1-GO in all modes), `DailyChestModal.tsx` (variable reward chest, replaced the streak popup), `SplashScreen.tsx`.
+- **Onboarding:** `OnboardingGame.tsx` (Paris, Tokyo, NY with hints), `TutorialOverlay.tsx`, `AutoDemo.tsx`.
+- **Multiplayer:** `MultiplayerLobby.tsx`, `WaitingRoom.tsx`, `SpectatorScreen.tsx`, `MultiplayerResultScreen.tsx`, `EmojiChat.tsx`.
+- **Monetization:** `StoreScreen.tsx` (countdown + glow on offers), `NoLivesModal.tsx` (mascot + rewarded ad + Pro upsell), `FrustrationOfferModal.tsx`, `BattlePassScreen.tsx`.
+- A11y: `ScreenReaderAnnouncer.tsx`, `ThemeToggle.tsx`.
 
-### Systems (src/lib/)
-- `adSystem.ts` — Rewarded + interstitial ad management (AdMob/AdSense)
-- `analytics.ts` — GA4 event tracking + convenience functions
-- `energySystem.ts` — Lives system (max 5, regen 1/20min)
-- `featureFlags.ts` — 15 remote flags, 3 AB groups, Supabase-backed, 5min cache
-- `frustrationDetector.ts` — Detects rage, offers contextual help (max 4/session, 90s cooldown)
-- `paymentProvider.ts` — Unified interface: Mock/RevenueCat/Stripe, auto-detect platform
-- `retentionTracker.ts` — D1/D7/D30 milestone tracking (idempotent, localStorage + GA4)
-- `shareVideo.ts` — 5s gameplay clips with audio (MediaRecorder + AudioDestination)
-- `sounds.ts` — Web Audio API with recording node routing for video capture
-- `dailyStreak.ts` — Daily streak system with FOMO hooks
-- `streakSystem.ts` — Streak tracking and rewards
-- `referralSystem.ts` — Deep link referral system
-- `confetti.ts` — Particle effects for celebrations
-- `juiceAnimations.ts` — Score fly, multiplier mega-feedback, particle burst
-- `levelSystem.ts` — 10 levels from Novato to Deidad Geo (0-100K XP)
-- `cosmetics.ts` — Battle Pass cosmetics system
-- `gameUtils.ts` — City selection, scoring, distance calculation
+### Systems (`src/lib/`)
+`gameUtils.ts` (scoring, leaderboard, stats, history) · `worldChallenge.ts` · `multiplayerUtils.ts` · `paymentProvider.ts` · `premiumSystem.ts` (Pro state) · `energySystem.ts` (5 lives, +1/20min) · `adSystem.ts` · `analytics.ts` · `featureFlags.ts` · `frustrationDetector.ts` · `retentionTracker.ts` (D1/D7/D30) · `dailyStreak.ts` · `streakSystem.ts` · `levelSystem.ts` · `cosmetics.ts` · `referralSystem.ts` · `notifications.ts` (web push, VAPID) · `cloudSync.ts` · `sounds.ts` (Web Audio, music as AudioBuffer, mediaSession, iOS interruption recovery) · `haptics.ts` · `confetti.ts` · `juiceAnimations.ts` · `shareCard.ts` · `shareVideo.ts` · `gameI18n.ts`.
 
-### Hooks
-- `useGamepad.ts` — Gamepad API with rAF polling, deadzone 0.15, standard button mapping
-- `useUltraWide.ts` — Aspect ratio >2.2 detection, maxMapWidth constraint
+### Hooks (`src/hooks/`)
+`useAuth`, `useBackgroundMusic`, `useGamepad` (rAF polling, deadzone 0.15), `useUltraWide` (aspect >2.2), `useKeyboardShortcuts`, `useAccessibility`, `useOnlineStatus`, `useTheme`, `use-mobile`, `use-toast`.
 
-### Data
-- `src/data/cities.ts` — Extensive catalog: Easy/Medium/Expert, 5 continents
-- `src/data/countries.ts` — Country data for regional modes
+### Data (`src/data/`)
+`cities.ts` (Easy/Medium/Expert, 5 continents), `countries.ts`, `countryAdjacency.ts`, `players.ts`.
 
-### Config
-- `capacitor.config.ts` — App ID: com.geospeed.challenge, dark theme, SplashScreen
-- `vercel.json` — Security headers (A+ Mozilla Observatory, 125/100) + SPA rewrites
-- `.env` — Supabase, RevenueCat, Stripe, GA4, payment mode keys
-- `store-listing/metadata.json` — iOS + Android store metadata, bilingual, ASO keywords
-- `supabase/migrations/20260517_feature_flags.sql` — Feature flags table + RLS
+### Supabase
+- Edge Functions: `create-game-room`, `update-game-room`, `submit-score`, `send-push`, `mercadopago-checkout`, `mercadopago-webhook`.
+- Migrations up to `20260707_push_subscriptions.sql` (player_data, feature_flags, push_subscriptions…).
+- Project: `motyvjfhupmvmfpgftku` (new project since mid-2026; `supabase/config.toml` and `.env` agree). `supabase/.temp/` is gitignored.
 
-### Scripts
-- `scripts/check-security-headers.mjs` — Validates security headers offline or live (--live URL)
+### Config & assets
+- `capacitor.config.ts` — appId `com.geospeed.challenge`, appName "GeoSpeed Challenge".
+- `android/` — Capacitor project. `build/`, `.gradle/`, `local.properties`, `*.aab/*.apk` are gitignored. versionCode 1 / versionName 1.0. Keystore is NOT in the repo (keep it that way).
+- `vercel.json` — security headers (A+ Mozilla Observatory) + SPA rewrites. `public/sw.js` — PWA service worker (`CACHE_NAME` currently `geospeed-v82`).
+- `.env` — tracked in git on purpose; contains ONLY public `VITE_*` keys (Supabase anon, GA4, AdMob IDs, payment mode, RevenueCat/Stripe placeholders). Never put secrets there; server secrets live in Supabase Edge Function secrets.
+- `store-listing/metadata.json` — iOS + Android store metadata, ASO keywords.
+- `scripts/check-security-headers.mjs` — header validation (`--live URL`).
 
-### Docs (in docs/)
-- `GeoSpeed_Analisis_Mercado_Financiero.docx` — Market analysis, competition, financial projections
-- `GeoSpeed_Guia_Lanzamiento.docx` — Launch guide with manual steps, costs, marketing, security
+### Docs (`docs/`)
+- `GeoSpeed_Build_Nativo_Android.md` — Capacitor → Play Console step by step (keystore, AAB, soft launch).
+- `GeoSpeed_RevenueCat_Setup.md` — product IDs (`lives_5`, `lives_15`, `lives_50`, `pro_monthly`, `pro_yearly`, `pro_lifetime`), entitlement `pro`, console steps.
+- `GeoSpeed_Modulo_Mundial_Spec.md` — Mundial mode spec (implemented).
+- `Protocolo_Juice_GeoSpeed_vs_Duolingo.md` + two audit `.docx` — 9-layer game-feel rubric. Score went 2.31 → 2.62 on 2026-07-06; the remaining gaps (chest, monetization juice, shake on miss) were closed in later commits.
+- `GeoSpeed_Analisis_Mercado_Financiero.docx`, `GeoSpeed_Guia_Lanzamiento.docx` — market analysis, launch guide.
 
-## Current Status (May 18, 2026)
-- **Audit Score:** 9.4/10
-- **Security:** A+ (125/100) on Mozilla Observatory — 10/10 tests
-- **Deploy:** Live on Vercel at geospeed-challenge.vercel.app
-- **Git:** github.com/juanjo-geo/geospeed-challenge (main branch)
-- **Code:** Complete — all 5 game modes, multiplayer, monetization, analytics, ads, onboarding
-- **Legal Pages:** /privacy, /terms, /support — all live and bilingual (ES/EN)
-- **SEO:** OG meta tags, Twitter Card, og-image.png, canonical URL
-- **PWA:** manifest.json + sw.js v5 (network-first, push notifications, SPA fallback)
+## Current Status (October 13, 2026)
+- **Code:** feature-complete for web. Last feature work 2026-07-15. Deployed at geospeed-challenge.vercel.app. Git: github.com/juanjo-geo/geospeed-challenge (`main`).
+- **Security:** A+ Mozilla Observatory. Secret test links/gestures were removed before launch (commit d8a4e52).
+- **Native:** `android/` exists and an AAB was built on 2026-06-15, but it predates all July commits → must be rebuilt before uploading.
+- **Working tree cleanup 2026-10-13:** Capacitor deps + android/ committed, Supabase project switch committed, loose docs moved into `docs/`, obsolete Stripe stubs and Vite temp files deleted, `screenshots/` gitignored.
 
-## Accounts & Services Status
+## Accounts & Services
 | Service | Status | Details |
 |---------|--------|---------|
-| Google Play Console | CREATED | $25 paid, developer: GeoSpeed Games |
-| Google Analytics (GA4) | CONFIGURED | Measurement ID: G-V0L6R02VG0, stream: GeoSpeed Web |
-| Google AdMob | CONFIGURED | App ID: ca-app-pub-9803010593449601~3668014353 |
-| AdMob Rewarded | CONFIGURED | ca-app-pub-9803010593449601/2163360991 (gives lives) |
-| AdMob Interstitial | CONFIGURED | ca-app-pub-9803010593449601/5565522179 (between games) |
-| AdSense Publisher | CONFIGURED | pub-9803010593449601 |
-| Supabase | ACTIVE | Auth, DB, Edge Functions, Realtime |
-| Vercel | ACTIVE | Free tier, CDN, auto-deploy from GitHub |
-| GitHub | ACTIVE | juanjo-geo/geospeed-challenge |
-| Apple Developer | PENDING | $99/year — not yet created |
-| RevenueCat | PENDING | Free tier — needs Apple + Google connected |
-| Stripe | PENDING | Free — needs account creation |
+| Google Play Console | CREATED | $25 paid, developer: GeoSpeed Games. No build uploaded yet. |
+| Google Analytics GA4 | CONFIGURED | G-V0L6R02VG0 |
+| Google AdMob | CONFIGURED | App ca-app-pub-9803010593449601~3668014353; rewarded …/2163360991; interstitial …/5565522179. Native plugin not integrated. |
+| Supabase | ACTIVE | Project motyvjfhupmvmfpgftku |
+| Vercel / GitHub | ACTIVE | Auto-deploy from main |
+| Mercado Pago | CODE READY | Web checkout + webhook Edge Functions. Verify production credentials in Supabase secrets of the NEW project. |
+| RevenueCat | PENDING | Plugin installed; `VITE_REVENUECAT_API_KEY` is a placeholder. Needs account + Play products. |
+| Stripe | DROPPED | Not available in Colombia. Replaced by Mercado Pago. |
+| Apple Developer | PENDING | $99/year, not created. |
 
-## .env Configuration
-- VITE_SUPABASE_*: Real keys configured
-- VITE_GA_MEASUREMENT_ID: G-V0L6R02VG0 (real)
-- VITE_ADMOB_APP_ID: ca-app-pub-9803010593449601~3668014353 (real)
-- VITE_ADMOB_REWARDED_ID: ca-app-pub-9803010593449601/2163360991 (real)
-- VITE_ADMOB_INTERSTITIAL_ID: ca-app-pub-9803010593449601/5565522179 (real)
-- VITE_REVENUECAT_API_KEY: placeholder (pending)
-- VITE_STRIPE_PUBLISHABLE_KEY: placeholder (pending)
-- VITE_PAYMENT_MODE: mock (change to 'auto' for production)
+## What's Pending — Technical
+1. Native AdMob: install `@capacitor-community/admob` and wire the "future AdMob" points in `adSystem.ts`.
+2. RevenueCat: real key in `.env` once the account exists; test purchases in Play internal testing.
+3. Rebuild native: `npm run build && npx cap sync android`, bump `versionCode`, sign AAB.
+4. New store screenshots + 1024×500 feature graphic (June captures predate mascot/Mundial).
+5. Lighthouse performance pass (target 90+).
+6. Store listing name: decide "GeoSpeed Challenge" vs "GeoSpeed IQ Challenge" and align `store-listing/metadata.json`.
 
-## Phases Completed
-1. **Phase 1-2:** Core game, 5 modes, multiplayer, scoring, cities DB
-2. **Phase 3:** Monetization (ads, IAP, Battle Pass, streaks, frustration detector, referrals, funnel analytics)
-3. **Phase 4:** Visual polish (multiplier mega-feedback, score fly, round transitions, canvas polish)
-4. **Phase 5:** Production readiness (onboarding, D1/D7/D30 retention, payment providers, gamepad, ultra-wide, audio in video clips)
-5. **Phase 6:** Launch prep (Capacitor, A/B testing, store listing, security headers A+, privacy/support/terms pages)
-6. **Phase 7:** Account setup (Google Play Console, GA4, AdMob — all configured with real keys)
+## What's Pending — JuanJo (manual)
+1. Create and back up the release keystore (2 locations). Losing it = cannot update the app ever.
+2. Upload AAB to Play Console internal testing, then create the 6 in-app products (IDs above).
+3. Create RevenueCat account, Google Play app, entitlement `pro`, paste API key.
+4. Confirm Mercado Pago production credentials in the new Supabase project.
+5. Apple Developer account; TikTok/Instagram profiles; soft launch Colombia + Mexico + Chile.
+6. AdMob payment profile (needed at $100+).
 
-## What's Pending (JuanJo's Manual Tasks)
-1. ~~Create Google Play Console~~ DONE
-2. ~~Create GA4 property~~ DONE
-3. ~~Create AdMob account + ad units~~ DONE
-4. Create Apple Developer account ($99/year)
-5. Create RevenueCat account (connect Apple + Google)
-6. Create Stripe account (web payments)
-7. Complete AdMob payment profile (bank account — not urgent, needed at $100+)
-8. Build iOS/Android with Capacitor, submit to stores
-9. Take screenshots for store listings
-10. Create TikTok/Instagram profiles for GeoSpeed
-11. Soft launch in Colombia + Mexico + Chile
+## Market Summary
+GeoGuessr = $17M/year, subscription. GeoSpeed niche: 2–5 min fast quiz sessions, zero map API cost. Hybrid monetization: rewarded ads 40-50%, interstitials 15-20%, IAP 30-40%. Base case $1,300/month net at 10K DAU, $3,300 at 25K DAU. Decision: launch, validate D1 > 35%, then scale marketing.
 
-## What's Pending (Technical)
-1. ~~SEO meta tags + Open Graph~~ DONE
-2. ~~Snyk dependency audit~~ DONE (0 known vulnerabilities)
-3. ~~PWA manifest + service worker~~ DONE
-4. Lighthouse performance optimization (target 90+)
-5. Configure Capacitor build for Android APK/AAB
-
-## Market Analysis Summary
-- GeoGuessr = $17M/year, 21M visits/month, subscription model ($3.99-9.99)
-- GeoSpeed = different niche: fast quiz (2-5min sessions) vs immersive exploration (15-30min)
-- No API costs (custom Canvas map, no Google Maps)
-- Hybrid monetization: rewarded ads (40-50%), interstitials (15-20%), IAP (30-40%)
-- Launch investment: ~$140 USD total
-- Revenue projection (base case): $1,300/month net at 10K DAU, $3,300/month at 25K DAU
-- EBITDA margin: 59-97% due to minimal fixed costs
-- Decision: LAUNCH as product. Validate retention first (D1 > 35%), then scale marketing.
-
-## Important Patterns
-- Git lock files: FUSE mount creates .git/*.lock files. Delete with `del "path\.git\HEAD.lock"` before commits.
-- Git plumbing: Used write-tree/commit-tree/direct ref writes to bypass FUSE locks in previous sessions.
-- Feature flags: Change any game parameter remotely via Supabase without app update.
-- Payment mode: VITE_PAYMENT_MODE=mock for dev, 'auto' for production (auto-detects platform).
-
----
-
-## ⚠️ PROTOCOLO DE VERIFICACIÓN PRE-PUBLICACIÓN (OBLIGATORIO)
-
-**Antes de darle a JuanJo cualquier comando de `git push`, Claude DEBE hacer una revisión profunda para que nada se rompa. No entregar comandos de push hasta completar TODO esto:**
-
-1. **Sintaxis:** validar con `@babel/parser` (plugins `typescript` + `jsx`) TODOS los archivos tocados.
-2. **Grafo de imports/exports:** correr el chequeo sobre todo `src/` de que ningún `import` apunte a un export inexistente. Esto es lo que rompe el build de Vite/Rollup (ej. saga `gameUtils`/`revenuecat`). Verificar también que no haya imports a archivos que no existen.
-3. **Reproducir el build cuando se pueda:** `vite build` da SIGBUS en el sandbox (binario SWC nativo), pero **esbuild SÍ corre**. Exportar el árbol commiteado con `git archive HEAD | tar -x -C /tmp/…` (evita el disco corrupto por FUSE), `npm install`, y `esbuild src/main.tsx --bundle --tsconfig=tsconfig.app.json --external:@revenuecat/purchases-capacitor --format=esm` → debe dar exit 0 limpio.
-4. **Anti-truncado FUSE:** NUNCA usar las herramientas Edit/Write sobre archivos del repo montado (truncan). Usar `python`/`sed`/`cat > heredoc` y **verificar conteos de bytes/líneas** tras cada cambio. Si algo se trunca, recuperar con `git show HEAD:archivo`.
-5. **Índice de git corrupto:** tras el commit, revisar la salida — que NO aparezca ningún `delete mode` de un archivo que siga en uso (rompió el build con `gameI18n.ts`). Si aparece, restaurar ese archivo y volver a commitear.
-6. **Service worker:** subir la versión de `CACHE_NAME` en `public/sw.js` (evita que la PWA sirva caché vieja).
-7. **Lista explícita de archivos:** dar el `git add` con la lista exacta de archivos tocados. NUNCA `git add -A` (evita subir `.env`, `package.json`, configs no deseadas). Recordar el baile de candados (`del .git\...lock`) por el bug FUSE.
-8. Solo tras completar 1–7, entregar los comandos de commit/push.
-
-**Notas del entorno para las validaciones:** correr `node` desde `/tmp` (el `package.json` del repo da `ERR_INVALID_PACKAGE_CONFIG` a node). Instalar `@babel/parser` en `/tmp` si no está.
+## Working Conventions (Windows / Claude Code desktop)
+- Normal Edit/Write tools work fine here. The old Cowork/FUSE rules (lock files, no Edit/Write, git plumbing) no longer apply.
+- Line endings: repo files are LF; git prints CRLF warnings on Windows. Harmless, do not "fix" them.
+- **Before any `git push`:**
+  1. `npm run build` must pass (Vite). Optionally `npx tsc -p tsconfig.app.json --noEmit`.
+  2. Bump `CACHE_NAME` in `public/sw.js` whenever app code changes (PWA clients cache aggressively).
+  3. `git add` with an explicit file list. Never `git add -A` (avoids `android/` build output, screenshots, stray files).
+  4. `.env` changes are reviewed by JuanJo before committing (it is tracked; public keys only).
+- Feature flags let you change game parameters remotely without a deploy.
+- Payment mode: `VITE_PAYMENT_MODE=auto` in production (platform auto-detect); `mock` for local dev.
