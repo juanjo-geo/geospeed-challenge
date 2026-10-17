@@ -516,6 +516,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           footnote={t('region_keepDifficulty')}
           onConfirm={(k) => { setSelectedMode(k); setSheet(null); }}
           onClose={closeSheet}
+          closeLabel={t('close')}
         />
       )}
       {sheet === 'difficulty' && (
@@ -529,6 +530,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           context={{ emoji: MODE_UNLOCK[selectedMode].emoji, title: t('diff_currentRegion', { region: regionLabel }), desc: citiesInfo }}
           onConfirm={(k) => { setSelectedDifficulty(k); setSheet(null); }}
           onClose={closeSheet}
+          closeLabel={t('close')}
         />
       )}
     </main>

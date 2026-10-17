@@ -446,6 +446,23 @@
    Las pantallas que conviven con la barra (inicio, perfil, tienda, pass, ajustes)
    se envuelven en .with-app-nav para no quedar tapadas. */
 .with-app-nav { padding-bottom: calc(var(--nav-h) + var(--sab)); }
+/* Celular en horizontal: la barra inferior ocupa menos alto */
+@media (max-height: 500px) and (max-width: 767px) {
+  :root { --nav-h: 50px; }
+}
+
+/* Capa de ventana emergente: centra el panel si cabe y hace scroll si no.
+   (Con items-center + justify-center un panel más alto que la pantalla queda
+   cortado por arriba y no se alcanza ni con scroll.) */
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(0.75rem, var(--sat)) max(0.75rem, var(--sar)) max(0.75rem, var(--sab)) max(0.75rem, var(--sal));
+}
+.modal-layer > .modal-panel { margin: auto; }
 @media (min-width: 768px) {
   .with-app-nav { padding-bottom: 0; padding-top: var(--nav-h); }
 }

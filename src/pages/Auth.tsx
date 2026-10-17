@@ -96,8 +96,8 @@ export default function Auth() {
   // ── Pantallas de "revisa tu correo" (confirmación de registro / enlace de recuperación) ──
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 game-bg">
-        <div className="bg-card border rounded-xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
+      <div className="min-h-screen flex items-center justify-center p-6 short:p-3 game-bg">
+        <div className="bg-card border rounded-xl p-8 short:p-5 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
           <p className="text-4xl mb-3">✉️</p>
           <h2 className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))' }}>
             {sent === 'confirm' ? t('auth_checkEmailTitle') : t('auth_resetSentTitle')}
@@ -127,10 +127,10 @@ export default function Auth() {
   const cta = loading ? t('auth_loading') : mode === 'login' ? t('auth_signIn') : mode === 'signup' ? t('auth_signUp') : t('auth_sendLink');
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 game-bg">
-      <div className="bg-card border rounded-xl p-8 max-w-sm w-full shadow-2xl animate-fade-in-up">
-        <div className="text-center mb-6">
-          <img src="/logo.png" alt="GeoSpeed" className="w-14 object-contain mx-auto mb-1" />
+    <div className="min-h-screen flex items-center justify-center p-6 short:p-3 game-bg">
+      <div className="bg-card border rounded-xl p-8 short:p-5 max-w-sm w-full shadow-2xl animate-fade-in-up">
+        <div className="text-center mb-6 short:mb-3">
+          <img src="/logo.png" alt="GeoSpeed" className="w-14 short:w-10 object-contain mx-auto mb-1" />
           <h1 className="leading-none"><Wordmark size="md" /></h1>
           {mode === 'forgot' && <h2 className="text-lg font-black mt-3">{t('auth_forgotTitle')}</h2>}
           <p className="text-muted-foreground text-sm mt-2">{title}</p>

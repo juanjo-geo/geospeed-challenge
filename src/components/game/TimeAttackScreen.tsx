@@ -173,7 +173,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
       // Tier D: Far — red burst
       else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
       // Tier F: Epic fail (>5000km) — cinematic distance reveal
-      if (distance >= 5000) { setTimeout(() => fireDistanceReveal(distance), 400); }
+      if (distance >= 5000) { setTimeout(() => fireDistanceReveal(distance, t('reveal_otherSide')), 400); }
       // Speed bonus sound
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 300); }
     }, 150);

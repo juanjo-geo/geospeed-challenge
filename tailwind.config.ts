@@ -13,6 +13,11 @@ export default {
       },
     },
     extend: {
+      screens: {
+        // Pantallas bajas (celular en horizontal): sm: aplica por ancho (>=640px) pero solo hay ~360px de alto.
+        // Va después de sm/md/lg en el CSS, así que short: gana sobre ellos.
+        short: { raw: "(max-height: 500px)" },
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

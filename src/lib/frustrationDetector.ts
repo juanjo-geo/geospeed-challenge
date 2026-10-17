@@ -40,6 +40,8 @@ export interface FrustrationOffer {
   ctaLabel: string;
   ctaAction: string; // 'store' | 'pro' | 'ad' | 'streak'
   urgency: 'low' | 'medium' | 'high';
+  /** Clave i18n de los textos (offer_<textKey>_head/_sub/_cta) */
+  textKey?: 'zeroLives' | 'pro' | 'ad' | 'close';
 }
 
 const BAD_SCORE_THRESHOLD = 2000; // below this = "bad game"
@@ -166,6 +168,7 @@ export function getContextualOffer(): FrustrationOffer | null {
       ctaLabel: '+5 VIDAS — $0.99',
       ctaAction: 'store',
       urgency: 'high',
+      textKey: 'zeroLives',
     };
   }
 
@@ -180,6 +183,7 @@ export function getContextualOffer(): FrustrationOffer | null {
       ctaLabel: 'PROBAR PRO — $2.99/mes',
       ctaAction: 'pro',
       urgency: 'high',
+      textKey: 'pro',
     };
   }
 
@@ -194,6 +198,7 @@ export function getContextualOffer(): FrustrationOffer | null {
       ctaLabel: 'VER VIDEO → +1 VIDA',
       ctaAction: 'ad',
       urgency: 'medium',
+      textKey: 'ad',
     };
   }
 
@@ -208,6 +213,7 @@ export function getContextualOffer(): FrustrationOffer | null {
       ctaLabel: '+5 VIDAS — $0.99',
       ctaAction: 'store',
       urgency: 'medium',
+      textKey: 'close',
     };
   }
 

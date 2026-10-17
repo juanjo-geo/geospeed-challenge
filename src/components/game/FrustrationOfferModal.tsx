@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { type FrustrationOffer, markOfferShown } from '@/lib/frustrationDetector';
 import { playButtonTap } from '@/lib/sounds';
 import { trackEvent } from '@/lib/analytics';
+import { useI18n } from '@/i18n';
 
 interface FrustrationOfferModalProps {
   offer: FrustrationOffer;
@@ -10,6 +11,7 @@ interface FrustrationOfferModalProps {
 }
 
 export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: FrustrationOfferModalProps) {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -39,33 +41,38 @@ export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: Fr
   };
 
   const colors = urgencyColors[offer.urgency];
+  // Textos traducidos por variante de oferta (el detector deja los de español como respaldo)
+  const k = offer.textKey;
+  const headline = k ? t(`offer_${k}_head` as never) : offer.headline;
+  const subtext = k ? t(`offer_${k}_sub` as never) : offer.subtext;
+  const ctaLabel = k ? t(`offer_${k}_cta` as never) : offer.ctaLabel;
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center px-4 transition-all duration-300 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`modal-layer z-[100] transition-all duration-300 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
       onClick={handleDismiss}
       role="dialog"
       aria-modal="true"
-      aria-label={offer.headline}
+      aria-label={headline}
     >
       <div
-        className={`bg-card border-2 ${colors.border} rounded-2xl p-5 sm:p-6 max-w-sm w-full shadow-2xl transform transition-all duration-300 ${visible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
+        className={`modal-panel relative bg-card border-2 ${colors.border} rounded-2xl p-5 sm:p-6 short:p-4 max-w-sm w-full shadow-2xl transform transition-all duration-300 ${visible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
         onClick={e => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={handleDismiss}
           className="absolute top-3 right-3 text-muted-foreground hover:text-foreground text-sm transition-colors"
-          aria-label="Cerrar"
+          aria-label={t('close')}
         >
           ✕
         </button>
 
         {/* Emoji hero */}
-        <div className="text-center mb-3">
+        <div className="text-center mb-3 short:mb-1">
           <span
-            className="text-5xl block animate-bounce"
+            className="text-5xl short:text-4xl block animate-bounce"
             style={{ animationDuration: '1.5s', animationIterationCount: '2' }}
           >
             {offer.emoji}
@@ -74,31 +81,31 @@ export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: Fr
 
         {/* Headline */}
         <h2 className="text-center font-black text-lg sm:text-xl text-foreground mb-1">
-          {offer.headline}
+          {headline}
         </h2>
-        <p className="text-center text-sm text-muted-foreground mb-5">
-          {offer.subtext}
+        <p className="text-center text-sm text-muted-foreground mb-5 short:mb-3">
+          {subtext}
         </p>
 
         {/* CTA Button */}
         <button
           onClick={handleAccept}
-          className="w-full py-3.5 rounded-xl font-black text-base sm:text-lg transition-all active:scale-[0.95] shadow-lg hover:scale-[1.02] hover:brightness-110"
+          className="w-full py-3.5 short:py-2.5 rounded-xl font-black text-base sm:text-lg transition-all active:scale-[0.95] shadow-lg hover:scale-[1.02] hover:brightness-110"
           style={{
             background: colors.cta,
             color: '#fff',
             boxShadow: '0 6px 24px rgba(0,0,0,0.3)',
           }}
         >
-          {offer.ctaLabel}
+          {ctaLabel}
         </button>
 
         {/* Dismiss link */}
         <button
           onClick={handleDismiss}
-          className="w-full mt-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="w-full mt-3 short:mt-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          No gracias, seguir jugando
+          {t('offer_dismiss')}
         </button>
       </div>
     </div>

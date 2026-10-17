@@ -260,6 +260,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [challengerScore, setChallengerScore] = useState<number | null>(null);
   // Notification permission prompt
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
+  const notifPendingRef = useRef(false);
   // Pestaña inicial del perfil (la pestaña "Progreso" de la barra abre el historial)
   const [profileTab, setProfileTab] = useState<'stats' | 'history'>('stats');
 
@@ -514,9 +515,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         scheduleLivesRegenerated(totalMs);
       }
     } else if (supportsNotifications() && !hasBeenAsked()) {
-      // Show prompt after first game only
-      setTimeout(() => setShowNotifPrompt(true), 2000);
+      // Se pide al volver al inicio (no encima del cierre, de la oferta ni de la siguiente cuenta regresiva)
+      notifPendingRef.current = true;
     }
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'home' || !notifPendingRef.current) { if (phase !== 'home') setShowNotifPrompt(false); return; }
+    const id = setTimeout(() => { notifPendingRef.current = false; setShowNotifPrompt(true); }, 900);
+    return () => clearTimeout(id);
   }, [phase]);
 
   const handleNotifAccept = useCallback(async () => {
@@ -867,22 +874,22 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
     if (phase === 'ta-select') {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 overflow-y-auto game-bg">
-          <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl text-center animate-fade-in-up my-4">
+        <div className="modal-layer z-50 game-bg">
+          <div className="modal-panel bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 short:p-4 max-w-md w-full shadow-2xl text-center animate-fade-in-up">
             {/* Logo + nombre */}
-            <div className="flex items-center justify-center gap-2.5 mb-3">
-              <img src="/logo.png" alt="GeoSpeed" className="w-16 sm:w-20 object-contain" />
+            <div className="flex items-center justify-center gap-2.5 mb-3 short:hidden">
+              <img src="/logo.png" alt="GeoSpeed" className="w-16 sm:w-20 short:w-10 object-contain" />
               <Wordmark size="md" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ {t('ta_title').toUpperCase()}</h2>
-            <p className="text-muted-foreground text-[10px] sm:text-xs mb-4 sm:mb-6 italic">{t('ta_subtitle')}</p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 uppercase tracking-widest">{t('ta_selectDifficulty')}</p>
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+            <h2 className="text-2xl sm:text-3xl short:text-xl font-black mb-1 short:mb-0" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ {t('ta_title').toUpperCase()}</h2>
+            <p className="text-muted-foreground text-[10px] sm:text-xs mb-4 sm:mb-6 short:mb-2 italic">{t('ta_subtitle')}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 short:mb-1.5 uppercase tracking-widest">{t('ta_selectDifficulty')}</p>
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mb-3 sm:mb-4 short:mb-2">
               {MODE_CONFIG.map(m => (
                 <button
                   key={m.key}
                   onClick={() => setGameMode(m.key)}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all active:scale-[0.97] ${
+                  className={`flex flex-col items-center gap-1 p-2 short:p-1.5 short:gap-0.5 rounded-lg border-2 transition-all active:scale-[0.97] ${
                     gameMode === m.key ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-muted-foreground/40'
                   }`}
                 >
@@ -891,7 +898,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mb-4 sm:mb-6">
+            <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mb-4 sm:mb-6 short:mb-3">
               {(['basic', 'easy', 'medium', 'hard'] as Difficulty[]).map(d => (
                 <button
                   key={d}
@@ -1163,8 +1170,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
       {/* Notification permission prompt — shown after first game */}
       {showNotifPrompt && (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full shadow-2xl animate-fade-in-up">
+        <div className="modal-layer z-[80] bg-black/50 backdrop-blur-sm animate-fade-in" role="dialog" aria-modal="true" aria-label={t('notif_title')}>
+          <div className="modal-panel bg-card border border-border rounded-2xl p-5 short:p-4 max-w-sm w-full shadow-2xl animate-fade-in-up">
             <p className="text-2xl text-center mb-2">🔔</p>
             <p className="text-sm font-bold text-center mb-1" style={{ color: 'hsl(var(--primary))' }}>{t('notif_title')}</p>
             <p className="text-xs text-muted-foreground text-center mb-4">

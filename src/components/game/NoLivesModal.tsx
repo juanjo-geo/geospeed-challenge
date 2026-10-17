@@ -57,26 +57,28 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in px-3">
-      <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
-        <div className="flex justify-center mb-2 sm:mb-3">
+    <div className="modal-layer z-50 bg-black/70 backdrop-blur-sm animate-fade-in" role="dialog" aria-modal="true" aria-label={t('lives_noLives')}>
+      {/* En horizontal (short:) pasa a dos columnas: estado a la izquierda, acciones a la derecha */}
+      <div className="modal-panel bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in-up short:max-w-2xl short:p-4 short:grid short:grid-cols-2 short:gap-5 short:items-center">
+       <div>
+        <div className="flex justify-center mb-2 sm:mb-3 short:mb-1">
           <div className={lifeRestored ? '' : 'animate-mascot-sway'}>
-            <Mascot state={lifeRestored ? 'celebrate' : 'sad'} className="w-16 sm:w-20" />
+            <Mascot state={lifeRestored ? 'celebrate' : 'sad'} className="w-16 sm:w-20 short:w-14" />
           </div>
         </div>
-        <h2 className="text-lg sm:text-xl font-black mb-1.5 sm:mb-2" style={{ color: 'hsl(var(--primary))' }}>
-          {lifeRestored ? '¡Vida restaurada!' : t('lives_noLives')}
+        <h2 className="text-lg sm:text-xl font-black mb-1.5 sm:mb-2 short:mb-1" style={{ color: 'hsl(var(--primary))' }}>
+          {lifeRestored ? t('lives_restored') : t('lives_noLives')}
         </h2>
-        <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4">
+        <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4 short:mb-2">
           {lifeRestored
-            ? '¡Ya puedes jugar de nuevo!'
+            ? t('lives_restoredSub')
             : t('lives_regenDesc')}
         </p>
 
         {/* Timer — hidden when life just restored */}
         {!lifeRestored && (
           <div
-            className="text-2xl sm:text-3xl font-mono font-black mb-3 sm:mb-4"
+            className="text-2xl sm:text-3xl font-mono font-black mb-3 sm:mb-4 short:mb-2 short:text-2xl"
             style={{ color: 'hsl(var(--primary))' }}
           >
             {formatRegenTime(energy.nextRegenMs)}
@@ -84,7 +86,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
         )}
 
         {/* Hearts */}
-        <div className="flex gap-0.5 justify-center mb-4 sm:mb-5">
+        <div className="flex gap-0.5 justify-center mb-4 sm:mb-5 short:mb-0">
           {Array.from({ length: energy.maxLives }).map((_, i) => (
             <span
               key={i}
@@ -99,9 +101,11 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
             </span>
           ))}
         </div>
+       </div>
 
+       <div>
         {/* ── Action buttons (hidden when life restored) ── */}
-        {!lifeRestored && <div className="flex flex-col gap-2 sm:gap-2.5 mb-3 sm:mb-4">
+        {!lifeRestored && <div className="flex flex-col gap-2 sm:gap-2.5 mb-3 sm:mb-4 short:gap-2">
           {/* Rewarded ad button (solo free users y si hay anuncios disponibles) */}
           {!userIsPro && isAdAvailable() && (
             <p className="text-[11px] sm:text-xs font-black text-amber-400 animate-bounce-soft -mb-0.5">
@@ -116,7 +120,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
             >
               {watchingAd ? (
                 <>
-                  <span className="animate-spin">⏳</span> Cargando anuncio...
+                  <span className="animate-spin">⏳</span> {t('lives_loadingAd')}
                 </>
               ) : (
                 <>{t('lives_watchAd')}</>
@@ -140,7 +144,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
               onClick={onOpenStore}
               className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-xs font-bold transition-all active:scale-[0.97] bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/30 text-primary hover:bg-primary/20"
             >
-              ⭐ GEOSPEED PRO — Vidas infinitas · Sin anuncios
+              ⭐ {t('lives_proBanner')}
             </button>
           )}
         </div>}
@@ -154,6 +158,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
             {t('lives_wait')}
           </button>
         </div>
+       </div>
       </div>
     </div>
   );

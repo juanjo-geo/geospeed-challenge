@@ -82,7 +82,7 @@ export default function AppNav({ active, onNavigate }: AppNavProps) {
                   isActive ? 'text-accent md:bg-accent/10' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <span className={`w-6 h-6 md:w-5 md:h-5 ${isActive ? 'drop-shadow-[0_0_8px_hsl(var(--accent)/0.6)]' : ''}`}>{ICONS[tab.key]}</span>
+                <span className={`w-6 h-6 short:w-5 short:h-5 md:w-5 md:h-5 ${isActive ? 'drop-shadow-[0_0_8px_hsl(var(--accent)/0.6)]' : ''}`}>{ICONS[tab.key]}</span>
                 <span className={`text-[10px] md:text-sm font-bold leading-none ${isActive ? '' : 'font-semibold'}`}>{tab.label}</span>
                 {isActive && <span className="md:hidden absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-accent" aria-hidden />}
               </button>

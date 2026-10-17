@@ -43,7 +43,7 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex flex-col items-center justify-center px-6 bg-black/80 backdrop-blur-sm animate-fade-in"
+      className="modal-layer z-[70] bg-black/80 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label={t('chest_daily')}
@@ -57,16 +57,18 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
         .dc-pop{ animation: dc-pop .55s cubic-bezier(.2,1.5,.4,1) both; }
       `}</style>
 
+      <div className="modal-panel flex flex-col items-center px-3">
       <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-primary/80 mb-1">{t('chest_daily')}</p>
-      <p className="text-base sm:text-lg font-black text-foreground mb-6">🔥 {dayLabel}</p>
+      <p className="text-base sm:text-lg font-black text-foreground mb-6 short:mb-2">🔥 {dayLabel}</p>
 
-      <div className="relative flex items-center justify-center mb-7" style={{ width: 220, height: 220 }}>
+      {/* El cofre escala con el alto disponible (en horizontal hay ~360px) */}
+      <div className="relative flex items-center justify-center mb-7 short:mb-3" style={{ width: 'min(220px, 46vh)', height: 'min(220px, 46vh)' }}>
         {opened && (
           <div
             className="dc-rays absolute"
             style={{
-              width: 320,
-              height: 320,
+              width: 'min(320px, 66vh)',
+              height: 'min(320px, 66vh)',
               background: 'repeating-conic-gradient(hsl(var(--primary)/0.30) 0deg 10deg, transparent 10deg 28deg)',
               WebkitMaskImage: 'radial-gradient(circle, #000 30%, transparent 68%)',
               maskImage: 'radial-gradient(circle, #000 30%, transparent 68%)',
@@ -81,13 +83,13 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
             className="dc-wiggle relative z-10 select-none"
             aria-label={t('chest_tapToOpen')}
           >
-            <span style={{ fontSize: 128, filter: 'drop-shadow(0 10px 26px hsl(var(--primary)/0.55))' }}>🎁</span>
+            <span style={{ fontSize: 'min(128px, 27vh)', filter: 'drop-shadow(0 10px 26px hsl(var(--primary)/0.55))' }}>🎁</span>
           </button>
         ) : (
           <div className="dc-pop relative z-10 flex flex-col items-center text-center">
             {reward.lives > 0 && (
               <div className="flex items-center gap-2">
-                <span style={{ fontSize: 68, filter: 'drop-shadow(0 6px 16px hsl(var(--primary)/0.5))' }}>❤️</span>
+                <span style={{ fontSize: 'min(68px, 15vh)', filter: 'drop-shadow(0 6px 16px hsl(var(--primary)/0.5))' }}>❤️</span>
                 <span className="text-5xl sm:text-6xl font-black" style={{ color: 'hsl(var(--primary))' }}>+{reward.lives}</span>
               </div>
             )}
@@ -118,6 +120,7 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
           {t('chest_claim')}
         </button>
       )}
+      </div>
     </div>
   );
 }

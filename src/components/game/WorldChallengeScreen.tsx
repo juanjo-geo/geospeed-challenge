@@ -313,7 +313,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
       setTimeout(() => { fireStreakBorder(res.newStreak); playStreak(res.newStreak); }, 380);
     }
     if ((res.band === 'far' || res.band === 'ocean') && dist != null && dist >= 4000) {
-      setTimeout(() => fireDistanceReveal(dist), 420);
+      setTimeout(() => fireDistanceReveal(dist, t('reveal_otherSide')), 420);
     }
 
     announce(t('sr_worldChallengeResult', {
@@ -367,8 +367,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
 
   if (stage === 'select') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 overflow-y-auto game-bg">
-        <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl text-center animate-fade-in-up my-4">
+      <div className="modal-layer z-50 game-bg">
+        <div className="modal-panel bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 short:p-4 max-w-md w-full shadow-2xl text-center animate-fade-in-up">
           <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>
             {BALL} {t('wc_modeName')}
           </h2>

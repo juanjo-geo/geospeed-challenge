@@ -32,7 +32,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
     <div className={`flex flex-col gap-2 rounded-3xl border border-border/80 bg-card/85 shadow-2xl backdrop-blur-md overflow-y-auto w-full ${lg ? 'p-5 gap-3 max-h-[90%]' : 'p-3 sm:p-4 max-h-full [@media(max-height:420px)]:gap-1 [@media(max-height:420px)]:p-2'}`}>
       <div className="text-center">
         <Mascot state={mascot} className={`mx-auto ${lg ? 'w-20' : 'w-12 sm:w-16 [@media(max-height:420px)]:hidden'}`} />
-        <p className={`font-black ${feedback.color} ${lg ? 'text-3xl mt-1' : 'text-lg sm:text-2xl'}`}>{feedback.phrase}</p>
+        <p className={`font-black ${feedback.color} ${lg ? 'text-3xl mt-1' : 'text-lg sm:text-2xl [@media(max-height:420px)]:text-base'}`}>{feedback.phrase}</p>
         {streak >= 2 && (
           <p className={`animate-score-pop font-bold text-primary ${lg ? 'text-sm' : 'text-[11px] sm:text-xs'}`}>
             🔥 {t('game_streakCount', { n: streak })}{streakBonus > 1 && ` · +${Math.round((streakBonus - 1) * 100)}%`}
@@ -41,22 +41,26 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
         {nearMissMsg && (
           <p className={`font-bold text-primary/90 animate-pulse ${lg ? 'text-sm' : 'text-[11px] sm:text-xs'}`}>💨 {nearMissMsg}</p>
         )}
-        <h3 className={`font-black mt-1 ${lg ? 'text-2xl' : 'text-base sm:text-xl'}`}>{result.city.name}</h3>
-        <p className={`text-muted-foreground ${lg ? 'text-sm' : 'text-[11px] sm:text-xs'}`}>{result.city.country}</p>
-        <p className={`font-black font-mono text-primary ${lg ? 'text-4xl mt-1' : 'text-2xl sm:text-3xl'}`} style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
+        {/* En pantallas muy bajas el país va en la misma línea que la ciudad */}
+        <h3 className={`font-black mt-1 ${lg ? 'text-2xl' : 'text-base sm:text-xl [@media(max-height:420px)]:mt-0'}`}>
+          {result.city.name}
+          {!lg && <span className="hidden [@media(max-height:420px)]:inline text-xs font-semibold text-muted-foreground"> · {result.city.country}</span>}
+        </h3>
+        <p className={`text-muted-foreground ${lg ? 'text-sm' : 'text-[11px] sm:text-xs [@media(max-height:420px)]:hidden'}`}>{result.city.country}</p>
+        <p className={`font-black font-mono text-primary ${lg ? 'text-4xl mt-1' : 'text-2xl sm:text-3xl [@media(max-height:420px)]:text-xl'}`} style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
           +{result.totalPoints.toLocaleString()} <span className={`font-bold text-foreground ${lg ? 'text-lg' : 'text-sm'}`}>pts</span>
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-2xl border border-border bg-muted/30 p-2 sm:p-2.5 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-muted/30 p-2 sm:p-2.5 [@media(max-height:420px)]:p-1.5 flex items-center gap-2">
           <span className={lg ? 'text-2xl' : 'text-lg'} aria-hidden>📍</span>
           <span>
             <span className="block text-[10px] text-muted-foreground">{t('game_distance')}</span>
             <span className={`block font-mono font-black ${lg ? 'text-xl' : 'text-sm sm:text-base'}`}>{formatDistance(result.distance)}</span>
           </span>
         </div>
-        <div className="rounded-2xl border border-border bg-muted/30 p-2 sm:p-2.5 flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-muted/30 p-2 sm:p-2.5 [@media(max-height:420px)]:p-1.5 flex items-center gap-2">
           <span className={lg ? 'text-2xl' : 'text-lg'} aria-hidden>⏱️</span>
           <span>
             <span className="block text-[10px] text-muted-foreground">{t('game_time')}</span>
@@ -86,13 +90,14 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
 
       <button
         onClick={onNext}
-        className={`btn3d w-full rounded-2xl font-black text-primary-foreground ${lg ? 'py-3.5 text-lg' : 'py-2.5 sm:py-3 text-sm sm:text-base'}`}
+        className={`btn3d w-full rounded-2xl font-black text-primary-foreground ${lg ? 'py-3.5 text-lg' : 'py-2.5 sm:py-3 text-sm sm:text-base [@media(max-height:420px)]:py-2'}`}
         style={{ background: 'var(--grad-cta)' }}
         aria-label={`${t('game_next')}, ${t('game_advanceIn', { seconds: autoAdvanceTimer })}`}
       >
         {t('game_next')} →
+        {!lg && <span className="hidden [@media(max-height:420px)]:inline font-semibold opacity-75"> · {autoAdvanceTimer} s</span>}
       </button>
-      <p className="text-center text-[10px] sm:text-xs text-muted-foreground">{t('game_advanceIn', { seconds: autoAdvanceTimer })}</p>
+      <p className={`text-center text-[10px] sm:text-xs text-muted-foreground ${lg ? '' : '[@media(max-height:420px)]:hidden'}`}>{t('game_advanceIn', { seconds: autoAdvanceTimer })}</p>
     </div>
   );
 }

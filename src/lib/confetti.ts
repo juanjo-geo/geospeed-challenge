@@ -189,7 +189,8 @@ export function fireRedBurst(origin?: { x: number; y: number }) {
 
 // ── Distance reveal — giant number with screen shake for >5000km ──
 
-export function fireDistanceReveal(distanceKm: number) {
+/** label: texto traducido bajo los km (lo pasa el componente con t('reveal_otherSide')) */
+export function fireDistanceReveal(distanceKm: number, label = '¡Al otro lado del mundo!') {
   if (distanceKm < 5000 || prefersReducedMotion()) return;
 
   const overlay = document.createElement('div');
@@ -211,7 +212,7 @@ export function fireDistanceReveal(distanceKm: number) {
       <div style="font-size: clamp(16px, 3.5vw, 28px); font-weight: 800; color: #fca5a5;
         margin-top: 12px; letter-spacing: 0.15em; text-transform: uppercase;
         text-shadow: 0 0 20px rgba(252,165,165,0.5);">
-        ¡Al otro lado del mundo!
+        ${label}
       </div>
     </div>
   `;

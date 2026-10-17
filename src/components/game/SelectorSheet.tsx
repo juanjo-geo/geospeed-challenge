@@ -23,13 +23,15 @@ interface SelectorSheetProps<K extends string> {
   context?: { emoji: string; title: string; desc: string };
   onConfirm: (key: K) => void;
   onClose: () => void;
+  /** aria-label del botón cerrar (traducido por quien abre la hoja) */
+  closeLabel?: string;
 }
 
 /**
  * Hoja inferior de selección (maquetas Región / Dificultad APROBADA_v1).
  * Móvil: sube desde abajo con asa. Escritorio (md+): modal centrado.
  */
-export default function SelectorSheet<K extends string>({ title, subtitle, options, selected, confirmLabel, footnote, context, onConfirm, onClose }: SelectorSheetProps<K>) {
+export default function SelectorSheet<K extends string>({ title, subtitle, options, selected, confirmLabel, footnote, context, onConfirm, onClose, closeLabel = 'Cerrar' }: SelectorSheetProps<K>) {
   const [value, setValue] = useState<K>(selected);
   const [visible, setVisible] = useState(false);
 
@@ -59,24 +61,24 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
         onClick={onClose}
       />
       <div
-        className="relative w-full md:max-w-lg bg-card border-t md:border border-border rounded-t-3xl md:rounded-3xl shadow-2xl px-4 pt-3 pb-5 md:p-6 transition-transform duration-300 ease-out max-h-[92dvh] overflow-y-auto"
+        className="relative w-full md:max-w-lg short:max-w-2xl bg-card border-t md:border border-border rounded-t-3xl md:rounded-3xl short:rounded-t-3xl shadow-2xl px-4 pt-3 pb-5 md:p-6 short:px-4 short:pt-3 transition-transform duration-300 ease-out max-h-[92dvh] short:max-h-[100dvh] overflow-y-auto"
         style={{ transform: visible ? 'translateY(0)' : 'translateY(24px)', paddingBottom: 'calc(1.25rem + var(--sab))' }}
       >
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-muted-foreground/40 md:hidden" aria-hidden />
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-muted-foreground/40 md:hidden short:hidden" aria-hidden />
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 w-9 h-9 rounded-full border border-border/60 bg-muted/40 flex items-center justify-center text-lg hover:bg-muted transition-colors active:scale-95"
-          aria-label="Cerrar"
+          className="absolute right-4 top-4 short:top-2 w-9 h-9 short:w-8 short:h-8 rounded-full border border-border/60 bg-muted/40 flex items-center justify-center text-lg hover:bg-muted transition-colors active:scale-95"
+          aria-label={closeLabel}
         >
           ×
         </button>
 
-        <h2 className="text-2xl sm:text-3xl font-black pr-10 leading-tight">
+        <h2 className="text-2xl sm:text-3xl short:text-xl font-black pr-10 leading-tight">
           {titleHead} <span className="text-primary">{titleTail}</span>
         </h2>
-        <p className="text-sm text-muted-foreground mt-1 mb-4">{subtitle}</p>
+        <p className="text-sm short:text-xs text-muted-foreground mt-1 mb-4 short:mt-0 short:mb-2">{subtitle}</p>
 
-        <div className="flex flex-col gap-2" role="radiogroup" aria-label={title}>
+        <div className="flex flex-col gap-2 short:grid short:grid-cols-2" role="radiogroup" aria-label={title}>
           {options.map(opt => {
             const isSel = value === opt.key;
             return (
@@ -86,7 +88,7 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
                 aria-checked={isSel}
                 disabled={opt.locked}
                 onClick={() => { if (!opt.locked) { playButtonTap(); setValue(opt.key); } }}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 text-left transition-all active:scale-[0.99] ${
+                className={`w-full flex items-center gap-3 p-3 short:px-2 short:py-1.5 short:gap-2 rounded-2xl border-2 text-left transition-all active:scale-[0.99] ${
                   opt.locked
                     ? 'border-border/40 bg-muted/20 opacity-55 cursor-not-allowed'
                     : isSel
@@ -94,10 +96,10 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
                     : 'border-border bg-muted/30 hover:border-accent/50'
                 }`}
               >
-                <span className="text-3xl w-11 text-center shrink-0" aria-hidden>{opt.locked ? '🔒' : opt.emoji}</span>
+                <span className="text-3xl short:text-2xl w-11 short:w-8 text-center shrink-0" aria-hidden>{opt.locked ? '🔒' : opt.emoji}</span>
                 <span className="flex-1 min-w-0">
-                  <span className="block font-black text-base sm:text-lg leading-tight">{opt.label}</span>
-                  <span className="block text-xs sm:text-sm text-muted-foreground leading-tight">{opt.locked && opt.lockLabel ? opt.lockLabel : opt.desc}</span>
+                  <span className="block font-black text-base sm:text-lg short:text-sm leading-tight">{opt.label}</span>
+                  <span className="block text-xs sm:text-sm short:text-[11px] text-muted-foreground leading-tight">{opt.locked && opt.lockLabel ? opt.lockLabel : opt.desc}</span>
                 </span>
                 <span
                   className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSel ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40'}`}
@@ -111,7 +113,7 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
         </div>
 
         {context && (
-          <div className="mt-3 flex items-center gap-3 p-3 rounded-2xl border border-border bg-muted/20">
+          <div className="mt-3 short:mt-2 flex items-center gap-3 p-3 short:py-1.5 rounded-2xl border border-border bg-muted/20">
             <span className="text-2xl" aria-hidden>{context.emoji}</span>
             <span>
               <span className="block font-bold text-sm">{context.title}</span>
@@ -122,12 +124,12 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
 
         <button
           onClick={() => { playButtonTap(); onConfirm(value); }}
-          className="btn3d mt-4 w-full py-3.5 rounded-2xl font-black text-base tracking-wide text-primary-foreground"
+          className="btn3d mt-4 short:mt-2 w-full py-3.5 short:py-2.5 rounded-2xl font-black text-base tracking-wide text-primary-foreground"
           style={{ background: 'var(--grad-cta)' }}
         >
           {confirmLabel}
         </button>
-        {footnote && <p className="text-center text-xs text-muted-foreground mt-2">{footnote}</p>}
+        {footnote && <p className="text-center text-xs text-muted-foreground mt-2 short:mt-1">{footnote}</p>}
       </div>
     </div>
   );

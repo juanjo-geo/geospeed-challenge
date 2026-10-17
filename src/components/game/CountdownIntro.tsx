@@ -41,7 +41,7 @@ export default function CountdownIntro({ count, label, onCancel }: CountdownIntr
         </p>
       )}
 
-      <p className="text-3xl sm:text-5xl font-black mb-2 sm:mb-4 animate-fade-in">{isGo ? t('countdown_go') : t('countdown_title')}</p>
+      <p className="text-3xl sm:text-5xl short:text-3xl font-black mb-2 sm:mb-4 short:mb-1 animate-fade-in">{isGo ? t('countdown_go') : t('countdown_title')}</p>
 
       <div className="relative flex items-center justify-center">
         {isGo && (
@@ -50,21 +50,21 @@ export default function CountdownIntro({ count, label, onCancel }: CountdownIntr
             style={{ borderColor: 'hsl(var(--accent))' }}
           />
         )}
-        <div className="absolute w-40 h-40 sm:w-56 sm:h-56 rounded-full border-4 border-accent/50" aria-hidden />
+        <div className="absolute w-40 h-40 sm:w-56 sm:h-56 short:w-36 short:h-36 rounded-full border-4 border-accent/50" aria-hidden />
         <div
           key={count}
           className={`font-black font-mono ${isGo
-            ? 'text-7xl sm:text-9xl md:text-[10rem] animate-go-impact'
-            : 'text-8xl sm:text-9xl animate-countdown-zoom'
+            ? 'text-7xl sm:text-9xl md:text-[10rem] short:text-6xl animate-go-impact'
+            : 'text-8xl sm:text-9xl short:text-7xl animate-countdown-zoom'
           }`}
           style={{ color: 'hsl(var(--primary))', textShadow: '0 6px 0 hsl(var(--primary-deep))' }}
         >
-          {isGo ? '¡YA!' : count}
+          {isGo ? t('countdown_goShort') : count}
         </div>
-        <Mascot state={isGo ? 'celebrate' : 'wink'} className="absolute -right-24 sm:-right-36 w-16 sm:w-24 animate-mascot-float" />
+        <Mascot state={isGo ? 'celebrate' : 'wink'} className="absolute -right-24 sm:-right-36 short:-right-28 w-16 sm:w-24 short:w-16 animate-mascot-float" />
       </div>
 
-      <p className="text-muted-foreground mt-6 sm:mt-8 text-sm sm:text-base animate-fade-in">
+      <p className="text-muted-foreground mt-6 sm:mt-8 short:mt-4 text-sm sm:text-base animate-fade-in">
         {t('countdown_ready')}
       </p>
 

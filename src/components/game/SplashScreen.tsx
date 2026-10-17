@@ -53,7 +53,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         <img
           src="/logo.png"
           alt="GeoSpeed Logo"
-          className="w-[72px] h-[72px] sm:w-[108px] sm:h-[108px] md:w-[132px] md:h-[132px] object-contain"
+          className="w-[72px] h-[72px] sm:w-[108px] sm:h-[108px] md:w-[132px] md:h-[132px] short:w-16 short:h-16 object-contain"
         />
       </div>
 
@@ -70,7 +70,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
 
       {/* Tagline */}
       <p
-        className="mt-3 text-sm sm:text-base font-bold text-center transition-all duration-1000 ease-out delay-500"
+        className="mt-3 short:mt-2 text-sm sm:text-base font-bold text-center transition-all duration-1000 ease-out delay-500"
         style={{
           color: 'hsl(var(--foreground))',
           opacity: phase === 'enter' ? 0 : 0.9,
@@ -81,7 +81,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       </p>
 
       {/* Loading bar — turquesa */}
-      <div className="mt-6 sm:mt-8 w-40 sm:w-52 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(var(--accent)/0.15)' }}>
+      <div className="mt-6 sm:mt-8 short:mt-4 w-40 sm:w-52 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(var(--accent)/0.15)' }}>
         <div
           className="h-full rounded-full transition-all ease-out"
           style={{
@@ -97,7 +97,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       {/* Tap hint */}
       {!tapped && phase === 'hold' && (
         <p
-          className="absolute bottom-8 text-[10px] tracking-widest uppercase animate-pulse"
+          className="absolute bottom-8 short:bottom-3 text-[10px] tracking-widest uppercase animate-pulse"
           style={{ color: 'hsl(var(--foreground)/0.35)' }}
         >
           {t('splash_tap')}
