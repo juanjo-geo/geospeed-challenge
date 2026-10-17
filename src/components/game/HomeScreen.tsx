@@ -1,22 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
-import { getPlayerStats, getLeaderboard, getGameHistory, getDailyPlayerCount, type LeaderboardEntry, type GameHistoryEntry, type LeaderboardPeriod } from '@/lib/gameUtils';
+import { getPlayerStats, getLeaderboard, getDailyPlayerCount, type LeaderboardEntry, type LeaderboardPeriod } from '@/lib/gameUtils';
 import { useAuth } from '@/hooks/useAuth';
-import { formatDistance } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
-import { getEnergy } from '@/lib/energySystem';
 import DailyChestModal from './DailyChestModal';
 import { checkStreak, claimDailyReward, getStreakAtRisk, protectStreak, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
-// ThemeToggle removed — neon-only mode
 import AutoDemo from './AutoDemo';
+import Mascot from './Mascot';
+import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import { playButtonTap, playAccordion } from '@/lib/sounds';
-import { getFlag } from '@/lib/featureFlags';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-// useA11y removed — colorblind toggle removed
 import { useI18n } from '@/i18n';
-import { getReferralProgress, claimReferralReward, type ReferralReward } from '@/lib/referralSystem';
+import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle, tBadgeName, tBadgeDesc } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
 
@@ -32,18 +29,39 @@ interface HomeScreenProps {
   onOpenProfile?: () => void;
   onOpenBattlePass?: () => void;
   onOpenSettings?: () => void;
-  /** Abrir el banner "¿Cómo se juega?" al montar (llegada desde Ajustes) */
-  howToPlayOpen?: boolean;
+  onOpenHistory?: () => void;
+  onMoreModes?: () => void;
+  onHowToPlay?: () => void;
 }
 
-const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string; unlockLevel: number }[] = [
-  { key: 'basic',  label: 'Turista',  emoji: '🌍', desc: '20 megaciudades', borderClass: 'border-emerald-400/40 hover:border-emerald-400', glowClass: 'hover:shadow-[0_0_18px_hsl(160_84%_39%/0.25)]', unlockLevel: 1 },
-  { key: 'easy',   label: 'Rookie',   emoji: '🧭', desc: '47 capitales',    borderClass: 'border-blue-500/40  hover:border-blue-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(217_91%_60%/0.25)]',  unlockLevel: 2 },
-  { key: 'medium', label: 'Crack',   emoji: '⚡', desc: '53 regionales',   borderClass: 'border-yellow-500/40 hover:border-yellow-500',  glowClass: 'hover:shadow-[0_0_18px_hsl(48_96%_53%/0.25)]',   unlockLevel: 4 },
-  { key: 'hard',   label: 'Leyenda', emoji: '🔥', desc: '60 difíciles',    borderClass: 'border-red-500/40    hover:border-red-500',     glowClass: 'hover:shadow-[0_0_18px_hsl(0_84%_60%/0.25)]',    unlockLevel: 6 },
+/** Dificultades: clave de datos, emoji y nivel de desbloqueo (D12: candado visible). */
+const DIFF_CONFIG: { key: Difficulty; emoji: string; unlockLevel: number }[] = [
+  { key: 'basic',  emoji: '🎒', unlockLevel: 1 },
+  { key: 'easy',   emoji: '🧭', unlockLevel: 2 },
+  { key: 'medium', emoji: '⚡', unlockLevel: 4 },
+  { key: 'hard',   emoji: '🔥', unlockLevel: 6 },
 ];
 
+/** Regiones: emoji y nivel de desbloqueo. */
+const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string }> = {
+  world:    { level: 1, emoji: '🌍' },
+  europe:   { level: 2, emoji: '🏰' },
+  asia:     { level: 3, emoji: '⛩️' },
+  americas: { level: 4, emoji: '🗽' },
+  africa:   { level: 5, emoji: '🏜️' },
+};
+
+const CLASSIC_ROUNDS = 13;
+const CLASSIC_SECONDS = 15;
+const SELECTION_KEY = 'geospeed_last_selection';
 const MEDALS = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
+
+function loadSelection(): { mode: GameMode; difficulty: Difficulty } | null {
+  try {
+    const raw = localStorage.getItem(SELECTION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
 
 /**
  * Normaliza el valor de dificultad guardado (clave actual basic|easy|medium|hard
@@ -62,55 +80,63 @@ function difficultyLabel(raw: string, t: (key: string) => string): string {
   return i18nKey ? t(i18nKey) : raw;
 }
 
-const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> = {
-  europe:   { level: 2, label: 'Nv.2' },
-  asia:     { level: 3, label: 'Nv.3' },
-  americas: { level: 4, label: 'Nv.4' },
-  africa:   { level: 5, label: 'Nv.5' },
-};
-
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile, onOpenBattlePass, onOpenSettings, howToPlayOpen }: HomeScreenProps) {
-  const { user, displayName, signOut } = useAuth();
+/**
+ * Inicio v2 (maquetas GeoSpeed_Inicio_Movil_APROBADA_v2 / Inicio_Computador_v2).
+ * Banner "¿Cómo se juega?" · "Tu próxima aventura" (región + dificultad en hojas) · tarjetas de acceso ·
+ * nivel + accesos a ranking/historial. Todo visible desde la primera visita (decisión D13).
+ */
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onOpenProfile, onOpenSettings, onOpenHistory, onMoreModes, onHowToPlay }: HomeScreenProps) {
+  const { user, displayName } = useAuth();
   const { t, locale } = useI18n();
-  const [inviteSent, setInviteSent] = useState(false);
   const navigate = useNavigate();
   const stats = getPlayerStats();
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [selectedMode, setSelectedMode] = useState<GameMode>('world');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('basic');
-  const [rankingMode, setRankingMode] = useState<string>('all');
-  const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
-  const [rankingDifficulty, setRankingDifficulty] = useState<string>('all');
-  const [showRanking, setShowRanking] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const history = getGameHistory();
   const playerLevel = getPlayerLevel();
   const badges = getPlayerBadges();
   const isOnline = useOnlineStatus();
   const isNewPlayer = stats.gamesPlayed === 0;
-  const [showHowToPlay, setShowHowToPlay] = useState(Boolean(howToPlayOpen) || isNewPlayer);
+
+  // ── Selección región/dificultad (persistida, validada contra los candados) ──
+  const [selectedMode, setSelectedMode] = useState<GameMode>(() => {
+    const saved = loadSelection();
+    return saved && MODE_UNLOCK[saved.mode] && playerLevel.level >= MODE_UNLOCK[saved.mode].level ? saved.mode : 'world';
+  });
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(() => {
+    const saved = loadSelection();
+    const cfg = saved && DIFF_CONFIG.find(d => d.key === saved.difficulty);
+    return cfg && playerLevel.level >= cfg.unlockLevel ? cfg.key : 'basic';
+  });
+  useEffect(() => {
+    try { localStorage.setItem(SELECTION_KEY, JSON.stringify({ mode: selectedMode, difficulty: selectedDifficulty })); } catch { /* sin espacio */ }
+  }, [selectedMode, selectedDifficulty]);
+  const [sheet, setSheet] = useState<null | 'region' | 'difficulty'>(null);
+  const closeSheet = useCallback(() => setSheet(null), []);
+
+  // ── Ranking (colapsable, igual que antes; F5 lo lleva a Progreso) ──
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [rankingMode, setRankingMode] = useState<string>('all');
+  const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
+  const [rankingDifficulty, setRankingDifficulty] = useState<string>('all');
+  const [showRanking, setShowRanking] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
+  const [inviteSent, setInviteSent] = useState(false);
+
+  // ── Racha / cofre ──
   const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
   const [streakDismissed, setStreakDismissed] = useState(false);
   const [dailyPlayers, setDailyPlayers] = useState<number>(0);
   const [streakRisk, setStreakRisk] = useState<{ days: number; canProtect: boolean } | null>(null);
   const [streakProtected, setStreakProtected] = useState(false);
 
-  // Scroll to top on mount (returning from game/store/profile)
   useEffect(() => {
     window.scrollTo(0, 0);
     getDailyPlayerCount().then(setDailyPlayers);
   }, []);
 
-  // Check daily streak on mount
   useEffect(() => {
     if (isNewPlayer) return;
     const result = checkStreak();
-    if (result.isNewDay && result.reward && result.reward.lives > 0) {
-      setStreakReward(result.reward);
-    }
-    // Check if streak is at risk (FOMO trigger)
+    if (result.isNewDay && result.reward && result.reward.lives > 0) setStreakReward(result.reward);
     const risk = getStreakAtRisk();
     if (risk) setStreakRisk(risk);
   }, [isNewPlayer]);
@@ -121,21 +147,72 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
     }
   }, [rankingMode, rankingPeriod, rankingDifficulty, showRanking]);
 
+  // ── Opciones de las hojas ──
+  const regionOptions: SelectorOption<GameMode>[] = useMemo(() => MODE_CONFIG.map(m => {
+    const lock = MODE_UNLOCK[m.key];
+    const locked = playerLevel.level < lock.level;
+    return {
+      key: m.key,
+      emoji: lock.emoji,
+      label: t(`mode_${m.key}` as never) || m.label,
+      desc: t(`region_desc_${m.key}` as never),
+      locked,
+      lockLabel: locked ? t('lock_level', { level: lock.level }) : undefined,
+    };
+  }), [playerLevel.level, t]);
+
+  const difficultyOptions: SelectorOption<Difficulty>[] = useMemo(() => DIFF_CONFIG.map(d => {
+    const locked = playerLevel.level < d.unlockLevel;
+    const cap = d.key.charAt(0).toUpperCase() + d.key.slice(1);
+    return {
+      key: d.key,
+      emoji: d.emoji,
+      label: t(`home_diff${cap}` as never),
+      desc: t(`home_diff${cap}Desc` as never),
+      locked,
+      lockLabel: locked ? t('lock_level', { level: d.unlockLevel }) : undefined,
+    };
+  }), [playerLevel.level, t]);
+
+  const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
+  const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
+  const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
+  const citiesInfo = t('home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
+  const dateLabel = new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
+
+  const shareDaily = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const url = `${window.location.origin}/daily/${today}`;
+    const text = t('home_dailyShareText', { date: dateLabel });
+    if (navigator.share) {
+      try { await navigator.share({ title: 'GeoSpeed Daily', text, url }); } catch { /* cancelado */ }
+    } else {
+      await navigator.clipboard?.writeText(`${text}\n${url}`);
+    }
+  };
+
   return (
     <main
       className="min-h-[100dvh] flex flex-col items-center px-3 pb-4 sm:px-4 sm:pb-6 md:px-6 md:pb-6 overflow-y-auto game-bg home-safe-top"
-      aria-label="Pantalla de inicio GeoSpeed"
+      aria-label={t('nav_home')}
     >
-      {/* Skip to content link for keyboard/screen reader users */}
       <a
         href="#game-modes"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-bold"
       >
         {t('home_skipToContent')}
       </a>
-      {/* ── Top bar: vidas · cuenta · ajustes (perfil, tienda y pass viven en la barra de navegación) ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-1 sm:mb-3 animate-fade-in-up flex items-center justify-between gap-2">
+
+      {/* ── Encabezado: vidas · marca · cuenta + ajustes ── */}
+      <header className="w-full max-w-md md:max-w-5xl mb-2 sm:mb-3 animate-fade-in-up flex items-center justify-between gap-2">
         <EnergyBar />
+        <div className="hidden sm:flex items-center gap-2">
+          <img src="/logo.png" alt="" className="w-9 h-9 md:w-11 md:h-11 object-contain" />
+          <span className="flex flex-col leading-none">
+            <Wordmark size="sm" />
+            <span className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{t('home_tagline')}</span>
+          </span>
+        </div>
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           {user ? (
             <button
@@ -149,8 +226,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           ) : (
             <button
               onClick={() => navigate('/auth')}
-              className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-[0.97] btn-glow whitespace-nowrap"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
+              className="btn3d text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-xl whitespace-nowrap text-primary-foreground"
+              style={{ background: 'var(--grad-cta)' }}
               aria-label={t('home_signIn')}
               title={t('home_saveProgress')}
             >
@@ -171,279 +248,112 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             </button>
           )}
         </div>
+      </header>
+
+      {/* Marca en móvil (en sm+ va en el encabezado) */}
+      <div className="sm:hidden flex items-center gap-2 mb-2 animate-fade-in-up">
+        <img src="/logo.png" alt="" className="w-10 h-10 object-contain" />
+        <span className="flex flex-col leading-none">
+          <Wordmark size="md" />
+          <span className="text-[10px] text-muted-foreground mt-0.5">{t('home_tagline')}</span>
+        </span>
       </div>
 
-      {/* ── Offline banner ── */}
       {!isOnline && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 animate-fade-in">
-          <div className="bg-yellow-500/15 border border-yellow-500/30 rounded-lg px-3 py-2 flex items-center gap-2 text-xs">
+        <div className="w-full max-w-md md:max-w-5xl mb-2 animate-fade-in">
+          <div className="bg-primary/15 border border-primary/30 rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
             <span>📡</span>
-            <span className="text-yellow-400 font-bold">{t('home_offline')}</span>
-            <span className="text-muted-foreground">— {t('home_offlineDesc')}</span>
+            <span className="text-primary font-bold">{t('home_offline')}</span>
+            <span className="text-muted-foreground">{t('home_offlineDesc')}</span>
           </div>
         </div>
       )}
 
-      {/* ── Logo + Title + Tagline — same style as loader ── */}
-      <div className={`animate-fade-in-up flex flex-col items-center ${isNewPlayer ? 'mb-1 sm:mb-2' : 'mb-0.5'}`}>
-        <img
-          src="/logo.png"
-          alt="GeoSpeed Logo"
-          className={`object-contain ${isNewPlayer ? 'w-20 sm:w-28 md:w-36' : 'w-14 sm:w-20'}`}
-        />
-        <h1 className="mt-0 leading-none">
-          <Wordmark size={isNewPlayer ? '2xl' : 'xl'} />
-        </h1>
-      </div>
-      <p
-        className={`animate-fade-in-up animation-delay-100 tracking-widest uppercase ${isNewPlayer ? 'text-[10px] sm:text-xs mb-2 sm:mb-3' : 'text-[9px] sm:text-[10px] mb-1 sm:mb-1.5'}`}
-        style={{ color: 'hsl(var(--accent))', opacity: 0.5 }}
-      >
-        {t('home_tagline')}
-      </p>
-
-      {/* ── Cómo se juega (toggle + collapsible onboarding) ── */}
-      <div className={`w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-150 ${isNewPlayer ? 'mb-3 sm:mb-4' : 'mb-1.5 sm:mb-2'}`}>
-        <button
-          onClick={() => { playAccordion(!showHowToPlay); setShowHowToPlay(prev => !prev); }}
-          className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl border border-border bg-card/60 text-[11px] sm:text-xs font-bold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all active:scale-[0.97]"
-        >
-          {showHowToPlay ? (
-            t('home_hideInstructions')
-          ) : (() => {
-            const txt = t('home_howToPlay');
-            const lead = txt.startsWith('¿') ? '¿' : '';
-            const tail = txt.endsWith('?') ? '?' : '';
-            const core = txt.slice(lead.length, txt.length - tail.length);
-            return (
-              <span>
-                <span className="text-red-500 font-black">{lead}</span>{core}<span className="text-red-500 font-black">{tail}</span>
-              </span>
-            );
-          })()}
-        </button>
-
-        <div className={`overflow-hidden transition-all duration-500 ease-out ${showHowToPlay ? 'max-h-[1200px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}>
-          <div className="flex flex-col gap-2 sm:gap-3">
-            {/* Paso 1: Precisión */}
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
-              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎯</span>
-              <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_precisionMatters')}</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  {t('home_precisionDesc', { perfect: '1,000' })}
-                </p>
-              </div>
-            </div>
-
-            {/* Paso 2: Velocidad */}
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
-              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚡</span>
-              <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_speedMultiplies')}</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  {t('home_speedDesc1')} <span className="font-bold text-green-400">×2</span>.
-                  {' '}{t('home_speedDesc2')} <span className="font-bold text-yellow-400">×1</span>.
-                  {' '}{t('home_speedDesc3')} <span className="font-bold text-red-400">×0.5</span>.
-                </p>
-              </div>
-            </div>
-
-            {/* Paso 3: Aceleradores */}
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
-              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🔥</span>
-              <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_streaksAndBoosters')}</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  {t('home_streaksFullDesc')}
-                </p>
-              </div>
-            </div>
-
-            {/* Paso 4: Modalidad y dificultad */}
-            <div className="rounded-xl border border-border bg-card/80 p-3 sm:p-4 flex items-start gap-3">
-              <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🗺️</span>
-              <div className="min-w-0">
-                <h3 className="font-black text-xs sm:text-sm text-foreground">{t('home_chooseAdventure')}</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  {t('home_chooseAdventureDesc')}
-                </p>
-              </div>
-            </div>
+      <div className="w-full max-w-md md:max-w-5xl md:grid md:grid-cols-[1fr_360px] md:gap-4 md:items-start">
+        {/* ── Banner: ¿Cómo se juega? ── */}
+        <section className="rounded-3xl border-2 border-primary/60 bg-card/60 p-3 sm:p-4 mb-3 animate-fade-in-up animation-delay-100" aria-label={t('home_howToPlay')}>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl sm:text-2xl font-black">
+              {t('home_howToPlayLead')} <span className="text-primary">{t('home_howToPlayTail')}</span>
+            </h2>
+            {onHowToPlay && (
+              <button onClick={() => { playButtonTap(); onHowToPlay(); }} className="text-xs sm:text-sm font-bold text-accent hover:underline whitespace-nowrap">
+                {t('home_seeTutorial')}
+              </button>
+            )}
           </div>
+          <div className="rounded-2xl overflow-hidden border border-border/60">
+            <AutoDemo hideTagline />
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-1 text-center">
+            {[t('home_step1'), t('home_step2'), t('home_step3')].map((s, i) => (
+              <div key={i} className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
+                <span className="w-6 h-6 rounded-full border-2 border-accent text-accent text-[11px] font-black flex items-center justify-center shrink-0">{i + 1}</span>
+                <span className="text-[11px] sm:text-xs font-bold leading-tight">{s}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs sm:text-sm font-bold mt-2">
+            <span className="text-accent">{t('home_equationSpeed')}</span> + <span className="text-accent">{t('home_equationPrecision')}</span> = <span className="text-primary">{t('home_equationPoints')}</span>
+          </p>
+        </section>
 
-          {/* Botón entrenamiento */}
+        {/* ── Tu próxima aventura ── */}
+        <section id="game-modes" className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5 mb-3 animate-fade-in-up animation-delay-150" aria-label={t('home_nextAdventure')}>
+          <div className="flex items-center gap-3 mb-3">
+            <Mascot state="wink" className="w-16 h-16 sm:w-20 sm:h-20 animate-mascot-float" />
+            <h2 className="text-2xl sm:text-3xl font-black leading-tight">
+              {t('home_nextAdventureLead')} <span className="text-primary">{t('home_nextAdventureTail')}</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <Dropdown label={t('home_region')} emoji={MODE_UNLOCK[selectedMode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
+            <Dropdown label={t('home_difficultyLabel')} emoji={difficultyEmoji} value={difficultyName} onClick={() => { playButtonTap(); setSheet('difficulty'); }} />
+          </div>
+          <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2 mb-3">{citiesInfo}</p>
           <button
-            onClick={() => { playButtonTap(); onStartTraining(); }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 mt-2 sm:mt-3 rounded-xl border-2 border-primary/50 hover:border-primary bg-primary/8 text-primary font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:bg-primary/15"
+            onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
+            className="btn3d w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-lg sm:text-xl tracking-wide text-primary-foreground animate-pulse-glow-subtle"
+            style={{ background: 'var(--grad-cta)' }}
+            aria-label={`${t('home_playNow')} — ${difficultyName}, ${regionLabel}`}
           >
-            {t('home_training').toUpperCase()}
+            <span aria-hidden>▶</span>
+            <span>{t('home_playNow')}</span>
           </button>
-
-          {/* Botón iniciar rápido solo para nuevos jugadores */}
-          {isNewPlayer && (
-            <div className="mt-2 sm:mt-2.5">
-              <button
-                onClick={() => onStartGame('basic', 'world')}
-                className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all active:scale-[0.97] hover:opacity-90 shadow-lg bg-primary text-primary-foreground"
-              >
-                🌍 {t('home_startGame')}
-              </button>
-              <p className="text-center text-[9px] sm:text-[10px] text-muted-foreground mt-1">
-                {t('home_startGameDesc')}
-              </p>
-            </div>
-          )}
-        </div>
+        </section>
       </div>
 
-      {/* ── Auto-demo — justo después de "¿Cómo se juega?", antes de las modalidades ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-120">
-        <AutoDemo />
+      {/* ── Tarjetas de acceso ── */}
+      <div className="w-full max-w-md md:max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-3 animate-fade-in-up animation-delay-200">
+        <AccessCard emoji="📅" title={t('home_dailyCard')} desc={dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-2 right-2 text-xs opacity-70 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
+        <AccessCard emoji="🤝" title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
+        <AccessCard emoji="⚡" title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
+        <AccessCard emoji="🎯" title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />
       </div>
 
-      {/* ══════════════════════════════════════════
-          JUGADOR RECURRENTE — layout completo
-      ══════════════════════════════════════════ */}
-      {!isNewPlayer && (
-        <>
-      {/* ── Modalidad ── */}
-      <div id="game-modes" className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-150">
-        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest" id="mode-label">{t('home_mode')}</p>
-        <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2" role="radiogroup" aria-labelledby="mode-label">
-          {MODE_CONFIG.map(m => {
-            const lock = MODE_UNLOCK[m.key];
-            const isLocked = lock && playerLevel.level < lock.level;
-            const isSelected = selectedMode === m.key;
-            return (
-              <button
-                key={m.key}
-                onClick={() => { if (!isLocked) { playButtonTap(); setSelectedMode(m.key); } }}
-                role="radio"
-                aria-checked={isSelected}
-                disabled={!!isLocked}
-                className={`relative flex flex-col items-center gap-0.5 p-1.5 sm:p-2 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                  isLocked
-                    ? 'border-border bg-card/50 opacity-50 cursor-not-allowed'
-                    : isSelected
-                    ? 'border-primary bg-primary/10 btn-glow'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
-                }`}
-              >
-                {isSelected && !isLocked && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>✓</span>
-                )}
-                <span className="text-lg sm:text-xl md:text-2xl">{isLocked ? '🔒' : m.emoji}</span>
-                <span className={`text-[9px] sm:text-[11px] md:text-sm font-bold leading-tight text-center ${isLocked ? 'text-muted-foreground' : isSelected ? 'text-primary' : 'text-foreground'}`}>
-                  {t(`mode_${m.key}` as any) || m.label}
-                </span>
-                {isLocked && <span className="text-[7px] sm:text-[8px] text-muted-foreground">{lock.label}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Dificultad ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-180" role="group" aria-label="Seleccionar dificultad">
-        <p className="text-[10px] sm:text-sm text-muted-foreground mb-1.5 sm:mb-2 text-center uppercase tracking-widest">{t('home_difficulty')}</p>
-        <div className="grid grid-cols-4 gap-1 sm:gap-1.5" role="radiogroup" aria-label="Seleccionar dificultad">
-          {DIFF_CONFIG.map(d => {
-            const labelKey = `home_diff${d.key.charAt(0).toUpperCase() + d.key.slice(1)}` as any;
-            const descKey = `${labelKey}Desc` as any;
-            const isSelected = selectedDifficulty === d.key;
-            const isLocked = playerLevel.level < d.unlockLevel;
-            return (
-              <button
-                key={d.key}
-                onClick={() => { if (!isLocked) { playButtonTap(); setSelectedDifficulty(d.key); } }}
-                role="radio"
-                aria-checked={isSelected}
-                disabled={isLocked}
-                className={`relative flex flex-col items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2.5 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                  isLocked
-                    ? 'border-border/30 bg-card/40 opacity-50 cursor-not-allowed'
-                    : isSelected
-                    ? 'border-primary bg-primary/15 shadow-[0_0_20px_hsl(var(--primary)/0.3)]'
-                    : `bg-card ${d.borderClass} ${d.glowClass}`
-                }`}
-                aria-label={isLocked ? `${t(labelKey)} — ${t('home_diffLocked', { level: String(d.unlockLevel) })}` : `Dificultad ${t(labelKey)}: ${t(descKey)}`}
-              >
-                {isSelected && !isLocked && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>✓</span>
-                )}
-                <span className="text-sm sm:text-lg">{isLocked ? '🔒' : d.emoji}</span>
-                <div className={`font-bold text-[10px] sm:text-xs ${isLocked ? 'text-muted-foreground/50' : isSelected ? 'text-primary' : 'text-foreground'}`}>{t(labelKey)}</div>
-                <div className="text-[7px] sm:text-[9px] text-muted-foreground text-center leading-tight">
-                  {isLocked ? `Nv.${d.unlockLevel}` : t(descKey)}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── JUGAR AHORA — CTA principal ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-200">
-        <button
-          onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
-          className="group w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg tracking-wide transition-all duration-200 active:translate-y-[5px] active:scale-[0.99] shadow-xl hover:shadow-2xl hover:scale-[1.03] hover:brightness-110 transition-transform"
-          style={{
-            background: 'linear-gradient(135deg, #E53E3E 0%, #DD6B20 50%, #D69E2E 100%)',
-            color: '#fff',
-            boxShadow: '0 6px 0 rgba(120,72,16,0.95), 0 10px 24px rgba(229,62,62,0.4), 0 0 60px rgba(221,107,32,0.2)',
-          }}
-          aria-label={`Jugar ahora — ${DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.label}, ${MODE_CONFIG.find(m => m.key === selectedMode)?.label}`}
-        >
-          <span
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-            style={{
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
-            }}
-          />
-          <span className="relative text-xl">🌍</span>
-          <span className="relative">{t('home_playNow') || 'JUGAR AHORA'}</span>
-          <span className="relative text-xl">▶</span>
-        </button>
-      </div>
-
-      {/* ── Cofre diario (recompensa variable con juice) ── */}
+      {/* ── Cofre diario ── */}
       {streakReward && !streakDismissed && (
-        <DailyChestModal
-          reward={streakReward}
-          onOpen={() => claimDailyReward()}
-          onClose={() => setStreakDismissed(true)}
-        />
+        <DailyChestModal reward={streakReward} onOpen={() => claimDailyReward()} onClose={() => setStreakDismissed(true)} />
       )}
 
-      {/* ── Streak at risk — FOMO banner ── */}
+      {/* ── Racha en riesgo ── */}
       {streakRisk && !streakProtected && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up">
-          <div className="bg-gradient-to-r from-red-500/15 to-orange-500/10 border-2 border-red-500/50 rounded-xl p-3 sm:p-4 text-center relative overflow-hidden">
-            <div className="absolute inset-0 opacity-20" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(239,68,68,0.1) 10px, rgba(239,68,68,0.1) 20px)' }} />
-            <span className="text-2xl sm:text-3xl block mb-1 relative">⚠️</span>
-            <p className="font-black text-sm sm:text-base text-red-400 relative">
-              {t('home_streakRiskTitle', { days: streakRisk.days })}
-            </p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 relative">
-              {t('home_streakRiskDesc')}
-            </p>
-            <div className="flex gap-2 mt-3 relative">
+        <div className="w-full max-w-md md:max-w-5xl mb-3 animate-fade-in-up">
+          <div className="bg-destructive/10 border-2 border-destructive/50 rounded-2xl p-3 sm:p-4 text-center relative overflow-hidden">
+            <span className="text-2xl sm:text-3xl block mb-1">⚠️</span>
+            <p className="font-black text-sm sm:text-base text-destructive">{t('home_streakRiskTitle', { days: streakRisk.days })}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{t('home_streakRiskDesc')}</p>
+            <div className="flex gap-2 mt-3">
               <button
                 onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
-                className="flex-1 py-2 rounded-lg font-bold text-xs bg-red-500 text-white active:scale-[0.97] transition-all"
+                className="flex-1 py-2 rounded-xl font-bold text-xs bg-destructive text-destructive-foreground active:scale-[0.97] transition-all"
               >
                 {t('home_streakPlay')}
               </button>
               {streakRisk.canProtect && (
                 <button
-                  onClick={() => {
-                    playButtonTap();
-                    protectStreak();
-                    setStreakProtected(true);
-                    setStreakRisk(null);
-                  }}
-                  className="flex-1 py-2 rounded-lg font-bold text-xs border-2 border-amber-500/50 text-amber-400 hover:bg-amber-500/10 active:scale-[0.97] transition-all"
+                  onClick={() => { playButtonTap(); protectStreak(); setStreakProtected(true); setStreakRisk(null); }}
+                  className="flex-1 py-2 rounded-xl font-bold text-xs border-2 border-primary/50 text-primary hover:bg-primary/10 active:scale-[0.97] transition-all"
                 >
                   {t('home_streakProtect')}
                 </button>
@@ -453,202 +363,95 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </div>
       )}
 
-      {/* ── Desafío Mundial (módulo Mundial) ── */}
-      {(() => {
-        const wcEvent = getFlag('world_challenge_event');
-        return (
-          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
-            <button
-              onClick={() => { playButtonTap(); onWorldChallenge(); }}
-              className={`w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                wcEvent
-                  ? 'border-emerald-400 bg-gradient-to-r from-emerald-500/20 to-green-500/15 animate-pulse-glow-subtle'
-                  : 'border-emerald-500/50 hover:border-emerald-500 bg-gradient-to-r from-emerald-500/10 to-green-500/10'
-              }`}
-              aria-label={t('wc_modeName')}
-            >
-              <span className="text-xl sm:text-2xl shrink-0">⚽</span>
-              <div className="text-left flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-black text-xs sm:text-sm text-emerald-400">{t('wc_banner')}</span>
-                  {wcEvent && (
-                    <span className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-500/90 text-white animate-pulse">
-                      {t('wc_eventLive')}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                  {wcEvent ? t('wc_eventFomo') : t('wc_homeDesc')}
-                </div>
-              </div>
-              <span className="text-[10px] sm:text-xs font-mono text-emerald-400/70 shrink-0">▶</span>
-            </button>
-          </div>
-        );
-      })()}
-
-      {/* ── Contrareloj + Speed Demon + Duelo ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-350 grid grid-cols-3 gap-1.5 sm:gap-2">
-        <button
-          onClick={() => { playButtonTap(); onTimeAttack(); }}
-          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-red-500/40 hover:border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(0_84%_60%/0.2)]"
-          aria-label="Modo Blitz"
-        >
-          <span className="text-base sm:text-lg shrink-0">⚡</span>
-          <div className="text-left min-w-0">
-            <div className="font-bold text-[9px] sm:text-[11px] text-red-400">{t('home_timeAttack')}</div>
-            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_timeAttackDesc')}</div>
-          </div>
-        </button>
-        {(() => {
-          const speedLocked = playerLevel.level < 5;
-          return (
-            <button
-              onClick={() => !speedLocked && onSpeedDemon?.()}
-              disabled={speedLocked}
-              className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 transition-all duration-200 active:scale-[0.97] ${
-                speedLocked
-                  ? 'border-border bg-card/50 opacity-50 cursor-not-allowed'
-                  : 'border-fuchsia-500/40 hover:border-fuchsia-500 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 hover:shadow-[0_0_20px_hsl(292_84%_60%/0.2)]'
-              }`}
-              aria-label="Speed Demon Mode"
-            >
-              <span className="text-base sm:text-lg shrink-0">{speedLocked ? '🔒' : '👹'}</span>
-              <div className="text-left min-w-0">
-                <div className={`font-bold text-[9px] sm:text-[11px] ${speedLocked ? 'text-muted-foreground' : 'text-fuchsia-400'}`}>{t('home_speedDemon') || 'SPEED DEMON'}</div>
-                <div className="text-[7px] sm:text-[9px] text-muted-foreground">{speedLocked ? 'Nv.5' : (t('home_speedDemonDesc') || '5s · 30 ciudades')}</div>
-              </div>
-            </button>
-          );
-        })()}
-        <button
-          onClick={() => { playButtonTap(); onMultiplayer(); }}
-          className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border-2 border-primary/40 hover:border-primary bg-gradient-to-br from-primary/10 to-emerald-500/5 transition-all duration-200 active:scale-[0.97] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]"
-          aria-label="Modo duelo 1 contra 1"
-        >
-          <span className="text-base sm:text-lg shrink-0">🎮</span>
-          <div className="text-left min-w-0">
-            <div className="font-bold text-[9px] sm:text-[11px] text-primary">{t('home_duel')}</div>
-            <div className="text-[7px] sm:text-[9px] text-muted-foreground">{t('home_duelDesc')}</div>
-          </div>
-        </button>
-      </div>
-
-      {/* ── Desafío Diario ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-300">
-        <div className="w-full flex items-center gap-0 rounded-xl border-2 border-amber-500/50 hover:border-amber-500 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transition-all duration-200 animate-pulse-glow-subtle">
-          <button
-            onClick={() => { playButtonTap(); onDailyChallenge(); }}
-            className="flex-1 flex items-center gap-2 sm:gap-3 p-3 sm:p-4 active:scale-[0.97] transition-transform"
-            aria-label="Desafío diario"
-          >
-            <span className="text-xl sm:text-2xl shrink-0">📅</span>
-            <div className="text-left flex-1 min-w-0">
-              <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
-              <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                {dailyPlayers > 0
-                  ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers }))
-                  : t('home_dailyChallengeDesc')
-                }
-              </div>
+      {/* ── Nivel + accesos a ranking / historial ── */}
+      <section className="w-full max-w-md md:max-w-5xl mb-3 animate-fade-in-up animation-delay-250 rounded-2xl border border-border bg-card/70 p-3 sm:p-4" aria-label={t('home_level')}>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl sm:text-3xl" aria-hidden>{playerLevel.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="font-black text-sm sm:text-base truncate">
+                {t('home_level')} {playerLevel.level} · <span className="text-primary">{tLevelTitle(playerLevel.title, locale)}</span>
+              </span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono whitespace-nowrap">
+                {playerLevel.xp.toLocaleString()} / {playerLevel.xpForNext.toLocaleString()} {t('home_xp')}
+              </span>
             </div>
-            <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0">
-              {new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' })}
-            </span>
-          </button>
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              const today = new Date().toISOString().split('T')[0];
-              const url = `${window.location.origin}/daily/${today}`;
-              const text = locale === 'en'
-                ? `🌍 GeoSpeed Daily Challenge (${new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' })}). Same cities for everyone — can you beat me?`
-                : `🌍 Desafío Diario GeoSpeed (${new Date().toLocaleDateString('es', { day: 'numeric', month: 'short' })}). Mismas ciudades para todos — ¿puedes superarme?`;
-              if (navigator.share) {
-                try { await navigator.share({ title: 'GeoSpeed Daily', text, url }); } catch (_) {}
-              } else {
-                await navigator.clipboard?.writeText(`${text}\n${url}`);
-              }
-            }}
-            className="shrink-0 px-3 py-3 sm:px-4 border-l border-amber-500/30 hover:bg-amber-500/10 active:scale-90 transition-all"
-            aria-label="Compartir desafío diario"
-            title="Compartir link del desafío"
-          >
-            <span className="text-sm">🔗</span>
-          </button>
+            <div className="w-full h-2 bg-muted rounded-full mt-1.5 overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${playerLevel.progress}%`, background: 'linear-gradient(90deg, hsl(var(--accent)), hsl(var(--primary)))' }} />
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* ── Level badge + Badges ── */}
-      {stats.gamesPlayed > 0 && (() => {
-        const unlockedCount = badges.filter(b => b.unlocked).length;
-        return (
-          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-3 sm:mb-4 animate-fade-in-up animation-delay-150">
-            {/* Level bar */}
-            <div className="bg-card border border-border rounded-xl p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl" style={{ background: 'linear-gradient(90deg, hsl(var(--primary)/0) 0%, hsl(var(--primary)) 35%, hsl(var(--accent)) 65%, hsl(var(--accent)/0) 100%)' }} />
-              <span className="text-xl sm:text-2xl">{playerLevel.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1.5 sm:gap-2">
-                  <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{t('home_level')} {playerLevel.level} {tLevelTitle(playerLevel.title, locale)}</span>
-                  <span className="text-[9px] sm:text-[10px] text-muted-foreground">{playerLevel.xp.toLocaleString()} {t('home_xp')}</span>
-                </div>
-                <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${playerLevel.progress}%`, background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))' }} />
-                </div>
-              </div>
-              <button
-                onClick={() => setShowBadges(prev => !prev)}
-                className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap hover:text-primary transition-colors"
-              >
-                🏅 {unlockedCount}/{badges.length} {showBadges ? '▴' : '▾'}
-              </button>
-            </div>
-
-            {/* Expandable badges grid */}
-            <div className={`overflow-hidden transition-all duration-500 ease-out ${showBadges ? 'max-h-[400px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2">
-                {badges.map(badge => (
-                  <div
-                    key={badge.id}
-                    className={`flex flex-col items-center gap-0.5 p-2 sm:p-2.5 rounded-xl border text-center transition-all ${
-                      badge.unlocked
-                        ? 'border-primary/30 bg-primary/8'
-                        : 'border-border bg-card/50 opacity-40 grayscale'
-                    }`}
-                  >
-                    <span className="text-lg sm:text-xl">{badge.emoji}</span>
-                    <p className="text-[8px] sm:text-[9px] font-bold text-foreground leading-tight">{tBadgeName(badge.id, badge.name, locale)}</p>
-                    <p className="text-[7px] sm:text-[8px] text-muted-foreground leading-tight">{tBadgeDesc(badge.id, badge.description, locale)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── Stats ── */}
-      {stats.gamesPlayed > 0 && (
-        <div
-          className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3 mb-3 sm:mb-5 md:mb-6 w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-200"
-          role="group"
-          aria-label="Estadísticas del jugador"
-        >
-          <StatCard label={t('home_statsGames')}   value={stats.gamesPlayed.toString()} accentColor="hsl(var(--primary))" />
-          <StatCard label={t('home_statsRecord')}     value={stats.bestScore.toLocaleString()} accentColor="hsl(var(--accent))" />
-          <StatCard label={t('home_statsAvgDist')} value={`${avgDist.toLocaleString()} km`} />
+        <div className="mt-3 grid grid-cols-3 divide-x divide-border text-center text-xs">
+          <button onClick={() => { playAccordion(!showRanking); setShowRanking(v => !v); }} className="py-1.5 font-bold hover:text-primary transition-colors" aria-expanded={showRanking} aria-controls="ranking-panel">🏆 {t('home_ranking')}</button>
+          <button onClick={() => { playButtonTap(); (onOpenHistory ?? onOpenProfile)?.(); }} className="py-1.5 font-bold hover:text-primary transition-colors">📊 {t('home_history')}</button>
+          <button onClick={() => { playButtonTap(); setShowBadges(v => !v); }} className="py-1.5 font-bold hover:text-primary transition-colors" aria-expanded={showBadges}>🏅 {badges.filter(b => b.unlocked).length}/{badges.length}</button>
         </div>
-      )}
+        {!isNewPlayer && (
+          <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+            <Stat label={t('home_statsGames')} value={stats.gamesPlayed.toLocaleString()} />
+            <Stat label={t('home_statsRecord')} value={stats.bestScore.toLocaleString()} />
+            <Stat label={t('home_statsAvgDist')} value={`${avgDist.toLocaleString()} km`} />
+          </div>
+        )}
+        <div className={`overflow-hidden transition-all duration-500 ease-out ${showBadges ? 'max-h-[400px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2">
+            {badges.map(badge => (
+              <div key={badge.id} className={`flex flex-col items-center gap-0.5 p-2 rounded-xl border text-center ${badge.unlocked ? 'border-primary/30 bg-primary/8' : 'border-border bg-card/50 opacity-40 grayscale'}`}>
+                <span className="text-lg sm:text-xl">{badge.emoji}</span>
+                <p className="text-[8px] sm:text-[9px] font-bold leading-tight">{tBadgeName(badge.id, badge.name, locale)}</p>
+                <p className="text-[7px] sm:text-[8px] text-muted-foreground leading-tight">{tBadgeDesc(badge.id, badge.description, locale)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      {/* ── Referral — Invita amigos ── */}
+        {/* Ranking colapsable (se mantiene aquí hasta F5) */}
+        <div id="ranking-panel" className={`overflow-hidden transition-all duration-500 ease-out ${showRanking ? 'max-h-[700px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+          <div className="grid grid-cols-3 gap-1 mb-1.5" role="tablist" aria-label={t('home_ranking')}>
+            {([
+              { key: 'all', label: `🏛️ ${t('home_rankingAllTime')}` },
+              { key: 'month', label: `📅 ${t('home_rankingMonth')}` },
+              { key: 'week', label: `🔥 ${t('home_rankingWeek')}` },
+            ] as { key: LeaderboardPeriod; label: string }[]).map(p => (
+              <FilterChip key={p.key} active={rankingPeriod === p.key} onClick={() => setRankingPeriod(p.key)}>{p.label}</FilterChip>
+            ))}
+          </div>
+          <div className="grid grid-cols-6 gap-1 mb-1.5" role="tablist">
+            {[{ key: 'all', label: t('home_rankingAll') }, ...MODE_CONFIG.map(m => ({ key: m.key, label: t(`mode_${m.key}` as never) || m.label }))].map(m => (
+              <FilterChip key={m.key} active={rankingMode === m.key} onClick={() => setRankingMode(m.key)}>{m.label}</FilterChip>
+            ))}
+          </div>
+          <div className="grid grid-cols-5 gap-1 mb-2" role="tablist">
+            {['all', 'basic', 'easy', 'medium', 'hard'].map(dk => (
+              <FilterChip key={dk} active={rankingDifficulty === dk} onClick={() => setRankingDifficulty(dk)}>{dk === 'all' ? t('home_rankingAll') : difficultyLabel(dk, t)}</FilterChip>
+            ))}
+          </div>
+          <div className="bg-muted/30 rounded-xl border border-border overflow-hidden" role="table" aria-label={t('home_ranking')}>
+            {leaderboard.length === 0 ? (
+              <p className="text-center text-muted-foreground text-xs sm:text-sm py-4">{t('home_noGamesYet')}</p>
+            ) : (
+              leaderboard.map((entry, i) => (
+                <div key={i} className="flex items-center px-2 sm:px-3 py-1.5 border-b border-border last:border-0" role="row">
+                  <span className="w-6 sm:w-7 text-center text-xs sm:text-sm">{MEDALS[i] || `${i + 1}.`}</span>
+                  <span className="font-mono font-bold flex-1 text-xs sm:text-sm text-primary">{entry.initials}</span>
+                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5">{entry.mode === 'mundial' ? '⚽' : (t(`mode_${entry.mode}` as never) || entry.mode)}</span>
+                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5">{difficultyLabel(entry.difficulty, t)}</span>
+                  <span className="font-mono font-bold text-xs sm:text-sm">{entry.score.toLocaleString()}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Invita amigos (referidos) ── */}
       {!isNewPlayer && (() => {
         const ref = getReferralProgress();
         return (
-          <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-320">
-            <div className="rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 p-3 sm:p-4">
+          <div className="w-full max-w-md md:max-w-5xl mb-3 animate-fade-in-up animation-delay-300">
+            <div className="rounded-2xl border border-accent/30 bg-accent/5 p-3 sm:p-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="font-black text-xs sm:text-sm text-purple-400">{t('ref_title')}</p>
+                <p className="font-black text-xs sm:text-sm text-accent">{t('ref_title')}</p>
                 <span className="text-[10px] sm:text-xs font-mono text-muted-foreground">{t('ref_invited', { count: ref.count })}</span>
               </div>
               {ref.nextTier && (
@@ -658,7 +461,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                     <span>{ref.count}/{ref.nextTier.threshold}</span>
                   </div>
                   <div className="w-full h-1.5 bg-background rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-purple-500 transition-all" style={{ width: `${Math.min(100, (ref.count / ref.nextTier.threshold) * 100)}%` }} />
+                    <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${Math.min(100, (ref.count / ref.nextTier.threshold) * 100)}%` }} />
                   </div>
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-1">
                     {t('ref_more', { remaining: ref.nextTier.threshold - ref.count, lives: ref.nextTier.lives, bonus: ref.nextTier.bonus ? ` + ${ref.nextTier.bonus}` : '' })}
@@ -668,8 +471,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               {ref.claimable && (
                 <button
                   onClick={() => { claimReferralReward(ref.claimable!.tier); playButtonTap(); }}
-                  className="w-full py-2 rounded-lg font-bold text-xs mb-2 transition-all active:scale-[0.97] animate-pulse"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)', color: '#fff' }}
+                  className="btn3d w-full py-2 rounded-xl font-bold text-xs mb-2 text-primary-foreground animate-pulse"
+                  style={{ background: 'var(--grad-cta)' }}
                 >
                   {t('ref_claim', { lives: ref.claimable.lives, bonus: ref.claimable.bonus ? ` + ${ref.claimable.bonus}` : '' })}
                 </button>
@@ -677,26 +480,21 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               <button
                 onClick={async () => {
                   playButtonTap();
-                  const text = locale === 'en'
-                    ? `🌍 Think you know geography? Beat my score on GeoSpeed!`
-                    : `🌍 ¿Crees que conoces el mundo? ¡Supera mi score en GeoSpeed!`;
+                  const text = t('ref_shareText');
                   let confirmed = false;
                   if (navigator.share) {
-                    try { await navigator.share({ title: 'GeoSpeed', text, url: ref.link }); confirmed = true; } catch (_) {}
+                    try { await navigator.share({ title: 'GeoSpeed', text, url: ref.link }); confirmed = true; } catch { /* cancelado */ }
                   } else {
-                    try { await navigator.clipboard?.writeText(`${text}\n${ref.link}`); confirmed = true; } catch (_) {}
+                    try { await navigator.clipboard?.writeText(`${text}\n${ref.link}`); confirmed = true; } catch { /* sin permiso */ }
                   }
-                  if (confirmed) {
-                    setInviteSent(true);
-                    setTimeout(() => setInviteSent(false), 4000);
-                  }
+                  if (confirmed) { setInviteSent(true); setTimeout(() => setInviteSent(false), 4000); }
                 }}
-                className="w-full py-2 rounded-lg font-bold text-[10px] sm:text-xs border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 transition-all active:scale-[0.97]"
+                className="w-full py-2 rounded-xl font-bold text-[10px] sm:text-xs border border-accent/40 text-accent hover:bg-accent/10 transition-all active:scale-[0.97]"
               >
                 {t('ref_share')}
               </button>
               {inviteSent && (
-                <p className="mt-2 text-center text-[9px] sm:text-[10px] text-emerald-400 animate-fade-in" role="status">
+                <p className="mt-2 text-center text-[9px] sm:text-[10px] text-accent animate-fade-in" role="status">
                   {navigator.share ? t('ref_sent') : t('ref_copied')}
                 </p>
               )}
@@ -705,155 +503,94 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         );
       })()}
 
-      {/* ── Collapsible Ranking ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl animate-fade-in-up animation-delay-400">
-        <button
-          onClick={() => { playAccordion(!showRanking); setShowRanking(prev => !prev); }}
-          className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl border border-border bg-card/50 text-xs sm:text-sm font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.97]"
-          aria-expanded={showRanking}
-          aria-controls="ranking-panel"
-        >
-          🏆 {t('home_ranking')} Top 10
-          <span className={`transition-transform duration-300 ${showRanking ? 'rotate-180' : ''}`}>▾</span>
-        </button>
+      <div className="h-2 shrink-0" />
 
-        <div
-          id="ranking-panel"
-          className={`overflow-hidden transition-all duration-500 ease-out ${showRanking ? 'max-h-[600px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}
-        >
-          {/* Period filter */}
-          <div className="grid grid-cols-3 gap-1 sm:gap-1.5 mb-1.5 sm:mb-2 w-full" role="tablist" aria-label="Filtrar ranking por período">
-            {([
-              { key: 'all', label: `🏛️ ${t('home_rankingAllTime')}` },
-              { key: 'month', label: `📅 ${t('home_rankingMonth')}` },
-              { key: 'week', label: `🔥 ${t('home_rankingWeek')}` },
-            ] as { key: LeaderboardPeriod; label: string }[]).map(p => (
-              <button
-                key={p.key}
-                onClick={() => setRankingPeriod(p.key)}
-                role="tab"
-                aria-selected={rankingPeriod === p.key}
-                className={`px-1 sm:px-2 py-1 sm:py-1.5 rounded-md text-[9px] sm:text-[11px] font-bold whitespace-nowrap transition-all active:scale-[0.97] ${
-                  rankingPeriod === p.key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card border border-border text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          {/* Mode filter */}
-          <div className="grid grid-cols-6 gap-1 sm:gap-1.5 mb-2 sm:mb-3 w-full" role="tablist" aria-label="Filtrar ranking por modo">
-            {[{ key: 'all', label: t('home_rankingAll') }, ...MODE_CONFIG].map(m => (
-              <button
-                key={m.key}
-                onClick={() => setRankingMode(m.key)}
-                role="tab"
-                aria-selected={rankingMode === m.key}
-                className={`flex-1 px-0.5 sm:px-1 py-1 sm:py-1.5 rounded-md text-[8px] sm:text-[10px] font-bold whitespace-nowrap transition-all active:scale-[0.97] ${
-                  rankingMode === m.key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card border border-border text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-          {/* Difficulty filter */}
-          <div className="grid grid-cols-5 gap-1 sm:gap-1.5 mb-2 sm:mb-3 w-full" role="tablist" aria-label="Filtrar ranking por dificultad">
-            {['all', 'basic', 'easy', 'medium', 'hard'].map(dk => (
-              <button
-                key={dk}
-                onClick={() => setRankingDifficulty(dk)}
-                role="tab"
-                aria-selected={rankingDifficulty === dk}
-                className={`flex-1 px-0.5 sm:px-1 py-1 sm:py-1.5 rounded-md text-[8px] sm:text-[10px] font-bold whitespace-nowrap transition-all active:scale-[0.97] ${
-                  rankingDifficulty === dk
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card border border-border text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {dk === 'all' ? t('home_rankingAll') : difficultyLabel(dk, t)}
-              </button>
-            ))}
-          </div>
-          <div className="bg-card rounded-xl border overflow-hidden" role="table" aria-label="Tabla de ranking">
-            {leaderboard.length === 0 ? (
-              <p className="text-center text-muted-foreground text-xs sm:text-sm py-4 sm:py-6">
-                {t('home_noGamesYet')}
-              </p>
-            ) : (
-              leaderboard.map((entry: LeaderboardEntry, i: number) => (
-                <div key={i} className="flex items-center px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border-b border-border last:border-0" role="row">
-                  <span className="w-6 sm:w-7 text-center text-xs sm:text-sm">{MEDALS[i] || `${i + 1}.`}</span>
-                  <span className="font-mono font-bold flex-1 text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{entry.initials}</span>
-                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1 sm:mr-1.5">{(entry.mode === 'mundial' ? '⚽' : MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode)}</span>
-                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5 sm:mr-2">{difficultyLabel(entry.difficulty, t)}</span>
-                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground/70 mr-1.5 sm:mr-2">{entry.date ? new Date(entry.date + 'T00:00:00').toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' }) : ''}</span>
-                  <span className="font-mono font-bold text-xs sm:text-sm">{entry.score.toLocaleString()}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Collapsible History ── */}
-      {history.length > 0 && (
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mt-2 sm:mt-3 animate-fade-in-up animation-delay-400">
-          <button
-            onClick={() => { playAccordion(!showHistory); setShowHistory(prev => !prev); }}
-            className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl border border-border bg-card/50 text-xs sm:text-sm font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.97]"
-            aria-expanded={showHistory}
-            aria-controls="history-panel"
-          >
-            📋 {t('profile_history')}
-            <span className={`transition-transform duration-300 ${showHistory ? 'rotate-180' : ''}`}>▾</span>
-          </button>
-
-          <div
-            id="history-panel"
-            className={`overflow-hidden transition-all duration-500 ease-out ${showHistory ? 'max-h-[500px] opacity-100 mt-2 sm:mt-3' : 'max-h-0 opacity-0'}`}
-          >
-            <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border max-h-[300px] sm:max-h-[350px] overflow-y-auto">
-              {history.map((entry: GameHistoryEntry, i: number) => {
-                const dateStr = new Date(entry.date).toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
-                const modeLabel = (entry.mode === 'mundial' ? '⚽' : MODE_CONFIG.find(m => m.key === entry.mode)?.label || entry.mode);
-                return (
-                  <div key={i} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs">
-                    <span className="text-muted-foreground w-[44px] sm:w-[52px] shrink-0">{dateStr}</span>
-                    <span className="shrink-0">{entry.type === 'timeattack' ? '⚡' : '🎮'}</span>
-                    <span className="text-muted-foreground shrink-0">{modeLabel}</span>
-                    <span className="text-muted-foreground shrink-0">{difficultyLabel(entry.difficulty, t)}</span>
-                    <span className="flex-1" />
-                    <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground">{formatDistance(entry.avgDistance)}</span>
-                    <span className="font-mono font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>{entry.score.toLocaleString()}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+      {/* ── Hojas de selección ── */}
+      {sheet === 'region' && (
+        <SelectorSheet<GameMode>
+          title={t('region_title')}
+          subtitle={t('region_subtitle')}
+          options={regionOptions}
+          selected={selectedMode}
+          confirmLabel={t('region_confirm')}
+          footnote={t('region_keepDifficulty')}
+          onConfirm={(k) => { setSelectedMode(k); setSheet(null); }}
+          onClose={closeSheet}
+        />
       )}
-
-      {/* Bottom spacer */}
-      <div className="h-4 sm:h-6 shrink-0" />
-        </>
+      {sheet === 'difficulty' && (
+        <SelectorSheet<Difficulty>
+          title={t('diff_title')}
+          subtitle={t('diff_subtitle')}
+          options={difficultyOptions}
+          selected={selectedDifficulty}
+          confirmLabel={t('diff_confirm')}
+          footnote={t('diff_keepRegion')}
+          context={{ emoji: MODE_UNLOCK[selectedMode].emoji, title: t('diff_currentRegion', { region: regionLabel }), desc: citiesInfo }}
+          onConfirm={(k) => { setSelectedDifficulty(k); setSheet(null); }}
+          onClose={closeSheet}
+        />
       )}
     </main>
   );
 }
 
-function StatCard({ label, value, accentColor }: { label: string; value: string; accentColor?: string }) {
-  const color = accentColor || 'hsl(var(--primary))';
+function Dropdown({ label, emoji, value, onClick }: { label: string; emoji: string; value: string; onClick: () => void }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-2 sm:p-2.5 md:p-3 text-center relative overflow-hidden">
-      {/* Accent top line — gradient for visual variety */}
-      <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-xl" style={{ background: `linear-gradient(90deg, ${color}, hsl(var(--accent)))` }} />
-      <div className="text-[8px] sm:text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5 mt-0.5">{label}</div>
-      <div className="text-sm sm:text-base md:text-lg font-bold font-mono" style={{ color }}>{value}</div>
+    <button
+      onClick={onClick}
+      className="flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border border-border bg-muted/30 hover:border-accent/50 transition-colors active:scale-[0.98] text-left"
+      aria-haspopup="dialog"
+    >
+      <span className="text-[11px] sm:text-xs text-muted-foreground">{label}</span>
+      <span className="flex items-center gap-2 w-full mt-1">
+        <span className="text-xl" aria-hidden>{emoji}</span>
+        <span className="flex-1 font-black text-sm sm:text-base truncate">{value}</span>
+        <span className="text-muted-foreground" aria-hidden>⌄</span>
+      </span>
+    </button>
+  );
+}
+
+function AccessCard({ emoji, title, desc, onClick, extra }: { emoji: string; title: string; desc: string; onClick: () => void; extra?: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <button
+        onClick={onClick}
+        className="w-full h-full flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border border-border bg-card/70 hover:border-accent/50 text-left transition-all active:scale-[0.98]"
+      >
+        <span className="text-3xl sm:text-4xl shrink-0" aria-hidden>{emoji}</span>
+        <span className="flex-1 min-w-0">
+          <span className="block font-black text-sm sm:text-base leading-tight">{title}</span>
+          <span className="block text-[10px] sm:text-xs text-muted-foreground leading-tight mt-0.5 line-clamp-2">{desc}</span>
+        </span>
+        <span className="text-muted-foreground hidden sm:inline" aria-hidden>›</span>
+      </button>
+      {extra}
     </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-muted/30 py-1.5">
+      <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className="text-xs sm:text-sm font-bold font-mono text-primary">{value}</div>
+    </div>
+  );
+}
+
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      role="tab"
+      aria-selected={active}
+      className={`px-1 py-1 rounded-md text-[8px] sm:text-[10px] font-bold whitespace-nowrap truncate transition-all active:scale-[0.97] ${
+        active ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:bg-muted'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

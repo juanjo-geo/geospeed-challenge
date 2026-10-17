@@ -77,7 +77,8 @@ const DEMO_BOUNDS = { latMin: -56, latMax: 80, lonMin: -180, lonMax: 180 };
 
 const DEMO_CITIES = buildDemoSet();
 
-export default function AutoDemo() {
+/** @param hideTagline oculta la frase "Velocidad + precisión" cuando el contenedor ya la muestra (banner de Inicio v2) */
+export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolean } = {}) {
   const { t, locale } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -326,13 +327,15 @@ export default function AutoDemo() {
       }
 
       // Tagline velocidad + precisión — al pie del mapa (sobre el polo sur)
-      ctx.globalAlpha = 0.92;
-      ctx.font = `bold ${Math.max(10, w / 30)}px system-ui`;
-      ctx.fillStyle = isNeon ? BRAND.yellow : isLight ? '#1a3a4a' : BRAND.yellow;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(t('demo_tagline'), w / 2, h - Math.max(16, w / 22));
-      ctx.globalAlpha = 1;
+      if (!hideTagline) {
+        ctx.globalAlpha = 0.92;
+        ctx.font = `bold ${Math.max(10, w / 30)}px system-ui`;
+        ctx.fillStyle = isNeon ? BRAND.yellow : isLight ? '#1a3a4a' : BRAND.yellow;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(t('demo_tagline'), w / 2, h - Math.max(16, w / 22));
+        ctx.globalAlpha = 1;
+      }
 
       animRef.current = requestAnimationFrame(animate);
     };
@@ -347,7 +350,7 @@ export default function AutoDemo() {
     }
     animRef.current = requestAnimationFrame(animate);
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [size, locale, t]);
+  }, [size, locale, t, hideTagline]);
 
   return (
     <div ref={containerRef} className="w-full">
