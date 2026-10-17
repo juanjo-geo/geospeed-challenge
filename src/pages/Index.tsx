@@ -341,7 +341,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   const handleSelectDifficulty = useCallback((diff: Difficulty, mode: GameMode) => {
     unlockAudio(); // Pre-unlock audio on user gesture so sounds work on mobile
-    if (!consumeLife()) {
+    const onboardingDone = localStorage.getItem('geospeed_onboarding_done');
+    // La práctica (jugador nuevo) no gasta vida: se cobra al pasar a la partida real (HELP-01)
+    if (onboardingDone && !consumeLife()) {
       setShowNoLives(true);
       return;
     }
@@ -351,13 +353,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     newGameSeed();
     setDifficulty(diff);
     setGameMode(mode);
-    trackGameStart(mode, diff);
-    // Show onboarding for brand-new players, tutorial overlay for returning players who haven't seen it
-    const onboardingDone = localStorage.getItem('geospeed_onboarding_done');
     if (!onboardingDone) {
       setPhase('onboarding');
       return;
     }
+    trackGameStart(mode, diff);
     const tutorialSeen = localStorage.getItem('geospeed_tutorial_seen');
     if (!tutorialSeen) {
       setPhase('tutorial');
@@ -845,7 +845,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (phase === 'onboarding') {
       return <OnboardingGame
         onComplete={() => {
-          // After onboarding, go straight to a real game
+          // "¡Jugar de verdad!" / "Saltar práctica": aquí se cobra la vida de la partida real
+          if (!consumeLife()) { setShowNoLives(true); setPhase('home'); return; }
+          try { localStorage.setItem('geospeed_tutorial_seen', 'true'); } catch { /* sin almacenamiento */ }
+          trackGameStart(gameMode, difficulty);
           gameKeyRef.current += 1;
           setPhase('countdown');
         }}

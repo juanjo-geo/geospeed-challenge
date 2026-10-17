@@ -565,7 +565,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       )}
 
       {/* ──── Map area (all modes) — h-full gives WorldMapCanvas explicit height in grid ──── */}
-      <div className="relative h-full min-w-0 overflow-hidden" style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
+      {/* w-full: con margin auto, un ítem de grid se encoge al tamaño del canvas (800 px) en ultrawide */}
+      <div className="relative w-full h-full min-w-0 overflow-hidden" style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
         {/* ── HUD compacto (móvil horizontal) — maqueta Partida_Movil_APROBADA_v1 ── */}
         {isCompact && (
           <div

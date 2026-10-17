@@ -10,7 +10,7 @@ interface TutorialOverlayProps {
 /**
  * Ghost-hand tutorial — minimal overlay on top of the real game.
  * Shows an animated pointing hand + one-line instruction.
- * Dismisses on first tap/click anywhere, or after 6 seconds.
+ * Se cierra solo cuando el jugador toca (HELP-01: la ayuda no arranca la partida por su cuenta).
  */
 export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
   const { t } = useI18n();
@@ -20,13 +20,6 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
     const seen = localStorage.getItem(TUTORIAL_KEY);
     if (!seen) {
       setVisible(true);
-      // Auto-dismiss after 6s if user hasn't tapped
-      const timer = setTimeout(() => {
-        localStorage.setItem(TUTORIAL_KEY, 'true');
-        setVisible(false);
-        onComplete();
-      }, 6000);
-      return () => clearTimeout(timer);
     } else {
       onComplete();
     }

@@ -28,6 +28,15 @@ export const BRAND = {
   muted: '#9DB0C9',
 } as const;
 
+/** Globo de la pantalla de carga (maqueta Carga_APROBADA_v1): océano azul, tierra verde, halo turquesa */
+export const GLOBE = {
+  oceanLight: '#3A8FE6',
+  oceanDeep: '#0B3778',
+  land: '#55C24A',
+  landShade: '#2E8B3E',
+  ice: '#E8F1FA',
+} as const;
+
 /** RGB triplets (sin "rgb(") para construir rgba() en strings CSS/canvas */
 export const BRAND_RGB = {
   navy: '11,31,58',
