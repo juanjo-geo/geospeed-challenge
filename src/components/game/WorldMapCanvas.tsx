@@ -4,6 +4,7 @@ import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from '
 import { countries } from '@/data/countries';
 import { type GameMode, getMapBounds } from '@/data/cities';
 import { unlockAudio } from '@/lib/sounds';
+import { useI18n } from '@/i18n';
 
 interface WorldMapCanvasProps {
   onMapClick: (lat: number, lon: number, viewportX?: number, viewportY?: number) => void;
@@ -77,6 +78,7 @@ export default function WorldMapCanvas({
   pinLabels,
   showZoomControls = true,
 }: WorldMapCanvasProps) {
+  const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1191,9 +1193,9 @@ export default function WorldMapCanvas({
       {showZoomControls && (
         <div className="absolute z-[8] flex items-center gap-1.5" style={{ right: 'max(0.5rem, var(--sar))', bottom: 'max(0.5rem, var(--sab))' }}>
           {([
-            { label: '−', onClick: () => zoomBy(1 / 1.4), aria: 'Alejar' },
-            { label: '+', onClick: () => zoomBy(1.4), aria: 'Acercar' },
-            { label: '⌖', onClick: resetZoom, aria: 'Centrar' },
+            { label: '−', onClick: () => zoomBy(1 / 1.4), aria: t('map_zoomOut') },
+            { label: '+', onClick: () => zoomBy(1.4), aria: t('map_zoomIn') },
+            { label: '⌖', onClick: resetZoom, aria: t('map_recenter') },
           ] as const).map(b => (
             <button
               key={b.aria}

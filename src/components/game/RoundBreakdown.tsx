@@ -8,6 +8,8 @@ interface RoundBreakdownProps {
   rounds: RoundResult[];
   /** Abierto desde el inicio (p. ej. en escritorio) */
   defaultOpen?: boolean;
+  /** Encabezado de la columna de nombre (Mundial: Jugador) */
+  nameLabel?: string;
 }
 
 function getRoundColor(distance: number): string {
@@ -28,7 +30,7 @@ function getRoundEmoji(distance: number): string {
 }
 
 /** Detalle por ronda (colapsable). La revisión por ciudad con mapa llega en el bloque EDU-01. */
-export default function RoundBreakdown({ rounds, defaultOpen = false }: RoundBreakdownProps) {
+export default function RoundBreakdown({ rounds, defaultOpen = false, nameLabel }: RoundBreakdownProps) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(defaultOpen);
 
@@ -50,7 +52,7 @@ export default function RoundBreakdown({ rounds, defaultOpen = false }: RoundBre
         <div className="bg-muted/30 rounded-xl border border-border overflow-hidden divide-y divide-border/50 max-h-[400px] overflow-y-auto">
           <div className="grid grid-cols-[2rem_1fr_4rem_2.8rem_2.8rem_3.5rem] gap-1 px-3 py-1.5 text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
             <span>#</span>
-            <span>{t('rb_city')}</span>
+            <span>{nameLabel ?? t('rb_city')}</span>
             <span className="text-right">{t('rb_dist')}</span>
             <span className="text-right">{t('rb_sec')}</span>
             <span className="text-right">{t('rb_mult')}</span>

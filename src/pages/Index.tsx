@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { formatDistance, addGameHistory } from '@/lib/gameUtils';
+import { addGameHistory, getGameHistory } from '@/lib/gameUtils';
 import { checkIncomingReferral } from '@/lib/referralSystem';
 import { recordInstallDate, checkRetention } from '@/lib/retentionTracker';
 import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
@@ -138,7 +138,7 @@ type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'settings'
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
 const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
-const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing'];
+const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -231,6 +231,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [finalScore, setFinalScore] = useState(0);
   const [endReason, setEndReason] = useState<'timeout' | 'complete'>('complete');
   const [taResult, setTaResult] = useState<TimeAttackResult | null>(null);
+  const [taPrevBest, setTaPrevBest] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [showNoLives, setShowNoLives] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
@@ -926,6 +927,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           key={`wc-${gameKeyRef.current}`}
           onExit={handleGoHome}
           onNoLives={() => setShowNoLives(true)}
+          musicMuted={isMusicMuted}
+          onToggleMusic={toggleMusic}
         />
       );
     }
@@ -936,8 +939,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           key={`ta-${gameKeyRef.current}`}
           difficulty={difficulty}
           gameMode={gameMode}
+          onExit={handleGoHome}
+          musicMuted={isMusicMuted}
+          onToggleMusic={toggleMusic}
           onGameOver={(result) => {
             setTaResult(result);
+            setTaPrevBest(Math.max(0, ...getGameHistory().filter(h => h.type === 'timeattack').map(h => h.score)));
             const avgD = result.rounds.length > 0 ? result.rounds.reduce((s, r) => s + r.distance, 0) / result.rounds.length : 0;
             addGameHistory({
               date: new Date().toISOString(),
@@ -966,45 +973,20 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'ta-final' && taResult) {
-      const avgDist = taResult.rounds.length > 0
-        ? taResult.rounds.reduce((s, r) => s + r.distance, 0) / taResult.rounds.length
-        : 0;
       return (
-        <div className="min-h-[100dvh] flex items-center justify-center px-3 py-4 sm:p-6 game-bg">
-          <div className="bg-card border rounded-xl p-5 sm:p-6 md:p-8 max-w-md w-full shadow-2xl animate-fade-in-up text-center">
-            {/* Logo + nombre */}
-            <div className="flex items-center justify-center gap-2.5 mb-3">
-              <img src="/logo.png" alt="GeoSpeed" className="w-16 sm:w-20 object-contain" />
-              <Wordmark size="md" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>{t('ta_finalTitle')}</h2>
-            <p className="text-muted-foreground text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 sm:mb-6">{t('ta_title')}</p>
-
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-4 sm:mb-6">
-              <div className="bg-muted rounded-lg p-2 sm:p-3">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('ta_finalCities')}</p>
-                <p className="text-xl sm:text-2xl font-mono font-bold" style={{ color: 'hsl(var(--primary))' }}>{taResult.cities}</p>
-              </div>
-              <div className="bg-muted rounded-lg p-2 sm:p-3">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('ta_finalScore')}</p>
-                <p className="text-xl sm:text-2xl font-mono font-bold" style={{ color: 'hsl(var(--primary))' }}>{taResult.totalScore.toLocaleString()}</p>
-              </div>
-              <div className="bg-muted rounded-lg p-2 sm:p-3">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('ta_finalAvgDist')}</p>
-                <p className="text-xs sm:text-sm font-mono font-bold">{formatDistance(avgDist)}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-2 sm:gap-3">
-              <button onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}>
-                {t('ta_retry')}
-              </button>
-              <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-black text-xs sm:text-sm border-2 border-primary/45 bg-primary/8 text-foreground transition-all active:scale-[0.97] hover:bg-primary/15">
-                🏠 {t('final_home')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <FinalResultScreen
+          variant="timeattack"
+          rounds={taResult.rounds}
+          totalScore={taResult.totalScore}
+          difficulty={difficulty}
+          mode={gameMode}
+          reason="complete"
+          totalRounds={taResult.rounds.length}
+          previousBestOverride={taPrevBest}
+          onNewGame={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
+          onGoHome={handleGoHome}
+          onOpenStore={handleOpenStore}
+        />
       );
     }
 

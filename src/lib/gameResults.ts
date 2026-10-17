@@ -176,16 +176,8 @@ export function roundsFromResults(rounds: RoundResult[]): SaveRoundInput[] {
 }
 
 export function roundsFromTimeAttack(rounds: TimeAttackResult['rounds']): SaveRoundInput[] {
-  return rounds.map((r, i) => ({
-    round_no: i + 1,
-    city_name: r.city.name,
-    city_country: r.city.country,
-    city_lat: r.city.lat,
-    city_lon: r.city.lon,
-    distance_km: r.distance,
-    time_s: r.timeUsed,
-    points: r.totalPoints,
-  }));
+  // Desde F2 las rondas de Caos traen clic, base y multiplicador (misma forma que RoundResult)
+  return roundsFromResults(rounds);
 }
 
 export function avgDistance(rounds: { distance: number }[]): number | null {

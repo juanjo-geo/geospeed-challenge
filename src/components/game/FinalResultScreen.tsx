@@ -20,14 +20,24 @@ import { useI18n } from '@/i18n';
 import { recordGameResult, getContextualOffer, type FrustrationOffer } from '@/lib/frustrationDetector';
 import FrustrationOfferModal from './FrustrationOfferModal';
 
+const BALL_EMOJI = '⚽';
+
 interface FinalResultScreenProps {
   rounds: RoundResult[];
   totalScore: number;
   difficulty: string;
   mode: string;
   reason: 'timeout' | 'complete';
-  /** Repetir estas ciudades (misma lista, gratis) */
-  onPlayAgain: () => void;
+  /** Repetir estas ciudades (misma lista, gratis). Si no se pasa, el botón principal es onNewGame. */
+  onPlayAgain?: () => void;
+  /** classic (por defecto) · timeattack (60s de Caos) · mundial. Cambia títulos, tiles y ranking. */
+  variant?: 'classic' | 'timeattack' | 'mundial';
+  /** Tiles de resumen personalizados (sustituyen Ciudades / Distancia media) */
+  tiles?: { emoji: string; label: string; value: string }[];
+  /** Mejor puntaje previo del modo (si no, se usa el récord global de stats) */
+  previousBestOverride?: number;
+  /** false → updatePlayerStats sin distancias (Mundial mide países, no km) */
+  countDistancesInStats?: boolean;
   /** Nueva partida: mismas condiciones, ciudades nuevas */
   onNewGame?: () => void;
   onGoHome: () => void;
@@ -58,6 +68,10 @@ export default function FinalResultScreen({
   onOpenStore,
   challengerScore,
   totalRounds = 13,
+  variant = 'classic',
+  tiles,
+  previousBestOverride,
+  countDistancesInStats = true,
 }: FinalResultScreenProps) {
   const { user, displayName: authName } = useAuth();
   const { t } = useI18n();
@@ -101,11 +115,14 @@ export default function FinalResultScreen({
 
   useEffect(() => {
     const stats = getPlayerStats();
-    setPreviousBest(stats.bestScore);
+    const prevBest = previousBestOverride ?? stats.bestScore;
+    setPreviousBest(prevBest);
     const prevXp = calculateXP();
-    updatePlayerStats(totalScore, distances);
-    qualifiesForLeaderboard(totalScore, mode, difficulty).then(setQualifies);
-    const record = totalScore > stats.bestScore && stats.bestScore > 0;
+    // 60s de Caos nunca contó en stats (su escala de puntos inflaría el récord global)
+    if (variant !== 'timeattack') updatePlayerStats(totalScore, countDistancesInStats ? distances : []);
+    // El ranking de ciudades no mezcla 60s de Caos (otra escala de puntos)
+    if (variant !== 'timeattack') qualifiesForLeaderboard(totalScore, mode, difficulty).then(setQualifies);
+    const record = totalScore > prevBest && prevBest > 0;
     if (record) {
       playVictory();
       setTimeout(() => { fireCelebration(); hapticCelebration(); }, 400);
@@ -119,7 +136,7 @@ export default function FinalResultScreen({
     const levelResult = checkLevelUp(prevXp, newXp);
     if (levelResult.leveled) setTimeout(() => playLevelUp(), reason === 'complete' ? 900 : 400);
 
-    getLeaderboard(mode).then(board => {
+    if (variant !== 'timeattack') getLeaderboard(mode).then(board => {
       setRankTotal(board.length);
       const pos = board.findIndex(e => totalScore >= e.score);
       setRankPosition(pos === -1 ? board.length + 1 : pos + 1);
@@ -138,15 +155,32 @@ export default function FinalResultScreen({
   }, []);
 
   useKeyboardShortcuts(useMemo(() => ({
-    'Enter': onPlayAgain,
+    'Enter': onPlayAgain ?? onNewGame ?? (() => {}),
     'Escape': onGoHome,
-  }), [onPlayAgain, onGoHome]));
+  }), [onPlayAgain, onNewGame, onGoHome]));
 
   const userIsPro = isPro();
   const scoreDelta = previousBest > 0 ? totalScore - previousBest : 0;
   const mascot: MascotState = outcome === 'record' ? 'celebrate' : outcome === 'timeout' ? 'sad' : 'wink';
-  const modeLabel = mode === 'mundial' ? t('wc_modeName') : (t(`mode_${mode}` as never) || mode);
-  const diffLabel = t(`diff_${difficulty}` as never) || difficulty;
+  const modeLabel = variant === 'mundial' || mode === 'mundial'
+    ? t('wc_modeName')
+    : variant === 'timeattack'
+    ? `${t('ta_hud')} · ${t(`mode_${mode}` as never) || mode}`
+    : (t(`mode_${mode}` as never) || mode);
+  // Mapa de fondo de la imagen/video compartido: Mundial no tiene bounds propios
+  const shareMode = mode === 'mundial' ? 'world' : mode;
+  const statTiles = tiles ?? (variant === 'timeattack'
+    ? [
+        { emoji: '🏙️', label: t('final_citiesCount'), value: String(rounds.length) },
+        { emoji: '📍', label: t('final_avgDist'), value: formatDistance(avgDistance) },
+      ]
+    : [
+        { emoji: '🏙️', label: t('final_cities'), value: `${rounds.length} / ${totalRounds}` },
+        { emoji: '📍', label: t('final_avgDist'), value: formatDistance(avgDistance) },
+      ]);
+  const diffLabel = variant === 'mundial'
+    ? `${BALL_EMOJI} ${t(`wc_diff_${difficulty}` as never)}`
+    : (t(`diff_${difficulty}` as never) || difficulty);
 
   const handleShare = async () => {
     playShareSuccess();
@@ -154,7 +188,7 @@ export default function FinalResultScreen({
     await shareResult({
       playerName: authName || initials || 'Jugador',
       score: totalScore,
-      mode,
+      mode: shareMode,
       difficulty,
       avgDistance: formatDistance(avgDistance),
       cities: rounds.length,
@@ -172,7 +206,7 @@ export default function FinalResultScreen({
       const success = await shareVideo({
         playerName: authName || initials || 'Jugador',
         totalScore,
-        mode,
+        mode: shareMode,
         difficulty,
         totalCities: rounds.length,
         bestRound: {
@@ -188,8 +222,13 @@ export default function FinalResultScreen({
     setSharingVideo(false);
   };
 
-  const title = outcome === 'record' ? t('final_recordTitle') : outcome === 'timeout' ? t('final_timeoutTitle') : t('final_completeTitle');
-  const subtitle = outcome === 'record' ? t('final_recordSub') : outcome === 'timeout' ? t('final_timeoutSub') : t('final_completeSub');
+  const title = outcome === 'record' ? t('final_recordTitle')
+    : variant === 'timeattack' ? t('final_taTitle')
+    : outcome === 'timeout' ? (variant === 'mundial' ? t('wc_finalTimeout') : t('final_timeoutTitle'))
+    : (variant === 'mundial' ? t('wc_finalTitle') : t('final_completeTitle'));
+  const subtitle = outcome === 'record' ? t('final_recordSub')
+    : variant === 'timeattack' ? t('final_taSub', { n: rounds.length })
+    : outcome === 'timeout' ? t('final_timeoutSub') : t('final_completeSub');
   const titleColor = outcome === 'record' ? 'text-primary text-glow' : outcome === 'timeout' ? 'text-destructive' : 'text-foreground';
 
   return (
@@ -244,20 +283,15 @@ export default function FinalResultScreen({
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-4" role="group" aria-label={t('final_resultLabel')}>
-            <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-center gap-3">
-              <span className="text-2xl" aria-hidden>🏙️</span>
-              <span>
-                <span className="block text-[10px] sm:text-xs text-muted-foreground">{t('final_cities')}</span>
-                <span className="block font-mono font-black text-lg sm:text-xl">{rounds.length} / {totalRounds}</span>
-              </span>
-            </div>
-            <div className="rounded-2xl border border-border bg-muted/30 p-3 flex items-center gap-3">
-              <span className="text-2xl" aria-hidden>📍</span>
-              <span>
-                <span className="block text-[10px] sm:text-xs text-muted-foreground">{t('final_avgDist')}</span>
-                <span className="block font-mono font-black text-lg sm:text-xl">{formatDistance(avgDistance)}</span>
-              </span>
-            </div>
+            {statTiles.map(tile => (
+              <div key={tile.label} className="rounded-2xl border border-border bg-muted/30 p-3 flex items-center gap-3">
+                <span className="text-2xl" aria-hidden>{tile.emoji}</span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] sm:text-xs text-muted-foreground">{tile.label}</span>
+                  <span className="block font-mono font-black text-lg sm:text-xl truncate">{tile.value}</span>
+                </span>
+              </div>
+            ))}
           </div>
 
           {bestRound && (
@@ -283,7 +317,7 @@ export default function FinalResultScreen({
           )}
 
           <div className="mt-3">
-            <RoundBreakdown rounds={rounds} />
+            <RoundBreakdown rounds={rounds} nameLabel={variant === 'mundial' ? t('rb_player') : undefined} />
           </div>
 
           {/* Comparación con el retador (enlace "Reta a un amigo") */}
@@ -339,25 +373,38 @@ export default function FinalResultScreen({
         <section className="rounded-3xl border border-border bg-card/80 p-4 sm:p-5 animate-fade-in-up animation-delay-100">
           <h2 className="text-xl sm:text-2xl font-black text-center mb-3">{t('final_tryAgainTitle')}</h2>
 
-          <button
-            onClick={() => { playButtonTap(); onPlayAgain(); }}
-            className="btn3d w-full rounded-2xl py-3.5 sm:py-4 px-4 flex items-center justify-center gap-3 text-primary-foreground text-left"
-            style={{ background: 'var(--grad-cta)' }}
-            aria-label={t('final_repeat')}
-          >
-            <span className="text-2xl" aria-hidden>🔁</span>
-            <span className="flex flex-col leading-tight">
-              <span className="font-black text-base sm:text-lg">{t('final_repeat')}</span>
-              <span className="text-[11px] sm:text-xs font-semibold opacity-80">{t('final_repeatSub')}</span>
-            </span>
-          </button>
-
-          {onNewGame && (
+          {onPlayAgain ? (
+            <>
+              <button
+                onClick={() => { playButtonTap(); onPlayAgain(); }}
+                className="btn3d w-full rounded-2xl py-3.5 sm:py-4 px-4 flex items-center justify-center gap-3 text-primary-foreground text-left"
+                style={{ background: 'var(--grad-cta)' }}
+                aria-label={t('final_repeat')}
+              >
+                <span className="text-2xl" aria-hidden>🔁</span>
+                <span className="flex flex-col leading-tight">
+                  <span className="font-black text-base sm:text-lg">{t('final_repeat')}</span>
+                  <span className="text-[11px] sm:text-xs font-semibold opacity-80">{t('final_repeatSub')}</span>
+                </span>
+              </button>
+              {onNewGame && (
+                <button
+                  onClick={() => { playButtonTap(); onNewGame(); }}
+                  className="mt-2.5 w-full rounded-2xl py-3 sm:py-3.5 border-2 border-accent text-accent font-black text-sm sm:text-base flex items-center justify-center gap-2 hover:bg-accent/10 transition-colors active:scale-[0.98]"
+                >
+                  <span aria-hidden>▶</span> {t('final_newGame')}
+                </button>
+              )}
+            </>
+          ) : onNewGame && (
+            /* Caos y Mundial no tienen "repetir estas ciudades": el principal es volver a jugar */
             <button
               onClick={() => { playButtonTap(); onNewGame(); }}
-              className="mt-2.5 w-full rounded-2xl py-3 sm:py-3.5 border-2 border-accent text-accent font-black text-sm sm:text-base flex items-center justify-center gap-2 hover:bg-accent/10 transition-colors active:scale-[0.98]"
+              className="btn3d w-full rounded-2xl py-3.5 sm:py-4 px-4 flex items-center justify-center gap-3 text-primary-foreground"
+              style={{ background: 'var(--grad-cta)' }}
             >
-              <span aria-hidden>▶</span> {t('final_newGame')}
+              <span className="text-2xl" aria-hidden>{variant === 'mundial' ? '⚽' : '⚡'}</span>
+              <span className="font-black text-base sm:text-lg">{variant === 'mundial' ? t('wc_playAgain').toUpperCase() : t('final_retry')}</span>
             </button>
           )}
 
@@ -370,7 +417,7 @@ export default function FinalResultScreen({
 
           <div className="h-px bg-border my-3" />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid gap-2 ${onShareChallenge ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <button
               onClick={handleShare}
               disabled={sharing || sharingVideo}
@@ -378,13 +425,15 @@ export default function FinalResultScreen({
             >
               {sharing ? '⏳' : '📤'} {t('final_shareShort')}
             </button>
-            <button
-              onClick={() => { if (onShareChallenge) { playShareSuccess(); onShareChallenge(); } }}
-              disabled={!onShareChallenge}
-              className="rounded-2xl py-2.5 border border-border bg-muted/20 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-muted transition-colors active:scale-[0.98] disabled:opacity-40"
-            >
-              ⚔️ {t('final_challengeShort')}
-            </button>
+            {/* El reto por enlace solo existe para el Clásico */}
+            {onShareChallenge && (
+              <button
+                onClick={() => { playShareSuccess(); onShareChallenge(); }}
+                className="rounded-2xl py-2.5 border border-border bg-muted/20 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-muted transition-colors active:scale-[0.98]"
+              >
+                ⚔️ {t('final_challengeShort')}
+              </button>
+            )}
           </div>
           {canRecordVideo() && (
             <button
