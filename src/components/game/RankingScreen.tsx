@@ -30,7 +30,7 @@ const MOCK_NAMES = ['Laura', 'Mateo', 'Sofía', 'Daniel', 'Camila', 'Andrés', '
 /** Ranking (maqueta Ranking_APROBADA_v1): Top 10 con nombre y avatar + tarjeta "Tu posición" aunque esté fuera del Top 10. */
 export default function RankingScreen({ initialMode = 'world', initialDifficulty = 'basic', onBack, onSignIn }: RankingScreenProps) {
   const { t } = useI18n();
-  const { displayName } = useAuth();
+  const { displayName, avatar } = useAuth();
   const [boardKey, setBoardKey] = useState(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty | ''>(initialDifficulty);
   const [period, setPeriod] = useState<RankPeriod>('all');
@@ -137,7 +137,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
               <div className="mt-2 rounded-2xl border border-primary bg-primary/10 p-3">
                 <div className="flex items-center justify-center gap-3">
                   <span className="font-black font-mono text-3xl sm:text-4xl text-primary">#{mine.rank}</span>
-                  <Avatar avatar="mascot" size="lg" />
+                  <Avatar avatar={avatar || "mascot"} size="lg" />
                   <span className="font-bold text-left leading-tight truncate">{myName}{displayName && <span className="text-primary"> · {t('ch_you')}</span>}</span>
                 </div>
                 <p className="mt-1 font-black font-mono text-2xl sm:text-3xl text-primary">{(mine.bestScore ?? 0).toLocaleString()} <span className="text-sm text-foreground font-bold">pts</span></p>

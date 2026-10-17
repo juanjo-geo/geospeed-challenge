@@ -15,6 +15,7 @@ import type { Json } from '@/integrations/supabase/types';
 import type { RoundResult } from '@/components/game/GameScreen';
 import type { TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import { getGameHistory, getPlayerStats, type GameHistoryEntry } from './gameUtils';
+import { ensureGuestSession } from './identity';
 
 export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel';
 export type EndReason = 'complete' | 'timeout' | 'abandoned';
@@ -122,12 +123,15 @@ export async function saveGameResult(input: SaveGameInput): Promise<string | nul
   const clientId = input.clientId ?? newClientId();
   const payload = toPayload(input, clientId);
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      // Invitado sin identidad todavía: guardar para cuando exista sesión (anónima o cuenta)
+    // D1: la primera partida terminada crea la sesión anónima (perezosa: quien solo mira no cuenta)
+    const guest = await ensureGuestSession();
+    if (guest === 'unavailable') {
+      // Anónimo desactivado o sin red: guardar para cuando exista sesión (anónima o cuenta)
       enqueue(payload);
       return null;
     }
+    // Recién creada: primero lo que estaba en cola (historial heredado incluido)
+    if (guest === 'created') await flushPendingResults().catch(() => 0);
     const res = await rpcSave(payload);
     if (!res.id && res.retryable) enqueue(payload);
     return res.id;

@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { getRandomCities, worldCities, type City, type Difficulty, type GameMode } from '@/data/cities';
 import { countryIso } from '@/lib/flags';
+import { ensureGuestSession } from '@/lib/identity';
 
 export const CHALLENGE_ROUNDS = 13;
 export const CHALLENGE_SECONDS = 15;
@@ -90,10 +91,8 @@ export class ChallengeError extends Error {
 // ── Sesión: registrada o anónima (D1). Si el anónimo está desactivado en Supabase, pide login. ──
 export async function ensureSession(): Promise<void> {
   if (mockEnabled()) return;
-  const { data } = await supabase.auth.getSession();
-  if (data.session) return;
-  const { error } = await supabase.auth.signInAnonymously();
-  if (error) throw new ChallengeError('auth_required', error.message);
+  const r = await ensureGuestSession();
+  if (r === 'unavailable') throw new ChallengeError('auth_required');
 }
 
 function mapError(error: { message?: string; code?: string } | null): ChallengeError {

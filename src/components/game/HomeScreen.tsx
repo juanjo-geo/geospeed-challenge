@@ -91,7 +91,8 @@ function difficultyLabel(raw: string, t: (key: string) => string): string {
  * nivel + accesos a ranking/historial. Todo visible desde la primera visita (decisión D13).
  */
 export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
-  const { user, displayName } = useAuth();
+  const { user, displayName, isAnonymous } = useAuth();
+  const hasAccount = !!user && !isAnonymous;
   const { t, locale } = useI18n();
   const navigate = useNavigate();
   const stats = getPlayerStats();
@@ -210,14 +211,14 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </span>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-          {user ? (
+          {hasAccount ? (
             <button
               onClick={() => { playButtonTap(); onOpenProfile?.(); }}
               className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground truncate max-w-[140px] px-2 py-1 rounded-lg hover:bg-muted/40 transition-colors active:scale-[0.97]"
               aria-label={t('nav_profile')}
             >
               <span aria-hidden>👤</span>
-              <span className="font-bold text-foreground truncate">{displayName || user.email?.split('@')[0]}</span>
+              <span className="font-bold text-foreground truncate">{displayName || user?.email?.split('@')[0]}</span>
             </button>
           ) : (
             <button

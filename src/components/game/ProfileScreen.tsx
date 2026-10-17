@@ -9,6 +9,8 @@ import { tLevelTitle, tBadgeName, tBadgeDesc, tDifficulty } from '@/lib/gameI18n
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { updateMyProfile } from '@/lib/identity';
+import { useNavigate } from 'react-router-dom';
 import Mascot from './Mascot';
 
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
@@ -46,9 +48,20 @@ function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
 
 /** Mi perfil (maqueta Perfil_APROBADA_v1): explorador + nivel, estadísticas y accesos a cada sección. */
 export default function ProfileScreen({ onBack, initialTab = 'overview', onMyChallenges, onOpenHistory, onOpenRanking }: ProfileScreenProps) {
-  const { user, displayName } = useAuth();
+  const { user, displayName, avatar: serverAvatar, isAnonymous, refreshProfile } = useAuth();
+  const navigate = useNavigate();
+  const navigateTo = (path: string) => navigate(path);
   const { t, locale } = useI18n();
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || 'mascot');
+  // Avatar guardado en el servidor gana sobre el local (otro dispositivo)
+  useEffect(() => { if (serverAvatar) { setAvatar(serverAvatar); localStorage.setItem(AVATAR_KEY, serverAvatar); } }, [serverAvatar]);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const saveName = async () => {
+    const n = nameDraft.trim();
+    if (n.length >= 2) { playButtonTap(); await updateMyProfile({ displayName: n }); await refreshProfile(); }
+    setEditingName(false);
+  };
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [tab, setTab] = useState<ProfileTab>(initialTab);
 
@@ -67,13 +80,16 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
   const avgDist = stats.totalRounds > 0 ? stats.totalDistance / stats.totalRounds : 0;
   const totalXp = level.xp;
   const unlockedBadges = badges.filter(b => b.unlocked).length;
-  const name = displayName || user?.email?.split('@')[0] || t('profile_player');
+  // Sin sesión todavía: el nombre elegido queda pendiente en local hasta crear la sesión de invitado
+  const pendingName = (() => { try { return localStorage.getItem('geospeed_pending_display_name') || ''; } catch { return ''; } })();
+  const name = displayName || pendingName || user?.email?.split('@')[0] || t('profile_player');
   const levelTitle = tLevelTitle(level.title, locale);
 
   const selectAvatar = (a: string) => {
     playButtonTap();
     setAvatar(a);
     localStorage.setItem(AVATAR_KEY, a);
+    updateMyProfile({ avatar: a }).catch(() => {});
     setShowAvatarPicker(false);
   };
   const open = (next: ProfileTab) => { playButtonTap(); setTab(next); window.scrollTo(0, 0); };
@@ -127,9 +143,31 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                 </div>
               )}
 
-              <p className="mt-3 font-black text-2xl sm:text-3xl truncate max-w-full">{name}</p>
+              {editingName ? (
+                <form onSubmit={(e) => { e.preventDefault(); saveName(); }} className="mt-3 w-full max-w-xs flex gap-2">
+                  <input autoFocus value={nameDraft} onChange={(e) => setNameDraft(e.target.value.slice(0, 20))} placeholder={t('acc_namePlaceholder')} maxLength={20}
+                    className="flex-1 min-w-0 rounded-xl border border-accent/60 bg-muted/30 px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-accent" />
+                  <button type="submit" className="rounded-xl bg-primary text-primary-foreground px-3 font-black text-sm">{t('acc_save')}</button>
+                </form>
+              ) : (
+                <button onClick={() => { playButtonTap(); setNameDraft(displayName || pendingName || ''); setEditingName(true); }} className="mt-3 group flex items-center gap-2 max-w-full" aria-label={t('acc_editName')}>
+                  <span className="font-black text-2xl sm:text-3xl truncate">{name}</span>
+                  <span className="text-sm opacity-60 group-hover:opacity-100" aria-hidden>✏️</span>
+                </button>
+              )}
+              {editingName && <p className="mt-1 text-[11px] text-muted-foreground">{t('acc_nameHint')}</p>}
               <span className="mt-1 rounded-full border border-border px-3 py-0.5 text-xs sm:text-sm font-semibold">{levelTitle}</span>
 
+              {(!user || isAnonymous) && (
+                <div className="w-full mt-4 rounded-2xl border border-primary/50 bg-primary/10 p-3 text-left">
+                  <p className="font-black text-sm">🔒 {t('acc_guestTitle')}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t('acc_guestDesc')}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button onClick={() => { playButtonTap(); navigateTo('/auth?mode=signup'); }} className="btn3d rounded-xl px-3 py-1.5 text-xs font-black text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>{t('acc_createAccount')}</button>
+                    <button onClick={() => { playButtonTap(); navigateTo('/auth'); }} className="rounded-xl px-3 py-1.5 text-xs font-bold border border-border hover:bg-muted">{t('acc_haveAccount')}</button>
+                  </div>
+                </div>
+              )}
               <div className="w-full mt-4 rounded-2xl border border-border bg-muted/20 p-3 flex items-center gap-3 text-left">
                 <span className="text-4xl sm:text-5xl shrink-0" aria-hidden>{level.emoji}</span>
                 <div className="flex-1 min-w-0">

@@ -2,11 +2,14 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { supabase } from '@/integrations/supabase/client';
 import { syncOnLogin } from '@/lib/cloudSync';
 import { importLegacyHistoryOnce, flushPendingResults } from '@/lib/gameResults';
+import { redeemTransfer } from '@/lib/identity';
 import type { User, Session } from '@supabase/supabase-js';
 
 /** Tareas de servidor al tener sesión: migrar historial local y vaciar la cola offline (F1). */
 function afterSession(userId: string) {
-  importLegacyHistoryOnce(userId)
+  // Si veníamos de una sesión anónima y entramos a una cuenta existente, traer su progreso primero
+  redeemTransfer()
+    .then(() => importLegacyHistoryOnce(userId))
     .then(() => flushPendingResults())
     .catch(() => {});
 }
@@ -16,6 +19,10 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   displayName: string;
+  /** Avatar del perfil en servidor ('mascot' o emoji) */
+  avatar: string;
+  /** Sesión anónima de invitado (D1): tiene identidad pero no cuenta */
+  isAnonymous: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -25,6 +32,8 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   displayName: '',
+  avatar: '',
+  isAnonymous: false,
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -34,14 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState('');
+  const [avatar, setAvatar] = useState('');
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('display_name')
+      .select('display_name, avatar')
       .eq('id', userId)
       .single();
-    if (data) setDisplayName(data.display_name);
+    if (data) { setDisplayName(data.display_name); setAvatar(data.avatar ?? ''); }
   };
 
   const refreshProfile = async () => {
@@ -80,10 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setDisplayName('');
+    setAvatar('');
   };
 
+  const isAnonymous = !!user?.is_anonymous;
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, displayName, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, loading, displayName, avatar, isAnonymous, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

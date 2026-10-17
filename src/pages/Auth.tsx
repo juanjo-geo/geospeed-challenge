@@ -5,11 +5,14 @@ import { useI18n } from '@/i18n';
 import Wordmark from '@/components/ui/Wordmark';
 import { PASSWORD_MIN, resetPasswordRedirectUrl } from '@/lib/authRules';
 import { PasswordField } from './ResetPassword';
+import { isAnonymousSession, linkGuestEmail, setAccountPassword, prepareTransfer } from '@/lib/identity';
 
-type Mode = 'login' | 'signup' | 'forgot';
-type Sent = null | 'confirm' | 'reset';
+type Mode = 'login' | 'signup' | 'forgot' | 'set-password';
+type Sent = null | 'confirm' | 'reset' | 'link';
 
 async function signInWithProvider(provider: 'google' | 'apple') {
+  // Desde una sesión de invitado: ticket para traer su progreso a la cuenta (se canjea al volver)
+  await prepareTransfer();
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo: window.location.origin },
@@ -28,7 +31,11 @@ export default function Auth() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [mode, setMode] = useState<Mode>(params.get('mode') === 'forgot' ? 'forgot' : params.get('mode') === 'signup' ? 'signup' : 'login');
+  const initialMode = params.get('mode');
+  const [mode, setMode] = useState<Mode>(initialMode === 'forgot' ? 'forgot' : initialMode === 'signup' ? 'signup' : initialMode === 'set-password' ? 'set-password' : 'login');
+  // Invitado con sesión anónima: "crear cuenta" enlaza el correo a su usuario (conserva todo)
+  const [guest, setGuest] = useState(false);
+  useEffect(() => { isAnonymousSession().then(setGuest).catch(() => {}); }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -38,9 +45,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState<Sent>(null);
 
-  useEffect(() => { setError(''); }, [mode]);
-
-  const switchMode = (m: Mode) => { setMode(m); setSent(null); setPassword(''); setConfirm(''); };
+  // El error se limpia al cambiar de modo a mano (no cuando el propio flujo cambia de modo con un aviso)
+  const switchMode = (m: Mode) => { setMode(m); setSent(null); setPassword(''); setConfirm(''); setError(''); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +54,17 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      if (mode === 'set-password') {
+        if (password.length < PASSWORD_MIN) { setError(t('auth_errPasswordShort')); return; }
+        if (password !== confirm) { setError(t('auth_errPasswordMismatch')); return; }
+        if (await setAccountPassword(password)) navigate('/');
+        else setError(t('auth_errGeneric'));
+        return;
+      }
+
       if (mode === 'login') {
+        // Desde una sesión de invitado: ticket para traer su progreso a la cuenta (se canjea al entrar)
+        await prepareTransfer();
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
           // Genérico: no se dice cuál dato falló ni si la cuenta existe (ACC-03)
@@ -71,6 +87,14 @@ export default function Auth() {
       if (!displayName.trim()) { setError(t('auth_errNameRequired')); return; }
       if (password.length < PASSWORD_MIN) { setError(t('auth_errPasswordShort')); return; }
       if (password !== confirm) { setError(t('auth_errPasswordMismatch')); return; }
+      if (guest) {
+        // Invitado → cuenta permanente con el mismo user_id. La contraseña se fija tras confirmar el correo.
+        const r = await linkGuestEmail(email, displayName);
+        if (r.ok === true) { setSent('link'); return; }
+        if (r.reason === 'email_taken') { setError(t('auth_errEmailTakenGuest')); setMode('login'); return; }
+        setError(r.reason === 'invalid' ? t('auth_errInvalidEmail') : t('auth_errGeneric'));
+        return;
+      }
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -100,10 +124,10 @@ export default function Auth() {
         <div className="bg-card border rounded-xl p-8 short:p-5 max-w-sm w-full shadow-2xl text-center animate-fade-in-up">
           <p className="text-4xl mb-3">✉️</p>
           <h2 className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))' }}>
-            {sent === 'confirm' ? t('auth_checkEmailTitle') : t('auth_resetSentTitle')}
+            {sent === 'reset' ? t('auth_resetSentTitle') : t('auth_checkEmailTitle')}
           </h2>
           <p className="text-muted-foreground text-sm mb-2">
-            {sent === 'confirm' ? t('auth_checkEmailDesc', { email }) : t('auth_resetSentDesc')}
+            {sent === 'confirm' ? t('auth_checkEmailDesc', { email }) : sent === 'link' ? t('auth_linkSentDesc', { email }) : t('auth_resetSentDesc')}
           </p>
           <p className="text-muted-foreground text-xs mb-6">{t('auth_checkSpam')}</p>
           <button
@@ -123,8 +147,10 @@ export default function Auth() {
     );
   }
 
-  const title = mode === 'login' ? t('auth_loginSubtitle') : mode === 'signup' ? t('auth_signupSubtitle') : t('auth_forgotDesc');
-  const cta = loading ? t('auth_loading') : mode === 'login' ? t('auth_signIn') : mode === 'signup' ? t('auth_signUp') : t('auth_sendLink');
+  const title = mode === 'login' ? (guest ? t('auth_loginGuestSubtitle') : t('auth_loginSubtitle'))
+    : mode === 'signup' ? (guest ? t('auth_signupGuestSubtitle') : t('auth_signupSubtitle'))
+    : mode === 'set-password' ? t('auth_setPasswordDesc') : t('auth_forgotDesc');
+  const cta = loading ? t('auth_loading') : mode === 'login' ? t('auth_signIn') : mode === 'signup' ? t('auth_signUp') : mode === 'set-password' ? t('auth_setPasswordCta') : t('auth_sendLink');
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 short:p-3 game-bg">
@@ -133,6 +159,7 @@ export default function Auth() {
           <img src="/logo.png" alt="GeoSpeed" className="w-14 short:w-10 object-contain mx-auto mb-1" />
           <h1 className="leading-none"><Wordmark size="md" /></h1>
           {mode === 'forgot' && <h2 className="text-lg font-black mt-3">{t('auth_forgotTitle')}</h2>}
+          {mode === 'set-password' && <h2 className="text-lg font-black mt-3">{t('auth_setPasswordTitle')}</h2>}
           <p className="text-muted-foreground text-sm mt-2">{title}</p>
         </div>
 
@@ -151,7 +178,7 @@ export default function Auth() {
               />
             </div>
           )}
-          <div>
+          {mode !== 'set-password' && <div>
             <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">{t('auth_email')}</label>
             <input
               type="email"
@@ -162,7 +189,7 @@ export default function Auth() {
               autoComplete="email"
               className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
-          </div>
+          </div>}
           {mode !== 'forgot' && (
             <div>
               <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">{t('auth_password')}</label>
@@ -171,9 +198,9 @@ export default function Auth() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder={mode === 'signup' ? t('auth_passwordPlaceholder') : t('auth_password')}
+                  placeholder={mode === 'signup' || mode === 'set-password' ? t('auth_passwordPlaceholder') : t('auth_password')}
                   required
-                  minLength={mode === 'signup' ? PASSWORD_MIN : 1}
+                  minLength={mode === 'signup' || mode === 'set-password' ? PASSWORD_MIN : 1}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   className="w-full px-4 py-3 pr-11 rounded-lg bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -188,7 +215,7 @@ export default function Auth() {
               </div>
             </div>
           )}
-          {mode === 'signup' && (
+          {(mode === 'signup' || mode === 'set-password') && (
             <PasswordField
               label={t('auth_confirmPassword')}
               value={confirm}
@@ -222,7 +249,7 @@ export default function Auth() {
           )}
         </form>
 
-        {mode !== 'forgot' && (
+        {mode !== 'forgot' && mode !== 'set-password' && (
           <>
             {/* ── OAuth divider ── */}
             <div className="mt-6 flex items-center gap-3">
@@ -262,7 +289,7 @@ export default function Auth() {
           </>
         )}
 
-        <div className="mt-5 text-center">
+        {mode !== 'set-password' && <div className="mt-5 text-center">
           {mode === 'forgot' ? (
             <button onClick={() => switchMode('login')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('auth_backToLogin')}
@@ -272,7 +299,7 @@ export default function Auth() {
               {mode === 'login' ? t('auth_noAccount') : t('auth_hasAccount')}
             </button>
           )}
-        </div>
+        </div>}
 
         <div className="mt-4 text-center">
           <button

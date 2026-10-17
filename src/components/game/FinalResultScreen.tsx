@@ -77,7 +77,7 @@ export default function FinalResultScreen({
   previousBestOverride,
   countDistancesInStats = true,
 }: FinalResultScreenProps) {
-  const { user, displayName: authName } = useAuth();
+  const { user, displayName: authName, isAnonymous } = useAuth();
   const { t } = useI18n();
   const [initials, setInitials] = useState('');
   const [saved, setSaved] = useState(false);
@@ -492,11 +492,11 @@ export default function FinalResultScreen({
             </button>
           )}
 
-          {!user && (
+          {(!user || isAnonymous) && (
             <div className="mt-3 rounded-2xl border border-accent/30 bg-accent/5 p-3 text-center animate-fade-in animation-delay-500">
               <p className="text-xs sm:text-sm font-bold mb-1">{t('final_nudgeTitle')}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">{t('final_nudgeDesc')}</p>
-              <a href="/auth" className="inline-block px-4 py-2 rounded-xl text-xs font-bold border border-accent/50 text-accent hover:bg-accent/10 transition-colors active:scale-[0.97]">
+              <a href="/auth?mode=signup" className="inline-block px-4 py-2 rounded-xl text-xs font-bold border border-accent/50 text-accent hover:bg-accent/10 transition-colors active:scale-[0.97]">
                 {t('final_nudgeCta')}
               </a>
             </div>

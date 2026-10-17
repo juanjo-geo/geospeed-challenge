@@ -22,7 +22,7 @@ interface SettingsScreenProps {
  */
 export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenProps) {
   const { t, locale, setLocale } = useI18n();
-  const { user, displayName, signOut } = useAuth();
+  const { user, displayName, signOut, isAnonymous } = useAuth();
   const { colorblind, toggleColorblind } = useA11y();
   const navigate = useNavigate();
   const [prefs, setPrefs] = useState<Prefs>(getPrefs);
@@ -113,7 +113,7 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
 
         {/* Cuenta */}
         <Section title={t('settings_account')}>
-          {user ? (
+          {user && !isAnonymous ? (
             <>
               <div className="px-3 py-3 text-sm">
                 <p className="text-muted-foreground text-xs">{t('settings_signedInAs')}</p>
@@ -128,8 +128,12 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
             </>
           ) : (
             <>
-              <div className="px-3 py-3 text-sm text-muted-foreground">{t('settings_guest')}</div>
-              <LinkRow icon="👤" label={t('home_signIn')} onClick={() => navigate('/auth')} last />
+              <div className="px-3 py-3 text-sm">
+                <p className="font-bold">{t('acc_guestTitle')}</p>
+                <p className="text-xs text-muted-foreground">{t('acc_guestDesc')}</p>
+              </div>
+              <LinkRow icon="✨" label={t('acc_createAccount')} onClick={() => navigate('/auth?mode=signup')} />
+              <LinkRow icon="👤" label={t('acc_haveAccount')} onClick={() => navigate('/auth')} last />
             </>
           )}
         </Section>

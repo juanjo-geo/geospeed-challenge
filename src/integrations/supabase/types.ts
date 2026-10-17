@@ -410,6 +410,14 @@ export type Database = {
         Args: { p_display_name?: string | null; p_avatar?: string | null }
         Returns: undefined
       }
+      create_transfer_ticket: {
+        Args: Record<string, never>
+        Returns: string
+      }
+      redeem_transfer_ticket: {
+        Args: { p_ticket: string }
+        Returns: Json
+      }
       challenge_create: {
         Args: { p: Json }
         Returns: Json
