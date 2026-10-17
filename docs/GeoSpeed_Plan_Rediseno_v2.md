@@ -339,7 +339,9 @@ Hecho: migración `game_results` + `game_rounds` + RPCs (`save_game_result`, `my
 - **Criterio de salida:** un invitado juega, se registra y conserva todo; una partida aparece en `game_results` con 13 filas de rondas; el reset de contraseña funciona de punta a punta en móvil y escritorio.
 
 ### F2 — Rediseño visual del núcleo (12-18 días) · requiere F0 y maquetas · 🟡 EN CURSO (rama `feat/f2-home-v2`, 17 oct 2026)
-Hecho: Inicio v2 móvil y escritorio (banner Cómo se juega, Tu próxima aventura con hojas de región/dificultad y candados visibles, tarjetas de acceso, tarjeta de nivel con ranking/historial/insignias), pantalla Más modos, pantalla Cómo jugar de 3 pasos (Entendido no inicia partida). Siguen: girar antes de la cuenta, partida y feedback con mapa multicolor, cierres, revisión por ciudad, re-skin de tienda y modales.
+Hecho (bloque 1): Inicio v2 móvil y escritorio (banner Cómo se juega, Tu próxima aventura con hojas de región/dificultad y candados visibles, tarjetas de acceso, tarjeta de nivel con ranking/historial/insignias), pantalla Más modos, pantalla Cómo jugar de 3 pasos (Entendido no inicia partida).
+Hecho (bloque 2): aviso de girar antes de la cuenta regresiva con la cuenta en pausa en vertical y devolución de vida al cancelar; cuenta regresiva con "¡Prepárate!", etiqueta de modo, mascota y Cancelar; el tiempo en pausa ya no cuenta para el multiplicador; cierre de partida con tres estados (récord, tiempo agotado, completada), mascota por estado, dos columnas en escritorio, Nueva partida y Repetir estas ciudades.
+Siguen: partida y feedback con mapa multicolor y "Ver cálculo", unificar cierres de Caos y Mundial, revisión por ciudad, re-skin de tienda y modales.
 Pantallas en orden de impacto sobre el jugador:
 1. Splash (UI-02) y Home v2 móvil/escritorio (UI-03) con "Más modos" y tratamiento del jugador nuevo.
 2. Paneles de región y dificultad con confirmación y selección persistida (UI-04).
