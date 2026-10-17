@@ -1085,6 +1085,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onPlay={handlePlayChallenge}
           onBack={handleGoHome}
           onSignIn={() => navigate('/auth')}
+          onCreateAnother={handleFriends}
         />
       );
     }

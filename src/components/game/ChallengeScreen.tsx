@@ -7,6 +7,7 @@ import { playButtonTap, playShareSuccess } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
+import ChallengeResultScreen from './ChallengeResultScreen';
 
 export type ChallengeSource = { type: 'challenge'; challenge: Challenge } | { type: 'code'; code: string };
 
@@ -15,6 +16,8 @@ interface ChallengeScreenProps {
   onPlay: (ch: Challenge) => void;
   onBack: () => void;
   onSignIn: () => void;
+  /** "Crear otro reto" desde el resultado */
+  onCreateAnother: () => void;
 }
 
 /**
@@ -22,7 +25,7 @@ interface ChallengeScreenProps {
  *  - Creador / participante: "Tu reto está creado": código, copiar, compartir, condiciones y participantes.
  *  - Invitado que abre el código o el enlace /reto/:code: quién lo reta, condiciones y "Aceptar y jugar".
  */
-export default function ChallengeScreen({ source, onPlay, onBack, onSignIn }: ChallengeScreenProps) {
+export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCreateAnother }: ChallengeScreenProps) {
   const { t } = useI18n();
   const [challenge, setChallenge] = useState<Challenge | null>(source.type === 'challenge' ? source.challenge : null);
   const [preview, setPreview] = useState<ChallengePreview | null>(null);
@@ -157,6 +160,11 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn }: Ch
         <div className="flex justify-center py-12"><Mascot state="idle" className="w-20 animate-mascot-float" /></div>
       </Shell>
     );
+  }
+
+  // ── Ya jugué: resultado (pendiente / victoria / derrota / empate) ──
+  if (detail?.my_finished) {
+    return <ChallengeResultScreen detail={detail} onBack={onBack} onCreateAnother={onCreateAnother} onRefresh={refresh} />;
   }
 
   // ── Reto creado / estado ──

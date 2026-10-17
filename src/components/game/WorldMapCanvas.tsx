@@ -30,6 +30,8 @@ interface WorldMapCanvasProps {
   trailConfig?: { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | null;
   /** Etiquetas junto a los pines tras responder ("Tu respuesta" / "Ciudad correcta") */
   pinLabels?: { you: string; correct: string } | null;
+  /** Respuesta del rival en la revisión del reto: pin turquesa + línea punteada a la ciudad. Pasar memoizado. */
+  rivalClick?: { lat: number; lon: number; label: string; distanceKm?: number | null } | null;
   /** Botones −/+/centrar (maqueta Partida_APROBADA_v1). Por defecto visibles. */
   showZoomControls?: boolean;
   /** Encuadre geográfico fijo (Revisión de ciudad). Sustituye los límites del modo y redibuja nítido. Pasar memoizado. */
@@ -78,6 +80,7 @@ export default function WorldMapCanvas({
   pacificDecor,
   trailConfig,
   pinLabels,
+  rivalClick,
   showZoomControls = true,
   viewBounds,
 }: WorldMapCanvasProps) {
@@ -700,23 +703,39 @@ export default function WorldMapCanvas({
           ctx.textBaseline = 'middle';
           ctx.fillText(text, labelPt.x, labelPt.y);
         }
+        const drawPill = (text: string, x: number, y: number, bg: string, fg: string) => {
+          ctx.font = 'bold 12px system-ui';
+          const tw = ctx.measureText(text).width;
+          const bw = tw + 16, bh = 22;
+          const bx = Math.min(Math.max(4, x - bw / 2), dimensions.w - bw - 4);
+          const by = Math.min(Math.max(4, y), dimensions.h - bh - 4);
+          ctx.fillStyle = bg;
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 11); else ctx.rect(bx, by, bw, bh);
+          ctx.fill();
+          ctx.fillStyle = fg;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, bx + bw / 2, by + bh / 2);
+        };
+        // ── Respuesta del rival (maqueta Reto_Revision_Mapa): línea punteada turquesa + pin + etiqueta ──
+        if (rivalClick) {
+          const rx = lonToX(rivalClick.lon), ry = latToY(rivalClick.lat);
+          ctx.save();
+          ctx.setLineDash([7, 6]);
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = rgba(BRAND_RGB.turquoise, 0.9);
+          ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(cx, cy); ctx.stroke();
+          ctx.restore();
+          ctx.fillStyle = BRAND.turquoise;
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(rx, ry, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          const rl = rivalClick.distanceKm != null ? `${rivalClick.label} · ${Math.round(rivalClick.distanceKm).toLocaleString()} km` : rivalClick.label;
+          drawPill(rl, rx, ry - 36 < 60 ? ry + 14 : ry - 36, BRAND.turquoise, BRAND.navyDeep);
+        }
         // ── Etiquetas de los pines (maqueta Feedback_APROBADA_v1) ──
         if (pinLabels) {
-          const drawPill = (text: string, x: number, y: number, bg: string, fg: string) => {
-            ctx.font = 'bold 12px system-ui';
-            const tw = ctx.measureText(text).width;
-            const bw = tw + 16, bh = 22;
-            const bx = Math.min(Math.max(4, x - bw / 2), dimensions.w - bw - 4);
-            const by = Math.min(Math.max(4, y), dimensions.h - bh - 4);
-            ctx.fillStyle = bg;
-            ctx.beginPath();
-            if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 11); else ctx.rect(bx, by, bw, bh);
-            ctx.fill();
-            ctx.fillStyle = fg;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(text, bx + bw / 2, by + bh / 2);
-          };
           drawPill(pinLabels.you, ux, uy + 14, BRAND.yellow, BRAND.navyDeep);
           // Si la ciudad está pegada al borde superior (bajo el HUD), la etiqueta va debajo del pin
           drawPill(pinLabels.correct, cx, cy - 40 < 60 ? cy + 28 : cy - 40, BRAND.turquoise, BRAND.navyDeep);
@@ -755,7 +774,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct, rivalClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);

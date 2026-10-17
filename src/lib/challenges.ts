@@ -227,7 +227,12 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     const mine = db[id].mine;
     db[id].rival = { name: 'Valentina', joined: true, result: {
       score, end_reason: 'complete',
-      rounds: (mine?.rounds ?? []).map(r => ({ ...r, points: Math.round(score / Math.max(1, mine?.rounds.length ?? 13)) })),
+      rounds: (mine?.rounds ?? []).map(r => {
+        const dLat = (Math.random() - 0.5) * 12, dLon = (Math.random() - 0.5) * 12;
+        const lat = (r.click_lat ?? r.city_lat) + dLat, lon = (r.click_lon ?? r.city_lon) + dLon;
+        const km = Math.round(111 * Math.hypot(lat - r.city_lat, (lon - r.city_lon) * Math.cos((r.city_lat * Math.PI) / 180)));
+        return { ...r, click_lat: lat, click_lon: lon, distance_km: km, time_s: Math.round(((r.time_s ?? 5) + Math.random() * 3) * 10) / 10, points: Math.round(score / Math.max(1, mine?.rounds.length ?? 13)) };
+      }),
     } };
     mockSave(db);
     return 'ok';
