@@ -4,7 +4,7 @@
 JuanJo Grimar (juanjogrimar@gmail.com) — Senior Manager BPO, Colombia. 550 people under management. Focused on profitability and AI/automation. Started academic, now a monetizable product.
 
 ## What Is GeoSpeed
-Geography quiz game: locate cities (or a footballer's country) on an interactive world map combining speed + precision. Tagline: "How well do you know the world?" Dark premium aesthetic (#07130a bg, #f5c842 gold). Optimized for mobile landscape + desktop. App name: **GeoSpeed Challenge** (store listing still says "GeoSpeed IQ Challenge").
+Geography quiz game: locate cities (or a footballer's country) on an interactive world map combining speed + precision. Tagline: "How well do you know the world?" Dark premium aesthetic (#07130a bg, #f5c842 gold). Optimized for mobile landscape + desktop. App name: **GeoSpeed Challenge** everywhere since F6 (index.html, manifest, legal pages, `store-listing/metadata.json`).
 
 ## Tech Stack
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS. Bilingual ES/EN via `src/i18n/`.
@@ -142,6 +142,13 @@ Key facts the audit established (so nobody re-discovers them):
 - **Screens**: `HistoryScreen.tsx` (mockups Historial / Historial_Vacio: Región/Dificultad via `SelectorSheet`, newest/oldest toggle, table on md+ / cards on mobile, Completada / Tiempo agotado / Abandonada, Ver detalle → `CityAnswersScreen`+`CityReviewScreen`, CARGAR MÁS, empty state "Tu primera aventura te espera" vs "Sin coincidencias" + QUITAR FILTROS, link to Mis retos). `RankingScreen.tsx` (mockup Ranking: board = 5 regions + Mundial + 60s de Caos, difficulty, period chips, Top 10 with medals/avatars/names, "Tu posición" card with #rank · name · pts · "entre N jugadores", guest → sign-in CTA, "Aún no tienes partidas en esta tabla"); dev mock `localStorage.geospeed_mock_ranking='1'`. Home: ranking panel removed, 🏆 Ranking / 📊 Historial open the screens; daily card shows the local rollover time (D6). Profile: rows Historial / Ranking / Mis retos; stats from `my_progress` when logged (fallback local); streak line. Index phases `history`, `ranking` (nav tab Progreso → history).
 - **Not done:** `daily_sets` table (hardening of the daily seed, optional).
 
+### F6 Catálogo, QA y cierre — code part done 2026-10-18 (branch `feat/f6-cierre`)
+- **Bundle:** `vite.config.ts` `manualChunks` → `vendor-react`, `vendor-supabase`, `vendor-ui` (radix + tanstack), `vendor`, `data-countries`, `data-cities`. `SplashGlobe` and `AutoDemo` are `React.lazy` so the 113 KB polygon chunk is no longer in the eager graph. Eager set ≈ 257 KB gzip (was ≈ 280 KB + everything in one 904 KB file). Lighthouse could not be run from this environment (PageSpeed API answered 429); **JuanJo: run Lighthouse mobile in Chrome DevTools on production and paste the numbers**; target ≥ 90.
+- **Country photos (D7) plumbing:** `src/lib/countryPhotos.ts` (`countryPhotoUrl(country, 'lg'|'sm')` → `/countries/<ISO>.webp` / `<ISO>-sm.webp`, `fetchPhotoCredits()` reads `/countries/credits.json`), `components/ui/CountryPhoto.tsx` (renders nothing until the image loads; remembers missing files per session). Placed in `RoundFeedbackCard`, `CityReviewScreen` panel, Mundial feedback card and challenge comparison cards. `public/countries/README.md` documents the expected files + an ImageMagick one-liner. **JuanJo: drop the 195 photos as `ISO.webp` + `ISO-sm.webp` + `credits.json` (task C4) — no code change needed.** Support page shows the credits list when the json exists.
+- **ISO-3166:** `flags.ts` now maps **all 177 country names of `countries.ts`** (map/Mundial) plus the 162 Spanish catalog names → flags and photos work for every country the map can show (Kosovo uses `XK`).
+- **Store listing:** `metadata.json` rewritten: name GeoSpeed Challenge, URLs on geospeed-challenge.vercel.app (B14), modes updated (Caos, Mundial, retos con amigos, práctica), new screenshot ideas, feature graphic idea. Screenshots themselves are still manual.
+- **Pending (manual):** Lighthouse numbers, photos + credits, store screenshots + 1024×500 graphic, keystore/AAB (see list above).
+
 ## Current Status (October 13, 2026)
 - **Code:** feature-complete for web. Last feature work 2026-07-15. Deployed at geospeed-challenge.vercel.app. Git: github.com/juanjo-geo/geospeed-challenge (`main`).
 - **Security:** A+ Mozilla Observatory. Secret test links/gestures were removed before launch (commit d8a4e52).
@@ -166,8 +173,8 @@ Key facts the audit established (so nobody re-discovers them):
 2. RevenueCat: real key in `.env` once the account exists; test purchases in Play internal testing.
 3. Rebuild native: `npm run build && npx cap sync android`, bump `versionCode`, sign AAB.
 4. New store screenshots + 1024×500 feature graphic (June captures predate mascot/Mundial).
-5. Lighthouse performance pass (target 90+).
-6. Store listing name: decide "GeoSpeed Challenge" vs "GeoSpeed IQ Challenge" and align `store-listing/metadata.json`.
+5. Lighthouse performance pass (target 90+): bundle split done in F6; measure on production and iterate if < 90.
+6. ~~Store listing name~~ done in F6: "GeoSpeed Challenge" everywhere.
 
 ## What's Pending — JuanJo (manual)
 0. **Retos en producción (F3, publicado 2026-10-18):** hasta aplicar la migración, crear o unirse a un reto falla con "No pudimos conectar"; el simulador solo existe en `npm run dev`. Pasos: `npx supabase db push` (aplica también la migración de F1) y Authentication → Anonymous Sign-ins ON (+ Allow manual linking). Luego `npx supabase functions deploy submit-score`.

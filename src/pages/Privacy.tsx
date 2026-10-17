@@ -21,7 +21,7 @@ const Privacy = () => {
             to="/"
             className="inline-flex items-center gap-2 rounded-lg border border-[#f5c842]/30 px-4 py-2 text-sm text-[#f5c842] transition hover:bg-[#f5c842]/10"
           >
-            ← GeoSpeed IQ Challenge
+            ← GeoSpeed Challenge
           </Link>
           <a
             href="#english"
@@ -38,7 +38,7 @@ const Privacy = () => {
           Ultima actualizacion: 17 de mayo de 2026
         </p>
         <p className="mb-8 text-sm text-[#d4d4c8]/60">
-          Aplicacion: GeoSpeed IQ Challenge &middot; Desarrollador: JuanJo Grimar
+          Aplicacion: GeoSpeed Challenge &middot; Desarrollador: JuanJo Grimar
         </p>
 
         <div className="rounded-xl border border-[#f5c842]/10 bg-[#0d1f12] p-8">
@@ -46,7 +46,7 @@ const Privacy = () => {
 
           <SectionTitle>1. Introduccion</SectionTitle>
           <p className="text-[#d4d4c8] leading-relaxed">
-            GeoSpeed IQ Challenge (&quot;la App&quot;) es un juego de geografia desarrollado por
+            GeoSpeed Challenge (&quot;la App&quot;) es un juego de geografia desarrollado por
             JuanJo Grimar (&quot;nosotros&quot;, &quot;nos&quot;). Esta politica de privacidad describe
             como recopilamos, usamos y protegemos tu informacion cuando usas nuestra aplicacion
             en dispositivos moviles (iOS/Android) y en la web (geospeed-challenge.vercel.app).
@@ -141,7 +141,7 @@ const Privacy = () => {
 
           <SectionTitle>5. Privacidad de Menores (COPPA)</SectionTitle>
           <p className="text-[#d4d4c8] leading-relaxed">
-            GeoSpeed IQ Challenge tiene una clasificacion de edad de <strong>4+</strong> y esta
+            GeoSpeed Challenge tiene una clasificacion de edad de <strong>4+</strong> y esta
             disenada para ser apta para todas las edades. No recopilamos intencionalmente
             informacion personal de menores de 13 anos. La App no requiere registro para jugar.
             Si descubrimos que hemos recopilado datos de un menor sin consentimiento parental,
@@ -228,12 +228,12 @@ const Privacy = () => {
               Last updated: May 17, 2026
             </p>
             <p className="mb-8 text-sm text-[#d4d4c8]/60">
-              App: GeoSpeed IQ Challenge &middot; Developer: JuanJo Grimar
+              App: GeoSpeed Challenge &middot; Developer: JuanJo Grimar
             </p>
 
             <SectionTitle>1. Introduction</SectionTitle>
             <p className="text-[#d4d4c8] leading-relaxed">
-              GeoSpeed IQ Challenge (&quot;the App&quot;) is a geography game developed by JuanJo
+              GeoSpeed Challenge (&quot;the App&quot;) is a geography game developed by JuanJo
               Grimar (&quot;we&quot;, &quot;us&quot;). This privacy policy describes how we collect,
               use, and protect your information when you use our application on mobile devices
               (iOS/Android) and on the web (geospeed-challenge.vercel.app).
@@ -324,7 +324,7 @@ const Privacy = () => {
 
             <SectionTitle>5. Children's Privacy (COPPA)</SectionTitle>
             <p className="text-[#d4d4c8] leading-relaxed">
-              GeoSpeed IQ Challenge has an age rating of <strong>4+</strong> and is designed to
+              GeoSpeed Challenge has an age rating of <strong>4+</strong> and is designed to
               be suitable for all ages. We do not knowingly collect personal information from
               children under 13. The App does not require registration to play. If we discover
               that we have collected data from a child without parental consent, we will delete

@@ -9,6 +9,7 @@ import { useI18n } from '@/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Flag from '@/components/ui/Flag';
+import CountryPhoto from '@/components/ui/CountryPhoto';
 import Mascot from './Mascot';
 import WorldMapCanvas from './WorldMapCanvas';
 import CityAnswersScreen from './CityAnswersScreen';
@@ -285,6 +286,7 @@ function ChallengeCompare({ detail, rows, rivalName, onOpenMap, onBack }: { deta
           const who = mp > rp ? 'me' : rp > mp ? 'rival' : 'tie';
           return (
             <section key={idx} className="rounded-3xl border border-border bg-card/70 p-3 sm:p-4 flex flex-col gap-2">
+              <CountryPhoto country={row.city.country} size="sm" className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-24 rounded-t-3xl" />
               <div className="flex items-center gap-2">
                 <Flag country={row.city.country} className="w-8" />
                 <p className="min-w-0 truncate"><span className="font-black text-base sm:text-lg">{row.city.name}</span><span className="text-muted-foreground text-sm"> · {row.city.country}</span></p>

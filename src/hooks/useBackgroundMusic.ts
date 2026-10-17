@@ -175,7 +175,7 @@ function setupMediaSession() {
     const ms = (navigator as unknown as { mediaSession: any }).mediaSession;
     try {
       const MM = (window as unknown as { MediaMetadata?: any }).MediaMetadata;
-      if (MM) ms.metadata = new MM({ title: 'GeoSpeed IQ Challenge', artist: 'GeoSpeed' });
+      if (MM) ms.metadata = new MM({ title: 'GeoSpeed Challenge', artist: 'GeoSpeed' });
     } catch (_) {}
     ms.setActionHandler('play', () => {
       systemPaused = false;

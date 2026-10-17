@@ -4,6 +4,7 @@ import { formatDistance } from '@/lib/gameUtils';
 import { useI18n } from '@/i18n';
 import Mascot, { type MascotState } from './Mascot';
 import Flag from '@/components/ui/Flag';
+import CountryPhoto from '@/components/ui/CountryPhoto';
 import { playAccordion } from '@/lib/sounds';
 
 interface RoundFeedbackCardProps {
@@ -31,6 +32,8 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
 
   return (
     <div className={`flex flex-col gap-2 rounded-3xl border border-border/80 bg-card/85 shadow-2xl backdrop-blur-md overflow-y-auto w-full ${lg ? 'p-5 gap-3 max-h-[90%]' : 'p-3 sm:p-4 max-h-full [@media(max-height:420px)]:gap-1 [@media(max-height:420px)]:p-2'}`}>
+      {/* Foto del país (D7): solo si existe el archivo; oculta en pantallas bajas */}
+      <CountryPhoto country={result.city.country} size="sm" className={`-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-20 rounded-t-3xl ${lg ? '' : '[@media(max-height:420px)]:hidden'}`} />
       <div className="text-center">
         <Mascot state={mascot} className={`mx-auto ${lg ? 'w-20' : 'w-12 sm:w-16 [@media(max-height:420px)]:hidden'}`} />
         <p className={`font-black ${feedback.color} ${lg ? 'text-3xl mt-1' : 'text-lg sm:text-2xl [@media(max-height:420px)]:text-base'}`}>{feedback.phrase}</p>

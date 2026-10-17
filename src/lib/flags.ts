@@ -41,13 +41,28 @@ const ISO_BY_COUNTRY: Record<string, string> = {
   'Turquía': 'TR', 'Túnez': 'TN', 'Ucrania': 'UA', 'Uganda': 'UG', 'Uruguay': 'UY',
   'Uzbekistán': 'UZ', 'Venezuela': 'VE', 'Vietnam': 'VN', 'Yibuti': 'DJ', 'Zambia': 'ZM',
   'Zimbabue': 'ZW',
-  // ── Nombres en inglés (countries.ts / players.ts, modo Mundial) ──
-  "Côte d'Ivoire": 'CI', 'Algeria': 'DZ', 'Belgium': 'BE', 'Brazil': 'BR', 'Cameroon': 'CM',
-  'Canada': 'CA', 'Croatia': 'HR', 'Czechia': 'CZ', 'Egypt': 'EG', 'France': 'FR',
-  'Gabon': 'GA', 'Germany': 'DE', 'Iran': 'IR', 'Italy': 'IT', 'Japan': 'JP',
-  'Mexico': 'MX', 'Morocco': 'MA', 'Netherlands': 'NL', 'Norway': 'NO', 'Poland': 'PL',
-  'Romania': 'RO', 'South Korea': 'KR', 'Spain': 'ES', 'Sweden': 'SE', 'Switzerland': 'CH',
-  'Turkey': 'TR', 'United Kingdom': 'GB', 'United States of America': 'US',
+  // ── Nombres en inglés: TODOS los países de countries.ts (mapa, Mundial, fotos D7). XK (Kosovo) es código de uso común, no ISO oficial.
+  // (Los nombres que coinciden con el español — Argentina, Chile, India… — ya están arriba.)
+  'Fiji': 'FJ', 'W. Sahara': 'EH', 'Canada': 'CA', 'United States of America': 'US', 'Kazakhstan': 'KZ', 'Uzbekistan': 'UZ',
+  'Papua New Guinea': 'PG', 'Dem. Rep. Congo': 'CD', 'Kenya': 'KE', 'Sudan': 'SD', 'Haiti': 'HT', 'Dominican Rep.': 'DO',
+  'Russia': 'RU', 'Falkland Is.': 'FK', 'Norway': 'NO', 'Greenland': 'GL', 'Fr. S. Antarctic Lands': 'TF', 'Timor-Leste': 'TL',
+  'South Africa': 'ZA', 'Lesotho': 'LS', 'Mexico': 'MX', 'Brazil': 'BR', 'Peru': 'PE', 'Panama': 'PA',
+  'Belize': 'BZ', 'Suriname': 'SR', 'France': 'FR', 'Puerto Rico': 'PR', 'Zimbabwe': 'ZW', 'Botswana': 'BW',
+  'Benin': 'BJ', 'Niger': 'NE', 'Cameroon': 'CM', "Côte d'Ivoire": 'CI', 'Guinea-Bissau': 'GW', 'Sierra Leone': 'SL',
+  'Central African Rep.': 'CF', 'Congo': 'CG', 'Gabon': 'GA', 'Eq. Guinea': 'GQ', 'Malawi': 'MW', 'eSwatini': 'SZ',
+  'Israel': 'IL', 'Lebanon': 'LB', 'Palestine': 'PS', 'Gambia': 'GM', 'Tunisia': 'TN', 'Algeria': 'DZ',
+  'Jordan': 'JO', 'United Arab Emirates': 'AE', 'Qatar': 'QA', 'Iraq': 'IQ', 'Oman': 'OM', 'Vanuatu': 'VU',
+  'Cambodia': 'KH', 'Thailand': 'TH', 'North Korea': 'KP', 'South Korea': 'KR', 'Bangladesh': 'BD', 'Bhutan': 'BT',
+  'Pakistan': 'PK', 'Afghanistan': 'AF', 'Tajikistan': 'TJ', 'Kyrgyzstan': 'KG', 'Turkmenistan': 'TM', 'Iran': 'IR',
+  'Syria': 'SY', 'Sweden': 'SE', 'Belarus': 'BY', 'Ukraine': 'UA', 'Poland': 'PL', 'Hungary': 'HU',
+  'Moldova': 'MD', 'Romania': 'RO', 'Lithuania': 'LT', 'Latvia': 'LV', 'Germany': 'DE', 'Greece': 'GR',
+  'Turkey': 'TR', 'Croatia': 'HR', 'Switzerland': 'CH', 'Luxembourg': 'LU', 'Belgium': 'BE', 'Netherlands': 'NL',
+  'Spain': 'ES', 'Ireland': 'IE', 'New Caledonia': 'NC', 'Solomon Is.': 'SB', 'New Zealand': 'NZ', 'Taiwan': 'TW',
+  'Italy': 'IT', 'Denmark': 'DK', 'United Kingdom': 'GB', 'Iceland': 'IS', 'Azerbaijan': 'AZ', 'Philippines': 'PH',
+  'Malaysia': 'MY', 'Brunei': 'BN', 'Slovenia': 'SI', 'Finland': 'FI', 'Slovakia': 'SK', 'Czechia': 'CZ',
+  'Japan': 'JP', 'Yemen': 'YE', 'Saudi Arabia': 'SA', 'N. Cyprus': 'CY', 'Cyprus': 'CY', 'Morocco': 'MA',
+  'Egypt': 'EG', 'Libya': 'LY', 'Ethiopia': 'ET', 'Djibouti': 'DJ', 'Somaliland': 'SO', 'Rwanda': 'RW',
+  'Bosnia and Herz.': 'BA', 'Macedonia': 'MK', 'Kosovo': 'XK', 'Trinidad and Tobago': 'TT', 'S. Sudan': 'SS', 'Antarctica': 'AQ',
 };
 
 /** Código ISO-3166 alfa-2 del país (nombre en español del catálogo o en inglés del mapa), o null. */

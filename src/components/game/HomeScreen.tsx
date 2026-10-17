@@ -7,7 +7,9 @@ import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
 import DailyChestModal from './DailyChestModal';
 import { checkStreak, claimDailyReward, getStreakAtRisk, protectStreak, type StreakReward } from '@/lib/dailyStreak';
 import EnergyBar from './EnergyBar';
-import AutoDemo from './AutoDemo';
+import { lazy, Suspense } from 'react';
+// La demo dibuja el mapa (polígonos pesados): se carga aparte para que el inicio pinte antes
+const AutoDemo = lazy(() => import('./AutoDemo'));
 import Mascot from './Mascot';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import { playButtonTap, playAccordion } from '@/lib/sounds';
@@ -277,7 +279,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             )}
           </div>
           <div className="rounded-2xl overflow-hidden border border-border/60">
-            <AutoDemo hideTagline />
+            <Suspense fallback={<div className="w-full aspect-[16/9] rounded-xl bg-muted/20" />}>
+              <AutoDemo hideTagline />
+            </Suspense>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-1 text-center">
             {[t('home_step1'), t('home_step2'), t('home_step3')].map((s, i) => (

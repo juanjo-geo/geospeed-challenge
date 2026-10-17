@@ -19,6 +19,7 @@ import { fireScoreFly, fireMultiplierFeedback, fireStreakBorder, fireRoundFlash 
 import { getMultiplier, haversineDistance, formatDistance, addGameHistory, getGameHistory } from '@/lib/gameUtils';
 import FinalResultScreen from './FinalResultScreen';
 import Wordmark from '@/components/ui/Wordmark';
+import CountryPhoto from '@/components/ui/CountryPhoto';
 import { saveGameResult } from '@/lib/gameResults';
 import { consumeLife } from '@/lib/energySystem';
 import { useIsPortraitMobile } from '@/hooks/use-mobile';
@@ -523,6 +524,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
             <div className={`flex flex-col gap-2 rounded-3xl border border-border/80 bg-card/85 p-3 sm:p-4 shadow-2xl backdrop-blur-md overflow-y-auto ${
               isPortraitMobile ? 'w-full max-w-md max-h-[58vh]' : 'w-[clamp(18rem,40vw,26rem)] max-h-[94%] [@media(max-height:420px)]:gap-1 [@media(max-height:420px)]:p-2'
             }`}>
+              {/* Tarjeta del país (D7): foto del país correcto si existe */}
+              <CountryPhoto country={feedback.correctCountry} size="sm" className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-20 rounded-t-3xl [@media(max-height:420px)]:hidden" />
               <div className="text-center">
                 <span className="text-3xl sm:text-4xl block animate-record-pop [@media(max-height:420px)]:hidden" style={{ filter: 'drop-shadow(0 0 10px currentColor)' }}>
                   {BAND_EMOJI[feedback.band]}

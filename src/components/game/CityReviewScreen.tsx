@@ -8,6 +8,7 @@ import { useI18n } from '@/i18n';
 import WorldMapCanvas from './WorldMapCanvas';
 import Wordmark from '@/components/ui/Wordmark';
 import Flag from '@/components/ui/Flag';
+import CountryPhoto from '@/components/ui/CountryPhoto';
 
 interface CityReviewScreenProps {
   rounds: RoundResult[];
@@ -123,6 +124,9 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
         </div>
 
         <aside className="shrink-0 landscape:w-[min(38%,22rem)] max-h-[45%] landscape:max-h-none rounded-2xl border border-border/80 bg-card/85 backdrop-blur-md p-3 short:p-2 overflow-y-auto flex flex-col gap-2 short:gap-1.5">
+          <CountryPhoto country={r.city.country} className="-mx-3 -mt-3 short:-mx-2 short:-mt-2 h-24 short:h-16 rounded-t-2xl">
+            <span className="text-xs font-bold text-white drop-shadow">{r.city.country}</span>
+          </CountryPhoto>
           <h3 className="flex items-center gap-2 font-black text-base sm:text-xl short:text-sm border-b border-border/60 pb-1.5 short:pb-1">
             <span aria-hidden>📖</span> {t('review_toRemember')}
           </h3>

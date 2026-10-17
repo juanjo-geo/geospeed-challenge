@@ -14,7 +14,7 @@ const Terms = () => {
             to="/"
             className="inline-flex items-center gap-2 rounded-lg border border-[#f5c842]/30 px-4 py-2 text-sm text-[#f5c842] transition hover:bg-[#f5c842]/10"
           >
-            &larr; GeoSpeed IQ Challenge
+            &larr; GeoSpeed Challenge
           </Link>
           <a
             href="#english"
@@ -31,7 +31,7 @@ const Terms = () => {
           Ultima actualizacion: 18 de mayo de 2026
         </p>
         <p className="mb-8 text-sm text-[#d4d4c8]/60">
-          Aplicacion: GeoSpeed IQ Challenge &middot; Desarrollador: JuanJo Grimar
+          Aplicacion: GeoSpeed Challenge &middot; Desarrollador: JuanJo Grimar
         </p>
 
         <div className="rounded-xl border border-[#f5c842]/10 bg-[#0d1f12] p-8">
@@ -39,7 +39,7 @@ const Terms = () => {
 
           <SectionTitle>1. Aceptacion de los Terminos</SectionTitle>
           <p className="text-[#d4d4c8] leading-relaxed">
-            Al descargar, instalar o utilizar GeoSpeed IQ Challenge (&quot;la App&quot;),
+            Al descargar, instalar o utilizar GeoSpeed Challenge (&quot;la App&quot;),
             aceptas estos Terminos y Condiciones en su totalidad. Si no estas de acuerdo
             con alguno de estos terminos, no debes usar la App. Nos reservamos el derecho
             de modificar estos terminos en cualquier momento; la version actualizada sera
@@ -48,7 +48,7 @@ const Terms = () => {
 
           <SectionTitle>2. Descripcion del Servicio</SectionTitle>
           <p className="text-[#d4d4c8] leading-relaxed">
-            GeoSpeed IQ Challenge es un juego de geografia interactivo disponible en web
+            GeoSpeed Challenge es un juego de geografia interactivo disponible en web
             (geospeed-challenge.vercel.app), iOS y Android. La App ofrece multiples modos
             de juego, incluyendo modo clasico, contrarreloj, duelos 1v1, desafio diario y
             modos regionales. El juego es gratuito con opciones de compra dentro de la app
@@ -107,7 +107,7 @@ const Terms = () => {
           <p className="text-[#d4d4c8] leading-relaxed">
             Todo el contenido de la App, incluyendo pero no limitado a: codigo fuente, diseno,
             graficos, logotipos, iconos, la base de datos de ciudades, el sistema de puntuacion
-            y la marca &quot;GeoSpeed IQ Challenge&quot;, es propiedad de JuanJo Grimar o se
+            y la marca &quot;GeoSpeed Challenge&quot;, es propiedad de JuanJo Grimar o se
             utiliza con la debida licencia. No se concede ninguna licencia para reproducir,
             distribuir o crear obras derivadas sin autorizacion expresa por escrito.
           </p>
@@ -181,12 +181,12 @@ const Terms = () => {
               Last updated: May 18, 2026
             </p>
             <p className="mb-8 text-sm text-[#d4d4c8]/60">
-              App: GeoSpeed IQ Challenge &middot; Developer: JuanJo Grimar
+              App: GeoSpeed Challenge &middot; Developer: JuanJo Grimar
             </p>
 
             <SectionTitle>1. Acceptance of Terms</SectionTitle>
             <p className="text-[#d4d4c8] leading-relaxed">
-              By downloading, installing, or using GeoSpeed IQ Challenge (&quot;the App&quot;),
+              By downloading, installing, or using GeoSpeed Challenge (&quot;the App&quot;),
               you agree to these Terms and Conditions in full. If you do not agree with any
               of these terms, you must not use the App. We reserve the right to modify these
               terms at any time; the updated version will be posted on this page with a new
@@ -195,7 +195,7 @@ const Terms = () => {
 
             <SectionTitle>2. Service Description</SectionTitle>
             <p className="text-[#d4d4c8] leading-relaxed">
-              GeoSpeed IQ Challenge is an interactive geography game available on the web
+              GeoSpeed Challenge is an interactive geography game available on the web
               (geospeed-challenge.vercel.app), iOS, and Android. The App offers multiple game
               modes including classic, time attack, 1v1 duels, daily challenge, and regional
               modes. The game is free to play with optional in-app purchases and advertising.
@@ -251,7 +251,7 @@ const Terms = () => {
             <p className="text-[#d4d4c8] leading-relaxed">
               All content in the App, including but not limited to: source code, design,
               graphics, logos, icons, the city database, the scoring system, and the
-              &quot;GeoSpeed IQ Challenge&quot; brand, is the property of JuanJo Grimar or
+              &quot;GeoSpeed Challenge&quot; brand, is the property of JuanJo Grimar or
               is used under appropriate license. No license is granted to reproduce,
               distribute, or create derivative works without express written authorization.
             </p>

@@ -24,6 +24,23 @@ export default defineConfig(({ mode }) => ({
       // En la web nunca se ejecuta (PaymentProvider.load() no se llama), así que lo marcamos externo
       // para que el build de Vite/Rollup no intente resolverlo y falle.
       external: ["@revenuecat/purchases-capacitor"],
+      output: {
+        // Vendors en chunks propios: cambian poco entre despliegues y el navegador los conserva en caché.
+        // Los datos pesados (polígonos del mapa, catálogo de ciudades) también van aparte: solo se
+        // descargan cuando una pantalla los necesita (mapa, splash, demo del inicio).
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (/[\/]react(-dom|-router|-router-dom)?[\/]|[\/]scheduler[\/]/.test(id)) return "vendor-react";
+            if (id.includes("@supabase")) return "vendor-supabase";
+            if (id.includes("@radix-ui") || id.includes("@tanstack")) return "vendor-ui";
+            return "vendor";
+          }
+          if (id.includes("/src/data/countries.ts")) return "data-countries";
+          if (id.includes("/src/data/cities.ts")) return "data-cities";
+          return undefined;
+        },
+      },
     },
+    chunkSizeWarningLimit: 600,
   },
 }));

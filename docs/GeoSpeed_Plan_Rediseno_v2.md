@@ -382,7 +382,8 @@ Hecho: Historial de partidas sobre el servidor (o lo local sin sesión) con filt
 - Ranking: Top 10 con posición propia vía RPC, filtros región/dificultad, incluir Mundial y Caos (B2), nombre de jugador en vez de iniciales para registrados.
 - **Criterio de salida:** posición propia correcta fuera del Top 10; filtros coherentes con los contadores.
 
-### F6 — Catálogo, QA y cierre (6-9 días) · requiere D7
+### F6 — Catálogo, QA y cierre (6-9 días) · requiere D7 · 🟡 PARTE DE CÓDIGO HECHA (18 oct 2026, rama `feat/f6-cierre`)
+Hecho: ISO para todos los países del mapa; tubería de fotos de países lista (archivos `public/countries/<ISO>.webp`, miniaturas, créditos en Soporte) y colocada en feedback, revisión, Mundial y comparación; paquete inicial dividido (vendors y datos aparte, globo y demo en carga diferida); ficha de tienda alineada al nombre GeoSpeed Challenge y a las URLs reales. Pendiente de JuanJo: las 195 fotos con créditos (C4), medir Lighthouse en producción, capturas y gráfico de la tienda.
 - Añadir ISO-3166 a `countries.ts` y mapa ciudad→ISO. Pipeline de optimización de las 195 fotos (WebP, 2 tamaños, lazy) y tabla/JSON de créditos visible en Privacidad o Soporte.
 - Uso según D7 (feedback / revisión / tarjeta Mundial).
 - QA transversal: estados vacíos, errores de red, modo reducir movimiento, daltónico, teclado y gamepad, PWA (subir `CACHE_NAME`), Lighthouse ≥ 90.

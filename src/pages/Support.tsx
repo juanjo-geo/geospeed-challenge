@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { fetchPhotoCredits, type PhotoCredit } from '@/lib/countryPhotos';
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 const FAQItem = ({ q, a }: { q: string; a: string }) => {
@@ -31,7 +32,7 @@ const Support = () => {
             to="/"
             className="inline-flex items-center gap-2 rounded-lg border border-[#f5c842]/30 px-4 py-2 text-sm text-[#f5c842] transition hover:bg-[#f5c842]/10"
           >
-            ← GeoSpeed IQ Challenge
+            ← GeoSpeed Challenge
           </Link>
           <a
             href="#english"
@@ -45,7 +46,7 @@ const Support = () => {
           Centro de Soporte
         </h1>
         <p className="mb-8 text-[#d4d4c8]/60">
-          GeoSpeed IQ Challenge &middot; Desarrollado por JuanJo Grimar
+          GeoSpeed Challenge &middot; Desarrollado por JuanJo Grimar
         </p>
 
         <div className="rounded-xl border border-[#f5c842]/10 bg-[#0d1f12] p-8">
@@ -86,7 +87,7 @@ const Support = () => {
             />
             <FAQItem
               q="Como desactivo las notificaciones?"
-              a="Puedes desactivar las notificaciones desde la configuracion de tu dispositivo: Ajustes > Notificaciones > GeoSpeed IQ Challenge."
+              a="Puedes desactivar las notificaciones desde la configuracion de tu dispositivo: Ajustes > Notificaciones > GeoSpeed Challenge."
             />
           </div>
 
@@ -125,13 +126,15 @@ const Support = () => {
             <li>Si es un problema de pago, incluye tu recibo o ID de transaccion</li>
           </ul>
 
+          <PhotoCredits title="Créditos de las fotos de países" intro="Las fotografías de países que aparecen en el juego pertenecen a sus autores y se usan bajo las licencias indicadas." />
+
           {/* ────────── ENGLISH VERSION ────────── */}
           <div id="english" className="border-t border-[#f5c842]/20 pt-10">
             <h1 className="mb-2 text-4xl font-extrabold text-[#f5c842]">
               Support Center
             </h1>
             <p className="mb-8 text-[#d4d4c8]/60">
-              GeoSpeed IQ Challenge &middot; Developed by JuanJo Grimar
+              GeoSpeed Challenge &middot; Developed by JuanJo Grimar
             </p>
 
             <h2 className="mb-6 text-2xl font-bold text-[#f5c842]">
@@ -169,7 +172,7 @@ const Support = () => {
               />
               <FAQItem
                 q="How do I turn off notifications?"
-                a="You can disable notifications from your device settings: Settings > Notifications > GeoSpeed IQ Challenge."
+                a="You can disable notifications from your device settings: Settings > Notifications > GeoSpeed Challenge."
               />
             </div>
 
@@ -217,5 +220,26 @@ const Support = () => {
     </div>
   );
 };
+
+/** Créditos de las fotos de países (public/countries/credits.json). No renderiza nada si no hay fotos. */
+function PhotoCredits({ title, intro }: { title: string; intro: string }) {
+  const [credits, setCredits] = useState<PhotoCredit[]>([]);
+  useEffect(() => { fetchPhotoCredits().then(setCredits); }, []);
+  if (credits.length === 0) return null;
+  return (
+    <>
+      <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">{title}</h2>
+      <p className="mb-3 text-sm text-[#d4d4c8]/70">{intro}</p>
+      <ul className="mb-10 grid gap-1 text-xs text-[#d4d4c8] sm:grid-cols-2">
+        {credits.map(c => (
+          <li key={c.iso}>
+            <span className="font-mono text-[#f5c842]">{c.iso}</span> · {c.author ?? '—'}{c.source ? ` · ${c.source}` : ''}{c.license ? ` · ${c.license}` : ''}
+            {c.url && <> · <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline">↗</a></>}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
 
 export default Support;

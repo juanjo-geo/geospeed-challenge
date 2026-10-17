@@ -3,7 +3,9 @@ import { unlockAudio } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import Wordmark from '@/components/ui/Wordmark';
 import Mascot from './Mascot';
-import SplashGlobe from './SplashGlobe';
+import { lazy, Suspense } from 'react';
+// El globo trae los polígonos del mapa (~100 KB): se carga aparte para no frenar el primer pintado
+const SplashGlobe = lazy(() => import('./SplashGlobe'));
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -60,7 +62,9 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           style={{ opacity: shown ? 1 : 0, transform: shown ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.92)' }}
         >
           <div className="absolute bottom-0 left-[3%] w-[94%] rounded-full shadow-[0_0_60px_hsl(var(--accent)/0.35)]">
-            <SplashGlobe />
+            <Suspense fallback={<div className="w-full aspect-square rounded-full" style={{ background: 'radial-gradient(circle at 35% 35%, hsl(var(--accent) / 0.35), hsl(var(--brand-navy-deep)) 70%)' }} />}>
+              <SplashGlobe />
+            </Suspense>
           </div>
           {/* Ondas donde la mascota "aterriza" */}
           <span className="absolute left-1/2 top-[30%] -translate-x-1/2 w-[30%] aspect-[3/1] rounded-[50%] border-2 border-accent/70 animate-ping pointer-events-none" aria-hidden />
