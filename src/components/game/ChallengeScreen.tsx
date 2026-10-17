@@ -18,6 +18,9 @@ interface ChallengeScreenProps {
   onSignIn: () => void;
   /** "Crear otro reto" desde el resultado */
   onCreateAnother: () => void;
+  onMyChallenges: () => void;
+  /** Pedir revancha desde el resultado (derrota / empate) */
+  onRematch: (detail: ChallengeDetail) => void;
 }
 
 /**
@@ -25,7 +28,7 @@ interface ChallengeScreenProps {
  *  - Creador / participante: "Tu reto está creado": código, copiar, compartir, condiciones y participantes.
  *  - Invitado que abre el código o el enlace /reto/:code: quién lo reta, condiciones y "Aceptar y jugar".
  */
-export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCreateAnother }: ChallengeScreenProps) {
+export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCreateAnother, onMyChallenges, onRematch }: ChallengeScreenProps) {
   const { t } = useI18n();
   const [challenge, setChallenge] = useState<Challenge | null>(source.type === 'challenge' ? source.challenge : null);
   const [preview, setPreview] = useState<ChallengePreview | null>(null);
@@ -42,7 +45,8 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
       try {
         const p = await previewChallenge(source.code);
         if (cancelled) return;
-        if (p.my_role) {
+        // Ya participa y aceptó (o es el creador) → vista del reto. Invitado a una revancha sin aceptar → invitación.
+        if (p.my_role === 'creator' || (p.my_role === 'opponent' && p.accepted)) {
           const ch = await joinChallenge(source.code);
           if (!cancelled) setChallenge(ch);
         } else {
@@ -131,16 +135,24 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
   // ── Invitado: aceptar ──
   if (preview && !challenge) {
     return (
-      <Shell onBack={onBack} title={t('ch_inviteTitle', { name: preview.creator_name })} subtitle={t('ch_inviteSub')}>
+      <Shell onBack={onBack} title={preview.is_rematch ? t('ch_rematchInviteTitle') : t('ch_inviteTitle', { name: preview.creator_name })} subtitle={preview.is_rematch ? t('ch_rematchInviteSub', { name: preview.creator_name }) : t('ch_inviteSub')}>
         <div className="grid gap-4 md:grid-cols-2 md:items-start">
           <section className="rounded-3xl border border-accent/40 bg-card/70 p-5 text-center flex flex-col items-center">
             <Mascot state="wink" className="w-24 sm:w-28 short:w-16" />
             <p className="mt-2 text-lg sm:text-xl font-black">{preview.creator_name}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">{t('ch_inviteFrom')}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{preview.is_rematch ? t('ch_rematchInviteFrom') : t('ch_inviteFrom')}</p>
+            {preview.is_rematch && <span className="mt-2 rounded-full border border-primary text-primary px-3 py-0.5 text-xs font-black">↻ {t('ch_rematchBadge')}</span>}
             <p className="mt-3 font-mono font-black text-2xl tracking-[0.4em] text-accent">{preview.code}</p>
           </section>
           <div className="flex flex-col gap-4">
             {conditions}
+            {preview.is_rematch && (
+              <section className="rounded-3xl border border-border bg-card/70 p-4">
+                <h2 className="text-base sm:text-lg font-black mb-2">ⓘ {t('ch_newLead')} <span className="text-primary">{t('ch_newTail')}</span></h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">🏆 {t('ch_prevKept')}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">🙈 {t('ch_hiddenUntilBoth', { name: preview.creator_name })}</p>
+              </section>
+            )}
             <p className="rounded-2xl border border-border bg-muted/20 p-3 text-xs sm:text-sm text-muted-foreground">ⓘ {t('ch_restartNote')}</p>
           </div>
         </div>
@@ -150,6 +162,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
           </button>
           <button onClick={() => { playButtonTap(); onBack(); }} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">{t('ch_notNow')}</button>
         </div>
+        {preview.is_rematch && <p className="mt-2 text-center text-xs text-muted-foreground">{t('ch_staysInMine')}</p>}
       </Shell>
     );
   }
@@ -164,7 +177,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
 
   // ── Ya jugué: resultado (pendiente / victoria / derrota / empate) ──
   if (detail?.my_finished) {
-    return <ChallengeResultScreen detail={detail} onBack={onBack} onCreateAnother={onCreateAnother} onRefresh={refresh} />;
+    return <ChallengeResultScreen detail={detail} onBack={onBack} onCreateAnother={onCreateAnother} onRefresh={refresh} onRematch={() => onRematch(detail)} onMyChallenges={onMyChallenges} />;
   }
 
   // ── Reto creado / estado ──
@@ -173,10 +186,12 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
   const youStatus = meFinished ? { label: t('ch_statusDone'), cls: 'border-accent text-accent' } : { label: t('ch_statusNotPlayed'), cls: 'border-primary text-primary' };
   const rivalStatus = !rival ? { label: t('ch_statusToJoin'), cls: 'border-accent/60 text-accent' }
     : rival.finished ? { label: t('ch_statusDone'), cls: 'border-accent text-accent' }
+    : rival.accepted === false ? { label: t('ch_statusToAccept'), cls: 'border-accent/60 text-accent' }
     : { label: t('ch_statusJoined'), cls: 'border-primary text-primary' };
+  const isRematch = !!detail?.is_rematch || !!challenge.parent_challenge_id;
 
   return (
-    <Shell onBack={onBack} title={challenge.is_creator ? t('ch_createdTitle') : t('ch_statusTitle')} subtitle={t('ch_createdSub')}>
+    <Shell onBack={onBack} title={isRematch && challenge.is_creator ? t('ch_rematchSentTitle') : challenge.is_creator ? t('ch_createdTitle') : t('ch_statusTitle')} subtitle={isRematch && challenge.is_creator ? t('ch_rematchSentSub') : t('ch_createdSub')}>
       <div className="grid gap-4 md:grid-cols-2 md:items-start">
         <section className="rounded-3xl border border-accent/40 bg-card/70 p-4 sm:p-5 flex flex-col items-center text-center">
           <Mascot state="celebrate" className="w-24 sm:w-28 short:w-14" />
@@ -190,7 +205,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
           <button onClick={share} className="mt-3 w-full max-w-sm rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10 active:scale-[0.98]">
             🔗 {t('ch_share')}
           </button>
-          <p className="mt-1.5 text-[11px] sm:text-xs text-muted-foreground">{t('ch_shareHint')}</p>
+          <p className="mt-1.5 text-[11px] sm:text-xs text-muted-foreground">{isRematch && rival ? t('ch_rematchInInbox') : t('ch_shareHint')}</p>
         </section>
 
         <div className="flex flex-col gap-4">
@@ -209,16 +224,17 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
         ⓘ <b>{t('ch_startNow')}</b> <span className="text-muted-foreground">{t('ch_compareWhenBoth')}</span>
       </p>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-[1.4fr_1fr]">
+      <div className="mt-4 grid gap-2 sm:grid-cols-[1.4fr_1fr_1fr]">
         {!meFinished ? (
           <button onClick={() => { playButtonTap(); onPlay(challenge); }} className="btn3d rounded-2xl py-3.5 short:py-2.5 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
-            ▶ {t('ch_playMine')}
+            ▶ {isRematch ? t('ch_playRematch') : t('ch_playMine')}
           </button>
         ) : (
           <div className="rounded-2xl border border-accent/50 bg-accent/10 py-3 text-center font-bold text-accent">
             {detail?.status === 'completed' ? t('ch_resultReady') : t('ch_waitingFriend')}
           </div>
         )}
+        <button onClick={() => { playButtonTap(); onMyChallenges(); }} className="rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">📋 {t('mc_viewMine')}</button>
         <button onClick={() => { playButtonTap(); onBack(); }} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">🏠 {t('ob_backHome')}</button>
       </div>
     </Shell>

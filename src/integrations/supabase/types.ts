@@ -436,6 +436,8 @@ export type Database = {
           status: string
           created_at: string
           completed_at: string | null
+          rounds_total: number
+          is_rematch: boolean
           my_role: string
           state: string
           rival_name: string | null

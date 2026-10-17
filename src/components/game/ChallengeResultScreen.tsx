@@ -20,6 +20,8 @@ interface ChallengeResultScreenProps {
   onBack: () => void;
   onCreateAnother: () => void;
   onRefresh: () => void;
+  onRematch: () => void;
+  onMyChallenges: () => void;
 }
 
 type View = 'result' | 'compare' | 'map' | 'answers' | 'answer-city';
@@ -56,7 +58,7 @@ function boundsFor(pts: { lat: number; lon: number }[]): MapBounds {
  * Resultado del reto (maquetas Reto_Resultado_Pendiente / Final / Derrota / Empate, Comparación por
  * ciudad y Revisión del mapa). Se muestra cuando el jugador ya terminó su partida del reto.
  */
-export default function ChallengeResultScreen({ detail, onBack, onCreateAnother, onRefresh }: ChallengeResultScreenProps) {
+export default function ChallengeResultScreen({ detail, onBack, onCreateAnother, onRefresh, onRematch, onMyChallenges }: ChallengeResultScreenProps) {
   const { t, locale } = useI18n();
   const { displayName } = useAuth();
   const myName = displayName || t('ch_you');
@@ -205,12 +207,27 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
                 </table>
                 <p className="mt-2 text-[11px] sm:text-xs text-muted-foreground text-center">ⓘ {t('chr_sameForBoth')}</p>
               </section>
-              <button onClick={() => { playButtonTap(); setView('compare'); }} className="btn3d w-full rounded-2xl py-3.5 short:py-2.5 font-black text-base sm:text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
-                📋 {t('chr_compareByCity')}
-              </button>
-              <button onClick={() => { playButtonTap(); onCreateAnother(); }} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">
-                ＋ {t('chr_createAnother')}
-              </button>
+              {outcome === 'win' ? (
+                <>
+                  <button onClick={() => { playButtonTap(); setView('compare'); }} className="btn3d w-full rounded-2xl py-3.5 short:py-2.5 font-black text-base sm:text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
+                    📋 {t('chr_compareByCity')}
+                  </button>
+                  <button onClick={() => { playButtonTap(); onCreateAnother(); }} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">
+                    ＋ {t('chr_createAnother')}
+                  </button>
+                </>
+              ) : (
+                /* Derrota y empate: Pedir revancha es la acción principal (consolidado §5) */
+                <>
+                  <button onClick={() => { playButtonTap(); onRematch(); }} className="btn3d w-full rounded-2xl py-3 short:py-2.5 px-4 text-primary-foreground flex flex-col items-center leading-tight" style={{ background: 'var(--grad-cta)' }}>
+                    <span className="font-black text-base sm:text-lg">↻ {t('chr_rematch')}</span>
+                    <span className="text-[11px] sm:text-xs font-semibold opacity-80">{t('chr_rematchSub')}</span>
+                  </button>
+                  <button onClick={() => { playButtonTap(); setView('compare'); }} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">
+                    📋 {t('chr_compareByCity')}
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -228,6 +245,9 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
           ? <button onClick={() => { playButtonTap(); setView('answers'); }} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">📄 {t('chr_myAnswers')}</button>
           : <button onClick={share} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">📤 {t('chr_shareResult')}</button>}
       </div>
+      <p className="mt-3 text-center">
+        <button onClick={() => { playButtonTap(); onMyChallenges(); }} className="text-xs sm:text-sm font-bold text-accent hover:underline">📋 {t('mc_viewMine')}</button>
+      </p>
     </Shell>
   );
 }

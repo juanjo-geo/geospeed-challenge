@@ -24,6 +24,8 @@ interface HomeScreenProps {
   onDailyChallenge: () => void;
   onWorldChallenge: () => void;
   onStartTraining: () => void;
+  /** F4: bandeja Mis retos (4ª tarjeta de acceso) */
+  onMyChallenges?: () => void;
   onSpeedDemon?: () => void;
   onOpenStore?: () => void;
   onOpenProfile?: () => void;
@@ -85,7 +87,7 @@ function difficultyLabel(raw: string, t: (key: string) => string): string {
  * Banner "¿Cómo se juega?" · "Tu próxima aventura" (región + dificultad en hojas) · tarjetas de acceso ·
  * nivel + accesos a ranking/historial. Todo visible desde la primera visita (decisión D13).
  */
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onOpenProfile, onOpenSettings, onOpenHistory, onMoreModes, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { user, displayName } = useAuth();
   const { t, locale } = useI18n();
   const navigate = useNavigate();
@@ -328,7 +330,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         <AccessCard emoji="📅" title={t('home_dailyCard')} desc={dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-2 right-2 text-xs opacity-70 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
         <AccessCard emoji="🤝" title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
         <AccessCard emoji="⚡" title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
-        <AccessCard emoji="🎯" title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />
+        {onMyChallenges
+          ? <AccessCard emoji="📋" title={t('home_myChallenges')} desc={t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />
+          : <AccessCard emoji="🎯" title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />}
       </div>
 
       {/* ── Cofre diario ── */}

@@ -95,6 +95,7 @@ const FinalResultScreen = lazyWithReload(() => import('@/components/game/FinalRe
 const MultiplayerLobby = lazyWithReload(() => import('@/components/game/MultiplayerLobby'));
 const FriendsScreen = lazyWithReload(() => import('@/components/game/FriendsScreen'));
 const ChallengeScreen = lazyWithReload(() => import('@/components/game/ChallengeScreen'));
+const MyChallengesScreen = lazyWithReload(() => import('@/components/game/MyChallengesScreen'));
 const WaitingRoom = lazyWithReload(() => import('@/components/game/WaitingRoom'));
 const MultiplayerResultScreen = lazyWithReload(() => import('@/components/game/MultiplayerResultScreen'));
 const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
@@ -116,7 +117,7 @@ import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
-import { challengeCitiesToGame, mockRecordMyResult, type Challenge } from '@/lib/challenges';
+import { challengeCitiesToGame, mockRecordMyResult, createChallenge, type Challenge, type ChallengeDetail, type MyChallenge } from '@/lib/challenges';
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame, pullFromCloud, setLocalData } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
@@ -137,10 +138,10 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'friends' | 'challenge' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+type Phase = 'splash' | 'home' | 'friends' | 'challenge' | 'my-challenges' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge'];
+const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -629,6 +630,20 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setPhase('countdown');
   }, []);
   const handleViewChallenge = useCallback(() => { setActiveChallenge(null); setPhase('challenge'); window.scrollTo(0, 0); }, []);
+  const handleMyChallenges = useCallback(() => { setActiveChallenge(null); setPhase('my-challenges'); window.scrollTo(0, 0); }, []);
+  const handleOpenMyChallenge = useCallback((item: MyChallenge) => { setChallengeSource({ type: 'code', code: item.code }); setPhase('challenge'); window.scrollTo(0, 0); }, []);
+  const [rematchBusy, setRematchBusy] = useState(false);
+  // Revancha (F4): mismo rival y condiciones, ciudades nuevas; el rival la recibe en Mis retos
+  const handleRematch = useCallback(async (parent: ChallengeDetail) => {
+    if (rematchBusy) return;
+    setRematchBusy(true);
+    try {
+      const ch = await createChallenge({ mode: parent.mode, difficulty: parent.difficulty, requestId: `rematch-${parent.id}`, parentId: parent.id, excludeCities: parent.cities.map(c => c.name) });
+      setChallengeSource({ type: 'challenge', challenge: ch });
+      setPhase('challenge'); window.scrollTo(0, 0);
+    } catch { /* la pantalla del reto muestra el error si se reintenta */ }
+    finally { setRematchBusy(false); }
+  }, [rematchBusy]);
   const handleRevenge = useCallback((rounds: RoundResult[]) => {
     // Pick worst 5 rounds (lowest score) — one-time only
     const worst = [...rounds].sort((a, b) => a.totalPoints - b.totalPoints).slice(0, 5);
@@ -890,7 +905,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'profile') {
-      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} />;
+      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} onMyChallenges={handleMyChallenges} />;
     }
 
     if (phase === 'settings') {
@@ -1086,8 +1101,14 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onBack={handleGoHome}
           onSignIn={() => navigate('/auth')}
           onCreateAnother={handleFriends}
+          onMyChallenges={handleMyChallenges}
+          onRematch={handleRematch}
         />
       );
+    }
+
+    if (phase === 'my-challenges') {
+      return <MyChallengesScreen onBack={handleGoHome} onOpen={handleOpenMyChallenge} onCreate={handleFriends} onSignIn={() => navigate('/auth')} />;
     }
 
     if (phase === 'mp-lobby') {
@@ -1223,7 +1244,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 

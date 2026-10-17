@@ -32,6 +32,7 @@ interface ProfileScreenProps {
   onBack: () => void;
   /** Sección inicial (la pestaña "Progreso" de la barra abre el historial) */
   initialTab?: ProfileTab;
+  onMyChallenges?: () => void;
 }
 
 function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
@@ -40,7 +41,7 @@ function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
 }
 
 /** Mi perfil (maqueta Perfil_APROBADA_v1): explorador + nivel, estadísticas y accesos a cada sección. */
-export default function ProfileScreen({ onBack, initialTab = 'overview' }: ProfileScreenProps) {
+export default function ProfileScreen({ onBack, initialTab = 'overview', onMyChallenges }: ProfileScreenProps) {
   const { user, displayName } = useAuth();
   const { t, locale } = useI18n();
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || 'mascot');
@@ -152,6 +153,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview' }: Profi
                   <ExploreRow icon="📊" title={t('profile_historyTitle')} desc={t('profile_historyDesc')} onClick={() => open('history')} />
                   <ExploreRow icon="🏅" title={t('profile_levels')} desc={t('profile_levelsDesc')} onClick={() => open('levels')} />
                   <ExploreRow icon="🎖️" title={t('profile_badgesTitle')} desc={`${unlockedBadges}/${badges.length} ${t('profile_badgesUnlocked')}`} onClick={() => open('badges')} />
+                  {onMyChallenges && <ExploreRow icon="📋" title={t('home_myChallenges')} desc={t('profile_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />}
                   <ExploreRow icon="📈" title={t('profile_detailedStats')} desc={t('profile_detailedStatsDesc')} onClick={() => open('stats')} />
                 </div>
               </section>

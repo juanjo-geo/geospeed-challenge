@@ -368,7 +368,8 @@ Sigue: F4 (Mis retos y revancha).
 - Ocultar duelo en vivo tras flag (D8). Job de limpieza (D4).
 - **Criterio de salida:** los 7 criterios de aceptación del consolidado §3.2 pasan en pruebas; el rival no puede leer el puntaje ajeno vía API antes de terminar ambos (probar con `curl` y el anon key).
 
-### F4 — Mis retos y Revancha (6-9 días) · requiere F3
+### F4 — Mis retos y Revancha (6-9 días) · requiere F3 · ✅ HECHO (18 oct 2026, rama `feat/f4-mis-retos`; migración pendiente de aplicar)
+Hecho: bandeja Mis retos con filtros y contadores desde la misma consulta, estados por aceptar / te falta jugar / esperando / resultado listo, estado vacío distinto del error de carga, accesos desde Inicio (4ª tarjeta) y Perfil; revancha desde derrota y empate con mismo rival y condiciones, ciudades nuevas excluyendo las del original, invitación entregada en Mis retos del amigo (sin mensajes externos), pantallas Revancha enviada y Te piden revancha, "Ahora no" conserva la invitación.
 - Bandeja Mis retos móvil/escritorio con filtros y contadores desde la misma consulta; estados por aceptar / te falta jugar / esperando / listo; estado vacío; distinguir error de carga de "cero retos".
 - Accesos desde Home v2 y Perfil.
 - Revancha: `parent_challenge_id`, condiciones heredadas, ciudades nuevas excluyendo las del padre (si no alcanzan, se permite repetir las menos recientes y se avisa), sin tocar el resultado original.

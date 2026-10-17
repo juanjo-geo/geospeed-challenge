@@ -32,6 +32,7 @@ export interface Challenge {
   seconds_per_round: number;
   cities: ChallengeCity[];
   status: 'open' | 'active' | 'completed' | 'cancelled';
+  parent_challenge_id?: string | null;
   created_at: string;
   completed_at: string | null;
   is_creator: boolean;
@@ -49,6 +50,9 @@ export interface ChallengePreview {
   creator_avatar: string | null;
   /** null = todavía no participa; 'creator' = es su propio reto */
   my_role: 'creator' | 'opponent' | null;
+  /** Invitado a una revancha: ya está como participante pero aún no aceptó */
+  accepted: boolean;
+  is_rematch: boolean;
 }
 
 export interface ChallengeRound {
@@ -61,10 +65,21 @@ export interface ChallengeResult { score: number; end_reason: string; rounds: Ch
 export interface ChallengeDetail extends Challenge {
   my_role: 'creator' | 'opponent';
   my_finished: boolean;
-  rival: { name: string; avatar: string | null; finished: boolean } | null;
+  is_rematch?: boolean;
+  rival: { name: string; avatar: string | null; accepted?: boolean; finished: boolean } | null;
   my_result: ChallengeResult | null;
   /** Solo cuando el reto está completado (ambos terminaron) */
   rival_result: ChallengeResult | null;
+}
+
+export type ChallengeState = 'to_accept' | 'to_play' | 'waiting' | 'ready';
+/** Fila de la bandeja "Mis retos" (RPC my_challenges) */
+export interface MyChallenge {
+  id: string; code: string; mode: GameMode; difficulty: Difficulty; status: Challenge['status'];
+  created_at: string; completed_at: string | null; rounds_total: number; is_rematch: boolean;
+  my_role: 'creator' | 'opponent'; state: ChallengeState;
+  rival_name: string | null; rival_avatar: string | null; rival_finished: boolean;
+  my_score: number | null; rival_score: number | null;
 }
 
 export type ChallengeErrorCode = 'auth_required' | 'unavailable' | 'network';
@@ -102,10 +117,26 @@ function catalogVersion(): string {
 }
 
 /** Elige las ciudades del reto en el cliente del creador (D2: el servidor guarda la lista tal cual). */
-export function pickChallengeCities(difficulty: Difficulty, mode: GameMode, rounds = CHALLENGE_ROUNDS): ChallengeCity[] {
-  return getRandomCities(difficulty, rounds, mode).map((c, i) => ({
-    n: i + 1, name: c.name, country: c.country, iso: countryIso(c.country), lat: c.lat, lon: c.lon,
-  }));
+export function pickChallengeCities(difficulty: Difficulty, mode: GameMode, rounds = CHALLENGE_ROUNDS, exclude: string[] = []): ChallengeCity[] {
+  // Revancha: ciudades nuevas excluyendo las del reto original; si el pool no alcanza, se completan
+  // con las excluidas (la invitación muestra el número real de ciudades nuevas, D2).
+  const banned = new Set(exclude);
+  const pool = getRandomCities(difficulty, rounds * 4, mode);
+  const fresh = pool.filter(c => !banned.has(c.name));
+  const seen = new Set<string>();
+  const picked: City[] = [];
+  for (const c of [...fresh, ...pool]) {
+    if (picked.length >= rounds || seen.has(c.name)) continue;
+    seen.add(c.name); picked.push(c);
+  }
+  return picked.map((c, i) => ({ n: i + 1, name: c.name, country: c.country, iso: countryIso(c.country), lat: c.lat, lon: c.lon }));
+}
+
+/** Cuántas ciudades de `cities` no estaban en el reto original */
+export function countNewCities(cities: ChallengeCity[], parent: ChallengeCity[] | null | undefined): number {
+  if (!parent) return cities.length;
+  const prev = new Set(parent.map(c => c.name));
+  return cities.filter(c => !prev.has(c.name)).length;
 }
 
 /** Ciudades del reto en el formato que usa GameScreen. */
@@ -118,10 +149,10 @@ export function challengeLink(code: string): string {
 }
 
 // ── RPC ─────────────────────────────────────────────────────────────────────
-export async function createChallenge(opts: { mode: GameMode; difficulty: Difficulty; requestId: string; parentId?: string | null }): Promise<Challenge> {
+export async function createChallenge(opts: { mode: GameMode; difficulty: Difficulty; requestId: string; parentId?: string | null; excludeCities?: string[] }): Promise<Challenge> {
   if (mockEnabled()) return mock.create(opts);
   await ensureSession();
-  const cities = pickChallengeCities(opts.difficulty, opts.mode);
+  const cities = pickChallengeCities(opts.difficulty, opts.mode, CHALLENGE_ROUNDS, opts.excludeCities ?? []);
   const { data, error } = await supabase.rpc('challenge_create', {
     p: {
       mode: opts.mode, difficulty: opts.difficulty, rounds_total: cities.length, seconds_per_round: CHALLENGE_SECONDS,
@@ -148,6 +179,14 @@ export async function joinChallenge(code: string): Promise<Challenge> {
   return data as unknown as Challenge;
 }
 
+export async function fetchMyChallenges(): Promise<MyChallenge[]> {
+  if (mockEnabled()) return mock.list();
+  await ensureSession();
+  const { data, error } = await supabase.rpc('my_challenges', { p_limit: 100 });
+  if (error) throw mapError(error);
+  return (data ?? []) as unknown as MyChallenge[];
+}
+
 export async function fetchChallengeDetail(id: string): Promise<ChallengeDetail> {
   if (mockEnabled()) return mock.detail(id);
   await ensureSession();
@@ -162,25 +201,38 @@ function mockEnabled(): boolean {
 }
 
 const MOCK_KEY = 'geospeed_mock_challenges_db';
-interface MockRow { ch: Challenge; mine: ChallengeResult | null; rival: { name: string; joined: boolean; result: ChallengeResult | null } }
+interface MockRow {
+  ch: Challenge & { req?: string; parentId?: string | null };
+  /** 'creator' | 'opponent' (revancha recibida) */
+  myRole: 'creator' | 'opponent';
+  myAccepted: boolean;
+  mine: ChallengeResult | null;
+  rival: { name: string; joined: boolean; result: ChallengeResult | null };
+}
 const mockDb = (): Record<string, MockRow> => { try { return JSON.parse(localStorage.getItem(MOCK_KEY) || '{}'); } catch { return {}; } };
 const mockSave = (db: Record<string, MockRow>) => localStorage.setItem(MOCK_KEY, JSON.stringify(db));
 const delay = () => new Promise(r => setTimeout(r, 350));
+// Filas antiguas del simulador (sin myRole/myAccepted) cuentan como propias y aceptadas
+const mockAccepted = (r: MockRow) => r.myAccepted ?? true;
+const mockState = (r: MockRow): ChallengeState => !mockAccepted(r) ? 'to_accept' : !r.mine ? 'to_play' : (r.mine && r.rival.result) ? 'ready' : 'waiting';
+const mockStatus = (r: MockRow): Challenge['status'] => (r.mine && r.rival.result) ? 'completed' : r.rival.joined ? 'active' : 'open';
 
 const mock = {
-  async create(opts: { mode: GameMode; difficulty: Difficulty; requestId: string }): Promise<Challenge> {
+  async create(opts: { mode: GameMode; difficulty: Difficulty; requestId: string; parentId?: string | null; excludeCities?: string[] }): Promise<Challenge> {
     await delay();
     const db = mockDb();
-    const existing = Object.values(db).find(r => (r.ch as Challenge & { req?: string }).req === opts.requestId);
+    const existing = Object.values(db).find(r => r.ch.req === opts.requestId);
     if (existing) return existing.ch;
     const alpha = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const code = Array.from({ length: 5 }, () => alpha[Math.floor(Math.random() * 32)]).join('');
-    const ch = {
+    const parent = opts.parentId ? db[opts.parentId] : null;
+    const ch: MockRow['ch'] = {
       id: crypto.randomUUID(), code, mode: opts.mode, difficulty: opts.difficulty, rounds_total: CHALLENGE_ROUNDS,
-      seconds_per_round: CHALLENGE_SECONDS, cities: pickChallengeCities(opts.difficulty, opts.mode), status: 'open',
-      created_at: new Date().toISOString(), completed_at: null, is_creator: true, req: opts.requestId,
-    } as Challenge;
-    db[ch.id] = { ch, mine: null, rival: { name: 'Explorador', joined: false, result: null } };
+      seconds_per_round: CHALLENGE_SECONDS, cities: pickChallengeCities(opts.difficulty, opts.mode, CHALLENGE_ROUNDS, opts.excludeCities ?? []),
+      status: 'open', parent_challenge_id: opts.parentId ?? null, created_at: new Date().toISOString(), completed_at: null, is_creator: true, req: opts.requestId, parentId: opts.parentId ?? null,
+    };
+    // Revancha: el rival del reto original queda invitado (sin aceptar)
+    db[ch.id] = { ch, myRole: 'creator', myAccepted: true, mine: null, rival: { name: parent?.rival.name ?? 'Explorador', joined: !!parent, result: null } };
     mockSave(db);
     return ch;
   },
@@ -190,14 +242,15 @@ const mock = {
     if (!row) throw new ChallengeError('unavailable');
     const { ch } = row;
     return { id: ch.id, code: ch.code, mode: ch.mode, difficulty: ch.difficulty, rounds_total: ch.rounds_total,
-      seconds_per_round: ch.seconds_per_round, status: ch.status, creator_name: 'Explorador', creator_avatar: null,
-      my_role: ch.is_creator ? 'creator' : null };
+      seconds_per_round: ch.seconds_per_round, status: mockStatus(row), creator_name: row.myRole === 'creator' ? 'Explorador' : row.rival.name, creator_avatar: null,
+      my_role: row.myRole ?? 'creator', accepted: mockAccepted(row), is_rematch: !!ch.parentId };
   },
   async join(code: string): Promise<Challenge> {
     await delay();
     const db = mockDb();
     const row = Object.values(db).find(r => r.ch.code === code);
     if (!row) throw new ChallengeError('unavailable');
+    row.myAccepted = true; mockSave(db);
     return row.ch;
   },
   async detail(id: string): Promise<ChallengeDetail> {
@@ -205,10 +258,18 @@ const mock = {
     const row = mockDb()[id];
     if (!row) throw new ChallengeError('unavailable');
     const done = !!row.mine && !!row.rival.result;
-    return { ...row.ch, status: done ? 'completed' : row.rival.joined ? 'active' : 'open',
-      my_role: 'creator', my_finished: !!row.mine,
-      rival: row.rival.joined ? { name: row.rival.name, avatar: null, finished: !!row.rival.result } : null,
+    return { ...row.ch, status: mockStatus(row), my_role: row.myRole ?? 'creator', my_finished: !!row.mine, is_rematch: !!row.ch.parentId,
+      rival: row.rival.joined ? { name: row.rival.name, avatar: null, accepted: !!row.rival.result || row.myRole === 'opponent' || row.rival.joined && !row.ch.parentId, finished: !!row.rival.result } : null,
       my_result: row.mine, rival_result: done ? row.rival.result : null };
+  },
+  async list(): Promise<MyChallenge[]> {
+    await delay();
+    return Object.values(mockDb()).map(r => ({
+      id: r.ch.id, code: r.ch.code, mode: r.ch.mode, difficulty: r.ch.difficulty, status: mockStatus(r), created_at: r.ch.created_at,
+      completed_at: null, rounds_total: r.ch.rounds_total, is_rematch: !!r.ch.parentId, my_role: r.myRole ?? 'creator', state: mockState(r),
+      rival_name: r.rival.joined ? r.rival.name : null, rival_avatar: null, rival_finished: !!r.rival.result,
+      my_score: mockStatus(r) === 'completed' ? r.mine!.score : null, rival_score: mockStatus(r) === 'completed' ? r.rival.result!.score : null,
+    })).sort((a, b) => b.created_at.localeCompare(a.created_at));
   },
 };
 
@@ -221,11 +282,12 @@ export function mockRecordMyResult(id: string, result: ChallengeResult): void {
 export const isMockChallenges = mockEnabled;
 
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__mockRivalFinish = (id: string, score = 5000) => {
+  const w = window as unknown as Record<string, unknown>;
+  w.__mockRivalFinish = (id: string, score = 5000) => {
     const db = mockDb();
     if (!db[id]) return 'no existe';
     const mine = db[id].mine;
-    db[id].rival = { name: 'Valentina', joined: true, result: {
+    db[id].rival = { name: db[id].rival.name === 'Explorador' ? 'Valentina' : db[id].rival.name, joined: true, result: {
       score, end_reason: 'complete',
       rounds: (mine?.rounds ?? []).map(r => {
         const dLat = (Math.random() - 0.5) * 12, dLon = (Math.random() - 0.5) * 12;
@@ -237,11 +299,22 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     mockSave(db);
     return 'ok';
   };
-  (window as unknown as Record<string, unknown>).__mockRivalJoin = (id: string) => {
+  w.__mockRivalJoin = (id: string) => {
     const db = mockDb();
     if (!db[id]) return 'no existe';
     db[id].rival.joined = true; db[id].rival.name = 'Valentina';
     mockSave(db);
     return 'ok';
+  };
+  /** Simula que Valentina me pide revancha (aparece "Por aceptar" en Mis retos) */
+  w.__mockIncomingRematch = (mode: GameMode = 'world', difficulty: Difficulty = 'basic') => {
+    const db = mockDb();
+    const alpha = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const code = Array.from({ length: 5 }, () => alpha[Math.floor(Math.random() * 32)]).join('');
+    const ch: MockRow['ch'] = { id: crypto.randomUUID(), code, mode, difficulty, rounds_total: CHALLENGE_ROUNDS, seconds_per_round: CHALLENGE_SECONDS,
+      cities: pickChallengeCities(difficulty, mode), status: 'active', created_at: new Date().toISOString(), completed_at: null, is_creator: false, parentId: 'x' };
+    db[ch.id] = { ch, myRole: 'opponent', myAccepted: false, mine: null, rival: { name: 'Valentina', joined: true, result: null } };
+    mockSave(db);
+    return ch.code;
   };
 }
