@@ -137,6 +137,8 @@ type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'settings'
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
 const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto'];
+/** Fases donde GameScreen muestra su propio boton de musica en el HUD */
+const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing'];
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -1025,6 +1027,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           difficulty={difficulty}
           gameMode={gameMode}
           onRoundComplete={() => {}}
+          onExit={handleGoHome}
+          musicMuted={isMusicMuted}
+          onToggleMusic={toggleMusic}
           onGameOver={handleMpGameOver}
           seed={mpRoom?.seed}
         />
@@ -1042,6 +1047,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           difficulty="medium"
           gameMode="world"
           onRoundComplete={() => {}}
+          onExit={handleGoHome}
+          musicMuted={isMusicMuted}
+          onToggleMusic={toggleMusic}
           onGameOver={(rounds, reason) => {
             const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
             const avgDist = rounds.length > 0 ? rounds.reduce((s, r) => s + r.distance, 0) / rounds.length : 0;
@@ -1093,6 +1101,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           difficulty={difficulty}
           gameMode={gameMode}
           onRoundComplete={() => {}}
+          onExit={handleGoHome}
+          musicMuted={isMusicMuted}
+          onToggleMusic={toggleMusic}
           onGameOver={handleGameOver}
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
@@ -1200,7 +1211,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       {showRotateOverlay && <RotateOverlay t={t} beforeCountdown={phase === 'countdown'} onBack={phase === 'countdown' ? handleCancelCountdown : handleGoHome} />}
 
       {/* Floating music toggle — en partida; fuera de ella la música se controla desde Ajustes */}
-      {phase !== 'splash' && !showNav && (
+      {phase !== 'splash' && !showNav && !GAME_SCREEN_PHASES.includes(phase) && (
         <button
           onClick={toggleMusic}
           className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-md transition-all active:scale-90 shadow-lg"

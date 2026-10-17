@@ -36,6 +36,9 @@ function detectGameLayoutMode(): GameLayoutMode {
   // Portrait on touch devices → always compact (map needs max vertical space)
   if (isPortrait && isTouch) return 'compact';
 
+  // Teléfonos en horizontal (poca altura) → compact: el panel lateral no cabe (maqueta Partida_Movil)
+  if (isTouch && h < 500) return 'compact';
+
   // Narrow viewport → compact
   if (w < COMPACT_MAX_WIDTH) return 'compact';
 

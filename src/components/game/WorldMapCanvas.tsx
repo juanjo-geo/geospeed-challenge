@@ -27,6 +27,10 @@ interface WorldMapCanvasProps {
   pacificDecor?: 'ball' | 'trophy';
   /** Equipped trail cosmetic config (color as 'r,g,b' or colors[] for rainbow) */
   trailConfig?: { color?: string; colors?: string[]; width?: number; style?: string; glow?: boolean } | null;
+  /** Etiquetas junto a los pines tras responder ("Tu respuesta" / "Ciudad correcta") */
+  pinLabels?: { you: string; correct: string } | null;
+  /** Botones −/+/centrar (maqueta Partida_APROBADA_v1). Por defecto visibles. */
+  showZoomControls?: boolean;
 }
 
 // ── Continent → country mapping (ISO-style names matching countries.ts) ──
@@ -37,6 +41,16 @@ const CONTINENT_COUNTRIES: Record<string, Set<string>> = {
   Americas: new Set(['Antigua and Barb.','Argentina','Bahamas','Barbados','Belize','Bolivia','Brazil','Canada','Chile','Colombia','Costa Rica','Cuba','Dominica','Dominican Rep.','Ecuador','El Salvador','Grenada','Guatemala','Guyana','Haiti','Honduras','Jamaica','Mexico','Nicaragua','Panama','Paraguay','Peru','Puerto Rico','St. Kitts and Nevis','St. Lucia','St. Vin. and Gren.','Suriname','Trinidad and Tobago','United States of America','Uruguay','Venezuela','Falkland Is.']),
   Oceania: new Set(['Australia','Fiji','Kiribati','Marshall Is.','Micronesia','Nauru','New Caledonia','New Zealand','Palau','Papua New Guinea','Samoa','Solomon Is.','Tonga','Tuvalu','Vanuatu']),
 };
+
+const SOUTH_AMERICA = new Set(['Argentina','Bolivia','Brazil','Chile','Colombia','Ecuador','Guyana','Paraguay','Peru','Suriname','Uruguay','Venezuela','Falkland Is.']);
+
+/** Grupo de color del mapa (maqueta: 6 bloques + hielo) */
+function getColorGroup(name: string): string {
+  if (SOUTH_AMERICA.has(name)) return 'SouthAmerica';
+  const c = getCountryContinent(name);
+  if (c === 'Americas') return 'NorthAmerica';
+  return c ?? 'Ice';
+}
 
 function getCountryContinent(name: string): string | null {
   for (const [continent, set] of Object.entries(CONTINENT_COUNTRIES)) {
@@ -60,6 +74,8 @@ export default function WorldMapCanvas({
   fieldGreen,
   pacificDecor,
   trailConfig,
+  pinLabels,
+  showZoomControls = true,
 }: WorldMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
@@ -127,14 +143,17 @@ export default function WorldMapCanvas({
 
   // ── NEON: Continent palette derived from logo (gold/orange/teal) ──
   // Each continent uses tones from the logo's color story
+  // Rediseño v2: un color por continente, variaciones suaves por país, hielo gris-azulado.
   const CONTINENT_COLORS_NEON: Record<string, string[]> = {
-    Europe:   ['#C87828', '#E09038', '#B06820', '#D88530'], // warm amber (pin gold)
-    Asia:     ['#D45020', '#E86830', '#C04018', '#F07838'], // hot orange (speed streaks)
-    Africa:   ['#D4A030', '#E8B840', '#C09028', '#F0C048'], // bright gold
-    Americas: ['#1A8870', '#209878', '#168068', '#28A888'], // teal (logo accent)
-    Oceania:  ['#20786C', '#288880', '#187060', '#309888'], // deep teal
+    NorthAmerica: ['#2FB59B', '#3BC4A8', '#28A88F', '#45CDB3'], // verde agua
+    SouthAmerica: ['#F07A6A', '#F58C7A', '#E86B5B', '#F99A88'], // coral
+    Europe:       ['#9B8CE0', '#A99AE8', '#8C7DD6', '#B5A7EE'], // lavanda
+    Asia:         ['#F39A4A', '#F7A95E', '#EF8C3A', '#FAB772'], // naranja
+    Africa:       ['#F2C14E', '#F5CB62', '#EDB63C', '#F8D578'], // amarillo
+    Oceania:      ['#4FA8E8', '#62B5EE', '#3F9BE0', '#79C1F2'], // azul cielo
+    Ice:          ['#C9D6E2', '#D5E0EA', '#BFCDDB', '#DCE5EE'], // Antártida / Groenlandia
   };
-  const FALLBACK_NEON = ['#3A4858', '#4A5868', '#2A3848', '#506070'];
+  const FALLBACK_NEON = CONTINENT_COLORS_NEON.Ice;
 
   // Flat palette still needed for non-neon code paths
   const MAP_PALETTE_NEON = Object.values(CONTINENT_COLORS_NEON).flat();
@@ -203,8 +222,7 @@ export default function WorldMapCanvas({
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
       if (neon) {
-        const cont = getCountryContinent(country.name);
-        const colors = cont ? CONTINENT_COLORS_NEON[cont] : FALLBACK_NEON;
+        const colors = CONTINENT_COLORS_NEON[getColorGroup(country.name)] ?? FALLBACK_NEON;
         ctx.fillStyle = colors[ci % colors.length];
       } else {
         ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
@@ -227,8 +245,8 @@ export default function WorldMapCanvas({
       }
     }
     // Pass 2: Stroke all borders on top of the fills.
-    ctx.strokeStyle = neon ? 'rgba(255,255,255,0.45)' : light ? '#8899AA' : '#2A1408';
-    ctx.lineWidth = neon ? 0.8 : 1.2;
+    ctx.strokeStyle = neon ? 'rgba(255,255,255,0.6)' : light ? '#8899AA' : '#2A1408';
+    ctx.lineWidth = neon ? 0.9 : 1.2;
     for (let ci = 0; ci < countries.length; ci++) {
       const country = countries[ci];
       for (const polygon of country.polygons) {
@@ -258,7 +276,7 @@ export default function WorldMapCanvas({
           const inContinent = continentCountries.has(country.name);
           if (inContinent) {
             // Brighter highlight — more noticeable hint to lower difficulty
-            ctx.fillStyle = neon ? rgba(BRAND_RGB.turquoise, 0.34) : light ? 'rgba(0,150,255,0.28)' : rgba(BRAND_RGB.yellow, 0.34);
+            ctx.fillStyle = neon ? 'rgba(255,255,255,0.14)' : light ? 'rgba(0,150,255,0.28)' : rgba(BRAND_RGB.yellow, 0.34);
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;
@@ -271,7 +289,7 @@ export default function WorldMapCanvas({
             }
           } else {
             // Dim non-continent countries more strongly to make the highlighted continent pop
-            ctx.fillStyle = neon ? 'rgba(0,0,0,0.55)' : light ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.42)';
+            ctx.fillStyle = neon ? rgba(BRAND_RGB.navyDeep, 0.38) : light ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.42)';
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;
@@ -318,7 +336,9 @@ export default function WorldMapCanvas({
 
     const drawLabels = (labels: { name: string; lat: number; lon: number }[], fontSize: number, italic = false) => {
       ctx.font = `bold ${italic ? 'italic ' : ''}${fontSize}px system-ui`;
-      ctx.fillStyle = neon ? 'rgba(200,210,220,0.22)' : light ? '#1a3a4a' : 'rgba(80,50,20,0.60)';
+      // Continentes: navy oscuro sobre el color del continente. Océanos (itálica): azul claro sobre el mar.
+      ctx.fillStyle = neon ? (italic ? 'rgba(170,205,240,0.75)' : rgba(BRAND_RGB.navyDeep, 0.78)) : light ? '#1a3a4a' : 'rgba(80,50,20,0.60)';
+      if (neon && italic) ctx.letterSpacing = '0.12em';
       for (const l of labels) {
         const { x, y } = geoToPixel(l.lon, l.lat);
         const lines = l.name.split('\n');
@@ -326,10 +346,11 @@ export default function WorldMapCanvas({
           ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
         });
       }
+      if (neon) ctx.letterSpacing = '0px';
     };
 
     if (gameMode === 'world') {
-      const fontSize = Math.max(9, Math.round(w / 100));
+      const fontSize = Math.max(10, Math.round(w / 78));
       drawLabels([
         { name: 'AMÉRICA\nDEL NORTE', lat: 45, lon: -100 },
         { name: 'AMÉRICA\nDEL SUR', lat: -15, lon: -58 },
@@ -345,7 +366,8 @@ export default function WorldMapCanvas({
         { name: 'OCÉANO ÍNDICO', lat: -20, lon: 75 },
         { name: 'OCÉANO PACÍFICO', lat: 5, lon: 170 },
         { name: 'OCÉANO ÁRTICO', lat: 80, lon: 0 },
-      ], Math.max(8, Math.round(w / 120)), true);
+        { name: 'OCÉANO AUSTRAL', lat: -62, lon: 20 },
+      ], Math.max(9, Math.round(w / 110)), true);
     } else if (gameMode === 'europe') {
       drawLabels([
         { name: 'OCÉANO\nATLÁNTICO', lat: 50, lon: -18 },
@@ -575,8 +597,8 @@ export default function WorldMapCanvas({
 
       // ── User pin (always visible, pulsing ring) — uses equipped cosmetic if any ──
       const pulse = 1 + 0.15 * Math.sin(elapsed * 0.004);
-      const pinFill = pinConfig?.fill ?? (neon ? BRAND.turquoise : '#4fc3f7');
-      const pinGlow = pinConfig?.glow ?? (neon ? rgba(BRAND_RGB.turquoise, 0.35) : 'rgba(79,195,247,0.3)');
+      const pinFill = pinConfig?.fill ?? (neon ? BRAND.yellow : '#4fc3f7');
+      const pinGlow = pinConfig?.glow ?? (neon ? rgba(BRAND_RGB.yellow, 0.4) : 'rgba(79,195,247,0.3)');
       const pinSize = pinConfig?.size ?? 8;
       ctx.fillStyle = pinFill;
       ctx.strokeStyle = pinGlow;
@@ -602,9 +624,9 @@ export default function WorldMapCanvas({
       // Show correct pin and distance label only when line is complete
       if (progress >= 1) {
         // Correct pin — large vivid beacon impossible to miss
-        const isClose = (distanceKm ?? 9999) < 500;
-        const beaconColor = isClose ? '#22c55e' : '#ef4444';
-        const beaconGlow = isClose ? 'rgba(34,197,94,' : 'rgba(239,68,68,';
+        // Rediseño v2: la ciudad correcta siempre en turquesa (la cercanía la cuenta el trazo y la tarjeta)
+        const beaconColor = neon ? BRAND.turquoise : ((distanceKm ?? 9999) < 500 ? '#22c55e' : '#ef4444');
+        const beaconGlow = neon ? `rgba(${BRAND_RGB.turquoise},` : ((distanceKm ?? 9999) < 500 ? 'rgba(34,197,94,' : 'rgba(239,68,68,');
         const t = Date.now() * 0.004;
         const pulse = 1 + 0.25 * Math.sin(t);
 
@@ -673,6 +695,26 @@ export default function WorldMapCanvas({
           ctx.textBaseline = 'middle';
           ctx.fillText(text, labelPt.x, labelPt.y);
         }
+        // ── Etiquetas de los pines (maqueta Feedback_APROBADA_v1) ──
+        if (pinLabels) {
+          const drawPill = (text: string, x: number, y: number, bg: string, fg: string) => {
+            ctx.font = 'bold 12px system-ui';
+            const tw = ctx.measureText(text).width;
+            const bw = tw + 16, bh = 22;
+            const bx = Math.min(Math.max(4, x - bw / 2), dimensions.w - bw - 4);
+            const by = Math.min(Math.max(4, y), dimensions.h - bh - 4);
+            ctx.fillStyle = bg;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 11); else ctx.rect(bx, by, bw, bh);
+            ctx.fill();
+            ctx.fillStyle = fg;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, bx + bw / 2, by + bh / 2);
+          };
+          drawPill(pinLabels.you, ux, uy + 14, BRAND.yellow, BRAND.navyDeep);
+          drawPill(pinLabels.correct, cx, cy - 40, BRAND.turquoise, BRAND.navyDeep);
+        }
         // Keep animating for 3s after line completes (beacon pulse)
         if (elapsed < lineDuration + 3000) {
           animFrameRef.current = requestAnimationFrame(animate);
@@ -707,7 +749,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady]);
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels]);
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);
@@ -893,6 +935,22 @@ export default function WorldMapCanvas({
     return () => el.removeEventListener('wheel', handler);
   }, []);
 
+  // ── Botones −/+/centrar (sin auto-reset: el jugador decidió el zoom) ──
+  const zoomBy = useCallback((factor: number) => {
+    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
+    setPinchZoom(prev => {
+      const next = Math.min(4, Math.max(1, Math.round(prev * factor * 100) / 100));
+      if (next <= 1) setPan({ x: 0, y: 0 });
+      return next;
+    });
+  }, []);
+  const resetZoom = useCallback(() => {
+    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
+    setPinchZoom(1);
+    setPinchOrigin({ x: 50, y: 50 });
+    setPan({ x: 0, y: 0 });
+  }, []);
+
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     // Unlock audio on first tap/click — required for iOS Safari Web Audio
     unlockAudio();
@@ -1071,7 +1129,7 @@ export default function WorldMapCanvas({
   // This makes letterbox areas (when geo ratio ≠ container ratio) visually seamless:
   // the "empty" space around the canvas looks like ocean instead of a black bar.
   // ── Custom crosshair cursor (Phase 4) ──
-  const crosshairCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23f5c842' stroke-width='1.5' opacity='0.7'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23f5c842' opacity='0.9'/%3E%3Cline x1='16' y1='0' x2='16' y2='10' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='16' y1='22' x2='16' y2='32' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='0' y1='16' x2='10' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3Cline x1='22' y1='16' x2='32' y2='16' stroke='%23f5c842' stroke-width='1' opacity='0.5'/%3E%3C/svg%3E") 16 16, crosshair`;
+  const crosshairCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23FFD93B' stroke-width='1.5' opacity='0.7'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23FFD93B' opacity='0.9'/%3E%3Cline x1='16' y1='0' x2='16' y2='10' stroke='%23FFD93B' stroke-width='1' opacity='0.5'/%3E%3Cline x1='16' y1='22' x2='16' y2='32' stroke='%23FFD93B' stroke-width='1' opacity='0.5'/%3E%3Cline x1='0' y1='16' x2='10' y2='16' stroke='%23FFD93B' stroke-width='1' opacity='0.5'/%3E%3Cline x1='22' y1='16' x2='32' y2='16' stroke='%23FFD93B' stroke-width='1' opacity='0.5'/%3E%3C/svg%3E") 16 16, crosshair`;
 
   const oceanBg = fieldGreen
     ? 'linear-gradient(180deg, #1c4a30 0%, #163a26 50%, #102c1c 100%)'
@@ -1126,6 +1184,28 @@ export default function WorldMapCanvas({
       {pinchZoom > 1.05 && (
         <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-1 rounded-full pointer-events-none">
           {pinchZoom.toFixed(1)}x
+        </div>
+      )}
+      {/* Controles de zoom (maqueta): −  +  ⌖ */}
+      {showZoomControls && (
+        <div className="absolute z-[8] flex items-center gap-1.5" style={{ right: 'max(0.5rem, var(--sar))', bottom: 'max(0.5rem, var(--sab))' }}>
+          {([
+            { label: '−', onClick: () => zoomBy(1 / 1.4), aria: 'Alejar' },
+            { label: '+', onClick: () => zoomBy(1.4), aria: 'Acercar' },
+            { label: '⌖', onClick: resetZoom, aria: 'Centrar' },
+          ] as const).map(b => (
+            <button
+              key={b.aria}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); b.onClick(); }}
+              onTouchEnd={(e) => e.stopPropagation()}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-accent/60 text-accent font-black text-lg flex items-center justify-center backdrop-blur-md transition-all active:scale-90 hover:bg-accent/15"
+              style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}
+              aria-label={b.aria}
+            >
+              {b.label}
+            </button>
+          ))}
         </div>
       )}
       {/* Mini-map for regional modes */}

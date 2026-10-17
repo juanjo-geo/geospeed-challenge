@@ -63,7 +63,8 @@ export const PIN_SKINS: Cosmetic[] = [
     description: 'El pin original de GeoSpeed',
     emoji: '📍',
     rarity: 'common',
-    config: { fill: BRAND.turquoise, stroke: '#fff', glow: rgba(BRAND_RGB.turquoise, 0.35), size: 7 },
+    // Pin por defecto en amarillo de marca (maqueta: 'Tu respuesta' amarillo, 'Ciudad correcta' turquesa)
+    config: { fill: BRAND.yellow, stroke: '#fff', glow: rgba(BRAND_RGB.yellow, 0.4), size: 7 },
     source: 'default',
   },
   {
@@ -73,7 +74,7 @@ export const PIN_SKINS: Cosmetic[] = [
     description: 'Pin de oro brillante',
     emoji: '🥇',
     rarity: 'rare',
-    config: { fill: BRAND.yellow, stroke: '#fff', glow: rgba(BRAND_RGB.yellow, 0.4), size: 8 },
+    config: { fill: BRAND.yellowDeep, stroke: '#fff', glow: rgba(BRAND_RGB.yellowDeep, 0.55), size: 9 },
     source: 'battlepass_free',
   },
   {
