@@ -94,6 +94,16 @@ Key facts the audit established (so nobody re-discovers them):
 - Daily seed uses UTC date (rolls over 19:00 Colombia).
 - `countries.ts` has no ISO codes; 195 country photos (catalog done by JuanJo, outside the repo) need ISO mapping before integration.
 
+### F0 Fundaciones — done 2026-10-17 (branch `feat/f0-fundaciones`)
+- **Design tokens:** single palette in `src/index.css` `:root` (`--brand-*` + shadcn semantics; `.light`/`.neon` overrides removed, the `neon` class on `<html>` is inert). Canvas/JS code uses the hex mirror in `src/lib/theme.ts` (`BRAND`, `BRAND_RGB`, `rgba()`). `var(--grad-wordmark)`, `var(--grad-cta)`, `--btn3d-lip`, `--primary-deep` replace the old hardcoded gradients/lips. **Rule: no brand hex in `src/` outside `theme.ts`** (legal pages and `countries.ts` are the only exceptions left).
+- **Wordmark:** `src/components/ui/Wordmark.tsx` (GEO white + SPEED turquoise). Use it instead of gradient text.
+- **Preferences:** `src/lib/prefs.ts` → localStorage `geospeed_prefs` {sfx, haptics, reduceMotion}. `sounds.ts` play* functions check `isSfxEnabled()`, `haptics.ts` checks `isHapticsEnabled()`, confetti/juiceAnimations/AutoDemo/WorldMapCanvas check `prefersReducedMotion()` (pref OR OS media query; also toggles `reduce-motion` class on `<html>`). Music keeps its own key (`geospeed_music_muted`).
+- **Settings screen:** `SettingsScreen.tsx` (phase `settings`, gear in Home top bar). Music, SFX, vibration, reduce motion, colorblind, language, How to play, Support, Privacy, Terms, account.
+- **Persistent nav:** `AppNav.tsx` — 5 tabs (Inicio · Progreso · Tienda · Pass · Perfil), bottom on mobile, top bar on md+. Shown only in `NAV_PHASES` (home, profile, store, battlepass, settings); content wrapped in `.with-app-nav`. "Progreso" opens ProfileScreen on the History tab until F5 builds the real hub.
+- **Bugs fixed:** B1 challenge link now shares the real game seed (`gameSeedRef` in Index; button hidden after "Otra vez"/revenge/training); B2 `submit-score` accepts `mode: 'mundial'` (**redeploy the Edge Function**). Dead code deleted (GameLayout, FloatingHUD, ThemeToggle, useTheme, NavLink). Auth, Splash, notif prompt, error boundary, 60s final screen, streak banner, nudges → i18n. `Translations` type is now `{[K in TranslationKey]: string}` so `tsc` no longer flags en.ts.
+- **Known pre-existing `tsc` errors (not F0):** stale `src/integrations/supabase/types.ts` (push_subscriptions, player_data Json) and `WorldChallengeScreen.tsx:294`. `npm run build` is clean. Fix in F1 with `supabase gen types`.
+- Local dev server for the browser pane: `.claude/launch.json` → `geospeed-dev` (port 5173).
+
 ## Current Status (October 13, 2026)
 - **Code:** feature-complete for web. Last feature work 2026-07-15. Deployed at geospeed-challenge.vercel.app. Git: github.com/juanjo-geo/geospeed-challenge (`main`).
 - **Security:** A+ Mozilla Observatory. Secret test links/gestures were removed before launch (commit d8a4e52).

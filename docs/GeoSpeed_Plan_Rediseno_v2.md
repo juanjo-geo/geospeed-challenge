@@ -320,7 +320,8 @@ challenge_participants  -- estado por jugador (SOC-06 "Mis retos")
 
 Estimaciones en **días-desarrollador** para un equipo de 2 (1 front, 1 full-stack). Rango = incertidumbre, no holgura. La suma orientativa es **70-100 días-dev**, unas 8-12 semanas calendario con dos personas y solapando fases donde las dependencias lo permiten.
 
-### F0 — Fundaciones (5-8 días) · sin dependencias
+### F0 — Fundaciones (5-8 días) · sin dependencias · ✅ HECHA el 17 oct 2026 (rama `feat/f0-fundaciones`)
+Entregado: tokens de marca en `index.css` + espejo `theme.ts` para canvas (0 hex de marca fuera de ahí salvo páginas legales y `countries.ts`), componente `Wordmark`, `prefs.ts` + pantalla de Ajustes (música, efectos, vibración, reducir movimiento, daltónico, idioma, ayuda, legales, cuenta), barra de navegación de 5 pestañas (`AppNav`), i18n de Auth/Splash/avisos sueltos, código muerto borrado, B1 y B2 corregidos, `sw.js` v83. Pendiente de F0 que pasa a F2: paleta multicolor del mapa (`WorldMapCanvas` conserva sus colores de continente actuales).
 Objetivo: dejar el terreno listo para que el rediseño y los retos no choquen con deuda.
 - Design tokens: pasar la paleta aprobada a CSS vars en `index.css` y eliminar hex hardcodeados (inventario en B7/UI-01). Preparar variante del mapa multicolor en `WorldMapCanvas`.
 - Shell de navegación: barra inferior (móvil) y lateral (escritorio) montadas desde `Index.tsx`; las fases actuales se cuelgan de ella. Sin rediseñar aún cada pantalla.
