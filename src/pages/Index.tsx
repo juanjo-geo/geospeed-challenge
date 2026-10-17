@@ -298,11 +298,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mpRoom?.id, mpPhaseActive]);
 
-  // Countdown logic — goes 3 → 2 → 1 → 0 (GO!) → start playing
+  // Countdown — 3 → 2 → 1 → 0 (GO!) → fase de juego. Se inicializa al entrar y solo avanza
+  // mientras el telefono esta en horizontal (showRotateOverlay pausa el tic).
   useEffect(() => {
     if (phase !== 'countdown') return;
     unlockAudio(); // Ensure AudioContext is running before any sounds
     setCountdown(3);
+  }, [phase]);
+  useEffect(() => {
+    if (phase !== 'countdown' || showRotateOverlay) return;
     playCountdown();
     hapticTap();
     const interval = setInterval(() => {
@@ -326,7 +330,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [phase]);
+  }, [phase, showRotateOverlay]);
 
   const pendingStartRef = useRef<{ diff: Difficulty; mode: GameMode } | null>(null);
   const countdownNextRef = useRef<Phase>('playing'); // a qué fase saltar tras la cuenta regresiva
@@ -382,9 +386,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Detect portrait rotation DURING gameplay → show overlay (game stays mounted)
   // Uses touch detection instead of isMobile so it works on all tablets/phones
   useEffect(() => {
-    // 'countdown' excluido a propósito: la cuenta regresiva (3-2-1-GO) se muestra primero;
-    // el overlay 'gira el teléfono' aparece después, al entrar a la fase de juego real.
-    const playPhases: Phase[] = ['playing', 'ta-playing', 'mp-playing', 'daily', 'onboarding'];
+    // Maqueta Girar_APROBADA: el aviso de girar aparece ANTES de la cuenta regresiva y la cuenta
+    // espera en vertical ("La cuenta regresiva empieza despues").
+    const playPhases: Phase[] = ['countdown', 'playing', 'ta-playing', 'mp-playing', 'daily', 'onboarding'];
     const isTouch = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
     if (!playPhases.includes(phase) || !isTouch) {
       // Outside gameplay or desktop: always hide overlay
@@ -538,6 +542,25 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, [finalRounds]);
+  // "Nueva partida" desde el cierre: mismas condiciones, ciudades nuevas (consume vida como un inicio normal)
+  const handleNewGame = useCallback(() => {
+    if (!consumeLife()) { setShowNoLives(true); return; }
+    setReplayCities(null);
+    setRevengeCities(null);
+    setChallengeSeed(null);
+    setChallengerScore(null);
+    newGameSeed();
+    gameKeyRef.current += 1;
+    setPhase('countdown');
+  }, []);
+  // Cancelar durante la cuenta regresiva / aviso de giro: la partida no empezo → se devuelve la vida
+  const handleCancelCountdown = useCallback(() => {
+    if (!isTraining) addLives(1);
+    setChallengeSeed(null);
+    setChallengerScore(null);
+    setIsTraining(false); setRevengeCities(null); setReplayCities(null);
+    setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true });
+  }, [isTraining, navigate]);
   const handleRevenge = useCallback((rounds: RoundResult[]) => {
     // Pick worst 5 rounds (lowest score) — one-time only
     const worst = [...rounds].sort((a, b) => a.totalPoints - b.totalPoints).slice(0, 5);
@@ -833,7 +856,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return (
         <CountdownIntro
           count={countdown}
-          label={isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} — 5s` : `${modeLabel} — ${diffLabel}`}
+          label={isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
+          onCancel={handleCancelCountdown}
         />
       );
     }
@@ -1090,6 +1114,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           mode={gameMode}
           reason={endReason}
           onPlayAgain={handlePlayAgain}
+          onNewGame={handleNewGame}
           onGoHome={handleGoHome}
           onRevenge={revengeUsed ? undefined : handleRevenge}
           onShareChallenge={canShareChallenge ? handleShareChallenge : undefined}
@@ -1172,7 +1197,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       )}
 
       {/* Rotate overlay — shown on top of game when portrait during gameplay */}
-      {showRotateOverlay && <RotateOverlay t={t} />}
+      {showRotateOverlay && <RotateOverlay t={t} beforeCountdown={phase === 'countdown'} onBack={phase === 'countdown' ? handleCancelCountdown : handleGoHome} />}
 
       {/* Floating music toggle — en partida; fuera de ella la música se controla desde Ajustes */}
       {phase !== 'splash' && !showNav && (
@@ -1193,13 +1218,30 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   );
 };
 
-/** Pure overlay — no internal orientation detection (parent controls visibility via state) */
-function RotateOverlay({ t }: { t: (key: string) => string }) {
+/** Aviso de giro (maqueta GeoSpeed_Girar_APROBADA_v1). Sin deteccion propia: el padre controla la visibilidad. */
+function RotateOverlay({ t, beforeCountdown, onBack }: { t: (key: string) => string; beforeCountdown: boolean; onBack: () => void }) {
   return (
     <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center min-h-[100dvh] game-bg text-center px-6">
-      <div className="text-5xl mb-4 animate-bounce">🔄📱</div>
-      <p className="text-lg sm:text-xl font-black" style={{ color: 'hsl(var(--primary))' }}>{t('rotate_title')}</p>
-      <p className="text-xs sm:text-sm text-muted-foreground mt-2">{t('rotate_desc')}</p>
+      <div className="flex items-center gap-2 mb-6">
+        <img src="/logo.png" alt="" className="w-9 h-9 object-contain" />
+        <Wordmark size="sm" />
+      </div>
+      <div className="relative w-28 h-28 mb-6" aria-hidden>
+        <span className="absolute left-0 top-0 text-6xl opacity-40">📱</span>
+        <span className="absolute right-0 bottom-0 text-6xl rotate-90 animate-bounce">📱</span>
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-accent">↻</span>
+      </div>
+      <p className="text-3xl sm:text-4xl font-black leading-tight">
+        {t('rotate_titleLead')} <span className="text-primary">{t('rotate_titleTail')}</span>
+      </p>
+      <p className="text-sm text-muted-foreground mt-2">{t('rotate_sub')}</p>
+      <div className="mt-6 px-5 py-3 rounded-2xl border border-accent/50 text-accent font-bold text-sm animate-pulse">
+        {t('rotate_waiting')}
+      </div>
+      {beforeCountdown && <p className="text-xs text-muted-foreground mt-2">{t('rotate_countdownAfter')}</p>}
+      <button onClick={onBack} className="mt-8 px-6 py-2.5 rounded-2xl border border-border bg-card/50 text-sm font-bold hover:bg-muted transition-colors active:scale-[0.97]">
+        {t('rotate_back')}
+      </button>
     </div>
   );
 }

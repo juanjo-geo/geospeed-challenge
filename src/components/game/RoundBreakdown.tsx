@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { type RoundResult } from './GameScreen';
 import { formatDistance } from '@/lib/gameUtils';
+import { useI18n } from '@/i18n';
+import { playAccordion } from '@/lib/sounds';
 
 interface RoundBreakdownProps {
   rounds: RoundResult[];
+  /** Abierto desde el inicio (p. ej. en escritorio) */
+  defaultOpen?: boolean;
 }
 
 function getRoundColor(distance: number): string {
@@ -23,35 +27,36 @@ function getRoundEmoji(distance: number): string {
   return '😬';
 }
 
-export default function RoundBreakdown({ rounds }: RoundBreakdownProps) {
-  const [expanded, setExpanded] = useState(false);
+/** Detalle por ronda (colapsable). La revisión por ciudad con mapa llega en el bloque EDU-01. */
+export default function RoundBreakdown({ rounds, defaultOpen = false }: RoundBreakdownProps) {
+  const { t } = useI18n();
+  const [expanded, setExpanded] = useState(defaultOpen);
 
   if (rounds.length === 0) return null;
+  const best = rounds.reduce((b, x) => x.totalPoints > b.totalPoints ? x : b, rounds[0]);
 
   return (
-    <div className="mb-5">
+    <div>
       <button
-        onClick={() => setExpanded(prev => !prev)}
-        className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-muted/50 text-xs font-bold text-muted-foreground hover:bg-muted transition-all active:scale-[0.97]"
+        onClick={() => { playAccordion(!expanded); setExpanded(prev => !prev); }}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border bg-muted/40 text-xs sm:text-sm font-bold text-foreground hover:bg-muted transition-all active:scale-[0.98]"
         aria-expanded={expanded}
       >
-        📊 Detalle por ronda
+        📊 {t('final_detail')}
         <span className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>▾</span>
       </button>
 
       <div className={`overflow-hidden transition-all duration-500 ease-out ${expanded ? 'max-h-[600px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
-        <div className="bg-muted/30 rounded-lg border border-border overflow-hidden divide-y divide-border/50 max-h-[400px] overflow-y-auto">
-          {/* Header */}
+        <div className="bg-muted/30 rounded-xl border border-border overflow-hidden divide-y divide-border/50 max-h-[400px] overflow-y-auto">
           <div className="grid grid-cols-[2rem_1fr_4rem_2.8rem_2.8rem_3.5rem] gap-1 px-3 py-1.5 text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
             <span>#</span>
-            <span>Ciudad</span>
-            <span className="text-right">Dist.</span>
-            <span className="text-right">Seg.</span>
-            <span className="text-right">Mult.</span>
-            <span className="text-right">Pts</span>
+            <span>{t('rb_city')}</span>
+            <span className="text-right">{t('rb_dist')}</span>
+            <span className="text-right">{t('rb_sec')}</span>
+            <span className="text-right">{t('rb_mult')}</span>
+            <span className="text-right">{t('rb_pts')}</span>
           </div>
           {rounds.map((r, i) => {
-            const best = rounds.reduce((b, x) => x.totalPoints > b.totalPoints ? x : b, rounds[0]);
             const isBest = r === best;
             const multColor = r.multiplier >= 2 ? 'text-green-400' : r.multiplier >= 1 ? 'text-yellow-400' : 'text-red-400';
             return (
@@ -67,9 +72,7 @@ export default function RoundBreakdown({ rounds }: RoundBreakdownProps) {
                 <span className="text-right font-mono text-muted-foreground">{formatDistance(r.distance)}</span>
                 <span className="text-right font-mono text-muted-foreground">{r.timeUsed}s</span>
                 <span className={`text-right font-mono font-bold ${multColor}`}>×{r.multiplier}</span>
-                <span className="text-right font-mono font-bold" style={{ color: 'hsl(var(--primary))' }}>
-                  {r.totalPoints}
-                </span>
+                <span className="text-right font-mono font-bold text-primary">{r.totalPoints}</span>
               </div>
             );
           })}

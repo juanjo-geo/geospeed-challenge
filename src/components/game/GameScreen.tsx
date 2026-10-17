@@ -128,10 +128,21 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     if (isWaiting) setShowHint(false);
   }, [isWaiting]);
 
+  // Tiempo en pausa (vertical / app oculta) que NO cuenta para el multiplicador de velocidad
+  const pausedMsRef = useRef(0);
+  const pauseStartRef = useRef<number | null>(null);
+  useEffect(() => {
+    const paused = isPortraitMobile || isPageHidden;
+    if (paused && pauseStartRef.current == null) pauseStartRef.current = Date.now();
+    if (!paused && pauseStartRef.current != null) { pausedMsRef.current += Date.now() - pauseStartRef.current; pauseStartRef.current = null; }
+  }, [isPortraitMobile, isPageHidden]);
+
   // Reset timeLeft and roundStart when a new round begins
   useEffect(() => {
     if (!currentCity) return;
     roundStartRef.current = Date.now();
+    pausedMsRef.current = 0;
+    pauseStartRef.current = (isPortraitMobile || isPageHidden) ? Date.now() : null;
     setTimeLeft(effectiveMaxTime);
     announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
@@ -163,7 +174,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           playTimeExpired();
           setTimeout(() => playGameOver(), 300);
           hapticError();
-          onGameOver(rounds, 'timeout');
+          // Fuera del updater de estado: evita "Cannot update Index while rendering GameScreen"
+          setTimeout(() => onGameOver(rounds, 'timeout'), 0);
           return 0;
         }
         if (prev <= 4) { playHeartbeat(); hapticTick(); } // Last 3s: heartbeat
@@ -254,7 +266,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     playClick();
     hapticTap();
 
-    const timeUsed = Math.round((Date.now() - roundStartRef.current) / 1000);
+    const pausedNow = pauseStartRef.current != null ? Date.now() - pauseStartRef.current : 0;
+    const timeUsed = Math.max(0, Math.round((Date.now() - roundStartRef.current - pausedMsRef.current - pausedNow) / 1000));
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     const basePoints = calculateBasePoints(distance);
     const mult = getMultiplier(timeUsed);
