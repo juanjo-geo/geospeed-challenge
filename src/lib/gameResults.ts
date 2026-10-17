@@ -61,6 +61,7 @@ function newClientId(): string {
 function toPayload(input: SaveGameInput, clientId: string): Json {
   return {
     client_id: clientId,
+    created_at: new Date().toISOString(), // la RPC lo ignora; lo usa el historial local mientras no hay sesión
     game_type: input.gameType,
     mode: input.mode,
     difficulty: input.difficulty,
@@ -241,8 +242,10 @@ export interface LeaderboardTopRow {
   achievedAt: string;
 }
 
-export async function fetchLeaderboardTop(mode = 'world', difficulty: string | null = null, period: 'all' | 'week' | 'month' = 'all', limit = 10): Promise<LeaderboardTopRow[]> {
-  const { data, error } = await supabase.rpc('leaderboard_top', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_limit: limit });
+export type RankPeriod = 'all' | 'week' | 'month';
+/** gameType: null = ranking de ciudades (o Mundial si mode='mundial'); 'timeattack' = 60s de Caos (tabla aparte, B2) */
+export async function fetchLeaderboardTop(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', limit = 10, gameType: string | null = null): Promise<LeaderboardTopRow[]> {
+  const { data, error } = await supabase.rpc('leaderboard_top', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_limit: limit, p_game_type: gameType });
   if (error || !data) return [];
   return (data as Array<Record<string, unknown>>).map(r => ({
     rank: Number(r.rank), userId: String(r.user_id), displayName: String(r.display_name ?? ''),
@@ -250,8 +253,10 @@ export async function fetchLeaderboardTop(mode = 'world', difficulty: string | n
   }));
 }
 
-export async function fetchMyRank(mode = 'world', difficulty: string | null = null, period: 'all' | 'week' | 'month' = 'all'): Promise<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null> {
-  const { data, error } = await supabase.rpc('my_rank', { p_mode: mode, p_difficulty: difficulty, p_period: period });
+export async function fetchMyRank(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', gameType: string | null = null): Promise<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+  const { data, error } = await supabase.rpc('my_rank', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_game_type: gameType });
   if (error || !data) return null;
   const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
   if (!row) return null;
@@ -274,6 +279,27 @@ export interface MyHistoryRow {
   endReason: EndReason;
   isRecord: boolean;
   createdAt: string;
+}
+
+/** Detalle por ciudad de una partida del servidor (game_rounds es privada: solo las propias). */
+export async function fetchMyResultRounds(resultId: string): Promise<SaveRoundInput[]> {
+  const { data, error } = await supabase
+    .from('game_rounds')
+    .select('round_no, city_name, city_country, city_lat, city_lon, click_lat, click_lon, distance_km, time_s, base_points, multiplier, points')
+    .eq('result_id', resultId)
+    .order('round_no', { ascending: true });
+  if (error || !data) return [];
+  return data.map(r => ({
+    round_no: r.round_no, city_name: r.city_name, city_country: r.city_country, city_lat: r.city_lat, city_lon: r.city_lon,
+    click_lat: r.click_lat, click_lon: r.click_lon, distance_km: r.distance_km == null ? null : Number(r.distance_km),
+    time_s: r.time_s == null ? null : Number(r.time_s), base_points: r.base_points,
+    multiplier: r.multiplier == null ? null : Number(r.multiplier), points: r.points,
+  }));
+}
+
+/** Cola offline leída (para el historial local de invitados). */
+export function readPendingResults(): Array<Record<string, unknown>> {
+  return readPending() as Array<Record<string, unknown>>;
 }
 
 /** Historial paginado por cursor (created_at del último elemento). */

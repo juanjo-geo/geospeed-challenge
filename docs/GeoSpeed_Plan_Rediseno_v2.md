@@ -375,7 +375,8 @@ Hecho: bandeja Mis retos con filtros y contadores desde la misma consulta, estad
 - Revancha: `parent_challenge_id`, condiciones heredadas, ciudades nuevas excluyendo las del padre (si no alcanzan, se permite repetir las menos recientes y se avisa), sin tocar el resultado original.
 - **Criterio de salida:** doble clic no duplica; "Ahora no" conserva; recargar conserva todo.
 
-### F5 — Perfil, Historial y Ranking (8-11 días) · requiere F1, D5
+### F5 — Perfil, Historial y Ranking (8-11 días) · requiere F1, D5 · ✅ HECHO (18 oct 2026, rama `feat/f5-historial-ranking`; migración pendiente de aplicar)
+Hecho: Historial de partidas sobre el servidor (o lo local sin sesión) con filtros de región y dificultad, orden, estado, puntos, ciudades, distancia media, detalle por ciudad, cargar más, estado vacío y "sin coincidencias"; Ranking Top 10 con nombre y avatar, posición propia aunque esté fuera del Top 10, tablas por región, Mundial y 60s de Caos (aparte), dificultad y periodo; Perfil con accesos a Historial, Ranking y Mis retos, estadísticas del servidor y racha; la tarjeta del Desafío diario muestra la hora local de cambio (D6).
 - Perfil: accesos a Historial, Ranking y Mis retos; racha; entrada con 0 partidas.
 - Historial sobre `game_results`: filtros región/dificultad, orden reciente, estado, puntos, ciudades completadas, distancia media, detalle por ciudad (reusa EDU-01), cargar más, estado vacío y estado "sin coincidencias" (falta maqueta).
 - Ranking: Top 10 con posición propia vía RPC, filtros región/dificultad, incluir Mundial y Caos (B2), nombre de jugador en vez de iniciales para registrados.

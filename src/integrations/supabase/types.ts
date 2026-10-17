@@ -388,7 +388,7 @@ export type Database = {
         }[]
       }
       my_rank: {
-        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string }
+        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_game_type?: string | null }
         Returns: {
           rank: number | null
           best_score: number | null
@@ -396,7 +396,7 @@ export type Database = {
         }[]
       }
       leaderboard_top: {
-        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_limit?: number }
+        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_limit?: number; p_game_type?: string | null }
         Returns: {
           rank: number
           user_id: string

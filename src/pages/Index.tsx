@@ -96,6 +96,8 @@ const MultiplayerLobby = lazyWithReload(() => import('@/components/game/Multipla
 const FriendsScreen = lazyWithReload(() => import('@/components/game/FriendsScreen'));
 const ChallengeScreen = lazyWithReload(() => import('@/components/game/ChallengeScreen'));
 const MyChallengesScreen = lazyWithReload(() => import('@/components/game/MyChallengesScreen'));
+const HistoryScreen = lazyWithReload(() => import('@/components/game/HistoryScreen'));
+const RankingScreen = lazyWithReload(() => import('@/components/game/RankingScreen'));
 const WaitingRoom = lazyWithReload(() => import('@/components/game/WaitingRoom'));
 const MultiplayerResultScreen = lazyWithReload(() => import('@/components/game/MultiplayerResultScreen'));
 const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
@@ -138,10 +140,10 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'friends' | 'challenge' | 'my-challenges' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+type Phase = 'splash' | 'home' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges'];
+const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -659,7 +661,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
   const handleMoreModes = useCallback(() => { window.scrollTo(0, 0); setPhase('more-modes'); }, []);
   const handleHowTo = useCallback(() => { window.scrollTo(0, 0); setPhase('howto'); }, []);
-  const handleOpenHistory = useCallback(() => { setProfileTab('history'); setPhase('profile'); }, []);
+  const handleOpenHistory = useCallback(() => { setPhase('history'); window.scrollTo(0, 0); }, []);
+  const handleOpenRanking = useCallback(() => { setPhase('ranking'); window.scrollTo(0, 0); }, []);
   const handleWorldChallenge = useCallback(() => { unlockAudio(); gameKeyRef.current += 1; setPhase('wc-playing'); }, []);
   const handleOpenBattlePass = useCallback(() => setPhase('battlepass'), []);
 
@@ -669,13 +672,14 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     phase === 'home' ? 'home'
     : phase === 'store' ? 'store'
     : phase === 'battlepass' ? 'pass'
+    : phase === 'history' || phase === 'ranking' ? 'progress'
     : phase === 'profile' ? (profileTab === 'history' ? 'progress' : 'profile')
     : null;
   const handleNav = useCallback((tab: NavTab) => {
     window.scrollTo(0, 0);
     switch (tab) {
       case 'home': handleGoHome(); break;
-      case 'progress': setProfileTab('history'); setPhase('profile'); break;
+      case 'progress': setPhase('history'); window.scrollTo(0, 0); break;
       case 'store': handleOpenStore(); break;
       case 'pass': handleOpenBattlePass(); break;
       case 'profile': setProfileTab('overview'); setPhase('profile'); break;
@@ -905,7 +909,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'profile') {
-      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} onMyChallenges={handleMyChallenges} />;
+      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} onMyChallenges={handleMyChallenges} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} />;
+    }
+
+    if (phase === 'history') {
+      return <HistoryScreen onBack={handleGoHome} onPlay={() => handleSelectDifficulty(difficulty, gameMode)} onMyChallenges={handleMyChallenges} />;
+    }
+
+    if (phase === 'ranking') {
+      return <RankingScreen initialMode={gameMode} initialDifficulty={difficulty} onBack={handleGoHome} onSignIn={() => navigate('/auth')} />;
     }
 
     if (phase === 'settings') {
@@ -1244,7 +1256,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
-import { getPlayerStats, getLeaderboard, getDailyPlayerCount, type LeaderboardEntry, type LeaderboardPeriod } from '@/lib/gameUtils';
+import { getPlayerStats, getDailyPlayerCount } from '@/lib/gameUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { getPlayerLevel, getPlayerBadges } from '@/lib/levelSystem';
 import DailyChestModal from './DailyChestModal';
@@ -32,6 +32,7 @@ interface HomeScreenProps {
   onOpenBattlePass?: () => void;
   onOpenSettings?: () => void;
   onOpenHistory?: () => void;
+  onOpenRanking?: () => void;
   onMoreModes?: () => void;
   onHowToPlay?: () => void;
 }
@@ -87,7 +88,7 @@ function difficultyLabel(raw: string, t: (key: string) => string): string {
  * Banner "¿Cómo se juega?" · "Tu próxima aventura" (región + dificultad en hojas) · tarjetas de acceso ·
  * nivel + accesos a ranking/historial. Todo visible desde la primera visita (decisión D13).
  */
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onMoreModes, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { user, displayName } = useAuth();
   const { t, locale } = useI18n();
   const navigate = useNavigate();
@@ -114,12 +115,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [sheet, setSheet] = useState<null | 'region' | 'difficulty'>(null);
   const closeSheet = useCallback(() => setSheet(null), []);
 
-  // ── Ranking (colapsable, igual que antes; F5 lo lleva a Progreso) ──
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [rankingMode, setRankingMode] = useState<string>('all');
-  const [rankingPeriod, setRankingPeriod] = useState<LeaderboardPeriod>('all');
-  const [rankingDifficulty, setRankingDifficulty] = useState<string>('all');
-  const [showRanking, setShowRanking] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
 
@@ -127,6 +122,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
   const [streakDismissed, setStreakDismissed] = useState(false);
   const [dailyPlayers, setDailyPlayers] = useState<number>(0);
+  // D6: el diario cambia a medianoche UTC; se muestra la hora local equivalente
+  const dailyRolloverTime = (() => { const n = new Date(); const next = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1)); return next.toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-CO', { hour: '2-digit', minute: '2-digit' }); })();
   const [streakRisk, setStreakRisk] = useState<{ days: number; canProtect: boolean } | null>(null);
   const [streakProtected, setStreakProtected] = useState(false);
 
@@ -143,11 +140,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
     if (risk) setStreakRisk(risk);
   }, [isNewPlayer]);
 
-  useEffect(() => {
-    if (showRanking) {
-      getLeaderboard(rankingMode === 'all' ? undefined : rankingMode, rankingPeriod, rankingDifficulty === 'all' ? undefined : rankingDifficulty).then(setLeaderboard);
-    }
-  }, [rankingMode, rankingPeriod, rankingDifficulty, showRanking]);
 
   // ── Opciones de las hojas ──
   const regionOptions: SelectorOption<GameMode>[] = useMemo(() => MODE_CONFIG.map(m => {
@@ -327,7 +319,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* ── Tarjetas de acceso ── */}
       <div className="w-full max-w-md md:max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-3 animate-fade-in-up animation-delay-200">
-        <AccessCard emoji="📅" title={t('home_dailyCard')} desc={dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-2 right-2 text-xs opacity-70 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
+        <AccessCard emoji="📅" title={t('home_dailyCard')} desc={`${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-2 right-2 text-xs opacity-70 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
         <AccessCard emoji="🤝" title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
         <AccessCard emoji="⚡" title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
         {onMyChallenges
@@ -386,7 +378,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
         </div>
         <div className="mt-3 grid grid-cols-3 divide-x divide-border text-center text-xs">
-          <button onClick={() => { playAccordion(!showRanking); setShowRanking(v => !v); }} className="py-1.5 font-bold hover:text-primary transition-colors" aria-expanded={showRanking} aria-controls="ranking-panel">🏆 {t('home_ranking')}</button>
+          <button onClick={() => { playButtonTap(); (onOpenRanking ?? onOpenProfile)?.(); }} className="py-1.5 font-bold hover:text-primary transition-colors">🏆 {t('home_ranking')}</button>
           <button onClick={() => { playButtonTap(); (onOpenHistory ?? onOpenProfile)?.(); }} className="py-1.5 font-bold hover:text-primary transition-colors">📊 {t('home_history')}</button>
           <button onClick={() => { playButtonTap(); setShowBadges(v => !v); }} className="py-1.5 font-bold hover:text-primary transition-colors" aria-expanded={showBadges}>🏅 {badges.filter(b => b.unlocked).length}/{badges.length}</button>
         </div>
@@ -409,43 +401,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </div>
         </div>
 
-        {/* Ranking colapsable (se mantiene aquí hasta F5) */}
-        <div id="ranking-panel" className={`overflow-hidden transition-all duration-500 ease-out ${showRanking ? 'max-h-[700px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
-          <div className="grid grid-cols-3 gap-1 mb-1.5" role="tablist" aria-label={t('home_ranking')}>
-            {([
-              { key: 'all', label: `🏛️ ${t('home_rankingAllTime')}` },
-              { key: 'month', label: `📅 ${t('home_rankingMonth')}` },
-              { key: 'week', label: `🔥 ${t('home_rankingWeek')}` },
-            ] as { key: LeaderboardPeriod; label: string }[]).map(p => (
-              <FilterChip key={p.key} active={rankingPeriod === p.key} onClick={() => setRankingPeriod(p.key)}>{p.label}</FilterChip>
-            ))}
-          </div>
-          <div className="grid grid-cols-6 gap-1 mb-1.5" role="tablist">
-            {[{ key: 'all', label: t('home_rankingAll') }, ...MODE_CONFIG.map(m => ({ key: m.key, label: t(`mode_${m.key}` as never) || m.label }))].map(m => (
-              <FilterChip key={m.key} active={rankingMode === m.key} onClick={() => setRankingMode(m.key)}>{m.label}</FilterChip>
-            ))}
-          </div>
-          <div className="grid grid-cols-5 gap-1 mb-2" role="tablist">
-            {['all', 'basic', 'easy', 'medium', 'hard'].map(dk => (
-              <FilterChip key={dk} active={rankingDifficulty === dk} onClick={() => setRankingDifficulty(dk)}>{dk === 'all' ? t('home_rankingAll') : difficultyLabel(dk, t)}</FilterChip>
-            ))}
-          </div>
-          <div className="bg-muted/30 rounded-xl border border-border overflow-hidden" role="table" aria-label={t('home_ranking')}>
-            {leaderboard.length === 0 ? (
-              <p className="text-center text-muted-foreground text-xs sm:text-sm py-4">{t('home_noGamesYet')}</p>
-            ) : (
-              leaderboard.map((entry, i) => (
-                <div key={i} className="flex items-center px-2 sm:px-3 py-1.5 border-b border-border last:border-0" role="row">
-                  <span className="w-6 sm:w-7 text-center text-xs sm:text-sm">{MEDALS[i] || `${i + 1}.`}</span>
-                  <span className="font-mono font-bold flex-1 text-xs sm:text-sm text-primary">{entry.initials}</span>
-                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5">{entry.mode === 'mundial' ? '⚽' : (t(`mode_${entry.mode}` as never) || entry.mode)}</span>
-                  <span className="font-mono text-[8px] sm:text-[10px] text-muted-foreground mr-1.5">{difficultyLabel(entry.difficulty, t)}</span>
-                  <span className="font-mono font-bold text-xs sm:text-sm">{entry.score.toLocaleString()}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       </section>
 
       {/* ── Invita amigos (referidos) ── */}

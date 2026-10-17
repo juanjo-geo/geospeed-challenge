@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { fetchMyProgress, type MyProgress } from '@/lib/gameResults';
+import { getStreakState } from '@/lib/dailyStreak';
 import { playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import { getPlayerStats, getGameHistory, formatDistance, type GameHistoryEntry } from '@/lib/gameUtils';
@@ -33,6 +35,8 @@ interface ProfileScreenProps {
   /** Sección inicial (la pestaña "Progreso" de la barra abre el historial) */
   initialTab?: ProfileTab;
   onMyChallenges?: () => void;
+  onOpenHistory?: () => void;
+  onOpenRanking?: () => void;
 }
 
 function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
@@ -41,15 +45,22 @@ function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
 }
 
 /** Mi perfil (maqueta Perfil_APROBADA_v1): explorador + nivel, estadísticas y accesos a cada sección. */
-export default function ProfileScreen({ onBack, initialTab = 'overview', onMyChallenges }: ProfileScreenProps) {
+export default function ProfileScreen({ onBack, initialTab = 'overview', onMyChallenges, onOpenHistory, onOpenRanking }: ProfileScreenProps) {
   const { user, displayName } = useAuth();
   const { t, locale } = useI18n();
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || 'mascot');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [tab, setTab] = useState<ProfileTab>(initialTab);
 
-  const stats = getPlayerStats();
+  const localStats = getPlayerStats();
   const history = getGameHistory();
+  // F5: con sesión, las estadísticas salen del servidor; sin sesión, de lo local
+  const [progress, setProgress] = useState<MyProgress | null>(null);
+  useEffect(() => { fetchMyProgress().then(p => { if (p && p.gamesPlayed > 0) setProgress(p); }).catch(() => {}); }, []);
+  const stats = progress
+    ? { ...localStats, gamesPlayed: progress.gamesPlayed, bestScore: Math.max(progress.bestScore, localStats.bestScore), totalRounds: progress.totalRounds, totalDistance: (progress.avgDistanceKm ?? 0) * progress.totalRounds }
+    : localStats;
+  const streak = getStreakState().currentStreak;
   const level = getPlayerLevel();
   const badges = getPlayerBadges();
   const energy = getEnergy();
@@ -130,6 +141,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                   </div>
                   <p className="mt-1 text-xs sm:text-sm font-mono font-bold">{totalXp.toLocaleString()} / {level.xpForNext.toLocaleString()} XP</p>
                   <p className="text-[11px] sm:text-xs text-accent">{t('profile_nextLevelHint')}</p>
+                  {streak > 0 && <p className="mt-1 text-xs sm:text-sm font-bold">🔥 {t('profile_streak', { n: streak })}</p>}
                 </div>
               </div>
             </section>
@@ -150,7 +162,8 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
               <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
                 <h2 className="text-xl sm:text-2xl font-black mb-3">{t('profile_exploreLead')} <span className="text-primary">{t('profile_exploreTail')}</span></h2>
                 <div className="flex flex-col gap-2">
-                  <ExploreRow icon="📊" title={t('profile_historyTitle')} desc={t('profile_historyDesc')} onClick={() => open('history')} />
+                  <ExploreRow icon="📊" title={t('profile_historyTitle')} desc={t('profile_historyDesc')} onClick={() => onOpenHistory ? (playButtonTap(), onOpenHistory()) : open('history')} />
+                  {onOpenRanking && <ExploreRow icon="🏆" title={t('rank_title')} desc={t('profile_rankingDesc')} onClick={() => { playButtonTap(); onOpenRanking(); }} />}
                   <ExploreRow icon="🏅" title={t('profile_levels')} desc={t('profile_levelsDesc')} onClick={() => open('levels')} />
                   <ExploreRow icon="🎖️" title={t('profile_badgesTitle')} desc={`${unlockedBadges}/${badges.length} ${t('profile_badgesUnlocked')}`} onClick={() => open('badges')} />
                   {onMyChallenges && <ExploreRow icon="📋" title={t('home_myChallenges')} desc={t('profile_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />}
