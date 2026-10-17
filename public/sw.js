@@ -7,7 +7,7 @@
  * Handles SPA navigation (falls back to /index.html for HTML requests).
  */
 
-const CACHE_NAME = 'geospeed-v95';
+const CACHE_NAME = 'geospeed-v96';
 
 // Critical app shell files to pre-cache for offline support
 const APP_SHELL = [
