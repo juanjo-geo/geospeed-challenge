@@ -75,6 +75,23 @@ Geography quiz game: locate cities (or a footballer's country) on an interactive
 - `Protocolo_Juice_GeoSpeed_vs_Duolingo.md` + two audit `.docx` — 9-layer game-feel rubric. Score went 2.31 → 2.62 on 2026-07-06; the remaining gaps (chest, monetization juice, shake on miss) were closed in later commits.
 - `GeoSpeed_Analisis_Mercado_Financiero.docx`, `GeoSpeed_Guia_Lanzamiento.docx` — market analysis, launch guide.
 
+## Redesign v2 (started October 17, 2026)
+JuanJo ran a design audit with the dev team and approved 83 mockups (new palette: ocean blue / turquoise / warm yellow, "Explorador" pin mascot, persistent nav, settings screen, async friend challenges). Two documents govern this work:
+- `docs/GeoSpeed_Ajustes_y_Sugerencias_Desarrollo_v1.md` — the consolidated change requests + approval log (source of truth for what was approved; it did NOT audit the code).
+- `docs/GeoSpeed_Plan_Rediseno_v2.md` — code audit vs. each request, bugs found, blocking product decisions (D1–D11), target data model, 6-phase plan with estimates. **Read this before touching anything related to the redesign.**
+- Mockup PNGs will arrive in a later session → store them in `docs/maquetas/` using the file names from Appendix A of the consolidado.
+
+Key facts the audit established (so nobody re-discovers them):
+- **No persistent player identity for guests** (no anonymous auth, no device id). Blocks challenges, cloud history, personal rank. Recommended: Supabase Anonymous Sign-in (decision D1).
+- **Server stores only aggregate scores.** Per-round detail (`RoundResult`) lives in memory only. History is localStorage, capped at 20; XP is derived from that capped list.
+- Live 1v1 duel: room `status` never leaves `waiting`, rooms never deleted, no resume, no user_id. The redesign **replaces** it with async challenges (decision 31 of the consolidado). Plan: hide behind a feature flag, don't extend it.
+- "Reta a un amigo" link is **broken** (generates a new seed, friend plays different cities) — `Index.tsx:574-579`.
+- `submit-score` rejects `mode: 'mundial'` → Mundial scores never reach the cloud leaderboard.
+- Dead code: `GameLayout.tsx`, `FloatingHUD.tsx`, `ThemeToggle.tsx`, `ReplayMap.tsx` (imported, never rendered), `showMoreModes` state.
+- No settings screen, no password recovery flow, no links to /privacy /support from inside the game, Auth + Splash hardcoded in Spanish.
+- Daily seed uses UTC date (rolls over 19:00 Colombia).
+- `countries.ts` has no ISO codes; 195 country photos (catalog done by JuanJo, outside the repo) need ISO mapping before integration.
+
 ## Current Status (October 13, 2026)
 - **Code:** feature-complete for web. Last feature work 2026-07-15. Deployed at geospeed-challenge.vercel.app. Git: github.com/juanjo-geo/geospeed-challenge (`main`).
 - **Security:** A+ Mozilla Observatory. Secret test links/gestures were removed before launch (commit d8a4e52).
