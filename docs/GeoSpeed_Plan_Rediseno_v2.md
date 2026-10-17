@@ -329,7 +329,8 @@ Objetivo: dejar el terreno listo para que el rediseño y los retos no choquen co
 - i18n de Auth, Splash y textos sueltos (B8). Borrado de código muerto (B7). Corregir B1 y B2.
 - **Criterio de salida:** `npm run build` limpio, Lighthouse sin regresión, ningún hex de marca fuera de tokens.
 
-### F1 — Identidad y persistencia (10-14 días) · requiere D1, D2, D5
+### F1 — Identidad y persistencia (10-14 días) · requiere D1, D2, D5 · 🟡 PARTE SIN DASHBOARD HECHA el 17 oct 2026 (rama `feat/f1-identidad`)
+Hecho: migración `game_results` + `game_rounds` + RPCs (`save_game_result`, `my_progress`, `my_rank`, `leaderboard_top`, `import_legacy_history`, `update_my_profile`, `cleanup_anonymous_users`), toda partida de todos los modos se guarda en servidor con cola offline, migración del historial local al primer login, tipos de Supabase al día (`tsc` limpio), recuperación de contraseña completa (5 estados), confirmar contraseña, mínimo 8, errores genéricos (B5). Pendiente hasta que JuanJo active el dashboard: sesión anónima perezosa, vinculación anónimo→cuenta, selector de avatares, y aplicar la migración (`supabase db push`).
 - Activar Anonymous Sign-in; `useAuth` crea sesión anónima al arrancar; flujo de "vincular cuenta" en registro.
 - Migraciones: `game_results`, `game_rounds`, RLS, RPC de ranking, función de migración local→nube (5.4).
 - Toda partida (Clásico, Caos, Diario, Mundial, Imposible) escribe `game_results` + `game_rounds` al terminar. `cloudSync` deja de sincronizar `history`.
