@@ -93,6 +93,8 @@ const GameScreen = lazyWithReload(() => import('@/components/game/GameScreen'));
 const ProfileScreen = lazyWithReload(() => import('@/components/game/ProfileScreen'));
 const FinalResultScreen = lazyWithReload(() => import('@/components/game/FinalResultScreen'));
 const MultiplayerLobby = lazyWithReload(() => import('@/components/game/MultiplayerLobby'));
+const FriendsScreen = lazyWithReload(() => import('@/components/game/FriendsScreen'));
+const ChallengeScreen = lazyWithReload(() => import('@/components/game/ChallengeScreen'));
 const WaitingRoom = lazyWithReload(() => import('@/components/game/WaitingRoom'));
 const MultiplayerResultScreen = lazyWithReload(() => import('@/components/game/MultiplayerResultScreen'));
 const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
@@ -114,6 +116,8 @@ import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
+import { challengeCitiesToGame, mockRecordMyResult, type Challenge } from '@/lib/challenges';
+import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame, pullFromCloud, setLocalData } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
 import { checkStreak } from '@/lib/dailyStreak';
@@ -133,10 +137,10 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+type Phase = 'splash' | 'home' | 'friends' | 'challenge' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto'];
+const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -187,7 +191,7 @@ const difficultyLabelsEs: Record<Difficulty, string> = {
 };
 
 export interface DeepLinkProps {
-  deepLink?: { type: 'daily' | 'challenge' | 'duel' };
+  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' };
 }
 
 const Index = ({ deepLink }: DeepLinkProps = {}) => {
@@ -237,6 +241,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [isTraining, setIsTraining] = useState(false);
   const [revengeCities, setRevengeCities] = useState<City[] | null>(null);
   const [replayCities, setReplayCities] = useState<City[] | null>(null);
+  // F3: reto asincrónico que se está jugando y fuente de la pantalla del reto
+  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  const [challengeSource, setChallengeSource] = useState<ChallengeSource | null>(null);
   const [revengeUsed, setRevengeUsed] = useState(false);
   const [originalScore, setOriginalScore] = useState(0);
   const [originalWorstScores, setOriginalWorstScores] = useState<number[]>([]);
@@ -349,6 +356,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
     setIsTraining(false);
     setIsSpeedDemon(false);
+    setActiveChallenge(null);
     setReplayCities(null); // partida nueva: ciudades frescas (no reusar las de "Otra vez")
     newGameSeed();
     setDifficulty(diff);
@@ -433,6 +441,35 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return;
     }
 
+    // F3: partida de un reto — se guarda en el reto (el servidor marca al jugador como terminado)
+    if (activeChallenge) {
+      setFinalRounds(rounds);
+      setFinalScore(total);
+      setEndReason(reason);
+      incrementGameCounter();
+      addBattlePassXP(total);
+      syncAfterGame();
+      saveGameResult({
+        gameType: 'challenge',
+        mode: gameMode,
+        difficulty,
+        score: total,
+        roundsPlayed: rounds.length,
+        roundsTotal: activeChallenge.rounds_total,
+        avgDistanceKm: avgDist,
+        endReason: reason,
+        seed: null,
+        challengeId: activeChallenge.id,
+        rounds: roundsFromResults(rounds),
+      });
+      mockRecordMyResult(activeChallenge.id, {
+        score: total, end_reason: reason,
+        rounds: roundsFromResults(rounds).map(r => ({ ...r, city_lat: r.city_lat ?? 0, city_lon: r.city_lon ?? 0, city_country: r.city_country ?? null, click_lat: r.click_lat ?? null, click_lon: r.click_lon ?? null, distance_km: r.distance_km ?? null, time_s: r.time_s ?? null, base_points: r.base_points ?? null, multiplier: r.multiplier ?? null })),
+      });
+      setPhase('final');
+      return;
+    }
+
     // Normal game — store original score for potential revenge
     setOriginalScore(total);
     setRevengeUsed(false);
@@ -485,7 +522,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     } else {
       setPhase('final');
     }
-  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities]);
+  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge]);
 
   // ── Notifications: start check loop + schedule after each game ──
   useEffect(() => {
@@ -559,6 +596,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setRevengeCities(null);
     setChallengeSeed(null);
     setChallengerScore(null);
+    setActiveChallenge(null); // tras un reto, "Nueva partida" es una partida normal
     newGameSeed();
     gameKeyRef.current += 1;
     setPhase('countdown');
@@ -568,9 +606,29 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (!isTraining) addLives(1);
     setChallengeSeed(null);
     setChallengerScore(null);
-    setIsTraining(false); setRevengeCities(null); setReplayCities(null);
+    setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null);
     setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true });
   }, [isTraining, navigate]);
+
+  // ── F3: retos asincrónicos ──
+  const handleFriends = useCallback(() => { setPhase('friends'); window.scrollTo(0, 0); }, []);
+  const handleChallengeCreated = useCallback((ch: Challenge) => { setChallengeSource({ type: 'challenge', challenge: ch }); setPhase('challenge'); window.scrollTo(0, 0); }, []);
+  const handleOpenChallengeCode = useCallback((code: string) => { setChallengeSource({ type: 'code', code }); setPhase('challenge'); window.scrollTo(0, 0); }, []);
+  const handlePlayChallenge = useCallback((ch: Challenge) => {
+    unlockAudio();
+    if (!consumeLife()) { setShowNoLives(true); return; }
+    setIsTraining(false); setIsSpeedDemon(false); setRevengeCities(null); setReplayCities(null);
+    setChallengeSeed(null); setChallengerScore(null);
+    setDifficulty(ch.difficulty);
+    setGameMode(ch.mode);
+    setActiveChallenge(ch);
+    setChallengeSource({ type: 'challenge', challenge: ch });
+    trackGameStart(ch.mode, ch.difficulty);
+    gameKeyRef.current += 1;
+    countdownNextRef.current = 'playing';
+    setPhase('countdown');
+  }, []);
+  const handleViewChallenge = useCallback(() => { setActiveChallenge(null); setPhase('challenge'); window.scrollTo(0, 0); }, []);
   const handleRevenge = useCallback((rounds: RoundResult[]) => {
     // Pick worst 5 rounds (lowest score) — one-time only
     const worst = [...rounds].sort((a, b) => a.totalPoints - b.totalPoints).slice(0, 5);
@@ -580,7 +638,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
+  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => { setProfileTab('overview'); setPhase('profile'); }, []);
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
@@ -751,6 +809,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         // challengeSeed effect will auto-start the game
       }
       navigate('/', { replace: true });
+    } else if (deepLink.type === 'reto' && routeParams.code) {
+      // /reto/ABC12 → invitación al reto (D3: el código se valida en el servidor)
+      setChallengeSource({ type: 'code', code: routeParams.code.toUpperCase() });
+      setPhase('challenge');
+      navigate('/', { replace: true });
     } else if (deepLink.type === 'duel' && routeParams.code) {
       // /duel/ABC12 → go to multiplayer lobby with pre-filled code
       setPhase('mp-lobby');
@@ -869,7 +932,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return (
         <CountdownIntro
           count={countdown}
-          label={isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
+          label={activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
           onCancel={handleCancelCountdown}
         />
       );
@@ -1000,6 +1063,32 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       );
     }
 
+    if (phase === 'friends') {
+      return (
+        <FriendsScreen
+          initialMode={gameMode}
+          initialDifficulty={difficulty}
+          onBack={handleGoHome}
+          onCreated={handleChallengeCreated}
+          onOpenCode={handleOpenChallengeCode}
+          onSignIn={() => navigate('/auth')}
+          onLiveDuel={handleMultiplayer}
+        />
+      );
+    }
+
+    if (phase === 'challenge' && challengeSource) {
+      return (
+        <ChallengeScreen
+          key={challengeSource.type === 'code' ? challengeSource.code : challengeSource.challenge.id}
+          source={challengeSource}
+          onPlay={handlePlayChallenge}
+          onBack={handleGoHome}
+          onSignIn={() => navigate('/auth')}
+        />
+      );
+    }
+
     if (phase === 'mp-lobby') {
       return <MultiplayerLobby onRoomReady={handleRoomReady} onBack={handleGoHome} onSpectate={handleSpectate} />;
     }
@@ -1099,7 +1188,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onGameOver={handleGameOver}
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
-          {...(revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
+          {...(activeChallenge
+            ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round }
+            : revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
           seed={gameSeedRef.current}
         />
       );
@@ -1108,7 +1199,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (phase === 'final') {
       // "Reta a un amigo" solo cuando la partida salió de una semilla reproducible
       // (no tras "Otra vez" ni tras la revancha, que juegan listas fijas sin semilla).
-      const canShareChallenge = !replayCities && !revengeUsed && !isTraining;
+      const canShareChallenge = !replayCities && !revengeUsed && !isTraining && !activeChallenge;
+      const playedChallenge = activeChallenge;
       return (
         <FinalResultScreen
           rounds={finalRounds}
@@ -1116,11 +1208,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           difficulty={difficulty}
           mode={gameMode}
           reason={endReason}
-          onPlayAgain={handlePlayAgain}
+          onPlayAgain={playedChallenge ? undefined : handlePlayAgain}
           onNewGame={handleNewGame}
           onGoHome={handleGoHome}
-          onRevenge={revengeUsed ? undefined : handleRevenge}
-          onShareChallenge={canShareChallenge ? handleShareChallenge : undefined}
+          onRevenge={revengeUsed || activeChallenge ? undefined : handleRevenge}
+          onShareChallenge={canShareChallenge ? handleFriends : undefined}
+          onViewChallenge={playedChallenge ? handleViewChallenge : undefined}
           onOpenStore={handleOpenStore}
           challengerScore={challengerScore}
           totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
@@ -1129,7 +1222,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 

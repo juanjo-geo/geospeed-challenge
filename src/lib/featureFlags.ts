@@ -18,6 +18,8 @@ export interface FeatureFlags {
   enable_gamepad: boolean;
   enable_onboarding: boolean;
   world_challenge_event: boolean;
+  /** D8: el duelo en vivo queda oculto al lanzar los retos asincrónicos */
+  live_duel_enabled: boolean;
   ab_group: 'control' | 'variant_a' | 'variant_b';
 }
 
@@ -38,6 +40,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   enable_gamepad: true,
   enable_onboarding: true,
   world_challenge_event: false, // activar durante Mundial/Copa para destacar el modo
+  live_duel_enabled: false,
   ab_group: 'control', // overridden per-user below
 };
 

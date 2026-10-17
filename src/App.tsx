@@ -16,16 +16,9 @@ const Support = lazy(() => import("./pages/Support.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
-/** Thin wrapper that extracts route params and forwards them to Index as props */
-function DailyRoute() {
-  return <Index deepLink={{ type: 'daily' }} />;
-}
-function ChallengeRoute() {
-  return <Index deepLink={{ type: 'challenge' }} />;
-}
-function DuelRoute() {
-  return <Index deepLink={{ type: 'duel' }} />;
-}
+// Los enlaces profundos renderizan <Index> DIRECTAMENTE (no un wrapper por ruta): así, cuando Index
+// hace navigate('/') tras procesar el enlace, React conserva la instancia (mismo tipo en la misma
+// posición) y no se pierde el estado. Con wrappers distintos se desmontaba y volvía al splash/inicio.
 
 const queryClient = new QueryClient();
 
@@ -42,10 +35,11 @@ const App = () => (
           <Suspense fallback={null}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/daily" element={<DailyRoute />} />
-              <Route path="/daily/:date" element={<DailyRoute />} />
-              <Route path="/challenge/:seed" element={<ChallengeRoute />} />
-              <Route path="/duel/:code" element={<DuelRoute />} />
+              <Route path="/daily" element={<Index deepLink={{ type: 'daily' }} />} />
+              <Route path="/daily/:date" element={<Index deepLink={{ type: 'daily' }} />} />
+              <Route path="/challenge/:seed" element={<Index deepLink={{ type: 'challenge' }} />} />
+              <Route path="/duel/:code" element={<Index deepLink={{ type: 'duel' }} />} />
+              <Route path="/reto/:code" element={<Index deepLink={{ type: 'reto' }} />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/privacy" element={<Privacy />} />

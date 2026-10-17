@@ -45,6 +45,8 @@ interface FinalResultScreenProps {
   onRevenge?: (rounds: RoundResult[]) => void;
   onShareChallenge?: () => void;
   onOpenStore?: () => void;
+  /** Partida de un reto: el botón principal lleva al reto (estado / comparación) */
+  onViewChallenge?: () => void;
   challengerScore?: number | null;
   totalRounds?: number;
 }
@@ -67,6 +69,7 @@ export default function FinalResultScreen({
   onRevenge,
   onShareChallenge,
   onOpenStore,
+  onViewChallenge,
   challengerScore,
   totalRounds = 13,
   variant = 'classic',
@@ -387,7 +390,19 @@ export default function FinalResultScreen({
         <section className="rounded-3xl border border-border bg-card/80 p-4 sm:p-5 animate-fade-in-up animation-delay-100">
           <h2 className="text-xl sm:text-2xl font-black text-center mb-3">{t('final_tryAgainTitle')}</h2>
 
-          {onPlayAgain ? (
+          {onViewChallenge ? (
+            <button
+              onClick={() => { playButtonTap(); onViewChallenge(); }}
+              className="btn3d w-full rounded-2xl py-3.5 sm:py-4 px-4 flex items-center justify-center gap-3 text-primary-foreground"
+              style={{ background: 'var(--grad-cta)' }}
+            >
+              <span className="text-2xl" aria-hidden>⚔️</span>
+              <span className="flex flex-col leading-tight text-left">
+                <span className="font-black text-base sm:text-lg">{t('ch_viewMine')}</span>
+                <span className="text-[11px] sm:text-xs font-semibold opacity-80">{t('ch_savedInChallenge')}</span>
+              </span>
+            </button>
+          ) : onPlayAgain ? (
             <>
               <button
                 onClick={() => { playButtonTap(); onPlayAgain(); }}

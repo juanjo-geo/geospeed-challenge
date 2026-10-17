@@ -410,6 +410,41 @@ export type Database = {
         Args: { p_display_name?: string | null; p_avatar?: string | null }
         Returns: undefined
       }
+      challenge_create: {
+        Args: { p: Json }
+        Returns: Json
+      }
+      challenge_preview: {
+        Args: { p_code: string }
+        Returns: Json
+      }
+      challenge_join: {
+        Args: { p_code: string }
+        Returns: Json
+      }
+      challenge_detail: {
+        Args: { p_id: string }
+        Returns: Json
+      }
+      my_challenges: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          code: string
+          mode: string
+          difficulty: string
+          status: string
+          created_at: string
+          completed_at: string | null
+          my_role: string
+          state: string
+          rival_name: string | null
+          rival_avatar: string | null
+          rival_finished: boolean
+          my_score: number | null
+          rival_score: number | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

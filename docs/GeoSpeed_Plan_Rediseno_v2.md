@@ -358,7 +358,9 @@ Pantallas en orden de impacto sobre el jugador:
 8. Re-skin con tokens de Tienda, Sin vidas, Cofre, Battle Pass, Perfil (D11).
 - **Criterio de salida:** paridad funcional con hoy + QA en móvil horizontal, móvil vertical (aviso), escritorio y ultrawide.
 
-### F3 — Reto asincrónico (12-16 días) · requiere F1, D2, D3, D9
+### F3 — Reto asincrónico (12-16 días) · requiere F1, D2, D3, D9 · 🟡 EN CURSO (18 oct 2026, rama `feat/f3-retos`)
+Hecho (bloque 1): migración `20261018120000_challenges.sql` (tablas, RLC, funciones de crear/previsualizar/unirse/detalle/bandeja y limpieza; el puntaje del rival solo se entrega cuando ambos terminaron; cierre automático al guardar la partida), cliente `challenges.ts` con simulador de desarrollo, pantallas Jugar con amigos e Invitación/estado del reto, partida del reto sobre `GameScreen` con la lista fija, enlace `/reto/:code`, duelo en vivo oculto tras bandera. Se decidió usar funciones de base de datos en vez de Edge Functions (atómicas, sin despliegue aparte). **Pendiente de JuanJo: aplicar la migración.**
+Siguen (bloque 2): Resultado pendiente, Resultado final (victoria/derrota/empate), Comparación por ciudad y Revisión del mapa del reto.
 - Edge Functions `challenge-create` (código servidor, set de ciudades explícito), `challenge-join`, `challenge-finish`.
 - Pantallas: Jugar con amigos v2, Invitación al reto (creador puede jugar sin esperar), partida de reto reutilizando `GameScreen` con `cities` fijas, Resultado pendiente, Resultado final victoria/derrota/empate, Comparación por ciudad, Revisión de mapa del reto con ambas respuestas.
 - Deep link `/reto/:code` que pre-rellena el código.
