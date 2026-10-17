@@ -1,0 +1,7 @@
+GEOSPEED — Entrega 17 de octubre de 2026
+
+01_Vigentes: referencias aprobadas para desarrollo, incluido isotipo.
+02_Historicas_NO_implementar: seis referencias de duelo simultáneo superadas por el reto asincrónico y el inicio computador v1 sustituido por v2.
+03_Documentacion: ajustes propuestos y registro de decisiones.
+
+Son maquetas estáticas, no código ni assets finales separados. No incluye las 195 fotografías de países, que están en el computador del usuario. No incluye imágenes exploratorias sin aprobación. Revisar las decisiones pendientes antes de implementar.

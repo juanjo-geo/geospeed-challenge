@@ -79,7 +79,9 @@ Geography quiz game: locate cities (or a footballer's country) on an interactive
 JuanJo ran a design audit with the dev team and approved 83 mockups (new palette: ocean blue / turquoise / warm yellow, "Explorador" pin mascot, persistent nav, settings screen, async friend challenges). Two documents govern this work:
 - `docs/GeoSpeed_Ajustes_y_Sugerencias_Desarrollo_v1.md` — the consolidated change requests + approval log (source of truth for what was approved; it did NOT audit the code).
 - `docs/GeoSpeed_Plan_Rediseno_v2.md` — code audit vs. each request, bugs found, blocking product decisions (D1–D11), target data model, 6-phase plan with estimates. **Read this before touching anything related to the redesign.**
-- Mockup PNGs will arrive in a later session → store them in `docs/maquetas/` using the file names from Appendix A of the consolidado.
+- `docs/maquetas/` — the 80 approved mockups as 1400px JPGs (`vigentes/`, `historicas_NO_implementar/`), the isotype PNG, `INDICE.csv` and the approval log. Originals (139 MB PNG) live only in JuanJo's zip `GeoSpeed_Maquetas_Aprobadas_2026-10-17.zip`.
+- Decisions closed 2026-10-17: D1 anonymous sign-in (on condition of zero cost → lazy session + weekly cleanup + Turnstile), D2 explicit city list stored per challenge (not a seed), D5 ranking = best game per region×difficulty×mode, D7 country photos in feedback/review/Mundial/comparison. Details in plan §4.0–4.1.
+- Visual direction from the mockups: **dark navy + yellow + turquoise** (an evolution of the current `neon` theme, not a light theme), multicolor continent map with labels, 5-tab bottom nav (Inicio · Progreso · Tienda · Pass · Perfil), mascot = yellow pin with turquoise gem (the hat/jacket variant in Ajustes/Login/Crear cuenta is NOT the master).
 
 Key facts the audit established (so nobody re-discovers them):
 - **No persistent player identity for guests** (no anonymous auth, no device id). Blocks challenges, cloud history, personal rank. Recommended: Supabase Anonymous Sign-in (decision D1).

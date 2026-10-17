@@ -1,8 +1,11 @@
 # GeoSpeed — Plan de Rediseño v2 (juice + retos asincrónicos)
 
-**Versión:** 1.0 · **Fecha:** 17 de octubre de 2026 · **Autor:** JuanJo + Claude (sesión de planificación)
-**Fuentes:** `GeoSpeed_Ajustes_y_Sugerencias_Desarrollo_v1.md` (consolidado de maquetas aprobadas, 83 entradas) + auditoría del código real hecha el 17 oct 2026 sobre el commit `993cfd0`.
-**Estado:** Plan para validar con el equipo. No compromete fechas. Las maquetas (PNG) se incorporan en la siguiente iteración.
+**Versión:** 1.1 · **Fecha:** 17 de octubre de 2026 · **Autor:** JuanJo + Claude (sesión de planificación)
+**Fuentes:** `GeoSpeed_Ajustes_y_Sugerencias_Desarrollo_v1.md` (consolidado de maquetas aprobadas, 83 entradas) + auditoría del código real hecha el 17 oct 2026 sobre el commit `993cfd0` + revisión de las 80 maquetas entregadas el 17 oct.
+**Maquetas:** `docs/maquetas/vigentes/` (73) y `docs/maquetas/historicas_NO_implementar/` (7), re-codificadas a JPG de 1400 px para el repo. Los PNG originales están en el zip `GeoSpeed_Maquetas_Aprobadas_2026-10-17.zip` en el computador de JuanJo. Índice en `docs/maquetas/INDICE.csv`.
+**Estado:** Plan para validar con el equipo. No compromete fechas. Decisiones D1, D2, D5 y D7 cerradas el 17 oct (sección 4).
+
+**Cambios v1.1:** sección 2b (hallazgos de las maquetas), D1 con análisis de costo, D2 especificada en detalle (4.1), corrección del riesgo de paleta (las maquetas son oscuras, no claras), tareas de contenido C5-C6.
 
 ---
 
@@ -124,6 +127,42 @@ Leyenda de **Estado real**: ✅ existe · 🟡 parcial · ❌ no existe. **Esfue
 
 ---
 
+## 2b. Hallazgos al revisar las maquetas (17 oct 2026)
+
+Se revisaron 34 de las 80 imágenes (todas las móviles clave, Inicio y Partida de escritorio, isotipo). Las de escritorio restantes son gemelas de contenido de las móviles. Lo que cambia o precisa el plan:
+
+**Dirección visual**
+1. **La paleta es oscura.** Fondo azul marino profundo (≈ `#0B1F3A`), acentos amarillo (≈ `#FFD93B`) y turquesa (≈ `#19E6D2`), coral puntual para error/tiempo. Es una **evolución del tema `neon` actual** (navy + dorado + teal), no un salto a tema claro. Baja el riesgo de UI-01 y el de perder "juice". El cambio grande es el **mapa multicolor por continente** con etiquetas de continentes y océanos.
+2. **Mascota:** conviven tres estilos. El vigente es el **pin amarillo con gema turquesa y aletas** (isotipo + casi todas las pantallas). Ajustes, Iniciar sesión y Crear cuenta usan un pin con sombrero de explorador y chaqueta, y un logotipo con brújula; las tres llevan marca de agua "Propuesta visual". Confirmar que el maestro es el pin con gema y re-dibujar esas tres con él (tarea C2). Poses que las maquetas requieren: idle, guiño, celebra con trofeo, preocupada (derrota y tiempo agotado), leyendo libro (historial), con mapa (reto), con sobre (invitación), con portapapeles (Mis retos), tranquila (cierre completado).
+3. En los cierres el logo-mascota del encabezado aparece con cara preocupada incluso en "Nuevo récord". En implementación el logo del header es neutro; la emoción va en la tarjeta.
+
+**Navegación y shell**
+4. **Barra inferior de 5 pestañas:** Inicio · Progreso · Tienda · Pass · Perfil. "Progreso" es el hub de Historial, Ranking y Mis retos (esas tres pantallas la muestran activa). En escritorio la misma barra va arriba. La maqueta "Más modos" muestra solo 3 pestañas: inconsistencia, usar 5.
+5. Encabezado de Home: vidas como corazones, avatar + nombre, engranaje → Ajustes. En partida: sonido, engranaje, cerrar; y controles de zoom −/+/centrar abajo a la derecha (hoy el zoom es solo por gesto).
+6. **Selectores:** en Home son dropdowns que abren un bottom sheet (Región / Dificultad). Textos de la maqueta: Turista "Megaciudades icónicas", Rookie "Capitales del mundo", Crack "Ciudades regionales", Leyenda "¿Dónde queda eso?!"; regiones con subtítulo. Debajo: "13 ciudades · 15 s por ciudad" (debe ser dinámico por modo). La maqueta **no muestra los candados por nivel** que hoy bloquean regiones y dificultades: decidir si se muestran bloqueados con candado o se eliminan (D12).
+7. **Home del jugador nuevo:** hay una sola maqueta de Inicio. Hoy el jugador con 0 partidas no ve modos ni selectores. Recomendación: mostrarle todo con el banner "¿Cómo se juega?" expandido y el tutorial de 3 pasos como primer CTA secundario (D13).
+
+**Datos y contenido que las maquetas dan por hechos**
+8. **Banderas por país** en Tus respuestas por ciudad, Comparación y Revisión → hace falta ISO-3166 por ciudad (tarea C5: mapear las 420 ciudades a ISO; usar banderas emoji o un set SVG).
+9. **Fotos en Comparación por ciudad** (Tokio, Roma, Lima): la maqueta usa fotos de ciudad; el catálogo de JuanJo es de **países**. Con D7 se usa la foto del país de la ciudad. Aclararlo al equipo para que nadie busque 420 fotos de ciudades.
+10. **Revisión de ciudad** muestra el mapa con zoom al país, fronteras de vecinos y **nombres de países en español** (CHILE, PARAGUAY, BRASIL). `countries.ts` tiene nombres en inglés y sin centroide → tarea C6: nombre ES/EN + centroide para etiquetas, en el mismo archivo donde se añade el ISO.
+11. "Ver cálculo" (feedback y revisión) → desglose base × velocidad × racha × dificultad. La lógica existe en `gameUtils.ts`; la UI es nueva.
+12. Feedback: "Avanza en 2 s" (hoy 3 s, `AUTO_ADVANCE_SECONDS`). Recomendación: 2,5 s y controlado por feature flag.
+13. **Avatares y nombres:** el ranking muestra avatares ilustrados de personas con nombre completo; los retos muestran mascotas de colores por jugador (amarilla tú, turquesa/blanca el rival). Hoy el avatar es un emoji y el ranking usa 3 iniciales. Se necesita un **sistema de avatares** (set de 8-12 exploradores de colores) + `display_name` para registrados; invitados anónimos como "Explorador 1234". Entra en F1.
+14. Código de reto ilustrado "GEO742" (prefijo + 3 dígitos = 1.000 combinaciones). Es ilustrativo. Se mantiene D3 (5 caracteres) mostrándolo como `GEO-XXXXX` donde el prefijo es solo visual.
+15. Historial agrupado por "Hoy / Ayer / fecha", con hora, badge de estado (Completada / Tiempo agotado) y ciudades N/13. Confirma la necesidad de `end_reason` y `rounds_played` en `game_results`.
+16. Ranking: Top 10 con nombres y la fila propia "#24 · Tú" fuera de la lista. Confirma la RPC de posición propia.
+
+**Flujo**
+17. Girar teléfono: "La cuenta regresiva empieza después" confirma el orden girar → cuenta → partida (hoy es al revés).
+18. Cuenta regresiva muestra "Clásico · Mundo · Turista" y un botón Cancelar (hoy no hay cancelar).
+19. Carga: barra con texto "Preparando tu próxima aventura…". Puede atarse a carga real de assets (mapa, mascota, audio) en vez de los 3 s fijos actuales.
+20. Perfil muestra la etiqueta "Explorador" bajo el nombre (rango o título). Hoy el título viene del nivel ("Deidad Geo"); definir si "Explorador" es texto fijo o el título de nivel (D14, trivial).
+
+**Nuevas decisiones menores añadidas a la sección 4:** D12 candados por nivel, D13 Home del jugador nuevo, D14 etiqueta del perfil.
+
+---
+
 ## 3. Bugs y deuda detectados que entran al plan aunque no estén en las maquetas
 
 Se incluyen porque el rediseño los tocaría de todos modos o porque invalidan una pantalla aprobada.
@@ -153,17 +192,66 @@ El consolidado marca varias como "por definir". Aquí van con una **recomendaci�
 
 | # | Decisión | Opciones | Recomendación |
 |---|---|---|---|
-| D1 🔴 | **Identidad del invitado** (bloquea retos, historial nube, ranking personal) | (a) Obligar cuenta para retos. (b) **Supabase Anonymous Sign-in**: todo visitante recibe un `auth.uid()` al abrir; al registrarse se convierte la misma identidad (`updateUser` con email) y conserva todo. (c) Device id propio. | **(b).** Da RLS real por usuario desde el día 1, resuelve "continuar en otro dispositivo" al vincular, y evita el merge por blobs de `cloudSync`. Costo: habilitar en el dashboard + manejar límites de usuarios anónimos (limpieza periódica de anónimos inactivos). |
-| D2 🔴 | **Set de ciudades del reto**: seed o lista explícita | Seed (como hoy) vs. lista de ciudades guardada en el reto | **Lista explícita** (`jsonb` con nombre, país, lat, lon). Inmune a cambios de `cities.ts`, permite revancha excluyendo ciudades usadas, y la comparación por ciudad no depende de recomputar nada. |
+| D1 ✅ | **Identidad del invitado** (bloquea retos, historial nube, ranking personal) | (a) Obligar cuenta para retos. (b) **Supabase Anonymous Sign-in**: todo visitante recibe un `auth.uid()`; al registrarse se convierte la misma identidad y conserva todo. (c) Device id propio. | **Decidido 17 oct: (b), con la condición de JuanJo "si y solo si no tiene costo".** Análisis de costo abajo (4.0). Conclusión: costo cero hasta 50.000 usuarios activos al mes; se implementa con tres salvaguardas para que siga siendo cero. |
+| D2 ✅ | **Set de ciudades del reto**: seed o lista explícita | Seed (como hoy) vs. lista de ciudades guardada en el reto | **Decidido 17 oct: lista explícita.** Especificación completa en 4.1. |
 | D3 | Códigos de reto | Longitud, alfabeto, generación cliente vs servidor, códigos inválidos | Mantener 5 caracteres del alfabeto actual (32 símbolos, ~33 M combinaciones) pero **generar en servidor** con reintento ante colisión; mensaje genérico "código no válido o reto no disponible". Además de código, enlace `/reto/:code` que pre-rellena. |
 | D4 | Caducidad y limpieza de retos e invitaciones | Sin caducidad / 7 días / 30 días | No fijar caducidad visible en v1 (no aprobada). Sí definir **limpieza técnica**: borrar retos sin ningún resultado a los 30 días; conservar los jugados. |
-| D5 | **Criterio del ranking** | Mejor partida / acumulado / por periodo | **Mejor partida por combinación región × dificultad × modo**, con los filtros de periodo que ya existen. Mostrar posición propia con una RPC `rank_position(user_id, filtros)`. Sin torneos ni premios (no aprobados). |
+| D5 ✅ | **Criterio del ranking** | Mejor partida / acumulado / por periodo | **Decidido 17 oct:** mejor partida por combinación región × dificultad × modo, con los filtros de periodo que ya existen. Posición propia con RPC `my_rank(mode, difficulty, period)`. Sin torneos ni premios (no aprobados). |
 | D6 | Día del Desafío diario | UTC (hoy) vs. hora local | Mantener UTC para que "las mismas ciudades para todos" sea literal, pero **mostrar la hora de cambio** en la tarjeta. Cambiar a local rompe la racha de usuarios actuales. |
-| D7 | Uso de las 195 fotos de países | (a) Fondo/ilustración en feedback y revisión de ciudad. (b) Tarjeta del país en Mundial. (c) Nuevo modo "adivina el país por la foto". | **(a)+(b)** en v1: enriquecen EDU-01 y Mundial sin nueva mecánica. (c) queda fuera (sería un modo nuevo, no aprobado). Requiere añadir ISO-3166 a `countries.ts` y un mapa nombre→ISO para `cities.ts`. |
+| D7 ✅ | Uso de las 195 fotos de países | (a) Fondo/ilustración en feedback y revisión de ciudad. (b) Tarjeta del país en Mundial. (c) Nuevo modo "adivina el país por la foto". | **Decidido 17 oct: (a)+(b).** Además, la foto del país se usa en la tarjeta de **Comparación por ciudad** (la maqueta muestra fotos de ciudad; se sustituyen por la del país, ver 2b.9). (c) queda fuera. Requiere ISO-3166 en `countries.ts` y mapa ciudad→ISO (tareas C5/C6). |
 | D8 | Qué pasa con el duelo en vivo, espectador y emoji chat | Borrar / dejar oculto por flag | **Ocultar tras feature flag `live_duel_enabled=false`** al lanzar retos; borrar en una versión posterior si nadie lo pide. |
 | D9 | Interrupción de partida en un reto | Reanudar / reiniciar / contar como abandono | v1: **si se cierra a mitad, el reto queda "te falta jugar" y se reinicia desde cero** con el mismo set (no se aprobó reanudación). Documentar en la pantalla de invitación. |
 | D10 | Política de contraseña y verificación de correo | Mínimo 6 (hoy) / 8 + confirmación | 8 caracteres + confirmación (la maqueta ya la pide). Verificación de correo: mantener la de Supabase. |
 | D11 | Alcance del rediseño sobre pantallas **sin maqueta** (Tienda, Sin vidas, Cofre diario, Battle Pass, Onboarding, cierres de Caos y Mundial, Perfil pestañas Niveles/Insignias) | Re-skin con los tokens nuevos / dejar como están / maquetar | **Re-skin con tokens** en F2 para no mezclar dos estéticas; maquetar solo Tienda y Sin vidas porque son las de conversión. |
+| D12 | Candados por nivel en región y dificultad (hoy Europa Nv2 … África Nv5; Rookie Nv2, Crack Nv4, Leyenda Nv6). Las maquetas no los muestran. | Mantener con candado visible / quitar | Mantener, con candado + "Nivel N" en la opción del bottom sheet. Quitarlos cambia la progresión, que no fue parte del rediseño. |
+| D13 | Home del jugador nuevo (0 partidas) | Ocultar modos como hoy / mostrar todo | Mostrar todo con el banner "¿Cómo se juega?" expandido. El onboarding jugable se ofrece al primer "Jugar ahora", como hoy. |
+| D14 | Etiqueta "Explorador" bajo el nombre en Perfil | Texto fijo / título de nivel | Título de nivel (ya existe: Novato … Deidad Geo). "Explorador" era ilustrativo. |
+
+### 4.0 D1 en detalle: ¿cuánto cuesta Anonymous Sign-in?
+
+Verificado el 17 oct 2026 en la documentación y precios de Supabase:
+
+- **Anonymous Sign-ins está incluido en el plan Free.** No es una función de pago.
+- **Cómo cobra Supabase la autenticación:** por "usuarios activos mensuales" (MAU), que son los usuarios distintos que inician sesión o refrescan su token en el ciclo de facturación, contados una sola vez. La documentación no excluye a los usuarios anónimos, así que **hay que asumir que un anónimo que juega en el mes cuenta como 1 MAU.**
+- **Cuotas:** Free incluye **50.000 MAU** sin cargo. Pro (25 USD/mes) incluye 100.000 y cobra 0,00325 USD por MAU adicional. A escala del plan de lanzamiento (10K-25K usuarios activos diarios en el caso base) el consumo de MAU puede acercarse al tope Free en el mejor escenario; en ese punto GeoSpeed ya estaría facturando y el salto a Pro se justificaría por otras razones (soporte, backups).
+- **Otro costo indirecto:** cada anónimo es una fila en `auth.users`. Sin limpieza, un bot puede inflar la base. Supabase no limpia anónimos automáticamente.
+
+**Conclusión:** la condición "sin costo" se cumple hoy y hasta 50.000 jugadores activos al mes. Para que siga cumpliéndose se implementa así:
+
+1. **Sesión anónima perezosa:** no se crea al abrir la app, sino al terminar la primera partida (o al tocar "Jugar con amigos"/"Perfil"). Un visitante que rebota sin jugar no consume MAU ni crea fila.
+2. **Limpieza semanal** (cron de Supabase, gratis): borrar `auth.users` anónimos con más de 30 días y sin filas en `game_results`. Los que sí jugaron se conservan.
+3. **Protección anti-abuso:** mantener el límite por IP que trae Supabase (30 altas anónimas/hora) y activar Cloudflare Turnstile invisible (gratis) en el alta anónima.
+4. **Vinculación a cuenta:** `updateUser({email})` + verificación + `updateUser({password})` para correo, o `linkIdentity` para Google/Apple. Requiere activar "manual linking" en el dashboard (gratis). Si el correo ya existe en otra cuenta, se inicia sesión en esa y se **migran** los `game_results` del anónimo con una función de servidor; no se pierden partidas.
+5. **Alarma:** panel de uso de Supabase con aviso al 70 % de la cuota de MAU.
+
+### 4.1 D2 en detalle: lista explícita de ciudades en el reto
+
+**Qué pasa hoy con el seed.** En el duelo solo se guarda un entero `seed`. Cada teléfono ejecuta `getRandomCities(dificultad, 13, región, seed)` y confía en que el otro obtendrá la misma lista. Eso solo es cierto si **ambos clientes tienen exactamente el mismo `cities.ts` y el mismo algoritmo de barajado.** Se rompe cuando:
+- Se despliega una versión que añade, quita o reordena una ciudad (el índice barajado apunta a otra ciudad).
+- Un jugador tiene la PWA en caché vieja y el otro la nueva, o uno usa la app Android y el otro la web.
+- Se ajusta la mezcla de dificultades de `getProgressiveCities`.
+En un reto asincrónico, donde pueden pasar días entre la partida de uno y la del otro, cualquiera de esas tres cosas es probable. Además, con seed no se puede excluir ciudades para la revancha, ni mostrar "13 ciudades nuevas", ni comparar por ciudad sin recomputar.
+
+**Qué se guarda en su lugar.** Al crear el reto se fija la lista y se guarda en la columna `challenges.cities` como JSON:
+
+```json
+[
+  { "n": 1, "name": "Tokio",        "country": "Japón",     "iso": "JP", "lat": 35.6762, "lon": 139.6503 },
+  { "n": 2, "name": "Buenos Aires", "country": "Argentina", "iso": "AR", "lat": -34.6037, "lon": -58.3816 },
+  …
+]
+```
+Unos 100 bytes por ciudad, ~1,3 KB por reto de 13. Un millón de retos ocuparían ~1,3 GB; a la escala real es despreciable.
+
+**Quién elige la lista.** El cliente del creador, que ya tiene el catálogo y la lógica de mezcla. Envía la lista a la Edge Function `challenge-create` junto con `catalog_version` (hash de `cities.ts` generado en build). El servidor valida forma y cantidad (13 entradas, campos completos, coordenadas en rango) y la guarda tal cual. No hace falta mover el catálogo al servidor. La equidad no depende de quién la eligió: ambos juegan la misma lista.
+
+**Cómo juega cada uno.** `GameScreen` recibe una prop nueva `cities: City[]` que sustituye al par `seed`/`getRandomCities`. Es el mismo cambio que necesita "Repetir estas ciudades" (hoy pasa `replayCities`), así que se unifica: una sola vía para "jugar esta lista concreta".
+
+**Revancha.** Se toma `parent.cities`, se excluyen esos nombres del pool de la misma región y dificultad, y se eligen 13 nuevas. Si el pool restante no alcanza (pasa en regiones de 60 ciudades tras varias revanchas), se completan con las excluidas más antiguas y la invitación dice "N ciudades nuevas" con el número real, nunca el fijo de la maqueta.
+
+**Comparación y revisión por ciudad.** Como `game_rounds` guarda por fila el clic de cada jugador y la ciudad viene de `challenges.cities`, la pantalla de comparación es una consulta sin recomputar nada, y sigue siendo correcta aunque la ciudad cambie de coordenadas en el catálogo años después.
+
+**Lo que NO cambia.** El Desafío diario sigue usando el seed de la fecha: todos juegan el mismo día con el mismo build. Tiene la misma fragilidad si se despliega a mitad del día; si se quiere blindar, se guarda el set del día en una tabla `daily_sets(date, cities)` la primera vez que alguien lo genera. Es una mejora pequeña y queda anotada para F5.
 
 ---
 
@@ -290,6 +378,8 @@ Pantallas en orden de impacto sobre el jugador:
 - **C2:** Unificar recurso maestro de mascota Explorador y sus 5 poses (idle, celebra, en llamas, triste, guiño) + variante "tranquila" de cierre completado. Exportar PNG/WebP a 2x y 3x.
 - **C3:** Nombres de ciudades/países en inglés (hoy solo ES) si el rediseño se lanza bilingüe.
 - **C4:** Paquete de 195 fotos con `paises.json` + `CREDITOS.txt` entregado al repo (fuera de `src/`, en `public/countries/`).
+- **C5:** Código ISO-3166 alfa-2 para cada una de las 420 ciudades (campo `iso` en `cities.ts`). Habilita banderas y la foto del país.
+- **C6:** En `countries.ts`: ISO, nombre en ES y EN, y centroide (lat, lon) por país, para las etiquetas de la Revisión de ciudad y el mapa comparativo.
 
 ---
 
@@ -314,7 +404,9 @@ Detectadas en la auditoría (pantallas que existen y el rediseño dejaría con l
 
 | Riesgo | Mitigación |
 |---|---|
-| Cambiar la paleta oscura premium por una clara puede bajar la percepción "juice" que ya mide 2.6+/3 en la auditoría de julio | Mantener los efectos (confeti, count-up, mascota, audio) intactos; validar la nueva paleta con la rúbrica de `Protocolo_Juice_GeoSpeed_vs_Duolingo.md` antes de F2.4 |
+| El re-skin puede bajar la percepción "juice" que ya mide 2.6+/3 en la auditoría de julio (la paleta nueva sigue siendo oscura, así que el riesgo está en los efectos, no en el color) | Mantener los efectos (confeti, count-up, mascota, audio) intactos; validar la nueva piel con la rúbrica de `Protocolo_Juice_GeoSpeed_vs_Duolingo.md` antes de F2.4 |
+| Tres estilos de mascota conviven en las maquetas (2b.2); el equipo puede producir assets del estilo equivocado | Cerrar C2 (maestro = pin con gema) antes de que nadie exporte assets; re-dibujar Ajustes, Login y Crear cuenta |
+| Anonymous Sign-in crece en MAU y filas sin control | Salvaguardas de 4.0: sesión perezosa, limpieza semanal, Turnstile, alarma al 70 % |
 | Anonymous Sign-in crea un usuario por visitante nuevo; el plan gratuito de Supabase tiene límites de MAU | Limpieza programada de anónimos sin partidas >30 días; medir en soft launch |
 | Retos sin notificación externa (no aprobada) dependen de que el amigo abra la app | Medir tasa de aceptación; si es baja, proponer push de "te retaron" como decisión separada (requiere B10) |
 | El equipo implementa cifras ilustrativas de las maquetas (13 ciudades, #24, etc.) | Regla ya escrita en el consolidado §13; repetirla en cada ticket |
@@ -324,7 +416,9 @@ Detectadas en la auditoría (pantallas que existen y el rediseño dejaría con l
 
 ## 9. Próximos pasos
 
-1. JuanJo cierra D1, D2, D5 y D7 (las que bloquean). Las demás pueden decidirse al entrar a cada fase.
-2. Siguiente iteración: entrega de maquetas PNG. Se guardan en `docs/maquetas/` con los nombres del registro del apéndice A, y este plan se cruza pantalla por pantalla.
-3. Con D1 decidida, arrancar F0 y F1 en paralelo (son independientes entre sí).
-4. Pasar este plan a tickets por fase con los criterios de salida como "definition of done".
+1. ~~JuanJo cierra D1, D2, D5 y D7.~~ Cerradas el 17 oct. Quedan abiertas D3, D4, D6, D8-D14; ninguna bloquea F0 ni F1.
+2. ~~Entrega de maquetas.~~ Entregadas y guardadas en `docs/maquetas/`. Pendientes las de la sección 7 (sobre todo Tienda y Sin vidas) y la unificación de mascota (C2).
+3. JuanJo confirma con el equipo de diseño: mascota maestra (2b.2), 5 pestañas de navegación (2b.4), candados por nivel (D12).
+4. Arrancar **F0 y F1 en paralelo**. F1 empieza por activar Anonymous Sign-in + manual linking en el dashboard de Supabase (JuanJo, 5 minutos) y por la migración `game_results` / `game_rounds`.
+5. Arrancar en paralelo las tareas de contenido C1 (pistas), C5 (ISO por ciudad) y C6 (países ES/EN + centroides): no necesitan código y desbloquean F2.6 y F6.
+6. Pasar este plan a tickets por fase con los criterios de salida como "definition of done".
