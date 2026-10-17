@@ -178,7 +178,7 @@ export default function MultiplayerResultScreen({ room, isHost, onPlayAgain, onG
             <button
               onClick={onPlayAgain}
               className="flex-1 py-3 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
             >
               {opponentFinished ? 'REVANCHA 🔄' : 'NUEVA PARTIDA 🔄'}
             </button>

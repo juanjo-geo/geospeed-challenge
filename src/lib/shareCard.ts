@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/theme';
 import { MODE_CONFIG, getMapBounds } from '@/data/cities';
 import { countries } from '@/data/countries';
 import { getPlayerLevel } from './levelSystem';
@@ -290,7 +291,7 @@ export async function generateShareCard(data: ShareCardData): Promise<Blob> {
       ctx.fill();
 
       // City dot (gold star)
-      ctx.fillStyle = '#f5c842';
+      ctx.fillStyle = BRAND.yellow;
       ctx.beginPath();
       ctx.arc(cx, cy, 3, 0, Math.PI * 2);
       ctx.fill();

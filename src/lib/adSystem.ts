@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/theme';
 /**
  * GeoSpeed — Ad System
  *
@@ -212,7 +213,7 @@ async function showAdSenseRewarded(): Promise<AdResult> {
 
       const label = document.createElement('p');
       label.textContent = '🎬 Mira el anuncio para recibir +1 vida';
-      label.style.cssText = 'color: #f5c842; font-size: 14px; font-weight: 600; margin-bottom: 16px; font-family: system-ui;';
+      label.style.cssText = `color: ${BRAND.yellow}; font-size: 14px; font-weight: 600; margin-bottom: 16px; font-family: system-ui;`;
 
       const adIns = document.createElement('ins');
       adIns.className = 'adsbygoogle';
@@ -232,7 +233,7 @@ async function showAdSenseRewarded(): Promise<AdResult> {
         closeBtn.textContent = '✓ Reclamar vida';
         closeBtn.style.cssText = `
           position: absolute; bottom: 40px;
-          background: #f5c842; color: #0A0E18;
+          background: ${BRAND.yellow}; color: ${BRAND.navyDeep};
           padding: 12px 32px; border-radius: 12px; border: none;
           font-size: 16px; font-weight: 800; cursor: pointer;
           font-family: system-ui;
@@ -287,7 +288,7 @@ function showDevOverlay(type: 'interstitial' | 'rewarded'): Promise<AdResult> {
           ${isRewarded ? 'Mira este anuncio para recibir +1 vida' : 'El juego continuará en unos segundos'}
         </p>
         <div style="width: 200px; height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin: 0 auto;">
-          <div style="height: 100%; background: #f5c842; border-radius: 3px; animation: adProgress ${duration / 1000}s linear forwards;"></div>
+          <div style="height: 100%; background: ${BRAND.yellow}; border-radius: 3px; animation: adProgress ${duration / 1000}s linear forwards;"></div>
         </div>
         <p style="font-size: 11px; color: #666; margin-top: 12px;">
           [Espacio publicitario — Configura VITE_ADSENSE_CLIENT_ID]

@@ -58,7 +58,9 @@ Deno.serve(async (req) => {
     }
 
     // Validate mode
-    const validModes = ["world", "europe", "asia", "americas", "africa"];
+    // "mundial" = Desafío Mundial (país del futbolista); antes se rechazaba y sus puntajes
+    // nunca llegaban al ranking en la nube (bug B2 del plan de rediseño).
+    const validModes = ["world", "europe", "asia", "americas", "africa", "mundial"];
     if (!validModes.includes(mode)) {
       return new Response(JSON.stringify({ error: "Invalid mode" }), {
         status: 400,

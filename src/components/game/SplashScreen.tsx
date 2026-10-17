@@ -1,11 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { unlockAudio } from '@/lib/sounds';
+import { useI18n } from '@/i18n';
+import Wordmark from '@/components/ui/Wordmark';
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
+/**
+ * Pantalla de carga (maqueta GeoSpeed_Carga_APROBADA_v1): logo, wordmark,
+ * pregunta de marca y barra de progreso. Duración fija de 3 s; el rediseño
+ * visual completo (globo + mascota) llega en F2.
+ */
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState<'enter' | 'hold' | 'exit'>('enter');
   const [tapped, setTapped] = useState(false);
 
@@ -34,9 +42,9 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       onClick={handleTap}
       onTouchStart={handleTap}
     >
-      {/* Logo image with glow */}
+      {/* Logo */}
       <div
-        className="relative mb-px sm:mb-0.5 transition-all duration-1000 ease-out"
+        className="relative mb-2 sm:mb-3 transition-all duration-1000 ease-out"
         style={{
           opacity: phase === 'enter' ? 0 : 1,
           transform: phase === 'enter' ? 'scale(0.6) rotate(-10deg)' : 'scale(1) rotate(0deg)',
@@ -46,61 +54,53 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           src="/logo.png"
           alt="GeoSpeed Logo"
           className="w-[72px] h-[72px] sm:w-[108px] sm:h-[108px] md:w-[132px] md:h-[132px] object-contain"
-          style={{
-            filter: 'none',
-          }}
         />
       </div>
 
-      {/* Title — gold gradient text */}
+      {/* Wordmark */}
       <h1
-        className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight transition-all duration-1000 ease-out delay-200"
+        className="leading-none transition-all duration-1000 ease-out delay-200"
         style={{
-          fontFamily: 'Impact, system-ui',
-          background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
           opacity: phase === 'enter' ? 0 : 1,
           transform: phase === 'enter' ? 'translateY(20px)' : 'translateY(0)',
-          filter: 'drop-shadow(0 2px 8px rgba(240,160,48,0.4))',
         }}
       >
-        GEOSPEED
+        <Wordmark size="xl" />
       </h1>
-
-      {/* Loading bar — gold to teal */}
-      <div className="mt-6 sm:mt-8 w-32 sm:w-40 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(240,160,48,0.15)' }}>
-        <div
-          className="h-full rounded-full transition-all ease-out"
-          style={{
-            background: 'linear-gradient(90deg, #D48020, #F0A030, #00D4AA)',
-            width: phase === 'enter' ? '0%' : phase === 'hold' ? '85%' : '100%',
-            transitionDuration: phase === 'hold' ? '2000ms' : '600ms',
-            boxShadow: '0 0 8px rgba(240,160,48,0.4)',
-          }}
-        />
-      </div>
 
       {/* Tagline */}
       <p
-        className="mt-3 text-[10px] sm:text-xs tracking-widest uppercase transition-all duration-1000 ease-out delay-700"
+        className="mt-3 text-sm sm:text-base font-bold text-center transition-all duration-1000 ease-out delay-500"
         style={{
-          color: '#00D4AA',
-          opacity: phase === 'enter' ? 0 : 0.5,
+          color: 'hsl(var(--foreground))',
+          opacity: phase === 'enter' ? 0 : 0.9,
           transform: phase === 'enter' ? 'translateY(8px)' : 'translateY(0)',
         }}
       >
-        ¿Cuánto conoces el mundo?
+        {t('home_tagline')}
       </p>
+
+      {/* Loading bar — turquesa */}
+      <div className="mt-6 sm:mt-8 w-40 sm:w-52 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(var(--accent)/0.15)' }}>
+        <div
+          className="h-full rounded-full transition-all ease-out"
+          style={{
+            background: 'linear-gradient(90deg, hsl(var(--accent)/0.7), hsl(var(--accent)))',
+            width: phase === 'enter' ? '0%' : phase === 'hold' ? '85%' : '100%',
+            transitionDuration: phase === 'hold' ? '2000ms' : '600ms',
+            boxShadow: '0 0 8px hsl(var(--accent)/0.45)',
+          }}
+        />
+      </div>
+      <p className="mt-2 text-[10px] sm:text-xs text-muted-foreground">{t('splash_loading')}</p>
 
       {/* Tap hint */}
       {!tapped && phase === 'hold' && (
         <p
           className="absolute bottom-8 text-[10px] tracking-widest uppercase animate-pulse"
-          style={{ color: 'rgba(255,255,255,0.3)' }}
+          style={{ color: 'hsl(var(--foreground)/0.35)' }}
         >
-          TAP TO START
+          {t('splash_tap')}
         </p>
       )}
     </div>

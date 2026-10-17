@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/theme';
 import { useRef, useEffect, useState } from 'react';
 import { countries } from '@/data/countries';
 import { type GameMode, getMapBounds } from '@/data/cities';
@@ -137,7 +138,7 @@ export default function ReplayMap({ rounds, gameMode }: ReplayMapProps) {
       ctx.stroke();
 
       // Target dot (correct city)
-      ctx.fillStyle = '#f5c842';
+      ctx.fillStyle = BRAND.yellow;
       ctx.beginPath();
       ctx.arc(cx, cy, isHovered ? 5 : 3.5, 0, Math.PI * 2);
       ctx.fill();

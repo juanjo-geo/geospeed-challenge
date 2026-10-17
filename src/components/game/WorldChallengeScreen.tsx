@@ -499,7 +499,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
         </span>
         <Mascot
           state={mascotState}
-          className={`w-8 sm:w-9 md:w-10 shrink-0 select-none pointer-events-none drop-shadow-[0_3px_8px_rgba(240,160,48,0.4)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+          className={`w-8 sm:w-9 md:w-10 shrink-0 select-none pointer-events-none drop-shadow-[0_3px_8px_hsl(var(--primary)/0.4)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
         />
       </div>
 

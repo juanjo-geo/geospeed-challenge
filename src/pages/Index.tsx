@@ -8,6 +8,10 @@ import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/c
 import { type RoundResult } from '@/components/game/GameScreen';
 import CountdownIntro from '@/components/game/CountdownIntro';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
+import AppNav, { type NavTab } from '@/components/game/AppNav';
+import Wordmark from '@/components/ui/Wordmark';
+import { initPrefs } from '@/lib/prefs';
+import { getTranslations, detectLocale, translate } from '@/i18n';
 
 // ── Eager loads (critical path — always needed) ──
 import HomeScreen from '@/components/game/HomeScreen';
@@ -34,14 +38,17 @@ class PhaseErrorBoundary extends Component<
   }
   render() {
     if (this.state.error) {
+      // Class component: sin hooks, se resuelve el idioma a mano
+      const dict = getTranslations(detectLocale());
+      const tt = (k: Parameters<typeof translate>[1]) => translate(dict, k);
       return (
         <div className="fixed inset-0 flex flex-col items-center justify-center game-bg p-6 text-center">
           <img src="/logo.png" alt="GeoSpeed" className="w-14 mb-4 opacity-60" />
           <h2 className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))' }}>
-            Algo salió mal
+            {tt('error_title')}
           </h2>
           <p className="text-sm text-muted-foreground mb-1 max-w-xs">
-            {this.state.error.message || 'Error desconocido'}
+            {this.state.error.message || tt('error_unknown')}
           </p>
           <p className="text-xs text-muted-foreground/60 mb-6 max-w-xs break-all">
             {this.state.error.name}
@@ -49,9 +56,9 @@ class PhaseErrorBoundary extends Component<
           <button
             onClick={() => { this.setState({ error: null }); this.props.onReset(); }}
             className="px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.97]"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
+            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
           >
-            ← VOLVER AL INICIO
+            {tt('error_backHome')}
           </button>
         </div>
       );
@@ -95,6 +102,7 @@ const OnboardingGame = lazyWithReload(() => import('@/components/game/Onboarding
 const StoreScreen = lazyWithReload(() => import('@/components/game/StoreScreen'));
 const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePassScreen'));
 const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
+const SettingsScreen = lazyWithReload(() => import('@/components/game/SettingsScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
@@ -122,7 +130,10 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+type Phase = 'splash' | 'home' | 'profile' | 'store' | 'battlepass' | 'settings' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+
+/** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
+const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings'];
 
 // Generate a deterministic seed from today's date so all players get the same cities
 function getDailySeed(): number {
@@ -230,14 +241,23 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [spectateRoomId, setSpectateRoomId] = useState<string>('');
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
+  // Semilla de la partida en curso: permite que "Reta a un amigo" comparta EXACTAMENTE
+  // las mismas ciudades (antes se generaba una semilla nueva al compartir → bug B1).
+  const gameSeedRef = useRef<number>(Math.floor(Math.random() * 1_000_000));
+  const newGameSeed = () => { gameSeedRef.current = Math.floor(Math.random() * 1_000_000); };
   // Overlay-based rotate screen — keeps game mounted so state is preserved
   const [showRotateOverlay, setShowRotateOverlay] = useState(false);
+  // Pestaña inicial del perfil (la pestaña "Progreso" de la barra abre el historial)
+  const [profileTab, setProfileTab] = useState<'stats' | 'history'>('stats');
+  // "Cómo jugar" desde Ajustes → Home con el banner abierto
+  const [homeHowToPlay, setHomeHowToPlay] = useState(false);
+  useEffect(() => { if (phase !== 'home' && phase !== 'settings') setHomeHowToPlay(false); }, [phase]);
 
   // ── Background music — single track, always on from splash ──
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
 
   // Initialize ads on mount
-  useEffect(() => { initAds(); initAnalytics(); initFeatureFlags(); checkIncomingReferral(); resetSessionFrustration(); recordInstallDate(); checkRetention(); }, []);
+  useEffect(() => { initPrefs(); initAds(); initAnalytics(); initFeatureFlags(); checkIncomingReferral(); resetSessionFrustration(); recordInstallDate(); checkRetention(); }, []);
 
   useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
 
@@ -313,6 +333,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setIsTraining(false);
     setIsSpeedDemon(false);
     setReplayCities(null); // partida nueva: ciudades frescas (no reusar las de "Otra vez")
+    newGameSeed();
     setDifficulty(diff);
     setGameMode(mode);
     trackGameStart(mode, diff);
@@ -338,7 +359,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       'countdown', 'playing', 'final', 'onboarding', 'tutorial',
       'ta-select', 'ta-playing', 'ta-final', 'daily',
       'mp-lobby', 'mp-waiting', 'mp-playing', 'mp-final', 'mp-spectate',
-      'store', 'profile', 'battlepass',
+      'store', 'profile', 'battlepass', 'settings',
     ];
     if (!inGamePhases.includes(phase)) return;
     // Push a sentinel entry so the first back press is captured here
@@ -508,9 +529,29 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, []);
   const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
-  const handleOpenProfile = useCallback(() => setPhase('profile'), []);
+  const handleOpenProfile = useCallback(() => { setProfileTab('stats'); setPhase('profile'); }, []);
+  const handleOpenSettings = useCallback(() => setPhase('settings'), []);
   const handleWorldChallenge = useCallback(() => { unlockAudio(); gameKeyRef.current += 1; setPhase('wc-playing'); }, []);
   const handleOpenBattlePass = useCallback(() => setPhase('battlepass'), []);
+
+  // Barra de navegación persistente (Inicio · Progreso · Tienda · Pass · Perfil)
+  const showNav = NAV_PHASES.includes(phase);
+  const activeNavTab: NavTab | null =
+    phase === 'home' ? 'home'
+    : phase === 'store' ? 'store'
+    : phase === 'battlepass' ? 'pass'
+    : phase === 'profile' ? (profileTab === 'history' ? 'progress' : 'profile')
+    : null;
+  const handleNav = useCallback((tab: NavTab) => {
+    window.scrollTo(0, 0);
+    switch (tab) {
+      case 'home': handleGoHome(); break;
+      case 'progress': setProfileTab('history'); setPhase('profile'); break;
+      case 'store': handleOpenStore(); break;
+      case 'pass': handleOpenBattlePass(); break;
+      case 'profile': setProfileTab('stats'); setPhase('profile'); break;
+    }
+  }, [handleGoHome, handleOpenStore, handleOpenBattlePass]);
 
   const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
   const handleSpectate = useCallback(async (code: string) => {
@@ -537,6 +578,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setGameMode('world');
     setIsTraining(false);
     setIsSpeedDemon(false);
+    gameSeedRef.current = getDailySeed(); // "Reta a un amigo" tras el Diario comparte las ciudades del día
     gameKeyRef.current += 1;
     countdownNextRef.current = 'daily'; // el Diario ahora muestra la cuenta regresiva primero
     setPhase('countdown');
@@ -553,6 +595,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     unlockAudio();
     setIsTraining(true);
     setIsSpeedDemon(false);
+    setReplayCities(null);
+    newGameSeed();
     setDifficulty('basic');
     setGameMode('world');
     gameKeyRef.current += 1;
@@ -564,6 +608,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (!consumeLife()) { setShowNoLives(true); return; }
     setIsTraining(false);
     setIsSpeedDemon(true);
+    setReplayCities(null);
+    newGameSeed();
     setDifficulty('basic');
     setGameMode('world');
     gameKeyRef.current += 1;
@@ -571,8 +617,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, []);
 
   // ── Challenge a Friend ──
+  // Usa la semilla REAL de la partida que acaba de jugarse: el amigo recibe las mismas ciudades.
   const generateChallengeLink = useCallback((score: number) => {
-    const seed = Math.floor(Math.random() * 1_000_000);
+    const seed = gameSeedRef.current;
     // Clean URL: /challenge/SEED?d=difficulty&m=mode&s=score
     const params = new URLSearchParams({ d: difficulty, m: gameMode, s: String(score) });
     return `${window.location.origin}/challenge/${seed}?${params.toString()}`;
@@ -580,7 +627,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   const handleShareChallenge = useCallback(async () => {
     const link = generateChallengeLink(finalScore);
-    const text = `🌍 GeoSpeed Challenge: Hice ${finalScore.toLocaleString()} pts. ¿Puedes superarme? ¡Juega las mismas ciudades!`;
+    const text = t('challenge_shareText', { score: finalScore.toLocaleString() });
     if (navigator.share) {
       try {
         await navigator.share({ title: 'GeoSpeed Challenge', text, url: link });
@@ -588,7 +635,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     } else {
       await navigator.clipboard?.writeText(`${text}\n${link}`);
     }
-  }, [finalScore, generateChallengeLink]);
+  }, [finalScore, generateChallengeLink, t]);
 
   /** Generate a shareable daily challenge URL */
   const getDailyShareLink = useCallback(() => {
@@ -625,6 +672,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       if (!consumeLife()) { setShowNoLives(true); return; }
       setIsTraining(false);
       setIsSpeedDemon(false);
+      setReplayCities(null);
+      gameSeedRef.current = challengeSeed;
       gameKeyRef.current += 1;
       setPhase('countdown');
     }
@@ -715,7 +764,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'profile') {
-      return <ProfileScreen onBack={handleGoHome} />;
+      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} />;
+    }
+
+    if (phase === 'settings') {
+      return <SettingsScreen onBack={handleGoHome} onHowToPlay={() => { setHomeHowToPlay(true); handleGoHome(); }} />;
     }
 
     if (phase === 'onboarding') {
@@ -742,7 +795,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return (
         <CountdownIntro
           count={countdown}
-          label={isTraining ? t('game_training') : isSpeedDemon ? '👹 SPEED DEMON — 5s/city' : `${modeLabel} — ${diffLabel}`}
+          label={isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} — 5s` : `${modeLabel} — ${diffLabel}`}
         />
       );
     }
@@ -754,20 +807,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
             {/* Logo + nombre */}
             <div className="flex items-center justify-center gap-2.5 mb-3">
               <img src="/logo.png" alt="GeoSpeed" className="w-16 sm:w-20 object-contain" />
-              <span
-                className="text-2xl sm:text-3xl font-black tracking-tight"
-                style={{
-                  fontFamily: 'Impact, system-ui',
-                  background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                GEOSPEED
-              </span>
+              <Wordmark size="md" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ 60 SEGUNDOS DE CAOS</h2>
+            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ {t('ta_title').toUpperCase()}</h2>
             <p className="text-muted-foreground text-[10px] sm:text-xs mb-4 sm:mb-6 italic">{t('ta_subtitle')}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 uppercase tracking-widest">{t('ta_selectDifficulty')}</p>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
@@ -804,7 +846,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               <button
                 onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
               >
                 {t('ta_start')} ⚡
               </button>
@@ -858,43 +900,32 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
             {/* Logo + nombre */}
             <div className="flex items-center justify-center gap-2.5 mb-3">
               <img src="/logo.png" alt="GeoSpeed" className="w-16 sm:w-20 object-contain" />
-              <span
-                className="text-2xl sm:text-3xl font-black tracking-tight"
-                style={{
-                  fontFamily: 'Impact, system-ui',
-                  background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                GEOSPEED
-              </span>
+              <Wordmark size="md" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ ¡TIEMPO!</h2>
-            <p className="text-muted-foreground text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 sm:mb-6">60 Segundos de Caos</p>
+            <h2 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>{t('ta_finalTitle')}</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 sm:mb-6">{t('ta_title')}</p>
 
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-4 sm:mb-6">
               <div className="bg-muted rounded-lg p-2 sm:p-3">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Ciudades</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('ta_finalCities')}</p>
                 <p className="text-xl sm:text-2xl font-mono font-bold" style={{ color: 'hsl(var(--primary))' }}>{taResult.cities}</p>
               </div>
               <div className="bg-muted rounded-lg p-2 sm:p-3">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Puntuación</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('ta_finalScore')}</p>
                 <p className="text-xl sm:text-2xl font-mono font-bold" style={{ color: 'hsl(var(--primary))' }}>{taResult.totalScore.toLocaleString()}</p>
               </div>
               <div className="bg-muted rounded-lg p-2 sm:p-3">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Dist. prom.</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('ta_finalAvgDist')}</p>
                 <p className="text-xs sm:text-sm font-mono font-bold">{formatDistance(avgDist)}</p>
               </div>
             </div>
 
             <div className="flex gap-2 sm:gap-3">
-              <button onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}>
-                REINTENTAR ⚡
+              <button onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}>
+                {t('ta_retry')}
               </button>
               <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-black text-xs sm:text-sm border-2 border-primary/45 bg-primary/8 text-foreground transition-all active:scale-[0.97] hover:bg-primary/15">
-                🏠 Regresar al menú
+                🏠 {t('final_home')}
               </button>
             </div>
           </div>
@@ -981,12 +1012,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
-          {...(challengeSeed !== null ? { seed: challengeSeed } : {})}
+          seed={gameSeedRef.current}
         />
       );
     }
 
     if (phase === 'final') {
+      // "Reta a un amigo" solo cuando la partida salió de una semilla reproducible
+      // (no tras "Otra vez" ni tras la revancha, que juegan listas fijas sin semilla).
+      const canShareChallenge = !replayCities && !revengeUsed && !isTraining;
       return (
         <FinalResultScreen
           rounds={finalRounds}
@@ -997,7 +1031,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onPlayAgain={handlePlayAgain}
           onGoHome={handleGoHome}
           onRevenge={revengeUsed ? undefined : handleRevenge}
-          onShareChallenge={handleShareChallenge}
+          onShareChallenge={canShareChallenge ? handleShareChallenge : undefined}
           onOpenStore={handleOpenStore}
           challengerScore={challengerScore}
           totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
@@ -1006,7 +1040,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleMultiplayer} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} howToPlayOpen={homeHowToPlay} />
     );
   };
 
@@ -1036,13 +1070,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     <>
       <PhaseErrorBoundary onReset={handleGoHome}>
         <Suspense fallback={lazyFallback}>
-          {skipTransition ? renderPhase() : (
-            <PhaseTransition phaseKey={phase}>
-              {renderPhase()}
-            </PhaseTransition>
-          )}
+          <div className={showNav ? 'with-app-nav' : undefined}>
+            {skipTransition ? renderPhase() : (
+              <PhaseTransition phaseKey={phase}>
+                {renderPhase()}
+              </PhaseTransition>
+            )}
+          </div>
         </Suspense>
       </PhaseErrorBoundary>
+      {showNav && <AppNav active={activeNavTab} onNavigate={handleNav} />}
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
 
       {/* Notification permission prompt — shown after first game */}
@@ -1050,23 +1087,23 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full shadow-2xl animate-fade-in-up">
             <p className="text-2xl text-center mb-2">🔔</p>
-            <p className="text-sm font-bold text-center mb-1" style={{ color: 'hsl(var(--primary))' }}>¿Activar notificaciones?</p>
+            <p className="text-sm font-bold text-center mb-1" style={{ color: 'hsl(var(--primary))' }}>{t('notif_title')}</p>
             <p className="text-xs text-muted-foreground text-center mb-4">
-              Te avisamos cuando tu racha esté en riesgo, tus vidas estén llenas o haya un nuevo desafío diario.
+              {t('notif_desc')}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={handleNotifAccept}
                 className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all active:scale-[0.97]"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
               >
-                Sí, activar
+                {t('notif_yes')}
               </button>
               <button
                 onClick={handleNotifDismiss}
                 className="flex-1 py-2.5 rounded-lg font-bold text-sm border border-border transition-all active:scale-[0.97] hover:bg-muted"
               >
-                Ahora no
+                {t('notif_no')}
               </button>
             </div>
           </div>
@@ -1076,8 +1113,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       {/* Rotate overlay — shown on top of game when portrait during gameplay */}
       {showRotateOverlay && <RotateOverlay t={t} />}
 
-      {/* Floating music toggle — always visible */}
-      {phase !== 'splash' && (
+      {/* Floating music toggle — en partida; fuera de ella la música se controla desde Ajustes */}
+      {phase !== 'splash' && !showNav && (
         <button
           onClick={toggleMusic}
           className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-md transition-all active:scale-90 shadow-lg"
@@ -1085,8 +1122,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
             background: 'hsl(var(--background) / 0.7)',
             borderColor: 'hsl(var(--primary) / 0.3)',
           }}
-          aria-label={isMusicMuted ? 'Activar música' : 'Silenciar música'}
-          title={isMusicMuted ? 'Activar música' : 'Silenciar música'}
+          aria-label={isMusicMuted ? t('music_on') : t('music_off')}
+          title={isMusicMuted ? t('music_on') : t('music_off')}
         >
           <span className="text-base">{isMusicMuted ? '🔇' : '🎵'}</span>
         </button>

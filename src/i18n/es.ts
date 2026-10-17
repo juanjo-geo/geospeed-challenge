@@ -369,8 +369,111 @@ const es = {
   sr_worldChallengeResult: '{player} es de {country}. {band}. {points} puntos. Ronda {round} de {total}.',
   wc_eventLive: '🔴 EN VIVO',
   wc_eventFomo: '¡Solo durante el evento — juega ya!',
+
+  // ── Navegación persistente (F0) ──
+  nav_home: 'Inicio',
+  nav_progress: 'Progreso',
+  nav_store: 'Tienda',
+  nav_pass: 'Pass',
+  nav_profile: 'Perfil',
+
+  // ── Ajustes ──
+  settings_title: 'Ajustes',
+  settings_prefs: 'Preferencias',
+  settings_music: 'Música',
+  settings_sfx: 'Efectos de sonido',
+  settings_haptics: 'Vibración',
+  settings_hapticsUnsupported: 'No disponible en este dispositivo',
+  settings_reduceMotion: 'Reducir movimiento',
+  settings_reduceMotionDesc: 'Menos animaciones, sin confeti ni zoom automático',
+  settings_colorblind: 'Modo daltónico',
+  settings_colorblindDesc: 'Colores distinguibles para todos',
+  settings_language: 'Idioma',
+  settings_help: 'Ayuda',
+  settings_howToPlay: 'Cómo jugar',
+  settings_support: 'Soporte',
+  settings_privacySection: 'Privacidad',
+  settings_privacy: 'Política de privacidad',
+  settings_terms: 'Términos de uso',
+  settings_account: 'Cuenta',
+  settings_signedInAs: 'Sesión iniciada como',
+  settings_guest: 'Jugando como invitado',
+  settings_signOutConfirm: '¿Seguro que deseas cerrar sesión?',
+  settings_version: 'Versión',
+  home_settings: 'Ajustes',
+
+  // ── Cuenta (Auth) ──
+  auth_loginSubtitle: 'Inicia sesión para guardar tu progreso',
+  auth_signupSubtitle: 'Crea tu cuenta de jugador',
+  auth_playerName: 'Nombre de jugador',
+  auth_playerNamePlaceholder: 'Tu nombre en el ranking',
+  auth_email: 'Correo electrónico',
+  auth_password: 'Contraseña',
+  auth_passwordPlaceholder: 'Mínimo 6 caracteres',
+  auth_showPassword: 'Mostrar contraseña',
+  auth_hidePassword: 'Ocultar contraseña',
+  auth_signIn: 'INICIAR SESIÓN',
+  auth_signUp: 'CREAR CUENTA',
+  auth_loading: 'CARGANDO...',
+  auth_orContinue: 'o continúa con',
+  auth_google: 'Continuar con Google',
+  auth_apple: 'Continuar con Apple',
+  auth_noAccount: '¿No tienes cuenta? Regístrate',
+  auth_hasAccount: '¿Ya tienes cuenta? Inicia sesión',
+  auth_playAsGuest: '← Jugar sin cuenta',
+  auth_checkEmailTitle: '¡Revisa tu email!',
+  auth_checkEmailDesc: 'Enviamos un enlace de confirmación a {email}. Haz clic en él para activar tu cuenta.',
+  auth_goToSignIn: 'IR A INICIAR SESIÓN',
+  auth_errInvalidCredentials: 'Email o contraseña incorrectos',
+  auth_errEmailNotConfirmed: 'Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja.',
+  auth_errNameRequired: 'Ingresa tu nombre de jugador',
+  auth_errAlreadyRegistered: 'Este email ya tiene una cuenta. Inicia sesión.',
+  auth_errInvalidEmail: 'Ingresa un email válido.',
+  auth_errPasswordShort: 'La contraseña debe tener al menos 6 caracteres.',
+  auth_errSignupDisabled: 'El registro está temporalmente deshabilitado. Intenta con Google o Apple.',
+
+  // ── Carga ──
+  splash_tap: 'TOCA PARA EMPEZAR',
+  splash_loading: 'Preparando tu próxima aventura…',
+
+  // ── Notificaciones (prompt) ──
+  notif_title: '¿Activar notificaciones?',
+  notif_desc: 'Te avisamos cuando tu racha esté en riesgo, tus vidas estén llenas o haya un nuevo desafío diario.',
+  notif_yes: 'Sí, activar',
+  notif_no: 'Ahora no',
+
+  // ── Errores y música ──
+  error_title: 'Algo salió mal',
+  error_unknown: 'Error desconocido',
+  error_backHome: '← VOLVER AL INICIO',
+  music_on: 'Activar música',
+  music_off: 'Silenciar música',
+
+  // ── 60s de Caos: pantalla final ──
+  ta_finalTitle: '⚡ ¡TIEMPO!',
+  ta_finalCities: 'Ciudades',
+  ta_finalScore: 'Puntuación',
+  ta_finalAvgDist: 'Dist. prom.',
+  ta_retry: 'REINTENTAR ⚡',
+
+  // ── Resultados: textos que estaban sueltos ──
+  final_top10: '🏆 ¡Entraste al Top 10!',
+  final_nudgeTitle: '🔒 ¿Quieres guardar tu progreso?',
+  final_nudgeDesc: 'Regístrate para conservar tus puntuaciones, nivel y badges en todos tus dispositivos.',
+  final_nudgeCta: 'CREAR CUENTA GRATIS',
+  final_challengeFriend: '⚔️ RETA A UN AMIGO',
+  challenge_shareText: '🌍 GeoSpeed Challenge: Hice {score} pts. ¿Puedes superarme? ¡Juega las mismas ciudades!',
+
+  // ── Home: racha en riesgo y jugadores del diario ──
+  home_streakRiskTitle: '¡Tu racha de {days} días está en peligro!',
+  home_streakRiskDesc: 'Juega hoy para mantenerla, o protégela ahora',
+  home_streakPlay: '🎮 JUGAR AHORA',
+  home_streakProtect: '🛡️ PROTEGER — $0.99',
+  home_dailyPlayedOne: '🔥 1 persona jugó hoy',
+  home_dailyPlayedMany: '🔥 {count} personas jugaron hoy',
 } as const;
 
 export type TranslationKey = keyof typeof es;
-export type Translations = typeof es;
+/** Diccionario completo: mismas claves que `es`, cualquier texto (en.ts se tipa con esto). */
+export type Translations = { [K in TranslationKey]: string };
 export default es;

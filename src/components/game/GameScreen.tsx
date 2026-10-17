@@ -419,11 +419,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               className="text-[22cqi] font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
-                background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                background: 'var(--grad-wordmark)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 1px 4px rgba(240,160,48,0.3))',
+                filter: 'drop-shadow(0 1px 4px hsl(var(--primary)/0.3))',
               }}
             >
               GEOSPEED
@@ -529,7 +529,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             )}
             <Mascot
               state={mascotState}
-              className={`w-[48cqi] max-w-[130px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-[48cqi] max-w-[130px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_hsl(var(--primary)/0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 
@@ -736,7 +736,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <button
                 onClick={advanceRound}
                 className="w-full rounded-xl py-3 text-sm font-black transition-all active:scale-[0.97] btn-glow focus-visible:ring-2 focus-visible:ring-ring"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
                 aria-label={t('game_next') + ', ' + t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               >
                 {t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
@@ -804,7 +804,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <button
                 onClick={advanceRound}
                 className="w-full py-2 sm:py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-[0.97] btn-glow"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
               >
                 {t('game_nextAutoAdvance', { seconds: autoAdvanceTimer })}
               </button>

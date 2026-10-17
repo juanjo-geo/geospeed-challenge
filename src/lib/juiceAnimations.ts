@@ -1,3 +1,5 @@
+import { prefersReducedMotion } from './prefs';
+import { BRAND_RGB, BRAND } from '@/lib/theme';
 /**
  * ═══════════════════════════════════════════════════════════════════
  * GeoSpeed — JUICE ANIMATIONS (Phase 4: Polish AAA)
@@ -33,8 +35,8 @@ function injectCSS() {
       100% { transform: scale(0.7) translateY(-30px); opacity: 0; }
     }
     @keyframes juice-mult-glow {
-      0%, 100% { text-shadow: 0 0 20px rgba(245,200,66,0.6), 0 0 60px rgba(245,200,66,0.2); }
-      50%      { text-shadow: 0 0 40px rgba(245,200,66,0.9), 0 0 80px rgba(245,200,66,0.4), 0 0 120px rgba(245,200,66,0.15); }
+      0%, 100% { text-shadow: 0 0 20px rgba(${BRAND_RGB.yellow},0.6), 0 0 60px rgba(${BRAND_RGB.yellow},0.2); }
+      50%      { text-shadow: 0 0 40px rgba(${BRAND_RGB.yellow},0.9), 0 0 80px rgba(${BRAND_RGB.yellow},0.4), 0 0 120px rgba(${BRAND_RGB.yellow},0.15); }
     }
     @keyframes juice-score-fly {
       0%   { opacity: 1; }
@@ -79,12 +81,12 @@ export function fireMultiplierFeedback(
   streak: number = 0,
   origin?: { x: number; y: number }
 ) {
-  if (multiplier < 1.5) return; // Only show for impressive multipliers
+  if (multiplier < 1.5 || prefersReducedMotion()) return; // Only show for impressive multipliers
   injectCSS();
 
   const tier = multiplier >= 2.0 ? 'S' : multiplier >= 1.8 ? 'A' : 'B';
   const emoji = tier === 'S' ? '🚀' : tier === 'A' ? '⚡' : '🎯';
-  const color = tier === 'S' ? '#fbbf24' : tier === 'A' ? '#f59e0b' : '#f5c842';
+  const color = tier === 'S' ? '#fbbf24' : tier === 'A' ? '#f59e0b' : BRAND.yellow;
   const fontSize = tier === 'S' ? 'clamp(48px, 10vw, 80px)' : tier === 'A' ? 'clamp(40px, 8vw, 68px)' : 'clamp(34px, 7vw, 56px)';
 
   const overlay = document.createElement('div');
@@ -100,7 +102,7 @@ export function fireMultiplierFeedback(
     <div style="
       font-size: ${fontSize}; font-weight: 900; font-family: Impact, system-ui, sans-serif;
       color: ${color}; letter-spacing: -0.02em; line-height: 1;
-      text-shadow: 0 0 30px rgba(245,200,66,0.7), 0 4px 15px rgba(0,0,0,0.5);
+      text-shadow: 0 0 30px rgba(${BRAND_RGB.yellow},0.7), 0 4px 15px rgba(0,0,0,0.5);
       animation: juice-mult-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
                  juice-mult-out 0.3s ease-in 0.7s forwards;
     ">
@@ -137,7 +139,7 @@ export function fireScoreFly(
   from: { x: number; y: number },
   to: { x: number; y: number }
 ) {
-  if (points <= 0) return;
+  if (points <= 0 || prefersReducedMotion()) return;
   injectCSS();
 
   const el = document.createElement('div');
@@ -207,6 +209,7 @@ export function fireRoundFlash(
   cityName: string,
   isGood: boolean
 ) {
+  if (prefersReducedMotion()) return;
   injectCSS();
 
   const color = isGood ? '#4ade80' : '#f97316';
@@ -247,6 +250,7 @@ export function fireRoundFlash(
  * Returns a promise that resolves when the countdown finishes.
  */
 export function fireCountdown(): Promise<void> {
+  if (prefersReducedMotion()) return Promise.resolve();
   injectCSS();
 
   return new Promise((resolve) => {
@@ -269,7 +273,7 @@ export function fireCountdown(): Promise<void> {
       }
 
       const isGo = i === steps.length - 1;
-      const color = isGo ? '#f5c842' : '#ffffff';
+      const color = isGo ? BRAND.yellow : '#ffffff';
       const size = isGo ? 'clamp(50px, 12vw, 90px)' : 'clamp(60px, 14vw, 100px)';
 
       overlay.innerHTML = `
@@ -300,7 +304,7 @@ export function fireCountdown(): Promise<void> {
  * @param streak - Current streak count
  */
 export function fireStreakBorder(streak: number) {
-  if (streak < 3) return;
+  if (streak < 3 || prefersReducedMotion()) return;
 
   const container = document.querySelector('[data-game-container]') as HTMLElement;
   if (!container) return;
@@ -309,7 +313,7 @@ export function fireStreakBorder(streak: number) {
   const alpha = 0.15 + intensity * 0.08; // 0.23..0.55
   const spread = 8 + intensity * 4; // 12..28px
 
-  container.style.boxShadow = `inset 0 0 ${spread}px rgba(245,200,66,${alpha}), 0 0 ${spread * 2}px rgba(249,115,22,${alpha * 0.5})`;
+  container.style.boxShadow = `inset 0 0 ${spread}px rgba(${BRAND_RGB.yellow},${alpha}), 0 0 ${spread * 2}px rgba(249,115,22,${alpha * 0.5})`;
   container.style.transition = 'box-shadow 0.4s ease-out';
 
   // Fade out after 1.5s

@@ -223,7 +223,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
             className="text-3xl font-black mb-2"
             style={{
               fontFamily: 'Impact, system-ui',
-              background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+              background: 'var(--grad-wordmark)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -245,9 +245,9 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
             onClick={startGame}
             className="px-8 py-3 rounded-2xl text-lg font-black transition-transform active:scale-95"
             style={{
-              background: 'linear-gradient(180deg, #F5D060 0%, #D48020 100%)',
-              color: '#1a1a2e',
-              boxShadow: '0 4px 20px rgba(245,192,66,0.4)',
+              background: 'var(--grad-cta)',
+              color: 'hsl(var(--primary-foreground))',
+              boxShadow: '0 4px 20px hsl(var(--primary)/0.4)',
             }}
           >
             {isEn ? 'Let\'s go!' : 'Vamos!'}
@@ -273,11 +273,11 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
             className="text-4xl font-black mb-2"
             style={{
               fontFamily: 'Impact, system-ui',
-              background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+              background: 'var(--grad-wordmark)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: 'drop-shadow(0 2px 8px rgba(240,160,48,0.4))',
+              filter: 'drop-shadow(0 2px 8px hsl(var(--primary)/0.4))',
             }}
           >
             {isEn ? 'You\'re Ready!' : 'Estas listo!'}
@@ -299,9 +299,9 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
               onClick={onComplete}
               className="px-8 py-3.5 rounded-2xl text-lg font-black transition-transform active:scale-95"
               style={{
-                background: 'linear-gradient(180deg, #F5D060 0%, #D48020 100%)',
-                color: '#1a1a2e',
-                boxShadow: '0 4px 24px rgba(245,192,66,0.5)',
+                background: 'var(--grad-cta)',
+                color: 'hsl(var(--primary-foreground))',
+                boxShadow: '0 4px 24px hsl(var(--primary)/0.5)',
               }}
             >
               {isEn ? 'Play for real!' : 'Jugar de verdad!'}
@@ -339,9 +339,9 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
             onClick={advanceToNextRound}
             className="px-8 py-3 rounded-2xl text-base font-black transition-transform active:scale-95"
             style={{
-              background: 'linear-gradient(180deg, #F5D060 0%, #D48020 100%)',
-              color: '#1a1a2e',
-              boxShadow: '0 4px 20px rgba(245,192,66,0.4)',
+              background: 'var(--grad-cta)',
+              color: 'hsl(var(--primary-foreground))',
+              boxShadow: '0 4px 20px hsl(var(--primary)/0.4)',
             }}
           >
             {isEn ? 'Continue' : 'Continuar'} →
@@ -397,9 +397,9 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           onClick={advanceToTip}
           className="px-6 py-2.5 rounded-xl text-sm font-black transition-transform active:scale-95"
           style={{
-            background: 'linear-gradient(180deg, #F5D060 0%, #D48020 100%)',
-            color: '#1a1a2e',
-            boxShadow: '0 4px 16px rgba(245,192,66,0.35)',
+            background: 'var(--grad-cta)',
+            color: 'hsl(var(--primary-foreground))',
+            boxShadow: '0 4px 16px hsl(var(--primary)/0.35)',
           }}
         >
           {currentRound + 1 >= TOTAL_ROUNDS
@@ -471,11 +471,11 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
               className="text-[22cqi] font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
-                background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                background: 'var(--grad-wordmark)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 1px 4px rgba(240,160,48,0.3))',
+                filter: 'drop-shadow(0 1px 4px hsl(var(--primary)/0.3))',
               }}
             >
               GEOSPEED

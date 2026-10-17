@@ -1,3 +1,5 @@
+import { prefersReducedMotion } from './prefs';
+import { BRAND } from '@/lib/theme';
 /**
  * Lightweight confetti burst using a temporary fullscreen canvas.
  * No external dependencies. Auto-cleans up after animation.
@@ -16,8 +18,8 @@ interface Particle {
   opacity: number;
 }
 
-const GOLD_PALETTE = ['#f5c842', '#ecdda2', '#c9b977', '#ffd700', '#fff4b8', '#e6c200'];
-const RAINBOW_PALETTE = ['#f5c842', '#4ade80', '#38bdf8', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
+const GOLD_PALETTE = [BRAND.yellow, '#ecdda2', '#c9b977', '#ffd700', '#fff4b8', '#e6c200'];
+const RAINBOW_PALETTE = [BRAND.yellow, '#4ade80', '#38bdf8', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
 
 export function fireConfetti(options?: {
   intensity?: 'light' | 'medium' | 'heavy';
@@ -25,6 +27,7 @@ export function fireConfetti(options?: {
   /** Origin point in viewport pixels (default: center of screen) */
   origin?: { x: number; y: number };
 }) {
+  if (prefersReducedMotion()) return;
   const intensity = options?.intensity ?? 'medium';
   const palette = options?.palette === 'rainbow' ? RAINBOW_PALETTE : GOLD_PALETTE;
 
@@ -122,6 +125,7 @@ export function fireCelebration(origin?: { x: number; y: number }) {
 const RED_PALETTE = ['#ef4444', '#dc2626', '#f87171', '#b91c1c', '#fca5a5', '#991b1b'];
 
 export function fireRedBurst(origin?: { x: number; y: number }) {
+  if (prefersReducedMotion()) return;
   fireConfetti({ intensity: 'medium', palette: 'gold', origin });
   // Override with red palette by creating a separate red burst
   const canvas = document.createElement('canvas');
@@ -186,7 +190,7 @@ export function fireRedBurst(origin?: { x: number; y: number }) {
 // ── Distance reveal — giant number with screen shake for >5000km ──
 
 export function fireDistanceReveal(distanceKm: number) {
-  if (distanceKm < 5000) return;
+  if (distanceKm < 5000 || prefersReducedMotion()) return;
 
   const overlay = document.createElement('div');
   overlay.style.cssText = `

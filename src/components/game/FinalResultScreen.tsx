@@ -13,7 +13,6 @@ import { fireCelebration } from '@/lib/confetti';
 import { hapticCelebration } from '@/lib/haptics';
 import RoundBreakdown from './RoundBreakdown';
 import Mascot, { type MascotState } from './Mascot';
-import ReplayMap from './ReplayMap';
 import { type GameMode } from '@/data/cities';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
@@ -349,7 +348,7 @@ export default function FinalResultScreen({
         {qualifies && !saved && (
           <div className="mb-4 sm:mb-5 md:mb-6 text-center">
             <p className="text-xs sm:text-sm mb-2 sm:mb-3" style={{ color: 'hsl(var(--primary))' }}>
-              🏆 ¡Entraste al Top 10! {t('final_enterInitials')}
+              {t('final_top10')} {t('final_enterInitials')}
             </p>
             <div className="flex justify-center gap-2 mb-2 sm:mb-3">
               <input
@@ -367,7 +366,7 @@ export default function FinalResultScreen({
               onClick={handleSave}
               disabled={initials.length !== 3 || saving}
               className="px-5 sm:px-6 py-2 rounded-lg font-bold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
             >
               {saving ? t('final_saved') : t('final_saveScore')}
             </button>
@@ -441,7 +440,7 @@ export default function FinalResultScreen({
             className="w-full py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-[0.97] flex items-center justify-center gap-2 mb-2 sm:mb-3"
             style={{ background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', border: '1px solid hsl(var(--primary) / 0.28)' }}
           >
-            ⚔️ RETA A UN AMIGO
+            {t('final_challengeFriend')}
           </button>
         )}
 
@@ -449,15 +448,15 @@ export default function FinalResultScreen({
         {/* Registration nudge — show after first game if not logged in */}
         {!user && (
           <div className="mt-3 sm:mt-4 rounded-xl border border-primary/30 bg-primary/5 p-3 sm:p-4 text-center animate-fade-in animation-delay-500">
-            <p className="text-xs sm:text-sm text-foreground font-bold mb-1">🔒 ¿Quieres guardar tu progreso?</p>
+            <p className="text-xs sm:text-sm text-foreground font-bold mb-1">{t('final_nudgeTitle')}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground mb-2.5">
-              Regístrate para conservar tus puntuaciones, nivel y badges en todos tus dispositivos.
+              {t('final_nudgeDesc')}
             </p>
             <a
               href="/auth"
               className="inline-block px-5 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97] border border-primary/40 text-primary hover:bg-primary/10"
             >
-              CREAR CUENTA GRATIS
+              {t('final_nudgeCta')}
             </a>
           </div>
         )}

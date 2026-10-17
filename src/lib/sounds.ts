@@ -1,3 +1,4 @@
+import { isSfxEnabled } from './prefs';
 // ═══════════════════════════════════════════════════════════════════════════
 // GeoSpeed — JUICE-TIER Audio Engine
 // ═══════════════════════════════════════════════════════════════════════════
@@ -307,6 +308,7 @@ function playTone(
   gain = 0.15,
   opts?: { attack?: number; detune?: number }
 ) {
+  if (!isSfxEnabled()) return;
   const c = getCtx();
   if (!c) return;
   try {
@@ -333,6 +335,7 @@ function playFilteredNoise(
   filterFreq = 3000,
   filterType: BiquadFilterType = 'highpass'
 ) {
+  if (!isSfxEnabled()) return;
   const c = getCtx();
   if (!c) return;
   try {
@@ -357,6 +360,7 @@ function playFilteredNoise(
 
 /** Impact/thud — short low-freq burst with body */
 function playImpact(freq = 80, duration = 0.12, gain = 0.18) {
+  if (!isSfxEnabled()) return;
   const c = getCtx();
   if (!c) return;
   try {
@@ -376,6 +380,7 @@ function playImpact(freq = 80, duration = 0.12, gain = 0.18) {
 
 /** Metallic bell / coin sound */
 function playCoinBell(freq = 2400, duration = 0.25, gain = 0.08) {
+  if (!isSfxEnabled()) return;
   const c = getCtx();
   if (!c) return;
   try {
@@ -399,6 +404,7 @@ function playCoinBell(freq = 2400, duration = 0.25, gain = 0.08) {
 
 /** Glass shatter — filtered noise with descending filter sweep */
 function playGlassShatter(gain = 0.06) {
+  if (!isSfxEnabled()) return;
   const c = getCtx();
   if (!c) return;
   try {
@@ -429,6 +435,7 @@ function playGlassShatter(gain = 0.06) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playClick() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   // Soft thud (low impact)
   playImpact(vary(pick([180, 200, 220]), 0.12), 0.08, 0.07);
@@ -441,6 +448,7 @@ export function playClick() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playPerfect() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const variation = pick([0, 1, 2]); // 3 variations
 
@@ -488,6 +496,7 @@ export function playPerfect() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playGood() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const variation = pick([0, 1, 2]);
 
@@ -517,6 +526,7 @@ export function playGood() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playBad() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const variation = pick([0, 1, 2]);
 
@@ -545,6 +555,7 @@ export function playBad() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playTick(secondsLeft?: number) {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   // Pitch + volume increase as time runs out → psychological pressure
   const urgency = secondsLeft !== undefined ? Math.max(0, 6 - secondsLeft) : 3;
@@ -559,6 +570,7 @@ export function playTick(secondsLeft?: number) {
 
 /** Heartbeat pulse for last 3 seconds — lub-dub with body */
 export function playHeartbeat() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const c = getCtx();
   if (!c) return;
@@ -601,6 +613,7 @@ export function playHeartbeat() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playStreak(streakLevel: number) {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   // Each streak level raises pitch by a semitone — musical scale ascent
   const semitones = Math.min(streakLevel - 1, 12); // cap at one octave
@@ -628,6 +641,7 @@ export function playStreak(streakLevel: number) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playGameOver() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const variation = pick([0, 1]);
 
@@ -662,6 +676,7 @@ export function playGameOver() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playVictory() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const base = vary(523, 0.05); // C5
 
@@ -693,6 +708,7 @@ export function playVictory() {
 
 /** Countdown beep for 3-2-1 */
 export function playCountdown() {
+  if (!isSfxEnabled()) return;
   // No unlockAudio() here — already called once in handleSelectDifficulty
   playTone(vary(880, 0.03), 0.12, 'sine', 0.10);
   // Subtle sub-bass hit for weight
@@ -701,6 +717,7 @@ export function playCountdown() {
 
 /** Final countdown beep (GO!) */
 export function playGo() {
+  if (!isSfxEnabled()) return;
   // Bright ascending burst
   playTone(vary(1320, 0.03), 0.25, 'sine', 0.14);
   setTimeout(() => playTone(vary(1760, 0.03), 0.3, 'sine', 0.12), 50);
@@ -714,6 +731,7 @@ export function playGo() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playRoundTransition() {
+  if (!isSfxEnabled()) return;
   const c = getCtx();
   if (!c) return;
   try {
@@ -748,6 +766,7 @@ export function playRoundTransition() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playMedium() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const variation = pick([0, 1, 2]);
 
@@ -780,6 +799,7 @@ export function playMedium() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playMultiplierX2() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   // Fast ascending sweep
   const base = vary(660, 0.08); // E5
@@ -796,6 +816,7 @@ export function playMultiplierX2() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playTimeExpired() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   // Harsh buzzer — descending sawtooth
   const base = vary(350, 0.1);
@@ -812,6 +833,7 @@ export function playTimeExpired() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playLevelUp() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const base = vary(523, 0.05); // C5
   // Rapid ascending major scale: C-E-G-C
@@ -836,6 +858,7 @@ export function playLevelUp() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playButtonTap() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const c = getCtx();
   if (!c) return;
@@ -863,6 +886,7 @@ export function playButtonTap() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playRevengeActivate() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   // Dark power chord — E minor feel
   const base = vary(165, 0.05); // E3
@@ -885,6 +909,7 @@ export function playRevengeActivate() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playShareSuccess() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   // Quick ascending swoosh
   const c = getCtx();
@@ -923,6 +948,7 @@ export function playShareSuccess() {
 
 /** Silbato de árbitro real — tono fijo agudo con trino rápido (el "priiii"), dos toques. */
 export function playWhistle() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const c = getCtx();
   if (!c) return;
@@ -967,6 +993,7 @@ export function playWhistle() {
 
 /** Vuvuzela — zumbido grave, largo y buzzy (dos sawtooth desafinados = "beating"). */
 export function playVuvuzela() {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const c = getCtx();
   if (!c) return;
@@ -1000,6 +1027,7 @@ export function playVuvuzela() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playAccordion(open: boolean = true) {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const c = getCtx();
   if (!c) return;
@@ -1051,6 +1079,7 @@ export function playAccordion(open: boolean = true) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function playStressBeat(secondsLeft: number) {
+  if (!isSfxEnabled()) return;
   unlockAudio();
   const c = getCtx();
   if (!c) return;

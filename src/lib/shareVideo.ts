@@ -1,3 +1,4 @@
+import { BRAND_RGB, BRAND, rgba } from '@/lib/theme';
 /**
  * GeoSpeed — Animated Share Video Generator
  *
@@ -91,7 +92,7 @@ const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t +
 // ── Score tier for visual theme ──
 function getScoreTier(score: number) {
   if (score >= 800) return { emoji: '💎', color: '#a78bfa', label: 'PERFECT' };
-  if (score >= 500) return { emoji: '🥇', color: '#f5c842', label: 'GREAT' };
+  if (score >= 500) return { emoji: '🥇', color: BRAND.yellow, label: 'GREAT' };
   if (score >= 300) return { emoji: '🥈', color: '#94a3b8', label: 'GOOD' };
   return { emoji: '🥉', color: '#f97316', label: 'OK' };
 }
@@ -158,9 +159,9 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
 
     // Background
     const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, '#0A0E18');
-    bgGrad.addColorStop(0.5, '#0C1020');
-    bgGrad.addColorStop(1, '#080C16');
+    bgGrad.addColorStop(0, BRAND.navyDeep);
+    bgGrad.addColorStop(0.5, BRAND.navy);
+    bgGrad.addColorStop(1, BRAND.navyDeep);
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
@@ -170,7 +171,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
 
     // Logo text
     ctx.globalAlpha = titleAlpha;
-    ctx.fillStyle = '#f5c842';
+    ctx.fillStyle = BRAND.yellow;
     ctx.font = 'bold 28px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('📍 GEOSPEED', W / 2, 50);
@@ -197,7 +198,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
     ctx.globalAlpha = mapAlpha;
 
     // Ocean background for map area
-    ctx.fillStyle = '#0A0E18';
+    ctx.fillStyle = BRAND.navyDeep;
     ctx.fillRect(mapX, mapY, mapW, mapH);
 
     // Draw countries (simplified)
@@ -232,7 +233,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
       ctx.save();
       ctx.translate(ux, uy);
       ctx.scale(pinScale, pinScale);
-      ctx.fillStyle = '#00D4AA';
+      ctx.fillStyle = BRAND.turquoise;
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -244,7 +245,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
       // "Tu click" label
       if (clickProgress > 0.5) {
         ctx.globalAlpha = (clickProgress - 0.5) * 2;
-        ctx.fillStyle = '#00D4AA';
+        ctx.fillStyle = BRAND.turquoise;
         ctx.font = 'bold 11px system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('📌 Tu click', ux, uy - 14);
@@ -265,7 +266,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
         const p0 = bezierPt(t0);
         const p1 = bezierPt(t1);
         const alpha = 0.3 + 0.7 * (i / steps);
-        ctx.strokeStyle = `rgba(240,160,48,${alpha})`;
+        ctx.strokeStyle = `rgba(${BRAND_RGB.yellow},${alpha})`;
         ctx.lineWidth = 2.5;
         ctx.setLineDash([]);
         ctx.beginPath();
@@ -278,9 +279,9 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
       if (arcProgress < 1) {
         const tip = bezierPt(arcProgress);
         const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 12);
-        glow.addColorStop(0, 'rgba(240,160,48,0.9)');
-        glow.addColorStop(0.5, 'rgba(240,160,48,0.3)');
-        glow.addColorStop(1, 'rgba(240,160,48,0)');
+        glow.addColorStop(0, rgba(BRAND_RGB.yellow, 0.9));
+        glow.addColorStop(0.5, rgba(BRAND_RGB.yellow, 0.3));
+        glow.addColorStop(1, rgba(BRAND_RGB.yellow, 0));
         ctx.fillStyle = glow;
         ctx.beginPath();
         ctx.arc(tip.x, tip.y, 12, 0, Math.PI * 2);
@@ -293,7 +294,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
 
       // Correct city pin (gold star) — appears when arc completes
       if (arcProgress >= 1) {
-        drawStar(ctx, cx, cy, 5, 10, 5, '#f5c842');
+        drawStar(ctx, cx, cy, 5, 10, 5, BRAND.yellow);
 
         // Distance label on arc midpoint
         const labelPt = bezierPt(0.5);
@@ -330,7 +331,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
       ctx.fillText(tier.emoji, W / 2, scoreY + 10);
 
       // Round score
-      ctx.fillStyle = '#f5c842';
+      ctx.fillStyle = BRAND.yellow;
       ctx.font = 'bold 48px system-ui, sans-serif';
       ctx.fillText(`${bestRound.score.toLocaleString()}`, W / 2, scoreY + 65);
       ctx.fillStyle = '#94a3b8';
@@ -351,7 +352,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
       if (scoreProgress > 0.5) {
         const ctaAlpha = (scoreProgress - 0.5) * 2;
         ctx.globalAlpha = ctaAlpha;
-        ctx.fillStyle = '#f5c842';
+        ctx.fillStyle = BRAND.yellow;
         ctx.font = 'bold 16px system-ui, sans-serif';
         ctx.fillText('¿Puedes superarlo? 🌍', W / 2, H - 60);
         ctx.fillStyle = '#64748b';

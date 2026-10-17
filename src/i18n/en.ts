@@ -371,6 +371,108 @@ const en: Translations = {
   sr_worldChallengeResult: '{player} is from {country}. {band}. {points} points. Round {round} of {total}.',
   wc_eventLive: '🔴 LIVE',
   wc_eventFomo: 'Event only — play now!',
+
+  // ── Persistent navigation (F0) ──
+  nav_home: 'Home',
+  nav_progress: 'Progress',
+  nav_store: 'Store',
+  nav_pass: 'Pass',
+  nav_profile: 'Profile',
+
+  // ── Settings ──
+  settings_title: 'Settings',
+  settings_prefs: 'Preferences',
+  settings_music: 'Music',
+  settings_sfx: 'Sound effects',
+  settings_haptics: 'Vibration',
+  settings_hapticsUnsupported: 'Not available on this device',
+  settings_reduceMotion: 'Reduce motion',
+  settings_reduceMotionDesc: 'Fewer animations, no confetti or auto-zoom',
+  settings_colorblind: 'Colorblind mode',
+  settings_colorblindDesc: 'Colors everyone can tell apart',
+  settings_language: 'Language',
+  settings_help: 'Help',
+  settings_howToPlay: 'How to play',
+  settings_support: 'Support',
+  settings_privacySection: 'Privacy',
+  settings_privacy: 'Privacy policy',
+  settings_terms: 'Terms of use',
+  settings_account: 'Account',
+  settings_signedInAs: 'Signed in as',
+  settings_guest: 'Playing as guest',
+  settings_signOutConfirm: 'Sign out?',
+  settings_version: 'Version',
+  home_settings: 'Settings',
+
+  // ── Account (Auth) ──
+  auth_loginSubtitle: 'Sign in to save your progress',
+  auth_signupSubtitle: 'Create your player account',
+  auth_playerName: 'Player name',
+  auth_playerNamePlaceholder: 'Your name on the leaderboard',
+  auth_email: 'Email',
+  auth_password: 'Password',
+  auth_passwordPlaceholder: 'At least 6 characters',
+  auth_showPassword: 'Show password',
+  auth_hidePassword: 'Hide password',
+  auth_signIn: 'SIGN IN',
+  auth_signUp: 'CREATE ACCOUNT',
+  auth_loading: 'LOADING...',
+  auth_orContinue: 'or continue with',
+  auth_google: 'Continue with Google',
+  auth_apple: 'Continue with Apple',
+  auth_noAccount: "Don't have an account? Sign up",
+  auth_hasAccount: 'Already have an account? Sign in',
+  auth_playAsGuest: '← Play without an account',
+  auth_checkEmailTitle: 'Check your email!',
+  auth_checkEmailDesc: 'We sent a confirmation link to {email}. Click it to activate your account.',
+  auth_goToSignIn: 'GO TO SIGN IN',
+  auth_errInvalidCredentials: 'Incorrect email or password',
+  auth_errEmailNotConfirmed: 'Confirm your email before signing in. Check your inbox.',
+  auth_errNameRequired: 'Enter your player name',
+  auth_errAlreadyRegistered: 'This email already has an account. Sign in.',
+  auth_errInvalidEmail: 'Enter a valid email.',
+  auth_errPasswordShort: 'Password must be at least 6 characters.',
+  auth_errSignupDisabled: 'Sign-up is temporarily disabled. Try Google or Apple.',
+
+  // ── Splash ──
+  splash_tap: 'TAP TO START',
+  splash_loading: 'Preparing your next adventure…',
+
+  // ── Notifications prompt ──
+  notif_title: 'Enable notifications?',
+  notif_desc: "We'll let you know when your streak is at risk, your lives are full or there's a new daily challenge.",
+  notif_yes: 'Yes, enable',
+  notif_no: 'Not now',
+
+  // ── Errors and music ──
+  error_title: 'Something went wrong',
+  error_unknown: 'Unknown error',
+  error_backHome: '← BACK TO HOME',
+  music_on: 'Turn music on',
+  music_off: 'Mute music',
+
+  // ── 60s Chaos: final screen ──
+  ta_finalTitle: "⚡ TIME'S UP!",
+  ta_finalCities: 'Cities',
+  ta_finalScore: 'Score',
+  ta_finalAvgDist: 'Avg. dist.',
+  ta_retry: 'RETRY ⚡',
+
+  // ── Results: previously hardcoded ──
+  final_top10: '🏆 You made the Top 10!',
+  final_nudgeTitle: '🔒 Want to save your progress?',
+  final_nudgeDesc: 'Sign up to keep your scores, level and badges on all your devices.',
+  final_nudgeCta: 'CREATE FREE ACCOUNT',
+  final_challengeFriend: '⚔️ CHALLENGE A FRIEND',
+  challenge_shareText: '🌍 GeoSpeed Challenge: I scored {score} pts. Can you beat me? Play the same cities!',
+
+  // ── Home: streak at risk and daily players ──
+  home_streakRiskTitle: 'Your {days}-day streak is at risk!',
+  home_streakRiskDesc: 'Play today to keep it, or protect it now',
+  home_streakPlay: '🎮 PLAY NOW',
+  home_streakProtect: '🛡️ PROTECT — $0.99',
+  home_dailyPlayedOne: '🔥 1 person played today',
+  home_dailyPlayedMany: '🔥 {count} people played today',
 };
 
 export default en;

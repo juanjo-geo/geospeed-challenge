@@ -1,3 +1,5 @@
+import { prefersReducedMotion } from '@/lib/prefs';
+import { BRAND_RGB, BRAND, rgba } from '@/lib/theme';
 import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import { countries } from '@/data/countries';
 import { type GameMode, getMapBounds } from '@/data/cities';
@@ -182,9 +184,9 @@ export default function WorldMapCanvas({
     } else if (neon) {
       // Neon-Velocity: deep blue-black ocean — maximizes contrast
       const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
-      oceanGrad.addColorStop(0, '#0A0E18');
-      oceanGrad.addColorStop(0.5, '#0C1020');
-      oceanGrad.addColorStop(1, '#080C16');
+      oceanGrad.addColorStop(0, BRAND.navyDeep);
+      oceanGrad.addColorStop(0.5, BRAND.navy);
+      oceanGrad.addColorStop(1, BRAND.navyDeep);
       ctx.fillStyle = oceanGrad;
     } else {
       // Dark: cream/bone ocean — matches warm earth-tone watercolor palette
@@ -256,7 +258,7 @@ export default function WorldMapCanvas({
           const inContinent = continentCountries.has(country.name);
           if (inContinent) {
             // Brighter highlight — more noticeable hint to lower difficulty
-            ctx.fillStyle = neon ? 'rgba(0,212,170,0.34)' : light ? 'rgba(0,150,255,0.28)' : 'rgba(245,200,66,0.34)';
+            ctx.fillStyle = neon ? rgba(BRAND_RGB.turquoise, 0.34) : light ? 'rgba(0,150,255,0.28)' : rgba(BRAND_RGB.yellow, 0.34);
             for (const polygon of country.polygons) {
               ctx.beginPath();
               let vis = false;
@@ -286,7 +288,7 @@ export default function WorldMapCanvas({
     }
 
     // Graticule — extends across the ENTIRE canvas, not just geographic bounds
-    ctx.strokeStyle = neon ? 'rgba(0,212,170,0.08)' : light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
+    ctx.strokeStyle = neon ? rgba(BRAND_RGB.turquoise, 0.08) : light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
     ctx.lineWidth = 0.8;
     const lonStep = gameMode === 'world' ? 30 : 10;
     const latStep = gameMode === 'world' ? 30 : 10;
@@ -573,8 +575,8 @@ export default function WorldMapCanvas({
 
       // ── User pin (always visible, pulsing ring) — uses equipped cosmetic if any ──
       const pulse = 1 + 0.15 * Math.sin(elapsed * 0.004);
-      const pinFill = pinConfig?.fill ?? (neon ? '#00D4AA' : '#4fc3f7');
-      const pinGlow = pinConfig?.glow ?? (neon ? 'rgba(0,212,170,0.35)' : 'rgba(79,195,247,0.3)');
+      const pinFill = pinConfig?.fill ?? (neon ? BRAND.turquoise : '#4fc3f7');
+      const pinGlow = pinConfig?.glow ?? (neon ? rgba(BRAND_RGB.turquoise, 0.35) : 'rgba(79,195,247,0.3)');
       const pinSize = pinConfig?.size ?? 8;
       ctx.fillStyle = pinFill;
       ctx.strokeStyle = pinGlow;
@@ -935,8 +937,7 @@ export default function WorldMapCanvas({
     }
 
     // Respect reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion()) return;
 
     // Cancel any previous zoom bomb
     if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
@@ -1077,7 +1078,7 @@ export default function WorldMapCanvas({
     : theme === 'light'
     ? 'linear-gradient(180deg, #C8E8F4 0%, #98C8E4 50%, #84B8DC 100%)'
     : theme === 'neon'
-      ? 'linear-gradient(180deg, #0A0E18 0%, #0C1020 50%, #080C16 100%)'
+      ? 'linear-gradient(180deg, hsl(var(--brand-navy-deep)) 0%, hsl(var(--brand-navy)) 50%, hsl(var(--brand-navy-deep)) 100%)'
       : 'linear-gradient(180deg, #EDE0C8 0%, #E8D8BC 50%, #E0CEB0 100%)';
 
   return (
@@ -1186,12 +1187,12 @@ function MiniMap({ gameMode }: { gameMode: GameMode }) {
     const rw = (regionBounds.lonMax - regionBounds.lonMin) * sx;
     const rh = (regionBounds.latMax - regionBounds.latMin) * sy;
 
-    ctx.strokeStyle = '#f5c842';
+    ctx.strokeStyle = BRAND.yellow;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([3, 2]);
     ctx.strokeRect(rx, ry, rw, rh);
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(245,200,66,0.12)';
+    ctx.fillStyle = rgba(BRAND_RGB.yellow, 0.12);
     ctx.fillRect(rx, ry, rw, rh);
   }, [gameMode, regionBounds, worldBounds]);
 
@@ -1207,7 +1208,7 @@ function MiniMap({ gameMode }: { gameMode: GameMode }) {
 }
 
 function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerR: number, innerR: number) {
-  ctx.fillStyle = '#f5c842';
+  ctx.fillStyle = BRAND.yellow;
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 2;
   ctx.beginPath();

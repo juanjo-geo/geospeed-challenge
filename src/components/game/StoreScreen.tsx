@@ -177,11 +177,11 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 className="text-xl sm:text-2xl font-black tracking-tight"
                 style={{
                   fontFamily: 'Impact, system-ui',
-                  background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                  background: 'var(--grad-wordmark)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                  filter: 'drop-shadow(0 2px 8px rgba(240,160,48,0.4))',
+                  filter: 'drop-shadow(0 2px 8px hsl(var(--primary)/0.4))',
                 }}
               >
                 GEOSPEED PRO

@@ -15,9 +15,10 @@ import { playButtonTap, playAccordion } from '@/lib/sounds';
 import { getFlag } from '@/lib/featureFlags';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 // useA11y removed — colorblind toggle removed
-import { useI18n, LOCALES } from '@/i18n';
+import { useI18n } from '@/i18n';
 import { getReferralProgress, claimReferralReward, type ReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle, tBadgeName, tBadgeDesc } from '@/lib/gameI18n';
+import Wordmark from '@/components/ui/Wordmark';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode) => void;
@@ -30,6 +31,9 @@ interface HomeScreenProps {
   onOpenStore?: () => void;
   onOpenProfile?: () => void;
   onOpenBattlePass?: () => void;
+  onOpenSettings?: () => void;
+  /** Abrir el banner "¿Cómo se juega?" al montar (llegada desde Ajustes) */
+  howToPlayOpen?: boolean;
 }
 
 const DIFF_CONFIG: { key: Difficulty; label: string; emoji: string; desc: string; borderClass: string; glowClass: string; unlockLevel: number }[] = [
@@ -65,10 +69,9 @@ const MODE_UNLOCK: Partial<Record<GameMode, { level: number; label: string }>> =
   africa:   { level: 5, label: 'Nv.5' },
 };
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile, onOpenBattlePass }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onWorldChallenge, onStartTraining, onSpeedDemon, onOpenStore, onOpenProfile, onOpenBattlePass, onOpenSettings, howToPlayOpen }: HomeScreenProps) {
   const { user, displayName, signOut } = useAuth();
-  // colorblind toggle removed
-  const { t, locale, setLocale } = useI18n();
+  const { t, locale } = useI18n();
   const [inviteSent, setInviteSent] = useState(false);
   const navigate = useNavigate();
   const stats = getPlayerStats();
@@ -81,13 +84,12 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [rankingDifficulty, setRankingDifficulty] = useState<string>('all');
   const [showRanking, setShowRanking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showMoreModes, setShowMoreModes] = useState(false);
   const history = getGameHistory();
   const playerLevel = getPlayerLevel();
   const badges = getPlayerBadges();
   const isOnline = useOnlineStatus();
   const isNewPlayer = stats.gamesPlayed === 0;
-  const [showHowToPlay, setShowHowToPlay] = useState(isNewPlayer);
+  const [showHowToPlay, setShowHowToPlay] = useState(Boolean(howToPlayOpen) || isNewPlayer);
   const [showBadges, setShowBadges] = useState(false);
   const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
   const [streakDismissed, setStreakDismissed] = useState(false);
@@ -131,79 +133,42 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       >
         {t('home_skipToContent')}
       </a>
-      {/* ── Top bar: energy + user ── */}
-      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-1 sm:mb-3 animate-fade-in-up flex flex-col gap-1.5 sm:gap-2">
-        {/* Row 1: Energy + Account */}
-        <div className="flex items-center justify-between gap-2">
-          <EnergyBar />
+      {/* ── Top bar: vidas · cuenta · ajustes (perfil, tienda y pass viven en la barra de navegación) ── */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mb-1 sm:mb-3 animate-fade-in-up flex items-center justify-between gap-2">
+        <EnergyBar />
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           {user ? (
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="text-xs sm:text-sm text-muted-foreground truncate max-w-[120px]">
-                👤 <span className="font-bold text-foreground">{displayName || user.email?.split('@')[0]}</span>
-              </span>
-              <button
-                onClick={() => { if (window.confirm('¿Seguro que deseas cerrar sesión?')) signOut(); }}
-                className="text-[10px] sm:text-xs text-muted-foreground hover:text-red-400 transition-colors px-1.5 sm:px-2 py-1 rounded border border-border active:scale-[0.97]"
-                aria-label="Cerrar sesión"
-              >
-                {t('home_signOut')}
-              </button>
-            </div>
+            <button
+              onClick={() => { playButtonTap(); onOpenProfile?.(); }}
+              className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground truncate max-w-[140px] px-2 py-1 rounded-lg hover:bg-muted/40 transition-colors active:scale-[0.97]"
+              aria-label={t('nav_profile')}
+            >
+              <span aria-hidden>👤</span>
+              <span className="font-bold text-foreground truncate">{displayName || user.email?.split('@')[0]}</span>
+            </button>
           ) : (
             <button
               onClick={() => navigate('/auth')}
               className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-[0.97] btn-glow whitespace-nowrap"
-              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 rgba(150,108,20,0.95)' }}
-              aria-label="Iniciar sesión"
+              style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
+              aria-label={t('home_signIn')}
+              title={t('home_saveProgress')}
             >
               {t('home_signIn').toUpperCase()}
             </button>
           )}
-        </div>
-        {/* Row 2: Navigation buttons */}
-        <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-wrap">
-          {onOpenProfile && stats.gamesPlayed > 0 && (
+          {onOpenSettings && (
             <button
-              onClick={() => { playButtonTap(); onOpenProfile?.(); }}
-              className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-all active:scale-[0.97]"
-              aria-label="Mi perfil"
+              onClick={() => { playButtonTap(); onOpenSettings(); }}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border border-border/60 bg-card/60 text-muted-foreground hover:text-foreground hover:border-accent/50 transition-all active:scale-[0.95] shrink-0"
+              aria-label={t('home_settings')}
+              title={t('home_settings')}
             >
-              {t('home_profile')}
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+              </svg>
             </button>
-          )}
-          {onOpenStore && (
-            <button
-              onClick={() => { playButtonTap(); onOpenStore?.(); }}
-              className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-all active:scale-[0.97]"
-              aria-label="Abrir tienda"
-            >
-              {t('home_store')}
-            </button>
-          )}
-          {onOpenBattlePass && (
-            <button
-              onClick={() => { playButtonTap(); onOpenBattlePass?.(); }}
-              className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-[#f5c842]/40 text-[#f5c842] hover:bg-[#f5c842]/10 transition-all active:scale-[0.97]"
-              aria-label="Battle Pass"
-            >
-              🏆 Pass
-            </button>
-          )}
-          <button
-            onClick={() => {
-              const idx = LOCALES.findIndex(l => l.key === locale);
-              setLocale(LOCALES[(idx + 1) % LOCALES.length].key);
-            }}
-            className="text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-all active:scale-[0.95]"
-            title={LOCALES.find(l => l.key === locale)?.label}
-            aria-label={`Language: ${LOCALES.find(l => l.key === locale)?.label}`}
-          >
-            {LOCALES.find(l => l.key === locale)?.flag}
-          </button>
-          {!user && (
-            <p className="text-[8px] sm:text-[9px] text-muted-foreground leading-tight">
-              {t('home_saveProgress')}
-            </p>
           )}
         </div>
       </div>
@@ -226,23 +191,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           alt="GeoSpeed Logo"
           className={`object-contain ${isNewPlayer ? 'w-20 sm:w-28 md:w-36' : 'w-14 sm:w-20'}`}
         />
-        <h1
-          className={`font-black tracking-tight leading-none mt-0 ${isNewPlayer ? 'text-6xl sm:text-7xl md:text-8xl' : 'text-5xl sm:text-6xl md:text-7xl'}`}
-          style={{
-            fontFamily: 'Impact, system-ui',
-            background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0 2px 8px rgba(240,160,48,0.4))',
-          }}
-        >
-          GEOSPEED
+        <h1 className="mt-0 leading-none">
+          <Wordmark size={isNewPlayer ? '2xl' : 'xl'} />
         </h1>
       </div>
       <p
         className={`animate-fade-in-up animation-delay-100 tracking-widest uppercase ${isNewPlayer ? 'text-[10px] sm:text-xs mb-2 sm:mb-3' : 'text-[9px] sm:text-[10px] mb-1 sm:mb-1.5'}`}
-        style={{ color: '#00D4AA', opacity: 0.5 }}
+        style={{ color: 'hsl(var(--accent))', opacity: 0.5 }}
       >
         {t('home_tagline')}
       </p>
@@ -376,7 +331,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                 }`}
               >
                 {isSelected && !isLocked && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: '#F0A030', color: '#0A0E18' }}>✓</span>
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>✓</span>
                 )}
                 <span className="text-lg sm:text-xl md:text-2xl">{isLocked ? '🔒' : m.emoji}</span>
                 <span className={`text-[9px] sm:text-[11px] md:text-sm font-bold leading-tight text-center ${isLocked ? 'text-muted-foreground' : isSelected ? 'text-primary' : 'text-foreground'}`}>
@@ -409,16 +364,16 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   isLocked
                     ? 'border-border/30 bg-card/40 opacity-50 cursor-not-allowed'
                     : isSelected
-                    ? 'border-[#F0A030] bg-[#F0A030]/15 shadow-[0_0_20px_rgba(240,160,48,0.3)]'
+                    ? 'border-primary bg-primary/15 shadow-[0_0_20px_hsl(var(--primary)/0.3)]'
                     : `bg-card ${d.borderClass} ${d.glowClass}`
                 }`}
                 aria-label={isLocked ? `${t(labelKey)} — ${t('home_diffLocked', { level: String(d.unlockLevel) })}` : `Dificultad ${t(labelKey)}: ${t(descKey)}`}
               >
                 {isSelected && !isLocked && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: '#F0A030', color: '#0A0E18' }}>✓</span>
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold" style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>✓</span>
                 )}
                 <span className="text-sm sm:text-lg">{isLocked ? '🔒' : d.emoji}</span>
-                <div className={`font-bold text-[10px] sm:text-xs ${isLocked ? 'text-muted-foreground/50' : isSelected ? 'text-[#F0A030]' : 'text-foreground'}`}>{t(labelKey)}</div>
+                <div className={`font-bold text-[10px] sm:text-xs ${isLocked ? 'text-muted-foreground/50' : isSelected ? 'text-primary' : 'text-foreground'}`}>{t(labelKey)}</div>
                 <div className="text-[7px] sm:text-[9px] text-muted-foreground text-center leading-tight">
                   {isLocked ? `Nv.${d.unlockLevel}` : t(descKey)}
                 </div>
@@ -468,17 +423,17 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <div className="absolute inset-0 opacity-20" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(239,68,68,0.1) 10px, rgba(239,68,68,0.1) 20px)' }} />
             <span className="text-2xl sm:text-3xl block mb-1 relative">⚠️</span>
             <p className="font-black text-sm sm:text-base text-red-400 relative">
-              ¡Tu racha de {streakRisk.days} dias esta en peligro!
+              {t('home_streakRiskTitle', { days: streakRisk.days })}
             </p>
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 relative">
-              Juega hoy para mantenerla, o protegela ahora
+              {t('home_streakRiskDesc')}
             </p>
             <div className="flex gap-2 mt-3 relative">
               <button
                 onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
                 className="flex-1 py-2 rounded-lg font-bold text-xs bg-red-500 text-white active:scale-[0.97] transition-all"
               >
-                🎮 JUGAR AHORA
+                {t('home_streakPlay')}
               </button>
               {streakRisk.canProtect && (
                 <button
@@ -490,7 +445,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
                   }}
                   className="flex-1 py-2 rounded-lg font-bold text-xs border-2 border-amber-500/50 text-amber-400 hover:bg-amber-500/10 active:scale-[0.97] transition-all"
                 >
-                  🛡️ PROTEGER — $0.99
+                  {t('home_streakProtect')}
                 </button>
               )}
             </div>
@@ -592,7 +547,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               <div className="font-black text-xs sm:text-sm text-amber-400">{t('home_dailyChallenge')}</div>
               <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
                 {dailyPlayers > 0
-                  ? `🔥 ${dailyPlayers} ${dailyPlayers === 1 ? 'persona jugó' : 'personas jugaron'} hoy`
+                  ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers }))
                   : t('home_dailyChallengeDesc')
                 }
               </div>

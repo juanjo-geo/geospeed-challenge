@@ -1,3 +1,4 @@
+import { BRAND_RGB, BRAND, rgba } from '@/lib/theme';
 /**
  * GeoSpeed — Cosmetics & Battle Pass System
  *
@@ -62,7 +63,7 @@ export const PIN_SKINS: Cosmetic[] = [
     description: 'El pin original de GeoSpeed',
     emoji: '📍',
     rarity: 'common',
-    config: { fill: '#00D4AA', stroke: '#fff', glow: 'rgba(0,212,170,0.35)', size: 7 },
+    config: { fill: BRAND.turquoise, stroke: '#fff', glow: rgba(BRAND_RGB.turquoise, 0.35), size: 7 },
     source: 'default',
   },
   {
@@ -72,7 +73,7 @@ export const PIN_SKINS: Cosmetic[] = [
     description: 'Pin de oro brillante',
     emoji: '🥇',
     rarity: 'rare',
-    config: { fill: '#f5c842', stroke: '#fff', glow: 'rgba(245,200,66,0.4)', size: 8 },
+    config: { fill: BRAND.yellow, stroke: '#fff', glow: rgba(BRAND_RGB.yellow, 0.4), size: 8 },
     source: 'battlepass_free',
   },
   {
@@ -193,7 +194,7 @@ export const SHARE_FRAMES: Cosmetic[] = [
     description: 'Borde dorado premium',
     emoji: '🏆',
     rarity: 'rare',
-    config: { border: '#f5c842', width: 4, bg: 'gold' },
+    config: { border: BRAND.yellow, width: 4, bg: 'gold' },
     source: 'battlepass_free',
   },
   {
@@ -505,7 +506,7 @@ export const RARITY_COLORS: Record<string, string> = {
   common: '#94a3b8',
   rare: '#3b82f6',
   epic: '#a78bfa',
-  legendary: '#f5c842',
+  legendary: BRAND.yellow,
 };
 
 export const RARITY_LABELS: Record<string, string> = {

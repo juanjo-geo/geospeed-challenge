@@ -23,16 +23,20 @@ const LEVELS_CONFIG: { minXp: number; title: string; emoji: string }[] = [
   { minXp: 100000, title: 'Deidad Geo', emoji: '⚡' },
 ];
 
+type ProfileTab = 'stats' | 'levels' | 'badges' | 'history';
+
 interface ProfileScreenProps {
   onBack: () => void;
+  /** Pestaña inicial (la pestaña "Progreso" de la barra abre el historial) */
+  initialTab?: ProfileTab;
 }
 
-export default function ProfileScreen({ onBack }: ProfileScreenProps) {
+export default function ProfileScreen({ onBack, initialTab = 'stats' }: ProfileScreenProps) {
   const { user, displayName } = useAuth();
   const { t, locale } = useI18n();
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '🌍');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [tab, setTab] = useState<'stats' | 'levels' | 'badges' | 'history'>('stats');
+  const [tab, setTab] = useState<ProfileTab>(initialTab);
 
   const stats = getPlayerStats();
   const history = getGameHistory();
@@ -67,7 +71,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
             className="text-xl sm:text-2xl font-black flex-1 text-center"
             style={{
               fontFamily: 'Impact, system-ui',
-              background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+              background: 'var(--grad-wordmark)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',

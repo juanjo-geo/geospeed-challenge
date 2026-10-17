@@ -22,6 +22,17 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          deep: "hsl(var(--primary-deep))",
+        },
+        brand: {
+          navy: "hsl(var(--brand-navy))",
+          "navy-deep": "hsl(var(--brand-navy-deep))",
+          "navy-card": "hsl(var(--brand-navy-card))",
+          yellow: "hsl(var(--brand-yellow))",
+          "yellow-deep": "hsl(var(--brand-yellow-deep))",
+          turquoise: "hsl(var(--brand-turquoise))",
+          coral: "hsl(var(--brand-coral))",
+          white: "hsl(var(--brand-white))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",

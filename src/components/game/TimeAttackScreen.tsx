@@ -256,11 +256,11 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
               className="text-[22cqi] font-black tracking-tight"
               style={{
                 fontFamily: 'Impact, system-ui',
-                background: 'linear-gradient(180deg, #F5D060 0%, #F0A030 40%, #D48020 100%)',
+                background: 'var(--grad-wordmark)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 1px 4px rgba(240,160,48,0.3))',
+                filter: 'drop-shadow(0 1px 4px hsl(var(--primary)/0.3))',
               }}
             >
               GEOSPEED
@@ -312,7 +312,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver }: T
             )}
             <Mascot
               state={mascotState}
-              className={`w-[48cqi] max-w-[130px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_rgba(240,160,48,0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
+              className={`w-[48cqi] max-w-[130px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_hsl(var(--primary)/0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
             />
           </div>
 

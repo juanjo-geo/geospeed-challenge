@@ -67,7 +67,7 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
             style={{
               width: 320,
               height: 320,
-              background: 'repeating-conic-gradient(rgba(245,200,66,0.30) 0deg 10deg, transparent 10deg 28deg)',
+              background: 'repeating-conic-gradient(hsl(var(--primary)/0.30) 0deg 10deg, transparent 10deg 28deg)',
               WebkitMaskImage: 'radial-gradient(circle, #000 30%, transparent 68%)',
               maskImage: 'radial-gradient(circle, #000 30%, transparent 68%)',
             }}
@@ -81,13 +81,13 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
             className="dc-wiggle relative z-10 select-none"
             aria-label={t('chest_tapToOpen')}
           >
-            <span style={{ fontSize: 128, filter: 'drop-shadow(0 10px 26px rgba(245,200,66,0.55))' }}>🎁</span>
+            <span style={{ fontSize: 128, filter: 'drop-shadow(0 10px 26px hsl(var(--primary)/0.55))' }}>🎁</span>
           </button>
         ) : (
           <div className="dc-pop relative z-10 flex flex-col items-center text-center">
             {reward.lives > 0 && (
               <div className="flex items-center gap-2">
-                <span style={{ fontSize: 68, filter: 'drop-shadow(0 6px 16px rgba(245,200,66,0.5))' }}>❤️</span>
+                <span style={{ fontSize: 68, filter: 'drop-shadow(0 6px 16px hsl(var(--primary)/0.5))' }}>❤️</span>
                 <span className="text-5xl sm:text-6xl font-black" style={{ color: 'hsl(var(--primary))' }}>+{reward.lives}</span>
               </div>
             )}
@@ -112,7 +112,7 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
           style={{
             background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(44 91% 50%))',
             color: 'hsl(var(--primary-foreground))',
-            boxShadow: '0 6px 0 rgba(150,108,20,0.95)',
+            boxShadow: '0 6px 0 hsl(var(--primary-deep))',
           }}
         >
           {t('chest_claim')}

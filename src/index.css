@@ -4,109 +4,87 @@
 
 @layer base {
   :root {
-    /* ── Dark mode: premium negro / oro ─────────────────────────────────
-       #020202 → 0   0%   1%  (negro puro     — fondo profundo)
-       #19191a → 240 2%  10%  (dark charcoal  — background)
-       #373739 → 240 2%  22%  (charcoal       — card / sidebar)
-       #c9b977 → 48  43% 63%  (muted gold     — primary)
-       #ecdda2 → 48  66% 78%  (light gold     — foreground / texto)
-    ──────────────────────────────────────────────────────────────────── */
-    --background: 240 2% 10%;
-    --foreground: 48 66% 78%;
+    /* ══════════════════════════════════════════════════════════════════
+       GeoSpeed — Design tokens (rediseño v2, maquetas oct 2026)
+       Fuente única de color. Los canvas y strings CSS usan la copia hex
+       de src/lib/theme.ts (BRAND); mantener ambos en sincronía.
 
-    --card: 240 2% 22%;
-    --card-foreground: 48 66% 78%;
+       Marca
+         navy        #0B1F3A → 213 68% 14%   fondo
+         navy-deep   #071426 → 215 69%  9%   fondo profundo / océano
+         navy-card   #122B4D → 214 62% 19%   tarjetas
+         yellow      #FFD93B →  48 100% 62%  CTA, puntos, marca
+         yellow-deep #D9AE00 →  48 100% 43%  labio 3D, sombras
+         turquoise   #19E6D2 → 174 80% 50%   acento, "SPEED", acierto
+         coral       #FF6B6B →   0 100% 71%  error, tiempo agotado
+         white       #F4F7FB → 216 47% 97%   texto
+    ══════════════════════════════════════════════════════════════════ */
+    --brand-navy: 213 68% 14%;
+    --brand-navy-deep: 215 69% 9%;
+    --brand-navy-card: 214 62% 19%;
+    --brand-yellow: 48 100% 62%;
+    --brand-yellow-deep: 48 100% 43%;
+    --brand-turquoise: 174 80% 50%;
+    --brand-coral: 0 100% 71%;
+    --brand-white: 216 47% 97%;
 
-    --popover: 240 2% 22%;
-    --popover-foreground: 48 66% 78%;
+    /* Semánticos (shadcn/Tailwind) */
+    --background: var(--brand-navy);
+    --foreground: var(--brand-white);
 
-    --primary: 48 43% 63%;
-    --primary-foreground: 0 0% 5%;
+    --card: var(--brand-navy-card);
+    --card-foreground: var(--brand-white);
 
-    --secondary: 240 2% 18%;
-    --secondary-foreground: 48 66% 78%;
+    --popover: var(--brand-navy-card);
+    --popover-foreground: var(--brand-white);
 
-    --muted: 240 2% 16%;
-    --muted-foreground: 48 15% 52%;
+    --primary: var(--brand-yellow);
+    --primary-foreground: var(--brand-navy-deep);
+    --primary-deep: var(--brand-yellow-deep);
 
-    --accent: 48 43% 63%;
-    --accent-foreground: 0 0% 5%;
+    --secondary: 214 50% 24%;
+    --secondary-foreground: var(--brand-white);
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 0 0% 98%;
+    --muted: 214 45% 22%;
+    --muted-foreground: 214 30% 70%;
 
-    --border: 240 2% 27%;
-    --input: 240 2% 27%;
-    --ring: 48 43% 63%;
+    --accent: var(--brand-turquoise);
+    --accent-foreground: var(--brand-navy-deep);
 
-    --radius: 0.5rem;
+    --destructive: var(--brand-coral);
+    --destructive-foreground: var(--brand-navy-deep);
 
-    --sidebar-background: 240 2% 8%;
-    --sidebar-foreground: 48 66% 78%;
-    --sidebar-primary: 48 43% 63%;
-    --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 240 2% 18%;
-    --sidebar-accent-foreground: 48 66% 78%;
-    --sidebar-border: 240 2% 27%;
-    --sidebar-ring: 48 43% 63%;
+    --border: 213 45% 30%;
+    --input: 213 45% 26%;
+    --ring: var(--brand-turquoise);
 
-    /* Background gradient vars */
-    --bg-from: 0 0% 1%;
-    --bg-to: 240 2% 10%;
+    --radius: 0.875rem;
 
-    /* Game sidebar panel */
-    --game-panel: 240 2% 13%;
-  }
+    --sidebar-background: var(--brand-navy-deep);
+    --sidebar-foreground: var(--brand-white);
+    --sidebar-primary: var(--brand-yellow);
+    --sidebar-primary-foreground: var(--brand-navy-deep);
+    --sidebar-accent: 214 50% 24%;
+    --sidebar-accent-foreground: var(--brand-white);
+    --sidebar-border: 213 45% 30%;
+    --sidebar-ring: var(--brand-turquoise);
 
-  /* ── Light mode: paleta tropical (WCAG AA compliant) ── */
-  /* #007a6e → 174 100% 24%  (teal profundo — primary)    */
-  /* #124653 → 192 64%  20%  (teal oscuro   — foreground) */
-  /* #fee074 → 47  99%  73%  (amarillo      — acento/ring)*/
-  /* #ff9469 → 17  100% 71%  (coral         — destructive)*/
-  /* #fe8d8f → 359 98%  77%  (rosa          — badge suave)*/
-  :root.light {
-    --background: 174 30% 94%;
-    --foreground: 192 64% 20%;
+    /* Fondo degradado de pantalla */
+    --bg-from: var(--brand-navy-deep);
+    --bg-to: var(--brand-navy);
 
-    --card: 174 25% 98%;
-    --card-foreground: 192 64% 20%;
+    /* Panel lateral de partida */
+    --game-panel: 215 60% 12%;
 
-    --popover: 174 25% 98%;
-    --popover-foreground: 192 64% 20%;
+    /* Degradados de marca (reemplazan los hex repetidos en los componentes) */
+    --grad-wordmark: linear-gradient(180deg, hsl(48 100% 74%) 0%, hsl(var(--brand-yellow)) 45%, hsl(var(--brand-yellow-deep)) 100%);
+    --grad-cta: linear-gradient(180deg, hsl(48 100% 70%) 0%, hsl(48 100% 56%) 100%);
 
-    --primary: 174 100% 24%;
-    --primary-foreground: 0 0% 100%;
+    /* Labio de los botones 3D (antes rgba(150,108,20,0.95)) */
+    --btn3d-lip: hsl(var(--brand-yellow-deep));
 
-    --secondary: 174 18% 86%;
-    --secondary-foreground: 192 64% 20%;
-
-    --muted: 174 14% 88%;
-    --muted-foreground: 192 40% 34%;
-
-    --accent: 47 80% 88%;
-    --accent-foreground: 192 64% 20%;
-
-    --destructive: 17 100% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 174 20% 78%;
-    --input: 174 20% 78%;
-    --ring: 47 99% 55%;
-
-    --sidebar-background: 174 25% 90%;
-    --sidebar-foreground: 192 64% 20%;
-    --sidebar-primary: 174 100% 24%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 174 18% 86%;
-    --sidebar-accent-foreground: 192 64% 20%;
-    --sidebar-border: 174 20% 78%;
-    --sidebar-ring: 47 99% 55%;
-
-    --bg-from: 174 30% 94%;
-    --bg-to: 174 22% 88%;
-
-    /* Game sidebar panel — teal medio (contraste ≥4.5 con foreground) */
-    --game-panel: 174 35% 68%;
+    /* Altura de la barra de navegación (móvil abajo / escritorio arriba) */
+    --nav-h: 64px;
   }
 }
 
@@ -424,48 +402,15 @@
   animation: float-up-big 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ── Neon-Velocity theme (optional high-contrast mode per Guía de Estilo) ── */
-:root.neon {
-  --background: 222 28% 5%;      /* #0A0E18 — deep navy black (logo bg) */
-  --foreground: 45 20% 92%;      /* warm white — matches gold tones */
+/* ── Tema único ──
+   La clase `neon` en <html> se conserva por compatibilidad (algunos canvas la
+   consultan), pero ya no cambia tokens: :root es la paleta de marca. */
+/* Acierto en turquesa (clases Tailwind heredadas de la fase anterior) */
+:root .text-green-400 { color: hsl(var(--accent)) !important; }
+:root .bg-green-500\/20 { background-color: hsl(var(--accent) / 0.2) !important; }
 
-  --card: 220 22% 10%;           /* dark navy card */
-  --card-foreground: 45 20% 92%;
-
-  --popover: 220 22% 10%;
-  --popover-foreground: 45 20% 92%;
-
-  --primary: 38 88% 56%;         /* #F0A030 — warm gold (the pin) */
-  --primary-foreground: 0 0% 5%;
-
-  --secondary: 220 18% 15%;     /* deep navy secondary */
-  --secondary-foreground: 45 20% 92%;
-
-  --muted: 220 15% 14%;          /* subtle navy undertone */
-  --muted-foreground: 40 10% 55%;  /* warm muted text */
-
-  --accent: 168 100% 42%;        /* #00D4AA — teal-cyan (circle & wave in logo) */
-  --accent-foreground: 0 0% 5%;
-
-  --destructive: 0 85% 55%;
-  --destructive-foreground: 0 0% 98%;
-
-  --border: 220 15% 20%;         /* navy borders */
-  --input: 220 15% 16%;
-  --ring: 24 100% 55%;           /* #FF6B1A — hot orange (speed streaks) */
-
-  --bg-from: 222 28% 3%;
-  --bg-to: 220 22% 7%;
-  --game-panel: 220 20% 8%;
-}
-/* Neon mode: teal success feedback */
-:root.neon .text-green-400 { color: hsl(168 100% 42%) !important; }
-:root.neon .bg-green-500\/20 { background-color: hsl(168 100% 42% / 0.2) !important; }
-/* Neon mode: teal accents on UI borders */
-:root.neon .border-primary\/40 { border-color: hsl(168 60% 35% / 0.4) !important; }
-:root.neon .hover\:border-primary:hover { border-color: hsl(168 100% 42%) !important; }
-
-/* Reduced motion preference */
+/* Reduced motion — por preferencia del sistema o por el toggle de Ajustes
+   (clase `reduce-motion` en <html>, ver src/lib/prefs.ts) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -475,6 +420,34 @@
   .vignette-urgent::after {
     display: none;
   }
+}
+:root.reduce-motion *, :root.reduce-motion *::before, :root.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+:root.reduce-motion .vignette-urgent::after {
+  display: none;
+}
+
+/* ── Wordmark GEO·SPEED (maquetas: GEO blanco + SPEED turquesa) ── */
+.wordmark {
+  font-family: Impact, 'Arial Black', system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  filter: drop-shadow(0 2px 10px hsl(var(--brand-navy-deep) / 0.6));
+}
+.wordmark-geo { color: hsl(var(--foreground)); }
+.wordmark-speed { color: hsl(var(--accent)); text-shadow: 0 0 18px hsl(var(--accent) / 0.45); }
+
+/* ── Barra de navegación persistente ──
+   Las pantallas que conviven con la barra (inicio, perfil, tienda, pass, ajustes)
+   se envuelven en .with-app-nav para no quedar tapadas. */
+.with-app-nav { padding-bottom: calc(var(--nav-h) + var(--sab)); }
+@media (min-width: 768px) {
+  .with-app-nav { padding-bottom: 0; padding-top: var(--nav-h); }
 }
 
 /* ── JUICE (Fase 1): Botón 3D estilo Duolingo — labio inferior + compresión al presionar ── */

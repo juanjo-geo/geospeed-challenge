@@ -70,7 +70,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
         >
           ← {tr('back')}
         </button>
-        <h1 className="text-base sm:text-lg font-bold" style={{ color: '#f5c842' }}>
+        <h1 className="text-base sm:text-lg font-bold" style={{ color: 'hsl(var(--primary))' }}>
           🏆 Battle Pass
         </h1>
         <div className="w-16" />
@@ -84,7 +84,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
             onClick={() => setTab(t)}
             className={`flex-1 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
               tab === t
-                ? 'bg-[#f5c842]/20 text-[#f5c842] border border-[#f5c842]/40'
+                ? 'bg-primary/20 text-primary border border-primary/40'
                 : 'bg-card/50 text-muted-foreground border border-border/30'
             }`}
           >
@@ -110,7 +110,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: bpLevel.xpForNext > 0 ? `${(bpLevel.xpInLevel / bpLevel.xpForNext) * 100}%` : '100%',
-                  background: 'linear-gradient(90deg, #f5c842, #ef4444)',
+                  background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--destructive)))',
                 }}
               />
             </div>
@@ -133,7 +133,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                   key={lvl.level}
                   className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${
                     reached
-                      ? 'bg-card/80 border-[#f5c842]/30'
+                      ? 'bg-card/80 border-primary/30'
                       : 'bg-card/30 border-border/20 opacity-60'
                   }`}
                 >
@@ -141,8 +141,8 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
                     style={{
-                      background: reached ? 'linear-gradient(135deg, #f5c842, #ef4444)' : 'rgba(100,116,139,0.2)',
-                      color: reached ? '#0A0E18' : '#64748b',
+                      background: reached ? 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--destructive)))' : 'rgba(100,116,139,0.2)',
+                      color: reached ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
                     }}
                   >
                     {lvl.level}
@@ -176,7 +176,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                         {reached && isPro && !premClaimed && !isUnlocked(premCosmetic.id) && (
                           <button
                             onClick={() => handleClaimPremium(lvl.level)}
-                            className="absolute -top-1 -right-1 bg-[#f5c842] text-[#0A0E18] text-[8px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
+                            className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
                           >
                             {tr('bp_claimShort')}
                           </button>
@@ -212,7 +212,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                 onClick={() => setSelectedCategory(cat)}
                 className={`flex-1 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
                   selectedCategory === cat
-                    ? 'bg-[#f5c842]/20 text-[#f5c842] border border-[#f5c842]/40'
+                    ? 'bg-primary/20 text-primary border border-primary/40'
                     : 'bg-card/50 text-muted-foreground border border-border/30'
                 }`}
               >
@@ -232,14 +232,14 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                   key={cosmetic.id}
                   className={`relative p-3 rounded-xl border transition-all ${
                     equipped
-                      ? 'border-[#f5c842]/60 bg-[#f5c842]/10 shadow-[0_0_12px_rgba(245,200,66,0.2)]'
+                      ? 'border-primary/60 bg-primary/10 shadow-[0_0_12px_hsl(var(--primary)/0.2)]'
                       : unlocked
                       ? 'border-border/40 bg-card/60 hover:border-border'
                       : 'border-border/20 bg-card/30 opacity-50'
                   }`}
                 >
                   {equipped && (
-                    <span className="absolute top-1.5 right-1.5 text-[8px] font-bold bg-[#f5c842] text-[#0A0E18] px-1.5 py-0.5 rounded-full">
+                    <span className="absolute top-1.5 right-1.5 text-[8px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
                       {tr('bp_equipped')}
                     </span>
                   )}
@@ -267,7 +267,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                   {unlocked && !equipped && (
                     <button
                       onClick={() => handleEquip(cosmetic.id)}
-                      className="w-full mt-2 py-1 rounded-lg text-[10px] font-bold bg-[#f5c842]/20 text-[#f5c842] border border-[#f5c842]/30 active:scale-[0.97]"
+                      className="w-full mt-2 py-1 rounded-lg text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 active:scale-[0.97]"
                     >
                       {tr('bp_equip')}
                     </button>

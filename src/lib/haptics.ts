@@ -5,8 +5,10 @@
  * Gracefully degrades — no-ops on unsupported browsers/desktop.
  */
 
+import { isHapticsEnabled } from './prefs';
+
 function canVibrate(): boolean {
-  return typeof navigator !== 'undefined' && 'vibrate' in navigator;
+  return typeof navigator !== 'undefined' && 'vibrate' in navigator && isHapticsEnabled();
 }
 
 /** Light tap — map click, button press */
