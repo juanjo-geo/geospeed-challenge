@@ -35,9 +35,9 @@ export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: Fr
   };
 
   const urgencyColors = {
-    low: { bg: 'from-blue-500/20 to-cyan-500/10', border: 'border-blue-500/40', cta: 'linear-gradient(135deg, #3b82f6, #06b6d4)' },
-    medium: { bg: 'from-amber-500/20 to-orange-500/10', border: 'border-amber-500/40', cta: 'linear-gradient(135deg, #f59e0b, #ea580c)' },
-    high: { bg: 'from-red-500/20 to-pink-500/10', border: 'border-red-500/40', cta: 'linear-gradient(135deg, #ef4444, #ec4899)' },
+    low: { bg: '', border: 'border-accent/50', cta: 'var(--grad-cta)' },
+    medium: { bg: '', border: 'border-primary/50', cta: 'var(--grad-cta)' },
+    high: { bg: '', border: 'border-primary', cta: 'var(--grad-cta)' },
   };
 
   const colors = urgencyColors[offer.urgency];
@@ -50,7 +50,7 @@ export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: Fr
   return (
     <div
       className={`modal-layer z-[100] transition-all duration-300 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)', backdropFilter: 'blur(4px)' }}
       onClick={handleDismiss}
       role="dialog"
       aria-modal="true"
@@ -90,12 +90,8 @@ export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: Fr
         {/* CTA Button */}
         <button
           onClick={handleAccept}
-          className="w-full py-3.5 short:py-2.5 rounded-xl font-black text-base sm:text-lg transition-all active:scale-[0.95] shadow-lg hover:scale-[1.02] hover:brightness-110"
-          style={{
-            background: colors.cta,
-            color: '#fff',
-            boxShadow: '0 6px 24px rgba(0,0,0,0.3)',
-          }}
+          className="btn3d w-full py-3.5 short:py-2.5 rounded-2xl font-black text-base sm:text-lg text-primary-foreground"
+          style={{ background: colors.cta }}
         >
           {ctaLabel}
         </button>

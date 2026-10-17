@@ -99,7 +99,7 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
                 : t('home_streakBonusLivesPlural', { lives: String(reward.lives) })}
             </p>
             {reward.badge && (
-              <p className="mt-1 text-xs sm:text-sm font-bold text-amber-400">🏅 {reward.badge}</p>
+              <p className="mt-1 text-xs sm:text-sm font-bold text-accent">🏅 {reward.badge}</p>
             )}
           </div>
         )}
@@ -110,12 +110,8 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
       ) : (
         <button
           onClick={() => { playButtonTap(); onClose(); }}
-          className="px-8 py-3 rounded-xl font-black text-base transition-all active:scale-[0.97] animate-fade-in"
-          style={{
-            background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(44 91% 50%))',
-            color: 'hsl(var(--primary-foreground))',
-            boxShadow: '0 6px 0 hsl(var(--primary-deep))',
-          }}
+          className="btn3d px-10 py-3 rounded-2xl font-black text-base text-primary-foreground animate-fade-in"
+          style={{ background: 'var(--grad-cta)' }}
         >
           {t('chest_claim')}
         </button>

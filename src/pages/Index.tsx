@@ -262,7 +262,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
   const notifPendingRef = useRef(false);
   // Pestaña inicial del perfil (la pestaña "Progreso" de la barra abre el historial)
-  const [profileTab, setProfileTab] = useState<'stats' | 'history'>('stats');
+  const [profileTab, setProfileTab] = useState<'overview' | 'history'>('overview');
 
   // ── Background music — single track, always on from splash ──
   const { toggle: toggleMusic, muted: isMusicMuted } = useBackgroundMusic('on');
@@ -582,7 +582,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, []);
   const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
-  const handleOpenProfile = useCallback(() => { setProfileTab('stats'); setPhase('profile'); }, []);
+  const handleOpenProfile = useCallback(() => { setProfileTab('overview'); setPhase('profile'); }, []);
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
   const handleMoreModes = useCallback(() => { window.scrollTo(0, 0); setPhase('more-modes'); }, []);
   const handleHowTo = useCallback(() => { window.scrollTo(0, 0); setPhase('howto'); }, []);
@@ -605,7 +605,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       case 'progress': setProfileTab('history'); setPhase('profile'); break;
       case 'store': handleOpenStore(); break;
       case 'pass': handleOpenBattlePass(); break;
-      case 'profile': setProfileTab('stats'); setPhase('profile'); break;
+      case 'profile': setProfileTab('overview'); setPhase('profile'); break;
     }
   }, [handleGoHome, handleOpenStore, handleOpenBattlePass]);
 

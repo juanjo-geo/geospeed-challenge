@@ -108,7 +108,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
         {!lifeRestored && <div className="flex flex-col gap-2 sm:gap-2.5 mb-3 sm:mb-4 short:gap-2">
           {/* Rewarded ad button (solo free users y si hay anuncios disponibles) */}
           {!userIsPro && isAdAvailable() && (
-            <p className="text-[11px] sm:text-xs font-black text-amber-400 animate-bounce-soft -mb-0.5">
+            <p className="text-[11px] sm:text-xs font-black text-primary animate-bounce-soft -mb-0.5">
               👇 {t('lives_watchAdHint')}
             </p>
           )}
@@ -116,7 +116,8 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
             <button
               onClick={handleWatchAd}
               disabled={watchingAd}
-              className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-[0.97] bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl disabled:opacity-50 animate-pulse-glow-subtle"
+              className="btn3d w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm text-primary-foreground disabled:opacity-50"
+              style={{ background: 'var(--grad-cta)' }}
             >
               {watchingAd ? (
                 <>
