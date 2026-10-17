@@ -2,7 +2,7 @@ import { prefersReducedMotion } from '@/lib/prefs';
 import { BRAND_RGB, BRAND, rgba } from '@/lib/theme';
 import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import { countries } from '@/data/countries';
-import { type GameMode, getMapBounds } from '@/data/cities';
+import { type GameMode, type MapBounds, getMapBounds } from '@/data/cities';
 import { unlockAudio } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 
@@ -32,6 +32,8 @@ interface WorldMapCanvasProps {
   pinLabels?: { you: string; correct: string } | null;
   /** Botones −/+/centrar (maqueta Partida_APROBADA_v1). Por defecto visibles. */
   showZoomControls?: boolean;
+  /** Encuadre geográfico fijo (Revisión de ciudad). Sustituye los límites del modo y redibuja nítido. Pasar memoizado. */
+  viewBounds?: MapBounds | null;
 }
 
 // ── Continent → country mapping (ISO-style names matching countries.ts) ──
@@ -77,6 +79,7 @@ export default function WorldMapCanvas({
   trailConfig,
   pinLabels,
   showZoomControls = true,
+  viewBounds,
 }: WorldMapCanvasProps) {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,7 +111,7 @@ export default function WorldMapCanvas({
   const pinchStartZoom = useRef(1);
   const pinchResetTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const bounds = getMapBounds(gameMode);
+  const bounds = viewBounds ?? getMapBounds(gameMode);
   const lonRange = bounds.lonMax - bounds.lonMin;
   const latRange = bounds.latMax - bounds.latMin;
 
@@ -953,6 +956,8 @@ export default function WorldMapCanvas({
     setPinchOrigin({ x: 50, y: 50 });
     setPan({ x: 0, y: 0 });
   }, []);
+  // Nuevo encuadre (otra ciudad en la revisión) → quitar el zoom/paneo manual
+  useEffect(() => { resetZoom(); }, [viewBounds, resetZoom]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     // Unlock audio on first tap/click — required for iOS Safari Web Audio

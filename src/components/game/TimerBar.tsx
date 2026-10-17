@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useI18n } from '@/i18n';
 
 interface TimerBarProps {
   timeLeft: number;
@@ -8,6 +9,7 @@ interface TimerBarProps {
 }
 
 export default function TimerBar({ timeLeft, maxTime, isRunning, compact = false }: TimerBarProps) {
+  const { t } = useI18n();
   const pct = (timeLeft / maxTime) * 100;
   const barRef = useRef<HTMLDivElement>(null);
   const isUrgent = timeLeft <= 5;
@@ -25,7 +27,7 @@ export default function TimerBar({ timeLeft, maxTime, isRunning, compact = false
   return (
     <div className={`w-full ${isCritical && isRunning ? 'animate-heartbeat' : ''}`}>
       <div className={`mb-1 flex justify-between font-mono ${compact ? 'text-[10px]' : 'text-xs'}`}>
-        <span className="text-muted-foreground">⏱ TIEMPO</span>
+        <span className="text-muted-foreground">⏱ {t('game_time').toUpperCase()}</span>
         <span
           className={isCritical ? 'font-black animate-pulse text-lg' : isUrgent ? 'font-black animate-pulse' : 'font-bold'}
           style={{ color, textShadow: isCritical ? '0 0 10px hsl(0 84% 60% / 0.8)' : 'none' }}

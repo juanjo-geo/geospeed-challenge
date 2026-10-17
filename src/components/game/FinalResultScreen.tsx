@@ -11,7 +11,8 @@ import { canRecordVideo, shareVideo } from '@/lib/shareVideo';
 import { checkLevelUp, calculateXP } from '@/lib/levelSystem';
 import { fireCelebration } from '@/lib/confetti';
 import { hapticCelebration } from '@/lib/haptics';
-import RoundBreakdown from './RoundBreakdown';
+import CityAnswersScreen from './CityAnswersScreen';
+import CityReviewScreen from './CityReviewScreen';
 import Mascot, { type MascotState } from './Mascot';
 import Wordmark from '@/components/ui/Wordmark';
 import { type GameMode } from '@/data/cities';
@@ -85,6 +86,8 @@ export default function FinalResultScreen({
   const [rankPosition, setRankPosition] = useState<number | null>(null);
   const [rankTotal, setRankTotal] = useState<number>(0);
   const [frustrationOffer, setFrustrationOffer] = useState<FrustrationOffer | null>(null);
+  /** Repaso: listado "Tus respuestas por ciudad" o revisión de una ciudad */
+  const [review, setReview] = useState<{ view: 'list' | 'city'; idx: number } | null>(null);
 
   useEffect(() => {
     if (authName && authName.length >= 3) setInitials(authName.substring(0, 3).toUpperCase());
@@ -154,10 +157,11 @@ export default function FinalResultScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useKeyboardShortcuts(useMemo(() => ({
+  // Con el repaso abierto, sus propias teclas mandan (Esc vuelve al listado, no al menú)
+  useKeyboardShortcuts(useMemo(() => (review ? {} : {
     'Enter': onPlayAgain ?? onNewGame ?? (() => {}),
     'Escape': onGoHome,
-  }), [onPlayAgain, onNewGame, onGoHome]));
+  }), [review, onPlayAgain, onNewGame, onGoHome]));
 
   const userIsPro = isPro();
   const scoreDelta = previousBest > 0 ? totalScore - previousBest : 0;
@@ -316,9 +320,19 @@ export default function FinalResultScreen({
             </p>
           )}
 
-          <div className="mt-3">
-            <RoundBreakdown rounds={rounds} nameLabel={variant === 'mundial' ? t('rb_player') : undefined} />
-          </div>
+          {rounds.length > 0 && (
+            <button
+              onClick={() => { playButtonTap(); setReview({ view: 'list', idx: 0 }); }}
+              className="mt-3 w-full rounded-2xl border border-accent/60 bg-accent/5 hover:bg-accent/10 px-4 py-2.5 flex items-center gap-3 text-left transition-colors active:scale-[0.99]"
+            >
+              <span className="text-xl" aria-hidden>📊</span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-black text-sm sm:text-base">{variant === 'mundial' ? t('answers_openPlayers') : t('answers_open')}</span>
+                <span className="block text-[11px] sm:text-xs text-muted-foreground">{t('answers_openSub')}</span>
+              </span>
+              <span className="text-accent font-black" aria-hidden>›</span>
+            </button>
+          )}
 
           {/* Comparación con el retador (enlace "Reta a un amigo") */}
           {challengerScore != null && challengerScore > 0 && (
@@ -484,6 +498,27 @@ export default function FinalResultScreen({
             if ((action === 'store' || action === 'pro') && onOpenStore) onOpenStore();
           }}
           onDismiss={() => setFrustrationOffer(null)}
+        />
+      )}
+
+      {review?.view === 'list' && (
+        <CityAnswersScreen
+          rounds={rounds}
+          isMundial={variant === 'mundial'}
+          focusIndex={review.idx}
+          onOpenCity={(i) => setReview({ view: 'city', idx: i })}
+          onReviewAll={() => setReview({ view: 'city', idx: 0 })}
+          onClose={() => setReview(null)}
+        />
+      )}
+      {review?.view === 'city' && (
+        <CityReviewScreen
+          rounds={rounds}
+          index={review.idx}
+          isMundial={variant === 'mundial'}
+          onIndexChange={(i) => setReview({ view: 'city', idx: i })}
+          onBackToList={() => setReview(v => ({ view: 'list', idx: v?.idx ?? 0 }))}
+          onClose={() => setReview(null)}
         />
       )}
     </div>

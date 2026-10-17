@@ -3,6 +3,7 @@ import { type RoundResult } from './GameScreen';
 import { formatDistance } from '@/lib/gameUtils';
 import { useI18n } from '@/i18n';
 import Mascot, { type MascotState } from './Mascot';
+import Flag from '@/components/ui/Flag';
 import { playAccordion } from '@/lib/sounds';
 
 interface RoundFeedbackCardProps {
@@ -46,7 +47,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
           {result.city.name}
           {!lg && <span className="hidden [@media(max-height:420px)]:inline text-xs font-semibold text-muted-foreground"> · {result.city.country}</span>}
         </h3>
-        <p className={`text-muted-foreground ${lg ? 'text-sm' : 'text-[11px] sm:text-xs [@media(max-height:420px)]:hidden'}`}>{result.city.country}</p>
+        <p className={`text-muted-foreground ${lg ? 'text-sm' : 'text-[11px] sm:text-xs [@media(max-height:420px)]:hidden'}`}><Flag country={result.city.country} className="w-4 inline-block align-[-2px] mr-1" />{result.city.country}</p>
         <p className={`font-black font-mono text-primary ${lg ? 'text-4xl mt-1' : 'text-2xl sm:text-3xl [@media(max-height:420px)]:text-xl'}`} style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
           +{result.totalPoints.toLocaleString()} <span className={`font-bold text-foreground ${lg ? 'text-lg' : 'text-sm'}`}>pts</span>
         </p>

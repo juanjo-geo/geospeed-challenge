@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 export default {
   darkMode: ["class"],
@@ -13,11 +14,6 @@ export default {
       },
     },
     extend: {
-      screens: {
-        // Pantallas bajas (celular en horizontal): sm: aplica por ancho (>=640px) pero solo hay ~360px de alto.
-        // Va después de sm/md/lg en el CSS, así que short: gana sobre ellos.
-        short: { raw: "(max-height: 500px)" },
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -103,5 +99,11 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // short: = pantallas bajas (celular en horizontal): sm: aplica por ancho (>=640px) pero solo hay ~360px de alto.
+    // Es una variante de plugin y NO un screen: un screen con `raw` desactiva las variantes min-[…]/max-[…].
+    // Su CSS sale ANTES que sm:/md: en el archivo: el ancestro `html` le da más especificidad para que gane igual.
+    plugin(({ addVariant }) => { addVariant("short", "@media (max-height: 500px) { html & }"); }),
+  ],
 } satisfies Config;
