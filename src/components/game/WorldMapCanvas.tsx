@@ -713,7 +713,8 @@ export default function WorldMapCanvas({
             ctx.fillText(text, bx + bw / 2, by + bh / 2);
           };
           drawPill(pinLabels.you, ux, uy + 14, BRAND.yellow, BRAND.navyDeep);
-          drawPill(pinLabels.correct, cx, cy - 40, BRAND.turquoise, BRAND.navyDeep);
+          // Si la ciudad está pegada al borde superior (bajo el HUD), la etiqueta va debajo del pin
+          drawPill(pinLabels.correct, cx, cy - 40 < 60 ? cy + 28 : cy - 40, BRAND.turquoise, BRAND.navyDeep);
         }
         // Keep animating for 3s after line completes (beacon pulse)
         if (elapsed < lineDuration + 3000) {
@@ -749,7 +750,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels]);
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);

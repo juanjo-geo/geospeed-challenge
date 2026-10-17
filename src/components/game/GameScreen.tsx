@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, getDifficultyMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
@@ -367,6 +367,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const diffLabel = t(`diff_${difficulty}` as never) || difficulty;
   const isTouchDevice = typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
   const confirmExit = () => { if (onExit && window.confirm(t('game_exitConfirm'))) onExit(); };
+  // Estable entre renders: WorldMapCanvas lo usa como dependencia de la animación del trazo
+  const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: t('game_correctCity') }), [t]);
+  // Objetos estables: si se recrean en cada render (tic del auto-avance), WorldMapCanvas reinicia
+  // la animación del trazo y nunca llega a mostrar la ciudad correcta ni las etiquetas.
+  const userClickPt = useMemo(() => lastResult ? { lat: lastResult.clickLat, lon: lastResult.clickLon } : null, [lastResult]);
+  const correctPt = useMemo(() => lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null, [lastResult]);
 
   // Near-miss detection — motivate the player when they were close to a better tier
   const nearMissMsg = (() => {
@@ -685,15 +691,15 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           onMapClick={handleMapClick}
           onCursorMove={handleCursorMove}
           clickDisabled={isWaiting}
-          userClick={lastResult ? { lat: lastResult.clickLat, lon: lastResult.clickLon } : null}
-          correctLocation={lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null}
+          userClick={userClickPt}
+          correctLocation={correctPt}
           distanceKm={lastResult?.distance ?? null}
           gameMode={gameMode}
           hintZone={isTraining && !isWaiting && showHint ? { lat: currentCity.lat, lon: currentCity.lon } : null}
           highlightContinent={gameMode === 'world' && !isWaiting ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
           pinConfig={pinConfig}
           trailConfig={trailConfig}
-          pinLabels={{ you: t('game_yourAnswer'), correct: t('game_correctCity') }}
+          pinLabels={pinLabels}
           showZoomControls={!isWaiting}
         />
 
