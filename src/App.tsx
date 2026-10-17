@@ -10,6 +10,7 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 import ScreenReaderAnnouncer from "@/components/game/ScreenReaderAnnouncer";
 import Index from "./pages/Index.tsx";
 const Auth = lazy(() => import("./pages/Auth.tsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const Support = lazy(() => import("./pages/Support.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/challenge/:seed" element={<ChallengeRoute />} />
               <Route path="/duel/:code" element={<DuelRoute />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/support" element={<Support />} />
               <Route path="/terms" element={<Terms />} />

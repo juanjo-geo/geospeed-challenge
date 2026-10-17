@@ -1,7 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { syncOnLogin } from '@/lib/cloudSync';
+import { importLegacyHistoryOnce, flushPendingResults } from '@/lib/gameResults';
 import type { User, Session } from '@supabase/supabase-js';
+
+/** Tareas de servidor al tener sesión: migrar historial local y vaciar la cola offline (F1). */
+function afterSession(userId: string) {
+  importLegacyHistoryOnce(userId)
+    .then(() => flushPendingResults())
+    .catch(() => {});
+}
 
 interface AuthContextType {
   user: User | null;
@@ -49,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => fetchProfile(session.user.id), 0);
           // Sync cloud data on login
           syncOnLogin().catch(() => {});
+          if (_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') afterSession(session.user.id);
         } else {
           setDisplayName('');
         }

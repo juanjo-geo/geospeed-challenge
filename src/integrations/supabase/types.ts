@@ -20,10 +20,12 @@ export type Database = {
           created_at: string
           current_round: number | null
           difficulty: string
+          guest_finished: boolean
           guest_name: string | null
           guest_ready: boolean | null
           guest_score: number | null
           guest_secret: string | null
+          host_finished: boolean
           host_name: string
           host_ready: boolean | null
           host_score: number | null
@@ -38,10 +40,12 @@ export type Database = {
           created_at?: string
           current_round?: number | null
           difficulty?: string
+          guest_finished?: boolean
           guest_name?: string | null
           guest_ready?: boolean | null
           guest_score?: number | null
           guest_secret?: string | null
+          host_finished?: boolean
           host_name: string
           host_ready?: boolean | null
           host_score?: number | null
@@ -56,10 +60,12 @@ export type Database = {
           created_at?: string
           current_round?: number | null
           difficulty?: string
+          guest_finished?: boolean
           guest_name?: string | null
           guest_ready?: boolean | null
           guest_score?: number | null
           guest_secret?: string | null
+          host_finished?: boolean
           host_name?: string
           host_ready?: boolean | null
           host_score?: number | null
@@ -130,19 +136,175 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar: string
           created_at: string
           display_name: string
           id: string
+          xp_legacy: number
         }
         Insert: {
+          avatar?: string
           created_at?: string
           display_name?: string
           id: string
+          xp_legacy?: number
         }
         Update: {
+          avatar?: string
           created_at?: string
           display_name?: string
           id?: string
+          xp_legacy?: number
+        }
+        Relationships: []
+      }
+      game_results: {
+        Row: {
+          avg_distance_km: number | null
+          challenge_id: string | null
+          client_id: string | null
+          created_at: string
+          difficulty: string
+          end_reason: string
+          game_type: string
+          id: string
+          is_record: boolean
+          mode: string
+          rounds_played: number
+          rounds_total: number
+          score: number
+          seed: number | null
+          user_id: string
+        }
+        Insert: {
+          avg_distance_km?: number | null
+          challenge_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          difficulty: string
+          end_reason?: string
+          game_type: string
+          id?: string
+          is_record?: boolean
+          mode: string
+          rounds_played?: number
+          rounds_total?: number
+          score: number
+          seed?: number | null
+          user_id: string
+        }
+        Update: {
+          avg_distance_km?: number | null
+          challenge_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          difficulty?: string
+          end_reason?: string
+          game_type?: string
+          id?: string
+          is_record?: boolean
+          mode?: string
+          rounds_played?: number
+          rounds_total?: number
+          score?: number
+          seed?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_rounds: {
+        Row: {
+          base_points: number | null
+          city_country: string | null
+          city_lat: number | null
+          city_lon: number | null
+          city_name: string
+          click_lat: number | null
+          click_lon: number | null
+          distance_km: number | null
+          extra: Json | null
+          multiplier: number | null
+          points: number
+          result_id: string
+          round_no: number
+          time_s: number | null
+        }
+        Insert: {
+          base_points?: number | null
+          city_country?: string | null
+          city_lat?: number | null
+          city_lon?: number | null
+          city_name: string
+          click_lat?: number | null
+          click_lon?: number | null
+          distance_km?: number | null
+          extra?: Json | null
+          multiplier?: number | null
+          points?: number
+          result_id: string
+          round_no: number
+          time_s?: number | null
+        }
+        Update: {
+          base_points?: number | null
+          city_country?: string | null
+          city_lat?: number | null
+          city_lon?: number | null
+          city_name?: string
+          click_lat?: number | null
+          click_lon?: number | null
+          distance_km?: number | null
+          extra?: Json | null
+          multiplier?: number | null
+          points?: number
+          result_id?: string
+          round_no?: number
+          time_s?: number | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string | null
+          created_at: string
+          endpoint: string
+          p256dh: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          auth?: string | null
+          created_at?: string
+          endpoint: string
+          p256dh?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          auth?: string | null
+          created_at?: string
+          endpoint?: string
+          p256dh?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          flags: Json
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          flags?: Json
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          flags?: Json
+          id?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -154,9 +316,11 @@ export type Database = {
           created_at: string | null
           current_round: number | null
           difficulty: string | null
+          guest_finished: boolean | null
           guest_name: string | null
           guest_ready: boolean | null
           guest_score: number | null
+          host_finished: boolean | null
           host_name: string | null
           host_ready: boolean | null
           host_score: number | null
@@ -170,9 +334,11 @@ export type Database = {
           created_at?: string | null
           current_round?: number | null
           difficulty?: string | null
+          guest_finished?: boolean | null
           guest_name?: string | null
           guest_ready?: boolean | null
           guest_score?: number | null
+          host_finished?: boolean | null
           host_name?: string | null
           host_ready?: boolean | null
           host_score?: number | null
@@ -186,9 +352,11 @@ export type Database = {
           created_at?: string | null
           current_round?: number | null
           difficulty?: string | null
+          guest_finished?: boolean | null
           guest_name?: string | null
           guest_ready?: boolean | null
           guest_score?: number | null
+          host_finished?: boolean | null
           host_name?: string | null
           host_ready?: boolean | null
           host_score?: number | null
@@ -201,7 +369,47 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      save_game_result: {
+        Args: { p: Json }
+        Returns: string
+      }
+      import_legacy_history: {
+        Args: { p: Json }
+        Returns: number
+      }
+      my_progress: {
+        Args: Record<string, never>
+        Returns: {
+          games_played: number
+          best_score: number
+          total_xp: number
+          total_rounds: number
+          avg_distance_km: number | null
+        }[]
+      }
+      my_rank: {
+        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string }
+        Returns: {
+          rank: number | null
+          best_score: number | null
+          total_players: number
+        }[]
+      }
+      leaderboard_top: {
+        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_limit?: number }
+        Returns: {
+          rank: number
+          user_id: string
+          display_name: string
+          avatar: string
+          best_score: number
+          achieved_at: string
+        }[]
+      }
+      update_my_profile: {
+        Args: { p_display_name?: string | null; p_avatar?: string | null }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

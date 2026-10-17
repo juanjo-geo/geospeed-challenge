@@ -17,6 +17,7 @@ import { hapticTap, hapticSuccess, hapticError, hapticCelebration } from '@/lib/
 import { fireGoldBurst, fireRedBurst, fireCelebration, fireDistanceReveal } from '@/lib/confetti';
 import { fireScoreFly, fireMultiplierFeedback, fireStreakBorder, fireRoundFlash } from '@/lib/juiceAnimations';
 import { getMultiplier, haversineDistance, formatDistance, addGameHistory, updatePlayerStats, qualifiesForLeaderboard, addToLeaderboard } from '@/lib/gameUtils';
+import { saveGameResult } from '@/lib/gameResults';
 import { consumeLife } from '@/lib/energySystem';
 import { useIsPortraitMobile } from '@/hooks/use-mobile';
 import { useI18n } from '@/i18n';
@@ -32,6 +33,9 @@ const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const FEEDBACK_MS = 3200;
 const WC_MODE = 'mundial';
+
+/** Ronda de Mundial con lo necesario para guardarla en servidor (F1): jugador, país y clic. */
+type WCRound = WorldRoundResult & { player: string; country: string; clickLat: number; clickLon: number };
 /** Balón de fútbol: pin del mapa e ícono de la mayoría de los mensajes del modo. */
 const BALL = '⚽';
 
@@ -122,7 +126,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
 
   const roundStartRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
-  const resultsRef = useRef<WorldRoundResult[]>([]);
+  const resultsRef = useRef<WCRound[]>([]);
   const scoreRef = useRef(0);
   const clickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
   const qualifiesRef = useRef(false);
@@ -213,8 +217,31 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
       type: 'classic',
     });
     qualifiesForLeaderboard(finalScore).then(setQualifies).catch(() => setQualifies(false));
+    // F1: partida de Mundial en servidor (jugador como "ciudad", país correcto, banda y país tocado en extra)
+    saveGameResult({
+      gameType: 'mundial',
+      mode: WC_MODE,
+      difficulty,
+      score: finalScore,
+      roundsPlayed: rounds.length,
+      roundsTotal: roster.length || rounds.length,
+      avgDistanceKm: null,
+      endReason: reason,
+      rounds: rounds.map((r, i) => ({
+        round_no: i + 1,
+        city_name: r.player,
+        city_country: r.country,
+        click_lat: r.clickLat,
+        click_lon: r.clickLon,
+        time_s: r.timeUsed,
+        base_points: r.basePoints,
+        multiplier: r.multiplier,
+        points: r.totalPoints,
+        extra: { band: r.band, tapped: r.tappedCountry },
+      })),
+    });
     setStage('over');
-  }, [difficulty]);
+  }, [difficulty, roster.length]);
 
   const handleTimeout = useCallback(() => {
     if (stage !== 'playing') return;
@@ -234,7 +261,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
 
     const timeUsed = Math.min(MAX_TIME, Math.max(0, Math.round((Date.now() - roundStartRef.current) / 1000)));
     const res = scoreWorldRound(current.country, lat, lon, timeUsed, streak);
-    resultsRef.current.push(res);
+    resultsRef.current.push({ ...res, player: current.name, country: current.country, clickLat: lat, clickLon: lon });
     const mult = getMultiplier(timeUsed);
     const centroid = getCountryCentroid(current.country);
     const dist = centroid ? haversineDistance(lat, lon, centroid.lat, centroid.lon) : null;
@@ -291,7 +318,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives }: WorldChallen
       setTimeout(() => fireMultiplierFeedback(mult.value, res.newStreak, from), 150);
     }
     if (res.newStreak >= 2) {
-      setTimeout(() => { fireStreakBorder(res.newStreak); playStreak(); }, 380);
+      setTimeout(() => { fireStreakBorder(res.newStreak); playStreak(res.newStreak); }, 380);
     }
     if ((res.band === 'far' || res.band === 'ocean') && dist != null && dist >= 4000) {
       setTimeout(() => fireDistanceReveal(dist), 420);

@@ -14,6 +14,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { getPlayerStats, type PlayerStats } from './gameUtils';
 import { validateProFromServer } from './premiumSystem';
 
@@ -39,10 +40,10 @@ export async function pushToCloud(): Promise<boolean> {
 
     const payload = {
       user_id: user.id,
-      stats: stats || { gamesPlayed: 0, bestScore: 0, totalDistance: 0, totalRounds: 0 },
-      history: history || [],
-      energy: energy || { lives: 5, lastRegenTimestamp: Date.now() },
-      premium: premium || { isPro: false, proExpiresAt: null, proSource: null },
+      stats: (stats || { gamesPlayed: 0, bestScore: 0, totalDistance: 0, totalRounds: 0 }) as Json,
+      history: (history || []) as Json,
+      energy: (energy || { lives: 5, lastRegenTimestamp: Date.now() }) as Json,
+      premium: (premium || { isPro: false, proExpiresAt: null, proSource: null }) as Json,
       updated_at: new Date().toISOString(),
     };
 

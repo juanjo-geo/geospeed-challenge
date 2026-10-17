@@ -113,6 +113,7 @@ import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackS
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
 import { syncAfterGame, pullFromCloud, setLocalData } from '@/lib/cloudSync';
+import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
 import { checkStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
@@ -247,6 +248,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const newGameSeed = () => { gameSeedRef.current = Math.floor(Math.random() * 1_000_000); };
   // Overlay-based rotate screen — keeps game mounted so state is preserved
   const [showRotateOverlay, setShowRotateOverlay] = useState(false);
+  // Declarados aquí (antes de handleGameOver) para que sus deps no los lean en TDZ
+  const [isSpeedDemon, setIsSpeedDemon] = useState(false);
+  // Challenge a Friend state
+  const [challengeSeed, setChallengeSeed] = useState<number | null>(null);
+  const [challengerScore, setChallengerScore] = useState<number | null>(null);
+  // Notification permission prompt
+  const [showNotifPrompt, setShowNotifPrompt] = useState(false);
   // Pestaña inicial del perfil (la pestaña "Progreso" de la barra abre el historial)
   const [profileTab, setProfileTab] = useState<'stats' | 'history'>('stats');
   // "Cómo jugar" desde Ajustes → Home con el banner abierto
@@ -450,6 +458,19 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     addBattlePassXP(total);
     trackGameComplete({ score: total, rounds: rounds.length, mode: gameMode, difficulty, avgDistance: avgDist, reason, durationMs: getSessionDurationMs() });
     syncAfterGame();
+    // F1: partida + detalle por ciudad en servidor (fire-and-forget; encola si no hay sesión)
+    saveGameResult({
+      gameType: isTraining ? 'training' : isSpeedDemon ? 'speeddemon' : challengeSeed !== null ? 'challenge' : 'classic',
+      mode: gameMode,
+      difficulty,
+      score: total,
+      roundsPlayed: rounds.length,
+      roundsTotal: isSpeedDemon ? 30 : isTraining ? 6 : 13,
+      avgDistanceKm: avgDist,
+      endReason: reason,
+      seed: replayCities ? null : gameSeedRef.current,
+      rounds: roundsFromResults(rounds),
+    });
 
     // Show interstitial ad between games (every 3 games for free users)
     if (shouldShowInterstitial()) {
@@ -457,7 +478,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     } else {
       setPhase('final');
     }
-  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores]);
+  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities]);
 
   // ── Notifications: start check loop + schedule after each game ──
   useEffect(() => {
@@ -584,12 +605,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setPhase('countdown');
   }, []);
 
-  const [isSpeedDemon, setIsSpeedDemon] = useState(false);
-  // Challenge a Friend state
-  const [challengeSeed, setChallengeSeed] = useState<number | null>(null);
-  const [challengerScore, setChallengerScore] = useState<number | null>(null);
-  // Notification permission prompt
-  const [showNotifPrompt, setShowNotifPrompt] = useState(false);
 
   const handleStartTraining = useCallback(() => {
     unlockAudio();
@@ -725,6 +740,19 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
     setFinalRounds(rounds);
     setFinalScore(total);
+    // F1: el duelo también queda en el historial del servidor (antes no se registraba)
+    saveGameResult({
+      gameType: 'duel',
+      mode: mpRoomRef.current?.mode ?? 'world',
+      difficulty: mpRoomRef.current?.difficulty ?? 'easy',
+      score: total,
+      roundsPlayed: rounds.length,
+      roundsTotal: 13,
+      avgDistanceKm: avgDistanceOf(rounds),
+      endReason: reason,
+      seed: mpRoomRef.current?.seed ?? null,
+      rounds: roundsFromResults(rounds),
+    });
     if (mpRoomRef.current) {
       // Save score to DB via edge function (broadcast is handled by MultiplayerResultScreen)
       updateRoomScore(mpRoomRef.current.id, mpIsHost, total, rounds.length);
@@ -884,6 +912,17 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               avgDistance: Math.round(avgD),
               type: 'timeattack',
             });
+            saveGameResult({
+              gameType: 'timeattack',
+              mode: gameMode,
+              difficulty,
+              score: result.totalScore,
+              roundsPlayed: result.rounds.length,
+              roundsTotal: result.rounds.length,
+              avgDistanceKm: avgDistanceOf(result.rounds),
+              endReason: 'complete',
+              rounds: roundsFromTimeAttack(result.rounds),
+            });
             setPhase('ta-final');
           }}
         />
@@ -994,6 +1033,18 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               addLives(1);
             }
             if (total > prevBest) localStorage.setItem(todayKey, total.toString());
+            saveGameResult({
+              gameType: 'daily',
+              mode: 'world',
+              difficulty: 'medium',
+              score: total,
+              roundsPlayed: rounds.length,
+              roundsTotal: 13,
+              avgDistanceKm: avgDist,
+              endReason: reason,
+              seed: getDailySeed(),
+              rounds: roundsFromResults(rounds),
+            });
             setPhase('final');
           }}
           seed={getDailySeed()}
