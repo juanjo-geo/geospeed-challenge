@@ -459,6 +459,7 @@ const es = {
   // ── Carga ──
   splash_tap: 'TOCA PARA EMPEZAR',
   splash_loading: 'Preparando tu próxima aventura…',
+  splash_tagline: '¿Cuánto conoces\nel mundo?',
 
   // ── Notificaciones (prompt) ──
   notif_title: '¿Activar notificaciones?',

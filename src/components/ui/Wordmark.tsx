@@ -1,12 +1,12 @@
 /**
  * Wordmark GEO·SPEED según las maquetas de oct 2026:
- * "GEO" en blanco y "SPEED" en turquesa, tipografía condensada.
+ * "GEO" en blanco y "SPEED" en turquesa, Poppins ExtraBold (redondeada, como en las maquetas).
  * Reemplaza las nueve copias del degradado dorado que había en los componentes.
  */
 interface WordmarkProps {
   className?: string;
   /** Tamaño tipográfico (clases Tailwind de texto). Por defecto md. */
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'custom';
 }
 
 const SIZE_CLASS: Record<NonNullable<WordmarkProps['size']>, string> = {
@@ -16,6 +16,7 @@ const SIZE_CLASS: Record<NonNullable<WordmarkProps['size']>, string> = {
   lg: 'text-3xl sm:text-4xl md:text-5xl',
   xl: 'text-4xl sm:text-5xl md:text-6xl',
   '2xl': 'text-5xl sm:text-6xl md:text-7xl',
+  custom: '', // el tamaño lo pone className
 };
 
 export default function Wordmark({ className = '', size = 'md' }: WordmarkProps) {
