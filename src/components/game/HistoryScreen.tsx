@@ -11,6 +11,8 @@ import { formatNumber } from '@/lib/format';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot, { type MascotState } from './Mascot';
 import HeaderBackdrop from './HeaderBackdrop';
+import PropExplorer from './PropExplorer';
+import FilterButton from './FilterButton';
 import CityAnswersScreen from './CityAnswersScreen';
 import CityReviewScreen from './CityReviewScreen';
 import { type RoundResult } from './GameScreen';
@@ -120,7 +122,7 @@ export default function HistoryScreen({ onBack, onPlay, onMyChallenges }: Histor
           align="left"
           titleClassName="text-[6vw] sm:text-5xl md:text-6xl short:text-2xl whitespace-nowrap"
           subtitleClassName="text-[3.4vw] sm:text-lg md:text-xl short:text-xs"
-          titleAside={emptyView ? undefined : <ReadingExplorer className="w-[22vw] sm:w-36 md:w-44 shrink-0 -mt-2 short:hidden" />}
+          titleAside={emptyView ? undefined : <PropExplorer prop="book" className="w-[22vw] sm:w-36 md:w-44 shrink-0 -mt-2 short:hidden" />}
         />
 
         {/* Filtros + orden */}
@@ -207,30 +209,6 @@ export default function HistoryScreen({ onBack, onPlay, onMyChallenges }: Histor
 }
 
 const TABLE_COLS = 'grid-cols-[7rem_minmax(0,1fr)_10.5rem_6rem_6rem_8rem_9.5rem]';
-
-/** Explorador leyendo (maqueta Historial): la mascota con un libro delante y destellos */
-function ReadingExplorer({ className, mascot = 'wink' }: { className: string; mascot?: MascotState }) {
-  return (
-    <div className={`relative [container-type:inline-size] ${className}`} aria-hidden>
-      <Mascot state={mascot} className="w-full drop-shadow-[0_10px_16px_rgba(0,0,0,0.45)]" />
-      <span className="absolute left-1/2 -translate-x-1/2 bottom-[0%] text-[40cqi] leading-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.5)]">📖</span>
-      <svg viewBox="0 0 40 22" className="absolute -left-[6%] top-[30%] w-[26%] text-primary -rotate-[30deg]" fill="none" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round"><path d="M7 19 3 8M20 17V3M33 19l4-11" /></svg>
-      <svg viewBox="0 0 40 22" className="absolute -right-[6%] top-[30%] w-[26%] text-primary rotate-[30deg]" fill="none" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round"><path d="M7 19 3 8M20 17V3M33 19l4-11" /></svg>
-    </div>
-  );
-}
-
-function FilterButton({ icon, label, value, onClick }: { icon: 'globe' | 'compass'; label: string; value: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="min-w-0 md:w-64 h-12 sm:h-14 flex items-center gap-1.5 sm:gap-3 rounded-2xl border-2 border-accent/60 bg-brand-navy-deep/60 px-1.5 sm:px-4 text-[13px] sm:text-base hover:border-accent shadow-[0_0_14px_hsl(var(--accent)/0.12)]">
-      {icon === 'globe'
-        ? <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-7 sm:h-7 text-accent shrink-0" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="12" cy="12" r="9.5" /><path d="M2.5 12h19M12 2.5c2.8 3 2.8 16 0 19M12 2.5c-2.8 3-2.8 16 0 19" /></svg>
-        : <span className="text-base sm:text-2xl shrink-0" aria-hidden>🧭</span>}
-      <span className="flex-1 min-w-0 truncate text-center tracking-tight sm:tracking-normal"><span className="font-semibold sm:font-bold">{label}:</span> <span className="font-extrabold text-primary">{value}</span></span>
-      <ChevronIcon dir="down" className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-accent shrink-0" />
-    </button>
-  );
-}
 
 function gameInfo(item: HistoryItem, t: T): { icon: string; name: string; diff: string } {
   const region = t(`mode_${item.mode}` as never) || item.mode;
@@ -378,7 +356,7 @@ function EmptyState({ mascot, lead, tail, title, desc, cta, ctaIcon, onCta, onBa
 }) {
   return (
     <section className="rounded-3xl border-2 border-accent/60 bg-card/70 p-5 sm:p-8 shadow-[0_0_24px_hsl(var(--accent)/0.18)] md:grid md:grid-cols-[0.9fr_1.1fr] md:items-center md:gap-8">
-      <ReadingExplorer mascot={mascot} className="w-40 sm:w-52 md:w-64 mx-auto" />
+      <PropExplorer prop="book" mascot={mascot} className="w-40 sm:w-52 md:w-64 mx-auto" />
       <div className="text-center mt-4 md:mt-0">
         <h2 className="text-[min(7.4vw,1.9rem)] sm:text-[2.4rem] font-black leading-tight">{title ?? <>{lead}<br /><span className="text-primary">{tail}</span></>}</h2>
         {desc && <p className="mt-3 text-base sm:text-lg text-foreground/85 max-w-md mx-auto">{desc}</p>}
