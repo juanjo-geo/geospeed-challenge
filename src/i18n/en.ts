@@ -461,6 +461,7 @@ const en: Translations = {
   // ── Splash ──
   splash_tap: 'TAP TO START',
   splash_loading: 'Preparing your next adventure…',
+  splash_tagline: 'How well do you\nknow the world?',
 
   // ── Notifications prompt ──
   notif_title: 'Enable notifications?',
