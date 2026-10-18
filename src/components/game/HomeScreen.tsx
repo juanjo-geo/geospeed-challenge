@@ -39,20 +39,20 @@ interface HomeScreenProps {
 }
 
 /** Dificultades: clave de datos, emoji y nivel de desbloqueo (D12: candado visible). */
-const DIFF_CONFIG: { key: Difficulty; emoji: string; unlockLevel: number }[] = [
-  { key: 'basic',  emoji: '🎒', unlockLevel: 1 },
-  { key: 'easy',   emoji: '🧭', unlockLevel: 2 },
-  { key: 'medium', emoji: '⚡', unlockLevel: 4 },
-  { key: 'hard',   emoji: '🔥', unlockLevel: 6 },
+const DIFF_CONFIG: { key: Difficulty; emoji: string; art: [string, string?]; unlockLevel: number }[] = [
+  { key: 'basic',  emoji: '🎒', art: ['🌍', '🎒'], unlockLevel: 1 },
+  { key: 'easy',   emoji: '🧭', art: ['🧭'],       unlockLevel: 2 },
+  { key: 'medium', emoji: '⚡', art: ['🗺️', '⚡'], unlockLevel: 4 },
+  { key: 'hard',   emoji: '🔥', art: ['🔥'],       unlockLevel: 6 },
 ];
 
 /** Regiones: emoji y nivel de desbloqueo. */
-const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string }> = {
-  world:    { level: 1, emoji: '🌍' },
-  europe:   { level: 2, emoji: '🏰' },
-  asia:     { level: 3, emoji: '⛩️' },
-  americas: { level: 4, emoji: '🗽' },
-  africa:   { level: 5, emoji: '🏜️' },
+const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string; art: [string, string?] }> = {
+  world:    { level: 1, emoji: '🌍', art: ['🌍'] },
+  europe:   { level: 2, emoji: '🏰', art: ['🗼', '🏛️'] },
+  asia:     { level: 3, emoji: '⛩️', art: ['🗻', '⛩️'] },
+  americas: { level: 4, emoji: '🗽', art: ['🗽', '🌴'] },
+  africa:   { level: 5, emoji: '🏜️', art: ['🐪', '🌳'] },
 };
 
 const CLASSIC_ROUNDS = 13;
@@ -131,6 +131,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
     return {
       key: m.key,
       emoji: lock.emoji,
+      art: lock.art,
       label: t(`mode_${m.key}` as never) || m.label,
       desc: t(`region_desc_${m.key}` as never),
       locked,
@@ -144,6 +145,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
     return {
       key: d.key,
       emoji: d.emoji,
+      art: d.art,
       label: t(`home_diff${cap}` as never),
       desc: t(`home_diff${cap}Desc` as never),
       locked,

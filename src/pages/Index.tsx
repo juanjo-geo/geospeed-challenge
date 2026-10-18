@@ -7,6 +7,7 @@ import { recordInstallDate, checkRetention } from '@/lib/retentionTracker';
 import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { type RoundResult } from '@/components/game/GameScreen';
 import CountdownIntro from '@/components/game/CountdownIntro';
+import RotateOverlay from '@/components/game/RotateOverlay';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import AppNav, { type NavTab } from '@/components/game/AppNav';
 import Wordmark from '@/components/ui/Wordmark';
@@ -1347,33 +1348,5 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     </>
   );
 };
-
-/** Aviso de giro (maqueta GeoSpeed_Girar_APROBADA_v1). Sin deteccion propia: el padre controla la visibilidad. */
-function RotateOverlay({ t, beforeCountdown, onBack }: { t: (key: string) => string; beforeCountdown: boolean; onBack: () => void }) {
-  return (
-    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center min-h-[100dvh] game-bg text-center px-6">
-      <div className="flex items-center gap-2 mb-6">
-        <img src="/mascot/explorer-logo.webp" alt="" className="w-9 h-9 object-contain" />
-        <Wordmark size="sm" />
-      </div>
-      <div className="relative w-28 h-28 mb-6" aria-hidden>
-        <span className="absolute left-0 top-0 text-6xl opacity-40">📱</span>
-        <span className="absolute right-0 bottom-0 text-6xl rotate-90 animate-bounce">📱</span>
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-accent">↻</span>
-      </div>
-      <p className="text-3xl sm:text-4xl font-black leading-tight">
-        {t('rotate_titleLead')} <span className="text-primary">{t('rotate_titleTail')}</span>
-      </p>
-      <p className="text-sm text-muted-foreground mt-2">{t('rotate_sub')}</p>
-      <div className="mt-6 px-5 py-3 rounded-2xl border border-accent/50 text-accent font-bold text-sm animate-pulse">
-        {t('rotate_waiting')}
-      </div>
-      {beforeCountdown && <p className="text-xs text-muted-foreground mt-2">{t('rotate_countdownAfter')}</p>}
-      <button onClick={onBack} className="mt-8 px-6 py-2.5 rounded-2xl border border-border bg-card/50 text-sm font-bold hover:bg-muted transition-colors active:scale-[0.97]">
-        {t('rotate_back')}
-      </button>
-    </div>
-  );
-}
 
 export default Index;
