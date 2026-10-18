@@ -8,6 +8,7 @@ import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/c
 import { type RoundResult } from '@/components/game/GameScreen';
 import CountdownIntro from '@/components/game/CountdownIntro';
 import RotateOverlay from '@/components/game/RotateOverlay';
+import DailyIntroScreen from '@/components/game/DailyIntroScreen';
 import { OPEN_SETTINGS_EVENT } from '@/components/ui/ScreenHeader';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import AppNav, { type NavTab } from '@/components/game/AppNav';
@@ -143,10 +144,10 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -388,7 +389,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       'countdown', 'playing', 'final', 'onboarding', 'tutorial',
       'ta-select', 'ta-playing', 'ta-final', 'daily',
       'mp-lobby', 'mp-waiting', 'mp-playing', 'mp-final', 'mp-spectate',
-      'store', 'profile', 'battlepass', 'settings', 'more-modes', 'howto',
+      'store', 'profile', 'battlepass', 'settings', 'more-modes', 'howto', 'daily-intro',
     ];
     if (!inGamePhases.includes(phase)) return;
     // Push a sentinel entry so the first back press is captured here
@@ -670,6 +671,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, []);
   const handleMoreModes = useCallback(() => { window.scrollTo(0, 0); setPhase('more-modes'); }, []);
   const handleHowTo = useCallback(() => { window.scrollTo(0, 0); setPhase('howto'); }, []);
+  // Tarjeta del Inicio → presentación del Desafío diario (maqueta); JUGAR DESAFÍO llama a handleDailyChallenge
+  const handleDailyIntro = useCallback(() => { window.scrollTo(0, 0); setPhase('daily-intro'); }, []);
   const handleOpenHistory = useCallback(() => { setPhase('history'); window.scrollTo(0, 0); }, []);
   const handleOpenRanking = useCallback(() => { setPhase('ranking'); window.scrollTo(0, 0); }, []);
   const handleWorldChallenge = useCallback(() => { unlockAudio(); gameKeyRef.current += 1; setPhase('wc-playing'); }, []);
@@ -678,7 +681,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Barra de navegación persistente (Inicio · Progreso · Tienda · Pass · Perfil)
   const showNav = NAV_PHASES.includes(phase);
   const activeNavTab: NavTab | null =
-    phase === 'home' ? 'home'
+    phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' ? 'home'
     : phase === 'store' ? 'store'
     : phase === 'battlepass' ? 'pass'
     : phase === 'history' || phase === 'ranking' ? 'progress'
@@ -935,6 +938,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
     if (phase === 'more-modes') {
       return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} />;
+    }
+
+    if (phase === 'daily-intro') {
+      return <DailyIntroScreen onBack={handleGoHome} onPlay={handleDailyChallenge} />;
     }
 
     if (phase === 'howto') {
@@ -1270,7 +1277,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyChallenge} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 

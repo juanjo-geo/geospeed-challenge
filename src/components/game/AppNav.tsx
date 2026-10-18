@@ -59,7 +59,8 @@ export default function AppNav({ active, onNavigate, onOpenSettings }: AppNavPro
   ];
 
   const go = (tab: NavTab) => {
-    if (tab === active) return;
+    // Inicio también navega cuando ya está marcado (Desafío diario, Más modos y Cómo jugar lo marcan)
+    if (tab === active && tab !== 'home') return;
     playButtonTap();
     onNavigate(tab);
   };
