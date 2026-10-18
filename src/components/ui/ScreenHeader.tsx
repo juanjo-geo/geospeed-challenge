@@ -18,6 +18,8 @@ interface ScreenHeaderProps {
   /** Tamaño del título y subtítulo si el de siempre no cabe (Historial: una línea junto a la mascota) */
   titleClassName?: string;
   subtitleClassName?: string;
+  /** Título ya compuesto (Ranking: "Rank" blanco + "ing" amarillo); reemplaza al resaltado de la última palabra */
+  titleNode?: ReactNode;
 }
 
 /** Evento global para abrir Ajustes desde cualquier pantalla (Index lo escucha). */
@@ -31,7 +33,7 @@ export function requestOpenSettings() {
  * volver (anillo turquesa) · logo centrado · ajustes, y debajo el título grande con la última palabra en
  * amarillo. En computador el logo y los ajustes ya están en la barra superior (AppNav).
  */
-export default function ScreenHeader({ onBack, title, subtitle, right, align = 'center', titleAside, titleClassName = 'text-[2.1rem] sm:text-5xl short:text-2xl', subtitleClassName = 'text-base sm:text-lg short:text-xs' }: ScreenHeaderProps) {
+export default function ScreenHeader({ onBack, title, subtitle, right, align = 'center', titleAside, titleClassName = 'text-[2.1rem] sm:text-5xl short:text-2xl', subtitleClassName = 'text-base sm:text-lg short:text-xs', titleNode }: ScreenHeaderProps) {
   const { t } = useI18n();
   const words = title.split(' ');
   const head = words.slice(0, -1).join(' ');
@@ -54,7 +56,7 @@ export default function ScreenHeader({ onBack, title, subtitle, right, align = '
         <>
           <div className="mt-4 short:mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             <h1 className={`${titleClassName} font-extrabold leading-tight text-center`}>
-              {head && <>{head} </>}<span className="text-primary">{tail}</span>
+              {titleNode ?? <>{head && <>{head} </>}<span className="text-primary">{tail}</span></>}
             </h1>
             {titleAside}
           </div>
@@ -64,7 +66,7 @@ export default function ScreenHeader({ onBack, title, subtitle, right, align = '
         <div className={titleAside ? 'flex items-center gap-3' : ''}>
           <div className="flex-1 min-w-0">
             <h1 className={`mt-4 short:mt-1 ${titleClassName} font-extrabold leading-tight ${centered ? 'text-center' : ''}`}>
-              {head && <>{head} </>}<span className="text-primary">{tail}</span>
+              {titleNode ?? <>{head && <>{head} </>}<span className="text-primary">{tail}</span></>}
             </h1>
             {subtitle && <p className={`${subtitleClassName} text-foreground/80 mt-1 ${centered ? 'text-center' : ''}`}>{subtitle}</p>}
           </div>
