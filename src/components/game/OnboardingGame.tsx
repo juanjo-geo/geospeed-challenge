@@ -192,7 +192,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
         <button onClick={() => { playButtonTap(); onGoHome(); }} className="absolute right-3 top-3 w-8 h-8 rounded-full border border-border/60 bg-muted/40 flex items-center justify-center hover:bg-muted active:scale-95" aria-label={t('close')}>×</button>
         <div>
         <div className="flex items-center justify-center gap-2 mb-2 short:mb-1">
-          <img src="/logo.png" alt="" className="w-7 h-7 object-contain" />
+          <img src="/mascot/explorer-logo.webp" alt="" className="w-7 h-7 object-contain" />
           <Wordmark size="sm" />
         </div>
         <Mascot state="wink" className="w-20 sm:w-24 short:w-14 mx-auto animate-mascot-float" />
@@ -313,7 +313,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           style={{ containerType: 'inline-size', paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}>
           <div className="w-full flex flex-col items-center gap-1.5 pb-2 mb-2 border-b border-border/50 shrink-0">
             <div className="flex items-center justify-center gap-2">
-              <img src="/logo.png" alt="GeoSpeed" className="w-[22cqi] max-w-[64px] object-contain" />
+              <img src="/mascot/explorer-logo.webp" alt="GeoSpeed" className="w-[22cqi] max-w-[64px] object-contain" />
               <Wordmark size="sm" />
             </div>
             <span className="rounded-full border border-accent/50 bg-accent/10 px-3 py-0.5 text-[6.5cqi] font-bold text-accent">🎓 {t('ob_badge')}</span>
@@ -348,7 +348,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-1"
             style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}>
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="" className="w-6 h-6 object-contain shrink-0" />
+              <img src="/mascot/explorer-logo.webp" alt="" className="w-6 h-6 object-contain shrink-0" />
               <div className="flex-1 min-w-0 flex justify-center">
                 <div className="max-w-full truncate rounded-full border border-accent/40 px-3 py-1 text-sm font-black backdrop-blur-md" style={pillStyle}>
                   {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>

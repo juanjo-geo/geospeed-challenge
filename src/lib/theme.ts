@@ -65,3 +65,17 @@ export function cssToken(name: string): string {
 export function hslVar(name: string, alpha?: number): string {
   return alpha === undefined ? `hsl(var(--${name}))` : `hsl(var(--${name}) / ${alpha})`;
 }
+
+/**
+ * Mapa del rediseño v2: un color por continente con variaciones suaves por país (maqueta Partida).
+ * Lo usan el mapa de la partida (WorldMapCanvas) y la demo del Inicio (AutoDemo).
+ */
+export const MAP_CONTINENT_COLORS: Record<string, string[]> = {
+  NorthAmerica: ['#2FB59B', '#3BC4A8', '#28A88F', '#45CDB3'], // verde agua
+  SouthAmerica: ['#F07A6A', '#F58C7A', '#E86B5B', '#F99A88'], // coral
+  Europe:       ['#9B8CE0', '#A99AE8', '#8C7DD6', '#B5A7EE'], // lavanda
+  Asia:         ['#F39A4A', '#F7A95E', '#EF8C3A', '#FAB772'], // naranja
+  Africa:       ['#F2C14E', '#F5CB62', '#EDB63C', '#F8D578'], // amarillo
+  Oceania:      ['#4FA8E8', '#62B5EE', '#3F9BE0', '#79C1F2'], // azul cielo
+  Ice:          ['#C9D6E2', '#D5E0EA', '#BFCDDB', '#DCE5EE'], // Antártida / Groenlandia
+};

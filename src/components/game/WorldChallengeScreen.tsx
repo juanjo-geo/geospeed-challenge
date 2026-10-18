@@ -347,7 +347,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   const rotateOverlay = (
     <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center game-bg text-center px-6">
       <div className="flex items-center gap-2 mb-6">
-        <img src="/logo.png" alt="" className="w-9 h-9 object-contain" />
+        <img src="/mascot/explorer-logo.webp" alt="" className="w-9 h-9 object-contain" />
         <Wordmark size="sm" />
       </div>
       <div className="relative w-28 h-28 mb-6" aria-hidden>
@@ -451,7 +451,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
       <div className="shrink-0 flex flex-col gap-1 px-2 pb-1" style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 shrink-0">
-            <img src="/logo.png" alt="" className="w-6 h-6 object-contain" />
+            <img src="/mascot/explorer-logo.webp" alt="" className="w-6 h-6 object-contain" />
             <Wordmark size="xs" className="hidden min-[520px]:inline" />
           </div>
           <div className="flex-1 min-w-0 flex justify-center">

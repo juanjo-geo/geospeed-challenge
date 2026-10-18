@@ -80,7 +80,7 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
       {/* Cabecera (se oculta en celular horizontal: el título lo da la barra de info) */}
       <div className="relative shrink-0 flex flex-col items-center short:hidden">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="" className="w-8 h-8 object-contain" />
+          <img src="/mascot/explorer-logo.webp" alt="" className="w-8 h-8 object-contain" />
           <Wordmark size="sm" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-black leading-tight">{t('review_title')}</h2>

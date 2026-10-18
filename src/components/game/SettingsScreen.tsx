@@ -59,7 +59,7 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
             <span aria-hidden className="text-lg">‹</span>
           </button>
           <div className="flex-1 flex items-center gap-2">
-            <img src="/logo.png" alt="" className="w-8 h-8 object-contain" />
+            <img src="/mascot/explorer-logo.webp" alt="" className="w-8 h-8 object-contain" />
             <Wordmark size="sm" />
           </div>
         </div>

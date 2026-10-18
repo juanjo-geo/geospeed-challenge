@@ -29,7 +29,7 @@ export default function ScreenHeader({ onBack, title, subtitle, right }: ScreenH
           <span aria-hidden className="text-lg">‹</span>
         </button>
         <div className="flex-1 flex items-center gap-2 min-w-0 md:hidden">
-          <img src="/logo.png" alt="" className="w-8 h-8 object-contain" />
+          <img src="/mascot/explorer-logo.webp" alt="" className="w-8 h-8 object-contain" />
           <Wordmark size="sm" />
         </div>
         <div className="hidden md:block flex-1" />

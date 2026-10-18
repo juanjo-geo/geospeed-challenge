@@ -66,7 +66,7 @@ export default function CityAnswersScreen({ rounds, isMundial = false, focusInde
       {/* Cabecera */}
       <div className="relative shrink-0 flex flex-col items-center text-center mb-2 short:mb-1">
         <div className="flex items-center gap-2 short:hidden">
-          <img src="/logo.png" alt="" className="w-8 h-8 object-contain" />
+          <img src="/mascot/explorer-logo.webp" alt="" className="w-8 h-8 object-contain" />
           <Wordmark size="sm" />
         </div>
         <h2 className="text-2xl sm:text-3xl short:text-lg font-black leading-tight mt-1 short:mt-0 pr-10 pl-10">

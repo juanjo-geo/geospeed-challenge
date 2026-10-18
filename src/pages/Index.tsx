@@ -43,7 +43,7 @@ class PhaseErrorBoundary extends Component<
       const tt = (k: Parameters<typeof translate>[1]) => translate(dict, k);
       return (
         <div className="fixed inset-0 flex flex-col items-center justify-center game-bg p-6 text-center">
-          <img src="/logo.png" alt="GeoSpeed" className="w-14 mb-4 opacity-60" />
+          <img src="/mascot/explorer-logo.webp" alt="GeoSpeed" className="w-14 mb-4 opacity-60" />
           <h2 className="text-xl font-black mb-2" style={{ color: 'hsl(var(--primary))' }}>
             {tt('error_title')}
           </h2>
@@ -971,7 +971,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           <div className="modal-panel bg-card/95 backdrop-blur-md border border-border rounded-2xl p-5 sm:p-6 md:p-8 short:p-4 max-w-md w-full shadow-2xl text-center animate-fade-in-up">
             {/* Logo + nombre */}
             <div className="flex items-center justify-center gap-2.5 mb-3 short:hidden">
-              <img src="/logo.png" alt="GeoSpeed" className="w-16 sm:w-20 short:w-10 object-contain" />
+              <img src="/mascot/explorer-logo.webp" alt="GeoSpeed" className="w-16 sm:w-20 short:w-10 object-contain" />
               <Wordmark size="md" />
             </div>
             <h2 className="text-2xl sm:text-3xl short:text-xl font-black mb-1 short:mb-0" style={{ color: 'hsl(var(--primary))', fontFamily: 'Impact, system-ui' }}>⚡ {t('ta_title').toUpperCase()}</h2>
@@ -1276,7 +1276,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const lazyFallback = (
     <div className="fixed inset-0 flex items-center justify-center game-bg">
       <div className="text-center animate-pulse">
-        <img src="/logo.png" alt="GeoSpeed" className="w-10 mx-auto mb-2" />
+        <img src="/mascot/explorer-logo.webp" alt="GeoSpeed" className="w-10 mx-auto mb-2" />
         <p className="text-sm text-muted-foreground">{t('loading')}</p>
       </div>
     </div>
@@ -1295,7 +1295,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           </div>
         </Suspense>
       </PhaseErrorBoundary>
-      {showNav && <AppNav active={activeNavTab} onNavigate={handleNav} />}
+      {showNav && <AppNav active={activeNavTab} onNavigate={handleNav} onOpenSettings={handleOpenSettings} />}
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
 
       {/* Notification permission prompt — shown after first game */}
@@ -1353,7 +1353,7 @@ function RotateOverlay({ t, beforeCountdown, onBack }: { t: (key: string) => str
   return (
     <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center min-h-[100dvh] game-bg text-center px-6">
       <div className="flex items-center gap-2 mb-6">
-        <img src="/logo.png" alt="" className="w-9 h-9 object-contain" />
+        <img src="/mascot/explorer-logo.webp" alt="" className="w-9 h-9 object-contain" />
         <Wordmark size="sm" />
       </div>
       <div className="relative w-28 h-28 mb-6" aria-hidden>

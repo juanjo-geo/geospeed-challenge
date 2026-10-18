@@ -1,12 +1,16 @@
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import Wordmark from '@/components/ui/Wordmark';
+import EnergyBar from './EnergyBar';
+import { AccountButton, SettingsButton } from './HeaderActions';
 
 export type NavTab = 'home' | 'progress' | 'store' | 'pass' | 'profile';
 
 interface AppNavProps {
   active: NavTab | null;
   onNavigate: (tab: NavTab) => void;
+  /** Engranaje de la barra de escritorio (maqueta Inicio_Computador v2) */
+  onOpenSettings?: () => void;
 }
 
 const ICONS: Record<NavTab, JSX.Element> = {
@@ -39,11 +43,12 @@ const ICONS: Record<NavTab, JSX.Element> = {
 
 /**
  * Barra de navegación persistente (maquetas oct 2026):
- * móvil → 5 pestañas abajo; escritorio (md+) → barra superior con wordmark.
- * Pestañas: Inicio · Progreso · Tienda · Pass · Perfil.
+ * móvil → 5 pestañas abajo; escritorio (md+) → una sola barra superior como en Inicio_Computador v2:
+ * marca + lema · Inicio · Progreso · Tienda · Pass · vidas · cuenta (avatar + nombre, abre Perfil) · ajustes.
+ * En escritorio la pestaña Perfil se oculta porque la cuenta ya lleva al perfil.
  * Se muestra solo fuera de la partida (Index decide en qué fases).
  */
-export default function AppNav({ active, onNavigate }: AppNavProps) {
+export default function AppNav({ active, onNavigate, onOpenSettings }: AppNavProps) {
   const { t } = useI18n();
   const tabs: { key: NavTab; label: string }[] = [
     { key: 'home', label: t('nav_home') },
@@ -65,12 +70,15 @@ export default function AppNav({ active, onNavigate }: AppNavProps) {
       style={{ background: 'hsl(var(--brand-navy-deep) / 0.92)', paddingBottom: 'var(--sab)' }}
       aria-label="Navegación principal"
     >
-      <div className="mx-auto max-w-5xl flex items-center md:gap-6 px-1 md:px-4" style={{ height: 'var(--nav-h)' }}>
-        <div className="hidden md:flex items-center gap-2 mr-2">
-          <img src="/logo.png" alt="" className="w-8 h-8 object-contain" />
-          <Wordmark size="xs" />
+      <div className="mx-auto max-w-6xl flex items-center md:gap-4 lg:gap-6 px-1 md:px-4" style={{ height: 'var(--nav-h)' }}>
+        <div className="hidden md:flex items-center gap-2 shrink-0">
+          <img src="/mascot/explorer-logo.webp" alt="" className="w-11 h-11 object-contain" />
+          <span className="flex flex-col leading-none">
+            <Wordmark size="sm" />
+            <span className="hidden xl:block text-[11px] text-muted-foreground mt-1">{t('home_tagline')}</span>
+          </span>
         </div>
-        <div className="flex-1 flex items-stretch justify-around md:justify-center md:gap-2 h-full">
+        <div className="flex-1 flex items-stretch justify-around md:justify-center md:items-center md:gap-1 lg:gap-2 h-full">
           {tabs.map(tab => {
             const isActive = tab.key === active;
             return (
@@ -78,16 +86,25 @@ export default function AppNav({ active, onNavigate }: AppNavProps) {
                 key={tab.key}
                 onClick={() => go(tab.key)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`relative flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-2 px-2 md:px-4 min-w-[56px] md:min-w-0 rounded-xl md:my-2 transition-all active:scale-[0.95] ${
-                  isActive ? 'text-accent md:bg-accent/10' : 'text-muted-foreground hover:text-foreground'
+                className={`relative flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-2 px-2 md:px-3 xl:px-5 min-w-[56px] md:min-w-0 md:h-11 rounded-xl md:rounded-full md:border transition-all active:scale-[0.95] ${
+                  tab.key === 'profile' ? 'md:hidden' : ''
+                } ${
+                  isActive ? 'text-accent md:text-foreground md:bg-accent/10 md:border-accent/60' : 'text-muted-foreground md:border-transparent hover:text-foreground'
                 }`}
               >
-                <span className={`w-6 h-6 short:w-5 short:h-5 md:w-5 md:h-5 ${isActive ? 'drop-shadow-[0_0_8px_hsl(var(--accent)/0.6)]' : ''}`}>{ICONS[tab.key]}</span>
+                <span className={`w-6 h-6 short:w-5 short:h-5 md:hidden lg:block lg:w-5 lg:h-5 ${isActive ? 'drop-shadow-[0_0_8px_hsl(var(--accent)/0.6)]' : ''}`}>{ICONS[tab.key]}</span>
                 <span className={`text-[10px] md:text-sm font-bold leading-none ${isActive ? '' : 'font-semibold'}`}>{tab.label}</span>
                 {isActive && <span className="md:hidden absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-accent" aria-hidden />}
               </button>
             );
           })}
+        </div>
+        {/* Escritorio: vidas · cuenta · ajustes */}
+        <div className="hidden md:flex items-center gap-3 lg:gap-4 shrink-0">
+          <EnergyBar stacked />
+          <span className="w-px h-8 bg-border" aria-hidden />
+          <AccountButton onOpenProfile={() => go('profile')} showName nameClassName="hidden xl:inline" />
+          {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
         </div>
       </div>
     </nav>
