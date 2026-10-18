@@ -10,6 +10,7 @@ import Mascot from './Mascot';
 import CityAnswersScreen from './CityAnswersScreen';
 import CityReviewScreen from './CityReviewScreen';
 import { type RoundResult } from './GameScreen';
+import { appNumberLocale } from '@/lib/format';
 
 interface HistoryScreenProps {
   onBack: () => void;
@@ -201,7 +202,7 @@ function Row({ item, locale, opening, onOpen }: { item: HistoryItem; locale: str
       </div>
       <div className="mt-1.5 md:mt-0"><span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${status.cls}`}>{status.label}</span></div>
       <div className="mt-1.5 md:mt-0 flex md:block items-center gap-3 text-sm md:text-right">
-        <span className="font-mono font-black text-primary text-base">{item.score.toLocaleString()}<span className="md:hidden text-xs text-foreground"> pts</span></span>
+        <span className="font-mono font-black text-primary text-base">{item.score.toLocaleString(appNumberLocale())}<span className="md:hidden text-xs text-foreground"> pts</span></span>
         <span className="md:hidden font-mono text-muted-foreground">📊 {cities}</span>
         <span className="md:hidden font-mono text-muted-foreground">📍 {dist}</span>
       </div>

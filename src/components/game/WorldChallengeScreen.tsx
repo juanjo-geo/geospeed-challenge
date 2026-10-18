@@ -30,6 +30,7 @@ import Button3D from '@/components/ui/Button3D';
 import CountUp from '@/components/ui/CountUp';
 import CountdownIntro from './CountdownIntro';
 import Mascot, { type MascotState } from './Mascot';
+import { appNumberLocale } from '@/lib/format';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -543,7 +544,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
                   <p className="text-xs text-muted-foreground">{t('wc_youTapped', { country: feedback.tappedCountry })}</p>
                 )}
                 <p className="font-black font-mono text-primary text-2xl sm:text-3xl" style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
-                  +{feedback.points.toLocaleString()} <span className="text-sm font-bold text-foreground">pts</span>
+                  +{feedback.points.toLocaleString(appNumberLocale())} <span className="text-sm font-bold text-foreground">pts</span>
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2">

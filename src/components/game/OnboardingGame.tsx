@@ -11,6 +11,7 @@ import TimerBar from './TimerBar';
 import Mascot from './Mascot';
 import Wordmark from '@/components/ui/Wordmark';
 import Flag from '@/components/ui/Flag';
+import { appNumberLocale } from '@/lib/format';
 
 // ── Ciudades de la práctica: las más reconocibles del mundo ──
 interface OnboardingCity {
@@ -227,7 +228,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
         <Mascot state="celebrate" className="w-24 sm:w-28 short:w-16 mx-auto" />
         <h1 className="text-3xl sm:text-4xl short:text-2xl font-black mt-2 leading-tight">{titleWithAccent(t('ob_readyTitle'))}</h1>
         <p className="mt-2 text-sm sm:text-base">
-          {t('ob_youScored')}: <span className="font-black font-mono text-xl text-primary">{score.toLocaleString()}</span> <span className="text-muted-foreground">pts</span>
+          {t('ob_youScored')}: <span className="font-black font-mono text-xl text-primary">{score.toLocaleString(appNumberLocale())}</span> <span className="text-muted-foreground">pts</span>
         </p>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('ob_readyDesc')}</p>
         <button onClick={() => { playButtonTap(); onComplete(); }} className="btn3d mt-5 short:mt-3 w-full py-3.5 short:py-2.5 rounded-2xl font-black text-lg short:text-base text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
@@ -273,7 +274,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           <p className="text-sm font-mono text-muted-foreground">📍 {formatDistance(lastDistance)} {t('ob_away')}</p>
         )}
         {lastPoints > 0 && (
-          <p className="text-2xl short:text-xl font-black font-mono text-primary">+{lastPoints.toLocaleString()} <span className="text-sm text-foreground">pts</span></p>
+          <p className="text-2xl short:text-xl font-black font-mono text-primary">+{lastPoints.toLocaleString(appNumberLocale())} <span className="text-sm text-foreground">pts</span></p>
         )}
         <button onClick={() => { playButtonTap(); setPhase('tip'); }} className="btn3d mt-1 w-full py-2.5 short:py-2 rounded-2xl font-black text-sm sm:text-base text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
           {currentRound + 1 >= TOTAL_ROUNDS ? t('ob_seeResults') : t('ob_next')} →
@@ -301,7 +302,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
         <div className="bg-card/95 backdrop-blur-md border-b border-border px-3 py-2 flex flex-col gap-1.5 shrink-0 z-20">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-black truncate">{t('game_whereIs')} <span className="text-primary">{currentCity.name}</span></p>
-            <span className={`font-mono font-black text-sm text-primary ${scorePop ? 'animate-score-pop' : ''}`}>⭐ {score.toLocaleString()}</span>
+            <span className={`font-mono font-black text-sm text-primary ${scorePop ? 'animate-score-pop' : ''}`}>⭐ {score.toLocaleString(appNumberLocale())}</span>
           </div>
           <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={phase === 'playing'} compact />
         </div>
@@ -325,7 +326,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           </div>
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
             <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">⭐ {t('game_points')}</p>
-            <p className={`text-[20cqi] font-mono font-black leading-none text-primary ${scorePop ? 'animate-score-pop' : ''}`}>{score.toLocaleString()}</p>
+            <p className={`text-[20cqi] font-mono font-black leading-none text-primary ${scorePop ? 'animate-score-pop' : ''}`}>{score.toLocaleString(appNumberLocale())}</p>
           </div>
           <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
             <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_round')}</p>
@@ -362,7 +363,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
                 <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={phase === 'playing'} compact />
               </div>
               <span className="rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={pillStyle}>
-                ⭐ <span className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`}>{score.toLocaleString()}</span> pts
+                ⭐ <span className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`}>{score.toLocaleString(appNumberLocale())}</span> pts
               </span>
             </div>
           </div>

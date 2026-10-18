@@ -1,5 +1,6 @@
 import { prefersReducedMotion } from './prefs';
 import { BRAND } from '@/lib/theme';
+import { appNumberLocale } from '@/lib/format';
 /**
  * Lightweight confetti burst using a temporary fullscreen canvas.
  * No external dependencies. Auto-cleans up after animation.
@@ -201,7 +202,7 @@ export function fireDistanceReveal(distanceKm: number, label = '¡Al otro lado d
     background: rgba(0,0,0,0.45);
   `;
 
-  const distText = Math.round(distanceKm).toLocaleString();
+  const distText = Math.round(distanceKm).toLocaleString(appNumberLocale());
   overlay.innerHTML = `
     <div style="text-align: center; animation: distance-reveal-scale 2s ease-out forwards;">
       <div style="font-size: clamp(60px, 15vw, 140px); font-weight: 900; font-family: Impact, system-ui;

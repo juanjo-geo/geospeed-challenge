@@ -22,6 +22,7 @@ import RoundFeedbackCard from './RoundFeedbackCard';
 import { HudIconButton, InGameSettings } from './GameHud';
 import { frameAnswer } from '@/lib/mapFraming';
 import FitToBox from '@/components/ui/FitToBox';
+import { appNumberLocale } from '@/lib/format';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -633,7 +634,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <span className="relative rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
                 ⭐ <span ref={scoreElRef} className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
                 {floatPoints !== null && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-accent animate-float-up whitespace-nowrap">+{floatPoints.toLocaleString()}</span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-accent animate-float-up whitespace-nowrap">+{floatPoints.toLocaleString(appNumberLocale())}</span>
                 )}
               </span>
             </div>

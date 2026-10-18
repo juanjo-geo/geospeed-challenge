@@ -12,6 +12,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import { updateMyProfile } from '@/lib/identity';
 import { useNavigate } from 'react-router-dom';
 import Mascot from './Mascot';
+import { appNumberLocale } from '@/lib/format';
 
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
 const AVATARS = ['mascot', '🌍', '🗺️', '🧭', '✈️', '🚀', '🏔️', '🌋', '🏝️', '🎯', '👑', '⚡', '🔮', '🦅', '🐉', '🎲', '🛸'];
@@ -177,7 +178,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                   <div className="mt-1.5 h-2.5 rounded-full bg-muted overflow-hidden">
                     <div className="h-full rounded-full bg-accent transition-all duration-1000" style={{ width: `${level.progress}%`, boxShadow: '0 0 10px hsl(var(--accent) / 0.5)' }} />
                   </div>
-                  <p className="mt-1 text-xs sm:text-sm font-mono font-bold">{totalXp.toLocaleString()} / {level.xpForNext.toLocaleString()} XP</p>
+                  <p className="mt-1 text-xs sm:text-sm font-mono font-bold">{totalXp.toLocaleString(appNumberLocale())} / {level.xpForNext.toLocaleString(appNumberLocale())} XP</p>
                   <p className="text-[11px] sm:text-xs text-accent">{t('profile_nextLevelHint')}</p>
                   {streak > 0 && <p className="mt-1 text-xs sm:text-sm font-bold">🔥 {t('profile_streak', { n: streak })}</p>}
                 </div>
@@ -189,8 +190,8 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
               <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
                 <h2 className="text-xl sm:text-2xl font-black mb-3">{t('profile_statsLead')} <span className="text-primary">{t('profile_statsTail')}</span></h2>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <StatTile icon="🎮" label={t('profile_gamesPlayed')} value={stats.gamesPlayed.toLocaleString()} />
-                  <StatTile icon="🏆" label={t('profile_record')} value={`${stats.bestScore.toLocaleString()} pts`} />
+                  <StatTile icon="🎮" label={t('profile_gamesPlayed')} value={stats.gamesPlayed.toLocaleString(appNumberLocale())} />
+                  <StatTile icon="🏆" label={t('profile_record')} value={`${stats.bestScore.toLocaleString(appNumberLocale())} pts`} />
                   <StatTile icon="📍" label={t('profile_avgDistance')} value={formatDistance(avgDist)} hint={t('profile_avgDistanceHint')} />
                   <StatTile icon="🧭" label={t('profile_level')} value={String(level.level)} />
                 </div>
@@ -277,10 +278,10 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
       {/* Main stats grid */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <StatBlock label={t('profile_gamesPlayed')} value={totalGames.toString()} icon="🎮" />
-        <StatBlock label={t('profile_personalRecord')} value={stats.bestScore.toLocaleString()} icon="🏆" highlight />
+        <StatBlock label={t('profile_personalRecord')} value={stats.bestScore.toLocaleString(appNumberLocale())} icon="🏆" highlight />
         <StatBlock label={t('profile_avgDist')} value={formatDistance(avgDist)} icon="📍" />
-        <StatBlock label={t('profile_totalRounds')} value={stats.totalRounds.toLocaleString()} icon="🔄" />
-        <StatBlock label={t('profile_totalXP')} value={totalXp.toLocaleString()} icon="⚡" />
+        <StatBlock label={t('profile_totalRounds')} value={stats.totalRounds.toLocaleString(appNumberLocale())} icon="🔄" />
+        <StatBlock label={t('profile_totalXP')} value={totalXp.toLocaleString(appNumberLocale())} icon="⚡" />
         <StatBlock label={t('profile_lives')} value={energy.lives > energy.maxLives ? `${energy.lives}` : `${energy.lives}/${energy.maxLives}`} icon="❤️" />
       </div>
 
@@ -301,7 +302,7 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
         <div className="bg-primary/10 border border-primary/30 rounded-2xl p-3 sm:p-4 text-center">
           <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mb-1">{t('profile_bestGame')}</p>
           <p className="font-black text-lg sm:text-xl" style={{ color: 'hsl(var(--primary))' }}>
-            {bestGame.score.toLocaleString()} pts
+            {bestGame.score.toLocaleString(appNumberLocale())} pts
           </p>
           <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
             {shortDate(bestGame.date, locale)} · {bestGame.rounds} {t('profile_rounds')} · {formatDistance(bestGame.avgDistance)} {t('profile_avgShort')}
@@ -375,7 +376,7 @@ function LevelsTab({ currentLevel }: { currentLevel: PlayerLevel }) {
                 )}
               </div>
               <p className="text-[9px] sm:text-[10px] text-muted-foreground">
-                {lvl.minXp.toLocaleString()} {t('profile_xpRequired')}
+                {lvl.minXp.toLocaleString(appNumberLocale())} {t('profile_xpRequired')}
               </p>
             </div>
             <div className="shrink-0 w-6 h-6 flex items-center justify-center">
@@ -455,7 +456,7 @@ function HistoryTab({ history }: { history: GameHistoryEntry[] }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-1.5">
                 <span className="font-bold text-xs sm:text-sm" style={{ color: 'hsl(var(--primary))' }}>
-                  {game.score.toLocaleString()} pts
+                  {game.score.toLocaleString(appNumberLocale())} pts
                 </span>
                 <span className="text-[8px] sm:text-[9px] text-muted-foreground">{gt.label}</span>
               </div>

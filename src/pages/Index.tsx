@@ -18,6 +18,7 @@ import { getTranslations, detectLocale, translate } from '@/i18n';
 import HomeScreen from '@/components/game/HomeScreen';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
+import { appNumberLocale } from '@/lib/format';
 
 // ── Error Boundary — catches lazy-load failures and render crashes ──
 class PhaseErrorBoundary extends Component<
@@ -755,7 +756,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   const handleShareChallenge = useCallback(async () => {
     const link = generateChallengeLink(finalScore);
-    const text = t('challenge_shareText', { score: finalScore.toLocaleString() });
+    const text = t('challenge_shareText', { score: finalScore.toLocaleString(appNumberLocale()) });
     if (navigator.share) {
       try {
         await navigator.share({ title: 'GeoSpeed Challenge', text, url: link });

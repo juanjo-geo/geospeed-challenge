@@ -4,6 +4,7 @@ import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
+import { appNumberLocale } from '@/lib/format';
 
 interface MyChallengesScreenProps {
   onBack: () => void;
@@ -137,7 +138,7 @@ function ChallengeCard({ item, onOpen }: { item: MyChallenge; onOpen: () => void
         <p className="text-xs sm:text-sm text-muted-foreground truncate">🌍 {t(`mode_${item.mode}` as never)} · {t(`diff_${item.difficulty}` as never)} · {item.is_rematch && item.state === 'to_accept' ? t('mc_newCities', { n: item.rounds_total }) : t('chc_nCities', { n: item.rounds_total })}</p>
         {/* En pantallas angostas el botón baja a su propia línea (el texto no cabe junto a él) */}
         <div className="flex flex-col gap-2 mt-1 min-[420px]:flex-row min-[420px]:items-end min-[420px]:justify-between">
-          <p className="min-w-0 text-xs sm:text-sm text-muted-foreground">ⓘ {result ? <span className="font-bold text-foreground">{result} · {item.my_score!.toLocaleString()} – {item.rival_score!.toLocaleString()}</span> : c.info}</p>
+          <p className="min-w-0 text-xs sm:text-sm text-muted-foreground">ⓘ {result ? <span className="font-bold text-foreground">{result} · {item.my_score!.toLocaleString(appNumberLocale())} – {item.rival_score!.toLocaleString(appNumberLocale())}</span> : c.info}</p>
           <button onClick={onOpen} className={`shrink-0 self-end rounded-xl px-3 py-2 text-xs sm:text-sm font-black whitespace-nowrap active:scale-[0.97] ${c.ctaPrimary ? 'btn3d text-primary-foreground' : 'border-2 border-accent text-accent hover:bg-accent/10'}`} style={c.ctaPrimary ? { background: 'var(--grad-cta)' } : undefined}>
             {c.cta} →
           </button>

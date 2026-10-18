@@ -6,6 +6,7 @@ import Mascot, { type MascotState } from './Mascot';
 import Flag from '@/components/ui/Flag';
 import CountryPhoto from '@/components/ui/CountryPhoto';
 import { playAccordion } from '@/lib/sounds';
+import { appNumberLocale } from '@/lib/format';
 
 interface RoundFeedbackCardProps {
   result: RoundResult;
@@ -113,7 +114,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
           {streakBonus > 1 && <CalcRow label={t('game_calcStreak')} value={`× ${streakBonus.toFixed(2)}`} />}
           {diffMult !== 1 && <CalcRow label={t('game_calcDifficulty')} value={`× ${diffMult.toFixed(2)}`} />}
           <div className="flex justify-between border-t border-border/60 mt-1 pt-1 font-black text-primary">
-            <span>{t('game_total')}</span><span>{result.totalPoints.toLocaleString()}</span>
+            <span>{t('game_total')}</span><span>{result.totalPoints.toLocaleString(appNumberLocale())}</span>
           </div>
         </div>
       </div>
