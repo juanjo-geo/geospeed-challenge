@@ -26,6 +26,8 @@ export const BRAND = {
   white: '#F4F7FB',
   /** Texto atenuado */
   muted: '#9DB0C9',
+  /** Azul cielo: texto secundario sobre navy (subtítulos de las pantallas de Cuenta) */
+  sky: '#8DCDF5',
 } as const;
 
 /** Globo de la pantalla de carga (maqueta Carga_APROBADA_v1): océano azul, tierra verde, halo turquesa */
@@ -41,6 +43,9 @@ export const GLOBE = {
   landDark: '#2F8A35',
   landLight: '#A7D86A',
   coast: 'rgba(22, 82, 34, 0.55)',
+  /** Mapa nocturno de fondo de las pantallas de Cuenta: continentes azules tenues */
+  nightLand: 'rgba(52, 120, 210, 0.26)',
+  nightCoast: 'rgba(130, 185, 255, 0.12)',
 } as const;
 
 /** RGB triplets (sin "rgb(") para construir rgba() en strings CSS/canvas */
