@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { playButtonTap } from '@/lib/sounds';
 
 export interface SelectorOption<K extends string> {
@@ -11,6 +11,8 @@ export interface SelectorOption<K extends string> {
    * uno secundario pequeño delante. Sustituye a las ilustraciones 3D de la maqueta sin añadir imágenes.
    */
   art?: [string, string?];
+  /** Ícono propio en lugar del emoji (p. ej. la bandera SVG en el selector de idioma) */
+  icon?: ReactNode;
   /** Bloqueada por nivel (decisión D12: se muestra con candado, no se oculta) */
   locked?: boolean;
   lockLabel?: string;
@@ -101,7 +103,9 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
                     : 'border-border bg-muted/30 hover:border-accent/50'
                 }`}
               >
-                <OptionArt art={opt.art ?? [opt.emoji]} locked={!!opt.locked} />
+                {opt.icon
+                  ? <span className="w-16 h-14 short:w-10 short:h-9 shrink-0 flex items-center justify-center" aria-hidden>{opt.icon}</span>
+                  : <OptionArt art={opt.art ?? [opt.emoji]} locked={!!opt.locked} />}
                 <span className="flex-1 min-w-0">
                   <span className="block font-extrabold text-lg sm:text-xl short:text-sm leading-tight">{opt.label}</span>
                   <span className="block text-xs sm:text-sm short:text-[11px] text-muted-foreground leading-tight">{opt.locked && opt.lockLabel ? opt.lockLabel : opt.desc}</span>

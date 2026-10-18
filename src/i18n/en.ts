@@ -387,7 +387,7 @@ const en: Translations = {
   settings_haptics: 'Vibration',
   settings_hapticsUnsupported: 'Not available on this device',
   settings_reduceMotion: 'Reduce motion',
-  settings_reduceMotionDesc: 'Fewer animations, no confetti or auto-zoom',
+  settings_reduceMotionDesc: 'Fewer animations and effects',
   settings_colorblind: 'Colorblind mode',
   settings_colorblindDesc: 'Colors everyone can tell apart',
   settings_language: 'Language',
@@ -402,6 +402,10 @@ const en: Translations = {
   settings_guest: 'Playing as guest',
   settings_signOutConfirm: 'Sign out?',
   settings_version: 'Version',
+  settings_pickLanguage: 'Choose your language',
+  settings_pickLanguageSub: 'Changes every text in the game.',
+  settings_apply: 'APPLY',
+  settings_hapticsDesc: 'If your device supports it',
   home_settings: 'Settings',
 
   // ── Account (Auth) ──
