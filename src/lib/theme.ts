@@ -35,6 +35,12 @@ export const GLOBE = {
   land: '#55C24A',
   landShade: '#2E8B3E',
   ice: '#E8F1FA',
+  /** Tonos de tierra por país (textura del globo de la carga) */
+  landTones: ['#55C24A', '#4AAE42', '#63CB52', '#5DB948', '#71C957', '#4FB83F'],
+  /** Manchas de relieve: bosque oscuro y zonas claras/secas */
+  landDark: '#2F8A35',
+  landLight: '#A7D86A',
+  coast: 'rgba(22, 82, 34, 0.55)',
 } as const;
 
 /** RGB triplets (sin "rgb(") para construir rgba() en strings CSS/canvas */

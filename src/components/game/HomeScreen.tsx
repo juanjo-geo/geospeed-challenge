@@ -192,7 +192,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
   return (
     <main
-      className="min-h-[100dvh] flex flex-col items-center px-3 pb-4 sm:px-4 sm:pb-6 lg:px-6 lg:pb-4 overflow-y-auto game-bg home-safe-top md:!pt-4 lg:!pt-3"
+      className="min-h-[calc(100dvh-var(--nav-h)-var(--sab))] md:min-h-[calc(100dvh-var(--nav-h))] flex flex-col items-center px-3 pb-2 sm:px-4 sm:pb-6 lg:px-6 lg:pb-4 overflow-y-auto game-bg pt-[max(0.75rem,var(--sat))] md:pt-4 lg:pt-3"
       aria-label={t('nav_home')}
     >
       <a
@@ -203,7 +203,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </a>
 
       {/* ── Encabezado del celular: vidas · marca · cuenta · ajustes (en md+ lo pone AppNav) ── */}
-      <header className="md:hidden w-full max-w-md mb-3 animate-fade-in-up grid grid-cols-[auto_1fr_auto] items-center gap-2">
+      <header className="md:hidden w-full max-w-md mb-2 sm:mb-3 animate-fade-in-up grid grid-cols-[auto_1fr_auto] items-center gap-2">
         <EnergyBar stacked />
         <div className="flex items-center justify-center gap-1.5 min-w-0">
           <img src="/mascot/explorer-logo.webp" alt="" className="w-9 h-9 min-[400px]:w-10 min-[400px]:h-10 object-contain shrink-0" />
@@ -230,9 +230,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl lg:grid lg:grid-cols-[1fr_minmax(320px,0.55fr)] lg:gap-4 lg:items-stretch">
         {/* ── Banner: ¿Cómo se juega? ── */}
-        <section className="rounded-3xl border-2 border-primary/70 bg-card/60 p-3 sm:p-4 mb-3 lg:mb-0 animate-fade-in-up animation-delay-100 shadow-[0_0_24px_hsl(var(--primary)/0.12)]" aria-label={t('home_howToPlay')}>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <h2 className="flex items-center gap-2 text-xl sm:text-2xl lg:text-3xl font-extrabold">
+        <section className="rounded-3xl border-2 border-primary/70 bg-card/60 p-2.5 sm:p-4 mb-2 sm:mb-3 lg:mb-0 animate-fade-in-up animation-delay-100 shadow-[0_0_24px_hsl(var(--primary)/0.12)]" aria-label={t('home_howToPlay')}>
+          <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
+            <h2 className="flex items-center gap-2 text-lg sm:text-2xl lg:text-3xl font-extrabold">
               <span aria-hidden>📖</span>
               <span>{t('home_howToPlayLead')} <span className="text-primary">{t('home_howToPlayTail')}</span></span>
             </h2>
@@ -243,12 +243,12 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             )}
           </div>
           <div className="rounded-2xl overflow-hidden border border-border/60">
-            <Suspense fallback={<div className="w-full aspect-[360/136] bg-muted/20" />}>
+            <Suspense fallback={<div className="w-full aspect-[360/128] bg-muted/20" />}>
               <AutoDemo hideTagline />
             </Suspense>
           </div>
           {/* Pasos con número, ícono y (en computador) descripción */}
-          <ol className="mt-3 flex items-center justify-between gap-1 rounded-2xl border border-border/60 bg-background/40 px-2 py-2 sm:px-3">
+          <ol className="mt-2 sm:mt-3 flex items-center justify-between gap-1 rounded-2xl border border-border/60 bg-background/40 px-2 py-1.5 sm:py-2 sm:px-3">
             {steps.map((s, i) => (
               <li key={i} className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
                 {i > 0 && <span className="text-muted-foreground text-xs sm:text-base shrink-0 -ml-0.5 mr-0.5" aria-hidden>›</span>}
@@ -261,29 +261,29 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
               </li>
             ))}
           </ol>
-          <p className="text-center text-xs sm:text-sm font-bold mt-2">
+          <p className="text-center text-[11px] sm:text-sm font-bold mt-1.5 sm:mt-2">
             <span className="text-accent">{t('home_equationSpeed')}</span> + <span className="text-accent">{t('home_equationPrecision')}</span> = <span className="text-primary">{t('home_equationPoints')}</span>
           </p>
         </section>
 
         {/* ── Tu próxima aventura ── */}
-        <section id="game-modes" className="rounded-3xl border border-accent/40 bg-card/70 p-3.5 sm:p-5 mb-3 lg:mb-0 animate-fade-in-up animation-delay-150 flex flex-col shadow-[0_0_24px_hsl(var(--accent)/0.10)]" aria-label={t('home_nextAdventure')}>
-          <div className="grid grid-cols-[4.25rem_1fr] min-[400px]:grid-cols-[5rem_1fr] sm:grid-cols-[6rem_1fr] lg:grid-cols-[6.5rem_1fr] gap-x-2.5 sm:gap-x-3 gap-y-2 items-center">
+        <section id="game-modes" className="rounded-3xl border border-accent/40 bg-card/70 p-3 sm:p-5 mb-2 sm:mb-3 lg:mb-0 animate-fade-in-up animation-delay-150 flex flex-col shadow-[0_0_24px_hsl(var(--accent)/0.10)]" aria-label={t('home_nextAdventure')}>
+          <div className="grid grid-cols-[3.9rem_1fr] min-[400px]:grid-cols-[4.4rem_1fr] sm:grid-cols-[5.5rem_1fr] lg:grid-cols-[5rem_1fr] gap-x-2.5 sm:gap-x-3 gap-y-1.5 sm:gap-y-2 items-center">
             <div className="row-span-2 lg:row-span-1 self-center">
               <Mascot state="wink" className="w-full animate-mascot-float drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
             </div>
-            <h2 className="text-2xl min-[400px]:text-[1.7rem] sm:text-3xl lg:text-[2.1rem] font-extrabold leading-[1.1]">
-              {t('home_nextAdventureLead')} <span className="text-primary lg:block">{t('home_nextAdventureTail')}</span>
+            <h2 className="text-[min(5.6vw,1.6rem)] sm:text-[1.9rem] lg:text-[min(1.85vw,1.9rem)] font-extrabold leading-tight whitespace-nowrap">
+              {t('home_nextAdventureLead')} <span className="text-primary">{t('home_nextAdventureTail')}</span>
             </h2>
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-3 lg:col-span-2 lg:grid-cols-1 lg:mt-2">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-3 lg:col-span-2 lg:grid-cols-1 lg:mt-3">
               <Dropdown label={t('home_region')} emoji={MODE_UNLOCK[selectedMode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
               <Dropdown label={t('home_difficultyLabel')} emoji={difficultyEmoji} value={difficultyName} onClick={() => { playButtonTap(); setSheet('difficulty'); }} />
             </div>
           </div>
-          <p className="text-center text-xs sm:text-sm text-muted-foreground mt-3 mb-3">{citiesInfo}</p>
+          <p className="text-center text-[11px] sm:text-sm text-muted-foreground mt-2 mb-2 sm:mt-3 sm:mb-3">{citiesInfo}</p>
           <button
             onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
-            className="btn3d lg:mt-auto w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-xl sm:text-2xl tracking-wide text-primary-foreground animate-pulse-glow-subtle"
+            className="btn3d lg:mt-auto w-full flex items-center justify-center gap-3 py-3 sm:py-4 rounded-2xl font-black text-lg sm:text-2xl tracking-wide text-primary-foreground animate-pulse-glow-subtle"
             style={{ background: 'var(--grad-cta)' }}
             aria-label={`${t('home_playNow')} — ${difficultyName}, ${regionLabel}`}
           >
@@ -294,13 +294,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       </div>
 
       {/* ── Tarjetas de acceso (orden de la maqueta: Diario · Amigos · Mis retos · Más modos) ── */}
-      <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">
-        <AccessCard icon={<span className="text-[2.1rem] sm:text-[2.5rem]">📅</span>} title={t('home_dailyCard')} desc={`${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-1.5 right-2 text-xs opacity-60 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
+      <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">
+        <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📅</span>} title={t('home_dailyCard')} desc={`${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-1.5 right-2 text-xs opacity-60 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
         <AccessCard icon={<FriendsIcon />} title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
         {onMyChallenges
-          ? <AccessCard icon={<span className="text-[2.1rem] sm:text-[2.5rem]">📋</span>} title={t('home_myChallenges')} desc={t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />
-          : <AccessCard icon={<span className="text-[2.1rem] sm:text-[2.5rem]">🎯</span>} title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />}
-        <AccessCard icon={<span className="text-[2.1rem] sm:text-[2.5rem]">⚡</span>} title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
+          ? <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📋</span>} title={t('home_myChallenges')} desc={t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />
+          : <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">🎯</span>} title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />}
+        <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">⚡</span>} title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
       </div>
 
       {/* ── Cofre diario ── */}
@@ -336,9 +336,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       )}
 
       {/* ── Franja de nivel: nivel + XP · (computador) estadísticas · ranking / historial / invitar ── */}
-      <section className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-3 animate-fade-in-up animation-delay-250 rounded-2xl border border-border bg-card/70 px-3 py-3 sm:px-4 flex items-center gap-3 lg:gap-5" aria-label={t('home_level')}>
-        <div className="flex items-center gap-3 flex-1 min-w-0 lg:flex-[1.3]">
-          <span className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full border-2 border-foreground/30 bg-gradient-to-b from-muted/80 to-background flex items-center justify-center text-2xl shadow-inner" aria-hidden>{playerLevel.emoji}</span>
+      <section className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 animate-fade-in-up animation-delay-250 rounded-2xl border border-border bg-card/70 px-2.5 py-2 sm:px-4 sm:py-3 flex items-center gap-2.5 sm:gap-3 lg:gap-5" aria-label={t('home_level')}>
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 lg:flex-[1.3]">
+          <span className="w-9 h-9 sm:w-12 sm:h-12 shrink-0 rounded-full border-2 border-foreground/30 bg-gradient-to-b from-muted/80 to-background flex items-center justify-center text-xl sm:text-2xl shadow-inner" aria-hidden>{playerLevel.emoji}</span>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-[13px] sm:text-base leading-tight lg:truncate">
               {t('home_level')} {playerLevel.level} · <span className="text-primary">{tLevelTitle(playerLevel.title, locale)}</span>
@@ -361,12 +361,12 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         <div className="flex items-stretch shrink-0 border-l border-border divide-x divide-border font-bold">
           <StripLink icon="🏆" label={t('home_ranking')} onClick={() => { playButtonTap(); (onOpenRanking ?? onOpenProfile)?.(); }} />
           <StripLink icon="📊" label={t('home_history')} onClick={() => { playButtonTap(); (onOpenHistory ?? onOpenProfile)?.(); }} />
-          <span className="hidden lg:flex"><StripLink icon="🎁" label={t('home_inviteFriends')} onClick={shareInvite} /></span>
+          <StripLink icon="🎁" label={t('home_inviteFriends')} shortLabel={t('home_inviteShort')} onClick={shareInvite} />
         </div>
       </section>
 
       {/* Invitar amigos en el celular (la franja no tiene espacio) y recompensa de referidos lista */}
-      <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-3 flex flex-col items-center gap-2">
+      <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl flex flex-col items-center gap-2 empty:hidden">
         {referral.claimable && (
           <button
             onClick={() => { claimReferralReward(referral.claimable!.tier); playButtonTap(); }}
@@ -376,9 +376,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             {t('ref_claim', { lives: referral.claimable.lives, bonus: referral.claimable.bonus ? ` + ${referral.claimable.bonus}` : '' })}
           </button>
         )}
-        <button onClick={shareInvite} className="lg:hidden text-xs font-bold text-accent hover:underline">
-          {t('ref_title')}
-        </button>
         {inviteSent && (
           <p className="text-center text-[10px] sm:text-xs text-accent animate-fade-in" role="status">
             {navigator.share ? t('ref_sent') : t('ref_copied')}
@@ -428,10 +425,10 @@ const Chevron = ({ className = '' }: { className?: string }) => (
 function Dropdown({ label, emoji, value, onClick }: { label: string; emoji: string; value: string; onClick: () => void }) {
   return (
     <div className="min-w-0">
-      <span className="block text-[11px] sm:text-xs lg:text-sm font-semibold text-muted-foreground lg:text-foreground mb-1">{label}</span>
+      <span className="block text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground lg:text-foreground mb-0.5 sm:mb-1">{label}</span>
       <button
         onClick={onClick}
-        className="w-full flex items-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-2.5 lg:px-3 lg:py-2.5 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-left"
+        className="w-full flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:py-2 sm:px-2.5 lg:px-3 lg:py-2.5 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-left"
         aria-haspopup="dialog"
         aria-label={`${label}: ${value}`}
       >
@@ -446,9 +443,9 @@ function Dropdown({ label, emoji, value, onClick }: { label: string; emoji: stri
 /** Ícono de "Jugar con amigos": dos exploradores (amarillo y turquesa), como en la maqueta. */
 function FriendsIcon() {
   return (
-    <span className="relative block w-11 h-10 sm:w-12 sm:h-11" aria-hidden>
-      <img src="/mascot/explorer-logo.webp" alt="" className="absolute left-0 bottom-0 w-7 sm:w-8 -rotate-6" />
-      <img src="/mascot/explorer-logo.webp" alt="" className="absolute right-0 bottom-0 w-7 sm:w-8 rotate-6 [filter:hue-rotate(125deg)_saturate(1.3)]" />
+    <span className="relative block w-9 h-8 sm:w-12 sm:h-11" aria-hidden>
+      <img src="/mascot/explorer-logo.webp" alt="" className="absolute left-0 bottom-0 w-6 sm:w-8 -rotate-6" />
+      <img src="/mascot/explorer-logo.webp" alt="" className="absolute right-0 bottom-0 w-6 sm:w-8 rotate-6 [filter:hue-rotate(125deg)_saturate(1.3)]" />
     </span>
   );
 }
@@ -458,12 +455,12 @@ function AccessCard({ icon, title, desc, onClick, extra }: { icon: React.ReactNo
     <div className="relative min-w-0">
       <button
         onClick={onClick}
-        className="w-full h-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3.5 rounded-2xl border border-border bg-card/70 hover:border-accent/50 text-left transition-all active:scale-[0.98]"
+        className="w-full h-full flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3.5 rounded-2xl border border-border bg-card/70 hover:border-accent/50 text-left transition-all active:scale-[0.98]"
       >
         <span className="shrink-0 leading-none" aria-hidden>{icon}</span>
         <span className="flex-1 min-w-0">
           <span className="block font-bold text-[13px] sm:text-base leading-tight">{title}</span>
-          <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight mt-0.5 line-clamp-2">{desc}</span>
+          <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight mt-0.5 line-clamp-1 sm:line-clamp-2">{desc}</span>
         </span>
         <Chevron className="text-muted-foreground shrink-0" />
       </button>
@@ -484,11 +481,13 @@ function StripStat({ icon, value, label }: { icon: string; value: string; label:
   );
 }
 
-function StripLink({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+function StripLink({ icon, label, shortLabel, onClick }: { icon: string; label: string; shortLabel?: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1.5 px-2.5 sm:px-3 hover:text-primary transition-colors whitespace-nowrap">
+    <button onClick={onClick} className="flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1.5 px-2 sm:px-3 hover:text-primary transition-colors whitespace-nowrap" aria-label={label}>
       <span className="text-lg lg:text-base leading-none" aria-hidden>{icon}</span>
-      <span className="flex items-center gap-0.5 text-[11px] sm:text-xs lg:text-sm">{label}<Chevron className="w-3 h-3 lg:hidden opacity-70" /></span>
+      <span className="flex items-center gap-0.5 text-[11px] sm:text-xs lg:text-sm">
+        {shortLabel ? <><span className="lg:hidden">{shortLabel}</span><span className="hidden lg:inline">{label}</span></> : label}
+      </span>
     </button>
   );
 }

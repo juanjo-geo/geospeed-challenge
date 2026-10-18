@@ -994,6 +994,20 @@ export default function WorldMapCanvas({
     // Cancel any previous zoom bomb
     if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
 
+    // Con un encuadre fijo (respuesta de la ronda, revisión) el mapa ya está acercado de verdad:
+    // quitar el zoom CSS para no sumar los dos acercamientos
+    if (viewBounds) {
+      zoomBombActiveRef.current = false;
+      const el = canvasRef.current;
+      if (el) {
+        el.style.transition = 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1)';
+        el.style.transform = 'scale(1)';
+        el.style.transformOrigin = '50% 50%';
+      }
+      setZoomStyle({});
+      return;
+    }
+
     const vw = window.innerWidth;
     const uxPct = (lonToX(userClick.lon) / dimensions.w) * 100;
     const uyPct = (latToY(userClick.lat) / dimensions.h) * 100;
@@ -1102,7 +1116,7 @@ export default function WorldMapCanvas({
       clearTimeout(kickoff);
       if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
     };
-  }, [userClick, correctLocation, bounds, lonRange, latRange, lonToX, latToY, dimensions]);
+  }, [userClick, correctLocation, bounds, lonRange, latRange, lonToX, latToY, dimensions, viewBounds]);
 
   // Reset zoom when markers clear
   useEffect(() => {
@@ -1182,22 +1196,22 @@ export default function WorldMapCanvas({
       )}
       {/* Controles de zoom (maqueta): −  +  ⌖ */}
       {showZoomControls && (
-        <div className="absolute z-[8] flex items-center gap-1.5" style={{ right: 'max(0.5rem, var(--sar))', bottom: 'max(0.5rem, var(--sab))' }}>
+        <div className="absolute z-[8] flex items-center gap-2 sm:gap-2.5" style={{ right: 'max(0.75rem, var(--sar))', bottom: 'max(0.75rem, var(--sab))' }}>
           {([
-            { label: '−', onClick: () => zoomBy(1 / 1.4), aria: t('map_zoomOut') },
-            { label: '+', onClick: () => zoomBy(1.4), aria: t('map_zoomIn') },
-            { label: '⌖', onClick: resetZoom, aria: t('map_recenter') },
-          ] as const).map(b => (
+            { icon: <path d="M6 12h12" />, onClick: () => zoomBy(1 / 1.4), aria: t('map_zoomOut') },
+            { icon: <><path d="M6 12h12" /><path d="M12 6v12" /></>, onClick: () => zoomBy(1.4), aria: t('map_zoomIn') },
+            { icon: <><circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="2" fill="currentColor" /><path d="M12 2.5v3" /><path d="M12 18.5v3" /><path d="M2.5 12h3" /><path d="M18.5 12h3" /></>, onClick: resetZoom, aria: t('map_recenter') },
+          ]).map(b => (
             <button
               key={b.aria}
               type="button"
               onClick={(e) => { e.stopPropagation(); b.onClick(); }}
               onTouchEnd={(e) => e.stopPropagation()}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-accent/60 text-accent font-black text-lg flex items-center justify-center backdrop-blur-md transition-all active:scale-90 hover:bg-accent/15"
-              style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}
+              className="w-9 h-9 sm:w-11 sm:h-11 short:w-9 short:h-9 rounded-full border-2 border-accent/70 text-foreground flex items-center justify-center backdrop-blur-md transition-all active:scale-90 hover:bg-accent/15"
+              style={{ background: 'hsl(var(--brand-navy-deep) / 0.8)' }}
               aria-label={b.aria}
             >
-              {b.label}
+              <svg viewBox="0 0 24 24" className="w-5 h-5 short:w-4 short:h-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>{b.icon}</svg>
             </button>
           ))}
         </div>

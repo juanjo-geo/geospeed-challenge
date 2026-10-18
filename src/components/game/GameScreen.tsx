@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { City, getRandomCities, getProgressiveCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { City, getRandomCities, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance, calculateBasePoints, getMultiplier, getDifficultyMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
@@ -19,6 +19,9 @@ import { useI18n } from '@/i18n';
 import { getEquipped } from '@/lib/cosmetics';
 import Wordmark from '@/components/ui/Wordmark';
 import RoundFeedbackCard from './RoundFeedbackCard';
+import { HudIconButton, InGameSettings } from './GameHud';
+import { frameAnswer } from '@/lib/mapFraming';
+import FitToBox from '@/components/ui/FitToBox';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -44,6 +47,8 @@ export interface RoundResult {
   multiplier: number;
   totalPoints: number;
   timeUsed: number;
+  /** Segundos con un decimal, solo para mostrar ("Respuesta 4,7 s"). La puntuación usa timeUsed. */
+  timeExact?: number;
 }
 
 interface GameScreenProps {
@@ -78,7 +83,7 @@ function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>
 }
 
 export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic }: GameScreenProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
   const isCompact = layoutMode === 'compact';
@@ -110,6 +115,20 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [showHint, setShowHint] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [isPageHidden, setIsPageHidden] = useState(false);
+  // Ajustes rápidos del engranaje: mientras están abiertos la ronda queda en pausa
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpenRef = useRef(false);
+  settingsOpenRef.current = settingsOpen;
+  // Tamaño del área del mapa (para encuadrar la respuesta junto a la tarjeta)
+  const mapAreaRef = useRef<HTMLDivElement>(null);
+  const [mapArea, setMapArea] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = mapAreaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setMapArea({ w: e.contentRect.width, h: e.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const roundStartRef = useRef(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const scoreElRef = useRef<HTMLParagraphElement>(null);
@@ -139,17 +158,17 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const pausedMsRef = useRef(0);
   const pauseStartRef = useRef<number | null>(null);
   useEffect(() => {
-    const paused = isPortraitMobile || isPageHidden;
+    const paused = isPortraitMobile || isPageHidden || settingsOpen;
     if (paused && pauseStartRef.current == null) pauseStartRef.current = Date.now();
     if (!paused && pauseStartRef.current != null) { pausedMsRef.current += Date.now() - pauseStartRef.current; pauseStartRef.current = null; }
-  }, [isPortraitMobile, isPageHidden]);
+  }, [isPortraitMobile, isPageHidden, settingsOpen]);
 
   // Reset timeLeft and roundStart when a new round begins
   useEffect(() => {
     if (!currentCity) return;
     roundStartRef.current = Date.now();
     pausedMsRef.current = 0;
-    pauseStartRef.current = (isPortraitMobile || isPageHidden) ? Date.now() : null;
+    pauseStartRef.current = (isPortraitMobile || isPageHidden || settingsOpenRef.current) ? Date.now() : null;
     setTimeLeft(effectiveMaxTime);
     announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
@@ -169,7 +188,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   // Single timer effect — pauses when waiting, portrait, or no city
   useEffect(() => {
-    if (isWaiting || !currentCity || isPortraitMobile || isPageHidden) {
+    if (isWaiting || !currentCity || isPortraitMobile || isPageHidden || settingsOpen) {
       clearInterval(timerRef.current);
       return;
     }
@@ -192,7 +211,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [currentRound, isWaiting, currentCity, isPortraitMobile, isPageHidden]);
+  }, [currentRound, isWaiting, currentCity, isPortraitMobile, isPageHidden, settingsOpen]);
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
@@ -207,6 +226,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     setAutoAdvanceTimer(AUTO_ADVANCE_SECONDS);
     const interval = setInterval(() => {
       setAutoAdvanceTimer(prev => {
+        if (settingsOpenRef.current) return prev; // en pausa con los ajustes abiertos
         if (prev <= 1) {
           clearInterval(interval);
           advanceRound();
@@ -274,7 +294,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     hapticTap();
 
     const pausedNow = pauseStartRef.current != null ? Date.now() - pauseStartRef.current : 0;
-    const timeUsed = Math.max(0, Math.round((Date.now() - roundStartRef.current - pausedMsRef.current - pausedNow) / 1000));
+    const elapsedS = Math.max(0, (Date.now() - roundStartRef.current - pausedMsRef.current - pausedNow) / 1000);
+    const timeUsed = Math.round(elapsedS);
+    const timeExact = Math.round(elapsedS * 10) / 10;
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     const basePoints = calculateBasePoints(distance);
     const mult = getMultiplier(timeUsed);
@@ -303,6 +325,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       multiplier: mult.value,
       totalPoints,
       timeUsed,
+      timeExact,
     };
 
     setTimeout(() => {
@@ -374,6 +397,27 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const userClickPt = useMemo(() => lastResult ? { lat: lastResult.clickLat, lon: lastResult.clickLon } : null, [lastResult]);
   const correctPt = useMemo(() => lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null, [lastResult]);
 
+  const numberLocale = locale === 'en' ? 'en-US' : 'es-CO';
+  const fmtSecs = (r: RoundResult) => (r.timeExact ?? r.timeUsed).toLocaleString(numberLocale, { maximumFractionDigits: 1 });
+  // Respuesta: el mapa se acerca a tu punto y a la ciudad correcta, dejando libre lo que tapa la tarjeta
+  const feedbackBounds = useMemo(() => {
+    if (!showPopup || !lastResult || mapArea.w === 0) return null;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : mapArea.w;
+    const clampPx = (min: number, pref: number, max: number) => Math.max(min, Math.min(pref, max));
+    const cover = isPortraitMobile
+      ? { bottom: 0.5 }
+      : isCompact
+      ? { right: clampPx(288, 0.48 * vw, 416) / mapArea.w, top: 76 / mapArea.h }
+      : isWide
+      ? { right: clampPx(384, 0.36 * vw, 512) / mapArea.w }
+      : { right: clampPx(352, 0.40 * vw, 480) / mapArea.w };
+    return frameAnswer(
+      { lat: lastResult.clickLat, lon: lastResult.clickLon },
+      { lat: lastResult.city.lat, lon: lastResult.city.lon },
+      mapArea.w, mapArea.h, cover, getMapBounds(gameMode),
+    );
+  }, [showPopup, lastResult, mapArea.w, mapArea.h, isPortraitMobile, isCompact, isWide, gameMode]);
+
   // Near-miss detection — motivate the player when they were close to a better tier
   const nearMissMsg = (() => {
     if (!lastResult) return null;
@@ -437,40 +481,37 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         </div>
       )}
 
-      {/* ──── Left sidebar (medium + wide) — idéntico en dark/light y training/normal ──── */}
+      {/* ──── Barra lateral (medium + wide) — maqueta Partida_Computador: marca + modo, ¿Dónde está?,
+           reloj (o tiempo de respuesta), PUNTOS, RONDA y racha en tarjetas ──── */}
       {hasSidebar && (
         <div
-          className="flex min-h-0 flex-col gap-0 border-r border-border/60 bg-card overflow-y-auto overflow-x-hidden scrollbar-hidden"
-          style={{ containerType: 'inline-size', paddingLeft: 'max(0.75rem, var(--sal))', paddingRight: 'max(0.75rem, var(--sar))', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+          className="flex min-h-0 flex-col gap-[3.2cqi] border-r-2 border-accent/50 bg-card overflow-y-auto overflow-x-hidden scrollbar-hidden"
+          style={{ containerType: 'inline-size', paddingLeft: 'max(0.9rem, var(--sal))', paddingRight: '0.9rem', paddingTop: '1rem', paddingBottom: '1rem' }}
         >
-          {/* ── Logo ── */}
-          <div className="w-full flex flex-col items-center gap-1.5 pb-2 mb-2 border-b border-border/50 shrink-0">
-            <div className="flex items-center justify-center gap-2">
-              <img src="/mascot/explorer-logo.webp" alt="GeoSpeed" className="w-[22cqi] max-w-[64px] object-contain" />
-              <Wordmark size="sm" />
+          <div className="w-full flex flex-col items-center gap-[3.5cqi] shrink-0">
+            <div className="flex items-center justify-center gap-[2.5cqi]">
+              <img src="/mascot/explorer-logo.webp" alt="GeoSpeed" className="w-[19cqi] max-w-[60px] object-contain" />
+              <Wordmark size="custom" className="text-[11.5cqi]" />
             </div>
-            <span className="rounded-full border border-accent/40 px-3 py-0.5 text-[6.5cqi] font-bold text-muted-foreground">
-              <span className="text-primary">{modeLabel}</span> · {diffLabel}
+            <span className="rounded-full border-2 border-accent/50 px-[6cqi] py-[1.6cqi] text-[6.6cqi] font-semibold whitespace-nowrap">
+              <span className="text-primary">{modeLabel}</span><span className="text-accent mx-[2cqi]">·</span>{diffLabel}
             </span>
           </div>
 
-          {/* ── Training badge (mismo estilo dark y light) ── */}
           {isTraining && (
-            <div className="w-full flex justify-center mb-2 shrink-0">
+            <div className="w-full flex justify-center shrink-0">
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-bold text-foreground/70">
                 {t('game_trainingPrefix')}
               </span>
             </div>
           )}
 
-          {/* ── Ciudad a encontrar ── */}
-          <div className="w-full shrink-0 mb-2 rounded-xl px-[6.7cqi] py-[5.4cqi] border border-primary/25 bg-primary/10 text-center">
-            <p className="text-[10cqi] font-semibold text-foreground/70 leading-none mb-1.5" id="city-label">
-              {t('game_whereIs')}
-            </p>
+          {/* ¿Dónde está? */}
+          <div className="w-full shrink-0 rounded-2xl border-2 border-accent/50 bg-background/40 px-[5cqi] py-[5.5cqi] text-center">
+            <p className="text-[8.6cqi] font-bold leading-none mb-[2.5cqi]" id="city-label">{t('game_whereIs')}</p>
             <p
-              className="text-[15.5cqi] font-black leading-tight text-center"
-              style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
+              className="text-[14.5cqi] font-extrabold leading-tight"
+              style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none', textShadow: '0 2px 10px hsl(var(--primary) / 0.25)' }}
               aria-labelledby="city-label"
             >
               {currentCity.name}
@@ -482,91 +523,78 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             )}
           </div>
 
-          {/* ── Puntuación ── */}
-          <div className="w-full text-center shrink-0 relative mb-2 pb-2 border-b border-border/40">
-            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">⭐ {t('game_points')}</p>
-            <p
-              ref={scoreElRef}
-              className={`text-[20cqi] font-mono font-black leading-none ${scorePop ? 'animate-score-pop' : ''}`}
-              style={{ color: 'hsl(var(--primary))' }}
-              aria-live="polite"
-            >
-              <CountUp value={score} />
-            </p>
-            {floatPoints !== null && (
-              <span className={`absolute left-1/2 -top-1 -translate-x-1/2 font-bold pointer-events-none ${
-                floatPoints >= 1000 ? 'text-sm text-green-400 animate-float-up-big' : 'text-xs text-green-400 animate-float-up'
-              }`}>
-                +{floatPoints.toLocaleString()}{floatPoints >= 1000 ? ' 🔥' : ''}
+          {/* Reloj de la ronda · en la respuesta, el tiempo que tardaste */}
+          {isWaiting && lastResult ? (
+            <div className="flex items-center gap-[4cqi] px-[2cqi] shrink-0">
+              <ClockIcon className="w-[11cqi] h-[11cqi] text-accent shrink-0" />
+              <span className="leading-tight">
+                <span className="block text-[6.6cqi] text-muted-foreground">{t('game_answerTime')}</span>
+                <span className="block text-[9.5cqi] font-bold">{fmtSecs(lastResult)} s</span>
               </span>
-            )}
-            {diffMult > 1 && (
-              <span className="mt-1.5 inline-block rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[7cqi] font-bold leading-none" style={{ color: 'hsl(var(--primary))' }}>
-                🎯 ×{diffMult} <span className="opacity-70">dif.</span>
-              </span>
-            )}
-          </div>
-
-          {/* ── Progreso de rondas ── */}
-          <div className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40">
-            <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('game_round')}</p>
-            <p className="text-[15cqi] font-mono font-bold leading-none">
-              {currentRound + 1}<span className="text-foreground/40 text-base">/{totalRounds}</span>
-            </p>
-            <div className="mt-2 flex flex-wrap justify-center gap-1">
-              {Array.from({ length: totalRounds }).map((_, i) => {
-                const round = rounds[i];
-                let dotClass = 'bg-border';
-                if (round) {
-                  dotClass = round.distance < 500 ? palette.good.twBg : round.distance < 2000 ? palette.medium.twBg : palette.bad.twBg;
-                } else if (i === currentRound) {
-                  dotClass = 'bg-primary animate-pulse';
-                }
-                return <div key={i} className={`h-2 w-2 rounded-full transition-colors duration-300 ${dotClass}`} />;
-              })}
             </div>
-          </div>
-
-          {/* ── Racha, multiplicador y mascota (en una sola fila) ── */}
-          <div className="w-full flex items-center justify-center gap-2.5 shrink-0 mb-2 min-h-[46px]">
-            {(showStreak || mult) && (
-              <div className="flex flex-col items-center gap-1.5">
-                {showStreak && (
-                  <div className="text-center animate-score-pop">
-                    <span className="inline-block rounded-full bg-primary/15 border border-primary/40 px-2 py-0.5 text-[4cqi] font-bold text-primary">
-                      🔥 {t('game_streakCount', { n: streak })}{streakPct > 0 && <span className="ml-0.5 text-[10px] opacity-80">+{streakPct}%</span>}
-                    </span>
-                  </div>
-                )}
-                {mult && (
-                  <div className="text-center">
-                    <span className={`inline-block rounded-full border px-2 py-0.5 text-[4cqi] font-bold ${
-                      mult.value >= 1.5 ? `${palette.good.twBgSoft} ${palette.good.twBorder} ${palette.good.tw}`
-                      : mult.value >= 1.0 ? `${palette.medium.twBgSoft} ${palette.medium.twBorder} ${palette.medium.tw}`
-                      : `${palette.bad.twBgSoft} ${palette.bad.twBorder} ${palette.bad.tw}`
-                    }`}>
-                      {mult.emoji} {mult.label}
-                    </span>
-                  </div>
-                )}
+          ) : (
+            <div className="shrink-0 px-[1.5cqi]" role="timer" aria-label={`${timeLeft} s`}>
+              <div className="flex items-center gap-[3.5cqi] mb-[2.5cqi]">
+                <ClockIcon className="w-[10cqi] h-[10cqi] text-accent shrink-0" />
+                <span className={`text-[9.5cqi] font-bold ${isTimerCritical ? 'text-destructive animate-pulse' : isTimerUrgent ? 'text-destructive' : ''}`}>{timeLeft} s</span>
               </div>
+              <div className="h-[6cqi] min-h-[12px] rounded-full border-2 border-accent/50 bg-background/40 p-[2px]">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${(timeLeft / effectiveMaxTime) * 100}%`,
+                    background: timeLeft <= 5 ? 'hsl(var(--destructive))' : 'hsl(var(--accent))',
+                    boxShadow: timeLeft <= 5 ? 'none' : '0 0 10px hsl(var(--accent) / 0.6)',
+                    transition: 'width 1s linear',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* PUNTOS */}
+          <div className="relative w-full shrink-0 rounded-2xl border-2 border-accent/30 bg-background/40 px-[5cqi] py-[3.5cqi] flex items-center gap-[4.5cqi]">
+            <span className="text-[12cqi] leading-none" aria-hidden>⭐</span>
+            <span className="min-w-0 leading-tight">
+              <span className="block text-[6.6cqi] font-semibold uppercase tracking-wide">{t('game_points')}</span>
+              <span ref={scoreElRef} className={`block text-[11.5cqi] font-extrabold text-primary leading-none ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite">
+                <CountUp value={score} />
+              </span>
+            </span>
+            {floatPoints !== null && (
+              <span className={`absolute right-[5cqi] top-[3cqi] font-bold text-accent pointer-events-none ${floatPoints >= 1000 ? 'text-sm animate-float-up-big' : 'text-xs animate-float-up'}`}>
+                +{floatPoints.toLocaleString(numberLocale)}
+              </span>
             )}
-            <Mascot
-              state={mascotState}
-              className={`w-[48cqi] max-w-[130px] shrink-0 select-none pointer-events-none drop-shadow-[0_4px_10px_hsl(var(--primary)/0.35)] ${mascotState === 'idle' ? 'animate-mascot-float' : ''}`}
-            />
           </div>
 
-          {/* ── Timer ── (sticky al fondo: siempre visible aunque el sidebar tenga poco alto, p.ej. Samsung S23 FE landscape) */}
-          <div className="w-full shrink-0 sticky bottom-0 z-10 bg-card pt-2 mt-auto">
-            <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} />
+          {/* RONDA */}
+          <div className="w-full shrink-0 rounded-2xl border-2 border-accent/30 bg-background/40 px-[5cqi] py-[3.5cqi] flex items-center gap-[4.5cqi]">
+            <BarsIcon className="w-[11cqi] h-[11cqi] text-accent shrink-0" />
+            <span className="min-w-0 leading-tight">
+              <span className="block text-[6.6cqi] font-semibold uppercase tracking-wide">{t('game_round')}</span>
+              <span className="block text-[10.5cqi] font-extrabold leading-none">
+                <span className="text-primary">{currentRound + 1}</span> / {totalRounds}
+              </span>
+            </span>
           </div>
+
+          {/* Racha */}
+          {showStreak && (
+            <div className="w-full shrink-0 rounded-2xl border-2 border-primary/40 bg-background/40 px-[5cqi] py-[3cqi] flex items-center gap-[3.5cqi] animate-score-pop">
+              <span className="text-[11cqi] leading-none" aria-hidden>🔥</span>
+              <span className="text-[7cqi] font-bold leading-tight">
+                <span className="text-primary text-[9.5cqi] font-extrabold">{streak}</span> {t('game_streakCount', { n: streak }).replace(/^\d+\s*/, '')}
+                {streakPct > 0 && <span className="ml-1 text-accent">+{streakPct}%</span>}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
       {/* ──── Map area (all modes) — h-full gives WorldMapCanvas explicit height in grid ──── */}
       {/* w-full: con margin auto, un ítem de grid se encoge al tamaño del canvas (800 px) en ultrawide */}
-      <div className="relative w-full h-full min-w-0 overflow-hidden" style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
+      <div ref={mapAreaRef} className="relative w-full h-full min-w-0 overflow-hidden" style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
         {/* ── HUD compacto (móvil horizontal) — maqueta Partida_Movil_APROBADA_v1 ── */}
         {isCompact && (
           <div
@@ -579,41 +607,24 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 <Wordmark size="xs" className="hidden min-[520px]:inline" />
               </div>
               <div className="flex-1 min-w-0 flex justify-center">
-                <div className="max-w-full truncate rounded-full border border-accent/40 px-3 py-1 text-sm font-black backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.8)' }}>
+                <div className="max-w-full truncate rounded-full border-2 border-accent/50 px-4 py-1 text-[15px] font-extrabold backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
                   {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
                   {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>
                   {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {currentCity.country}</span>}
                 </div>
               </div>
-              {onToggleMusic && (
-                <button
-                  onClick={onToggleMusic}
-                  className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-sm backdrop-blur-md transition-all active:scale-90"
-                  style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}
-                  aria-label={musicMuted ? t('music_on') : t('music_off')}
-                >
-                  {musicMuted ? '🔇' : '🔊'}
-                </button>
-              )}
-              {onExit && (
-                <button
-                  onClick={confirmExit}
-                  className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-base backdrop-blur-md transition-all active:scale-90"
-                  style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}
-                  aria-label={t('game_exit')}
-                >
-                  ×
-                </button>
-              )}
+              {onToggleMusic && <HudIconButton size="sm" icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+              <HudIconButton size="sm" icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
+              {onExit && <HudIconButton size="sm" icon="close" label={t('game_exit')} onClick={confirmExit} />}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] font-bold">
-              <span className="hidden min-[560px]:inline rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
+              <span className="hidden min-[560px]:inline rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
                 <span className="text-primary">{modeLabel}</span> · {diffLabel}
               </span>
-              <span className="rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
+              <span className="rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
                 {t('game_round')} <span className="text-primary">{currentRound + 1}</span><span className="text-muted-foreground"> / {totalRounds}</span>
               </span>
-              <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
+              <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
                 <span className={`font-mono whitespace-nowrap ${timeLeft <= 3 && !isWaiting ? 'text-destructive animate-pulse' : timeLeft <= 5 && !isWaiting ? 'text-destructive' : ''}`}>⏱ {timeLeft} s</span>
                 <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${(timeLeft / effectiveMaxTime) * 100}%`, background: timeLeft <= 5 ? 'hsl(var(--destructive))' : 'hsl(var(--accent))', transition: isWaiting ? 'none' : 'width 200ms linear' }} />
@@ -630,35 +641,18 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         )}
 
         {/* Música + salir (escritorio / tablet con panel lateral) */}
-        {!isCompact && (onExit || onToggleMusic) && (
-          <div className="absolute z-20 flex items-center gap-2" style={{ top: 'max(0.5rem, var(--sat))', right: 'max(0.5rem, var(--sar))' }}>
-            {onToggleMusic && (
-              <button
-                onClick={onToggleMusic}
-                className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center text-base backdrop-blur-md transition-all active:scale-90"
-                style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}
-                aria-label={musicMuted ? t('music_on') : t('music_off')}
-              >
-                {musicMuted ? '🔇' : '🔊'}
-              </button>
-            )}
-            {onExit && (
-              <button
-                onClick={confirmExit}
-                className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center text-lg backdrop-blur-md transition-all active:scale-90"
-                style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}
-                aria-label={t('game_exit')}
-              >
-                ×
-              </button>
-            )}
+        {!isCompact && (
+          <div className="absolute z-20 flex items-center gap-2.5" style={{ top: 'max(0.75rem, var(--sat))', right: 'max(0.75rem, var(--sar))' }}>
+            {onToggleMusic && <HudIconButton icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+            <HudIconButton icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
+            {onExit && <HudIconButton icon="close" label={t('game_exit')} onClick={confirmExit} />}
           </div>
         )}
 
         {/* Racha (móvil): abajo a la izquierda, como la maqueta */}
         {isCompact && showStreak && !isWaiting && (
           <div className="absolute z-[6] pointer-events-none" style={{ bottom: 'max(0.5rem, var(--sab))', left: 'max(0.5rem, var(--sal))' }}>
-            <span className="rounded-full px-3 py-1 text-xs font-bold border border-primary/50 backdrop-blur-md animate-score-pop" style={{ background: 'hsl(var(--brand-navy-deep) / 0.8)' }}>
+            <span className="rounded-full px-3 py-1.5 text-xs font-bold border-2 border-accent/40 backdrop-blur-md animate-score-pop" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
               🔥 <span className="text-primary">{streak}</span> {t('game_streakCount', { n: streak }).replace(/^\d+\s*/, '')}
             </span>
           </div>
@@ -667,9 +661,17 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* "Toca el mapa para responder" */}
         {!isWaiting && (
           <div className="absolute left-1/2 -translate-x-1/2 z-[6] pointer-events-none" style={{ bottom: 'max(0.5rem, var(--sab))' }}>
-            <span className="rounded-full px-3 py-1 text-[11px] sm:text-xs font-bold border border-border/60 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.8)' }}>
+            <span className="rounded-full px-4 py-1.5 short:py-1 text-xs sm:text-sm font-semibold border border-border/60 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
               {isTouchDevice ? t('game_tapToAnswer') : t('game_clickToAnswer')}
             </span>
+          </div>
+        )}
+
+        {/* Leyenda de pines durante la respuesta (maqueta Feedback) */}
+        {showPopup && lastResult && !isPortraitMobile && (
+          <div className="absolute z-[6] pointer-events-none rounded-xl border border-accent/40 px-3 py-2 short:py-1 backdrop-blur-md text-xs short:text-[11px] font-semibold flex flex-col gap-1 short:gap-0.5" style={{ bottom: 'max(0.75rem, var(--sab))', left: 'max(0.75rem, var(--sal))', background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
+            <span className="flex items-center gap-2"><PinIcon color="hsl(var(--accent))" />{t('game_correctCity')}</span>
+            <span className="flex items-center gap-2"><PinIcon color="hsl(var(--primary))" />{t('game_yourAnswer')}</span>
           </div>
         )}
 
@@ -702,6 +704,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           trailConfig={trailConfig}
           pinLabels={pinLabels}
           showZoomControls={!isWaiting}
+          viewBounds={feedbackBounds}
         />
 
         {/* Tarjeta de feedback — panel lateral en pantallas anchas */}
@@ -711,6 +714,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
+            <FitToBox center origin="center right">
             <RoundFeedbackCard
               result={lastResult}
               feedback={feedback}
@@ -722,8 +726,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               nearMissMsg={nearMissMsg}
               autoAdvanceTimer={autoAdvanceTimer}
               onNext={advanceRound}
+              timeLabel={`${fmtSecs(lastResult)} s`}
               size="lg"
+              natural
             />
+            </FitToBox>
           </div>
         )}
 
@@ -739,7 +746,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
-            <div className="w-full max-h-full flex">
+            <FitToBox maxScale={isCompact ? 0.88 : 1} center={!isCompact && !isPortraitMobile} origin={isPortraitMobile ? 'bottom center' : isCompact ? 'top right' : 'center right'} className={isPortraitMobile ? 'max-h-[70dvh]' : ''}>
               <RoundFeedbackCard
                 result={lastResult}
                 feedback={feedback}
@@ -751,13 +758,15 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 nearMissMsg={nearMissMsg}
                 autoAdvanceTimer={autoAdvanceTimer}
                 onNext={advanceRound}
+                timeLabel={`${fmtSecs(lastResult)} s`}
                 size="md"
+                natural
               />
-            </div>
+            </FitToBox>
           </div>
         )}
       </div>
-      {/* Right panel removed — now rendered as overlay inside map area */}
+      {settingsOpen && <InGameSettings musicMuted={musicMuted} onToggleMusic={onToggleMusic} onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }
@@ -777,5 +786,30 @@ function ModeLabel({ gameMode, compact }: { gameMode: GameMode; compact?: boolea
         {MODE_CONFIG.find(m => m.key === gameMode)?.emoji} {MODE_CONFIG.find(m => m.key === gameMode)?.label}
       </span>
     </div>
+  );
+}
+
+function ClockIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function BarsIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <rect x="3" y="13" width="4" height="8" rx="1.2" /><rect x="10" y="8" width="4" height="13" rx="1.2" /><rect x="17" y="3" width="4" height="18" rx="1.2" />
+    </svg>
+  );
+}
+
+function PinIcon({ color }: { color: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden>
+      <path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22Z" fill={color} stroke="white" strokeWidth="1.5" />
+      <circle cx="12" cy="9.5" r="2.6" fill="white" />
+    </svg>
   );
 }

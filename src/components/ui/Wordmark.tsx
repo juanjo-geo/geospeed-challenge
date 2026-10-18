@@ -1,6 +1,6 @@
 /**
  * Wordmark GEO·SPEED según las maquetas de oct 2026:
- * "GEO" en blanco y "SPEED" en turquesa, Poppins ExtraBold (redondeada, como en las maquetas).
+ * "GEO" blanco con relieve y "SPEED" turquesa con resplandor, en Fredoka Bold (estilos en index.css .wordmark).
  * Reemplaza las nueve copias del degradado dorado que había en los componentes.
  */
 interface WordmarkProps {
