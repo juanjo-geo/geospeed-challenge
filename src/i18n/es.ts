@@ -811,6 +811,8 @@ const es = {
   chr_sameScore: 'Mismo puntaje',
   chr_pointsDiff: 'puntos de diferencia',
   chr_pointsToWin: 'A {n} puntos de la victoria',
+  chr_pointsToWinLead: 'A',
+  chr_pointsToWinTail: 'puntos de la victoria',
   chr_compareLead: 'Comparación',
   chr_compareTail: 'pendiente',
   chr_finalWhenBoth: 'El resultado final aparecerá cuando ambos terminen.',

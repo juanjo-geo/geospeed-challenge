@@ -15,7 +15,8 @@ import WorldMapCanvas from './WorldMapCanvas';
 import CityAnswersScreen from './CityAnswersScreen';
 import CityReviewScreen from './CityReviewScreen';
 import { type RoundResult } from './GameScreen';
-import { appNumberLocale } from '@/lib/format';
+import { appNumberLocale, formatNumber } from '@/lib/format';
+import { PinIcon, StopwatchIcon, HomeIcon, ChevronIcon, ArrowRightIcon, LegendPin } from '@/components/ui/icons';
 
 interface ChallengeResultScreenProps {
   detail: ChallengeDetail;
@@ -110,7 +111,7 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
   const copy = async () => { playButtonTap(); try { await navigator.clipboard.writeText(detail.code); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* sin portapapeles */ } };
 
   const modeLabel = t(`mode_${detail.mode}` as never);
-  const diffLabel = t(`diff_${detail.difficulty}` as never);
+  const diffLabel = diffName(detail.difficulty, t);
 
   // ── Mis respuestas (reutiliza la revisión por ciudad de F2) ──
   if (view === 'answers') {
@@ -134,99 +135,123 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
   const title = outcome === 'pending' ? t('chr_pendingTitle') : outcome === 'win' ? t('chr_winTitle') : outcome === 'lose' ? t('chr_loseTitle') : t('chr_tieTitle');
   const subtitle = outcome === 'pending' ? t('chr_pendingSub') : outcome === 'win' ? t('chr_winSub') : outcome === 'lose' ? t('chr_loseSub') : t('chr_tieSub');
   const mascot = outcome === 'win' ? 'celebrate' : outcome === 'lose' ? 'sad' : outcome === 'tie' ? 'wink' : 'idle';
+  const fmt = (n: number) => n.toLocaleString(appNumberLocale());
 
   return (
     <Shell onBack={onBack} title={title} subtitle={subtitle}>
-      <div className="flex justify-center mb-4">
-        <span className="inline-flex items-center gap-2 rounded-full border border-accent/50 bg-card/60 px-4 py-1.5 text-xs sm:text-sm font-bold">
-          🌍 {modeLabel} · <span className="text-accent">{diffLabel}</span>
-          {done && <><span className="text-muted-foreground">|</span> ✅ {t('chr_bothDone')}</>}
-        </span>
+      {/* El Explorador con su insignia (✓ terminado · 🏆 ganador · 🗺️ derrota · ⚌ empate) */}
+      <div className="relative flex justify-center -mt-1 mb-3 short:hidden" aria-hidden>
+        <div className="relative">
+          <Mascot state={mascot} className="w-28 sm:w-32" />
+          {outcome === 'pending' && <span className="absolute -right-10 top-6 w-12 h-12 rounded-full bg-accent/90 text-accent-foreground flex items-center justify-center shadow-[0_0_18px_hsl(var(--accent)/0.7)]"><CheckIcon className="w-7 h-7" /></span>}
+          {outcome === 'win' && <span className="absolute -right-10 top-2 text-5xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">🏆</span>}
+          {outcome === 'lose' && <span className="absolute -right-9 bottom-1 text-4xl">🗺️</span>}
+          {outcome === 'tie' && <span className="absolute -right-9 top-4 text-4xl">🤝</span>}
+          <span className="absolute -left-6 top-6 text-primary text-lg">✦</span>
+        </div>
       </div>
+
+      {done && (
+        <div className="flex justify-center mb-4">
+          <span className="inline-flex items-center gap-2 sm:gap-3 rounded-full border-2 border-accent/50 bg-card/70 px-3 sm:px-4 py-1.5 sm:py-2 text-xs min-[400px]:text-sm sm:text-base font-semibold whitespace-nowrap">
+            <GlobeIcon className="w-6 h-6 text-accent" /> {modeLabel} · <span className="text-accent -ml-1">{diffLabel}</span>
+            <span className="w-px h-6 bg-border" aria-hidden />
+            <CheckCircleIcon className="w-6 h-6 text-accent" /> {t('chr_bothDone')}
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-[1.2fr_1fr] md:items-start">
         {/* Puntajes */}
-        <section className="rounded-3xl border border-accent/40 bg-card/70 p-4 sm:p-5">
-          {outcome === 'pending' ? (
-            <div className="flex flex-col items-center text-center">
-              <Mascot state="idle" className="w-24 sm:w-28 short:w-16" />
-              <p className="mt-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('chr_yourScore')}</p>
-              <p className="font-black font-mono text-4xl sm:text-5xl text-primary">{mine?.score.toLocaleString(appNumberLocale()) ?? '—'} <span className="text-base text-foreground">pts</span></p>
-              <div className="grid grid-cols-2 gap-2 w-full mt-3">
-                <Tile icon="📍" label={t('final_cities')} value={`${mine?.rounds.length ?? 0} / ${detail.rounds_total}`} />
-                <Tile icon="🗺️" label={t('final_avgDist')} value={formatDistance(avgDistance(mine?.rounds ?? []))} />
-              </div>
+        {outcome === 'pending' ? (
+          <Card>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm sm:text-base font-bold uppercase tracking-wide">{t('chr_yourScore')}</p>
+              <span className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-foreground/20 bg-background/40 px-2.5 py-1.5 text-xs sm:text-sm font-semibold">
+                <GlobeIcon className="w-5 h-5 text-accent" /> {modeLabel} · <span className="text-accent">{diffLabel}</span>
+              </span>
             </div>
-          ) : (
-            <>
-              <div className="flex justify-center gap-2 mb-2 short:hidden" aria-hidden>
-                <Mascot state={mascot} className="w-20 sm:w-24" />
-                <Mascot state={outcome === 'lose' ? 'celebrate' : 'wink'} className="w-20 sm:w-24 hue-rotate-[140deg]" />
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <PlayerCard name={myName} score={mine!.score} tag={outcome === 'win' ? 'winner' : outcome === 'tie' ? 'tie' : 'done'} mine showYou={!!displayName} t={t} />
-                <PlayerCard name={rivalName} score={rival!.score} tag={outcome === 'lose' ? 'winner' : outcome === 'tie' ? 'tie' : 'done'} t={t} />
-              </div>
-              <p className="mt-3 text-center text-sm sm:text-base">
-                {outcome === 'tie' ? <b>⚌ {t('chr_sameScore')}</b>
-                  : outcome === 'win' ? <><b className="text-primary font-mono text-lg">+{diff.toLocaleString(appNumberLocale())}</b> {t('chr_pointsDiff')}</>
-                  : <b>{t('chr_pointsToWin', { n: diff.toLocaleString(appNumberLocale()) })}</b>}
+            <p className="font-extrabold text-primary text-[2.6rem] sm:text-5xl leading-tight whitespace-nowrap">{mine ? fmt(mine.score) : '—'} <span className="text-2xl sm:text-3xl text-foreground">{t('game_pointsWord')}</span></p>
+            <div className="h-px bg-border my-3" />
+            <div className="grid grid-cols-2 gap-2.5">
+              <Tile icon={<PinIcon className="w-8 h-8 text-accent" />} label={t('final_cities')} value={`${mine?.rounds.length ?? 0} / ${detail.rounds_total}`} />
+              <Tile icon={<RouteIcon className="w-8 h-8 text-accent" />} label={t('final_avgDist')} value={formatDistance(avgDistance(mine?.rounds ?? []))} />
+            </div>
+          </Card>
+        ) : (
+          <div>
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              <PlayerCard name={myName} score={mine!.score} tag={outcome === 'win' ? 'winner' : outcome === 'tie' ? 'tie' : 'done'} mine showYou={!!displayName} t={t} />
+              <PlayerCard name={rivalName} score={rival!.score} tag={outcome === 'lose' ? 'winner' : outcome === 'tie' ? 'tie' : 'done'} t={t} />
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <span className="flex-1 h-px bg-border" aria-hidden />
+              <p className="text-base sm:text-lg font-bold whitespace-nowrap">
+                {outcome === 'tie' ? <>{t('chr_sameScore')}</>
+                  : outcome === 'win' ? <><b className="text-primary text-3xl font-extrabold">+{fmt(diff)}</b> {t('chr_pointsDiff')}</>
+                  : <>{t('chr_pointsToWinLead')} <b className="text-primary text-3xl font-extrabold">{fmt(diff)}</b> {t('chr_pointsToWinTail')}</>}
               </p>
-            </>
-          )}
-        </section>
+              <span className="flex-1 h-px bg-border" aria-hidden />
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4">
           {outcome === 'pending' ? (
             <>
-              <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
-                <h2 className="text-lg sm:text-xl font-black mb-3">👥 {t('chr_compareLead')} <span className="text-primary">{t('chr_compareTail')}</span></h2>
+              <Card>
+                <h2 className="flex items-center gap-2.5 text-xl sm:text-2xl font-extrabold mb-3"><PeopleIcon className="w-7 h-7 text-accent" /> {t('chr_compareLead')} <span className="text-primary -ml-1">{t('chr_compareTail')}</span></h2>
                 <div className="flex flex-col gap-2">
-                  <Participant name={myName} ok label={t('chr_completed')} me />
+                  <Participant name={myName} youTag={displayName ? t('ch_you') : undefined} ok label={t('chr_completed')} me />
                   <Participant name={rivalName} ok={false} label={detail.rival ? t('chr_notFinished') : t('ch_statusToJoin')} />
                 </div>
-                <p className="mt-2 text-[11px] sm:text-xs text-muted-foreground text-center">ⓘ {t('chr_finalWhenBoth')}</p>
-              </section>
-              <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
-                <h2 className="text-lg sm:text-xl font-black mb-2">🔗 {t('ch_codeLead')} <span className="text-primary">{t('ch_codeTail')}</span></h2>
-                <div className="flex items-stretch gap-2">
-                  <span className="flex-1 rounded-2xl border border-border bg-muted/30 py-2 text-center font-mono font-black text-xl tracking-[0.4em] pl-[0.4em]">{detail.code}</span>
-                  <button onClick={copy} className="rounded-2xl border border-accent/60 text-accent px-3 font-bold text-sm hover:bg-accent/10">{copied ? '✓' : '📋'} <span className="hidden min-[420px]:inline">{copied ? t('ch_copied') : t('ch_copy')}</span></button>
+                <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground/80"><InfoIcon className="w-5 h-5 text-accent" /> {t('chr_finalWhenBoth')}</p>
+              </Card>
+              <Card>
+                <div className="flex items-center gap-3">
+                  <LinkIcon className="w-14 h-14 text-accent drop-shadow-[0_0_10px_hsl(var(--accent)/0.6)]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xl font-extrabold">{t('ch_codeLead')} <span className="text-primary">{t('ch_codeTail')}</span></p>
+                    <div className="mt-2 flex items-stretch gap-2">
+                      <span className="flex-1 min-w-0 rounded-2xl border-2 border-foreground/15 bg-background/60 py-2 text-center font-extrabold text-2xl tracking-[0.35em] pl-[0.35em] truncate">{detail.code}</span>
+                      <button onClick={copy} className="rounded-2xl border-2 border-accent/70 px-3 font-bold text-sm hover:bg-accent/10 flex items-center gap-1.5">{copied ? '✓' : <CopyIcon className="w-5 h-5" />}<span>{copied ? t('ch_copied') : t('ch_copy')}</span></button>
+                    </div>
+                  </div>
                 </div>
-                <button onClick={share} className="mt-2 w-full rounded-2xl py-2.5 border-2 border-accent text-accent font-black hover:bg-accent/10">🔗 {t('ch_share')}</button>
-              </section>
+                <button onClick={share} className="mt-3 w-full rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10 flex items-center justify-center gap-2.5"><ShareIcon className="w-6 h-6" /> {t('ch_share')}</button>
+              </Card>
             </>
           ) : (
             <>
-              <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
-                <h2 className="text-lg sm:text-xl font-black mb-2">📊 {t('chr_howItWent')}</h2>
-                <table className="w-full text-sm">
-                  <thead><tr className="text-xs text-muted-foreground"><th className="text-left font-semibold pb-1"></th><th className="text-primary font-black pb-1">{t('ch_you')}</th><th className="text-accent font-black pb-1">{rivalName}</th></tr></thead>
+              <Card>
+                <h2 className="flex items-center gap-2.5 text-xl sm:text-2xl font-extrabold mb-2"><BarsIcon className="w-7 h-7 text-accent" /> {t('chr_howItWent')}</h2>
+                <table className="w-full text-sm sm:text-base border-separate border-spacing-0">
+                  <thead><tr><th /><th className="text-primary font-bold pb-1">{t('ch_you')}</th><th className="text-accent font-bold pb-1 truncate max-w-[6rem]">{rivalName}</th></tr></thead>
                   <tbody>
-                    <tr className="border-t border-border/60"><td className="py-1.5">📍 {t('final_cities')}</td><td className="text-center font-mono font-bold">{mine!.rounds.length} / {detail.rounds_total}</td><td className="text-center font-mono font-bold">{rival!.rounds.length} / {detail.rounds_total}</td></tr>
-                    <tr className="border-t border-border/60"><td className="py-1.5">🗺️ {t('final_avgDist')}</td><td className="text-center font-mono font-bold">{formatDistance(avgDistance(mine!.rounds))}</td><td className="text-center font-mono font-bold">{formatDistance(avgDistance(rival!.rounds))}</td></tr>
+                    <tr><td className="py-2 pl-1 border-t border-l border-foreground/15 rounded-tl-xl"><span className="flex items-center gap-2"><PinIcon className="w-6 h-6 text-accent" /> {t('final_cities')}</span></td><td className="text-center font-extrabold border-t border-l border-foreground/15">{mine!.rounds.length} / {detail.rounds_total}</td><td className="text-center font-extrabold border-t border-l border-r border-foreground/15 rounded-tr-xl">{rival!.rounds.length} / {detail.rounds_total}</td></tr>
+                    <tr><td className="py-2 pl-1 border-t border-b border-l border-foreground/15 rounded-bl-xl"><span className="flex items-center gap-2"><RouteIcon className="w-6 h-6 text-accent" /> {t('final_avgDist')}</span></td><td className="text-center font-extrabold border-t border-b border-l border-foreground/15">{formatDistance(avgDistance(mine!.rounds))}</td><td className="text-center font-extrabold border border-foreground/15 rounded-br-xl">{formatDistance(avgDistance(rival!.rounds))}</td></tr>
                   </tbody>
                 </table>
-                <p className="mt-2 text-[11px] sm:text-xs text-muted-foreground text-center">ⓘ {t('chr_sameForBoth')}</p>
-              </section>
+                <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground/80"><InfoIcon className="w-5 h-5 text-accent" /> {t('chr_sameForBoth')}</p>
+              </Card>
               {outcome === 'win' ? (
                 <>
-                  <button onClick={() => { playButtonTap(); setView('compare'); }} className="btn3d w-full rounded-2xl py-3.5 short:py-2.5 font-black text-base sm:text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
-                    📋 {t('chr_compareByCity')}
+                  <button onClick={() => { playButtonTap(); setView('compare'); }} className="btn3d w-full rounded-2xl py-3.5 short:py-2.5 font-black text-base sm:text-xl text-primary-foreground flex items-center justify-center gap-2.5" style={{ background: 'var(--grad-cta)' }}>
+                    <DocIcon className="w-7 h-7" /> {t('chr_compareByCity')}
                   </button>
-                  <button onClick={() => { playButtonTap(); onCreateAnother(); }} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">
-                    ＋ {t('chr_createAnother')}
+                  <button onClick={() => { playButtonTap(); onCreateAnother(); }} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black text-base sm:text-lg hover:bg-accent/10 flex items-center justify-center gap-2.5">
+                    <PlusIcon className="w-6 h-6" /> {t('chr_createAnother')}
                   </button>
                 </>
               ) : (
                 /* Derrota y empate: Pedir revancha es la acción principal (consolidado §5) */
                 <>
-                  <button onClick={() => { playButtonTap(); onRematch(); }} className="btn3d w-full rounded-2xl py-3 short:py-2.5 px-4 text-primary-foreground flex flex-col items-center leading-tight" style={{ background: 'var(--grad-cta)' }}>
-                    <span className="font-black text-base sm:text-lg">↻ {t('chr_rematch')}</span>
-                    <span className="text-[11px] sm:text-xs font-semibold opacity-80">{t('chr_rematchSub')}</span>
+                  <button onClick={() => { playButtonTap(); onRematch(); }} className="btn3d w-full rounded-2xl py-3 short:py-2.5 px-4 text-primary-foreground flex items-center justify-center gap-3 leading-tight" style={{ background: 'var(--grad-cta)' }}>
+                    <DocIcon className="w-8 h-8 shrink-0" />
+                    <span className="flex flex-col items-center"><span className="font-black text-lg sm:text-xl">{t('chr_rematch')}</span><span className="text-xs sm:text-sm font-semibold opacity-80">{t('chr_rematchSub')}</span></span>
                   </button>
-                  <button onClick={() => { playButtonTap(); setView('compare'); }} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">
-                    📋 {t('chr_compareByCity')}
+                  <button onClick={() => { playButtonTap(); setView('compare'); }} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black text-base sm:text-lg hover:bg-accent/10 flex items-center justify-center gap-2.5">
+                    <BarsIcon className="w-6 h-6" /> {t('chr_compareByCity')}
                   </button>
                 </>
               )}
@@ -235,18 +260,26 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
         </div>
       </div>
 
-      {outcome === 'pending' && (
-        <p className="mt-4 rounded-2xl border border-border bg-muted/20 p-3 text-center text-xs sm:text-sm"><b>{t('chr_canLeave')}</b> <span className="text-muted-foreground">{t('chr_saved')}</span></p>
+      {outcome === 'pending' ? (
+        <>
+          <div className="mt-4 rounded-2xl border-2 border-accent/40 bg-card/60 p-3 sm:p-4 flex items-center gap-3 max-w-xl mx-auto">
+            <InfoIcon className="w-8 h-8 text-accent" />
+            <p className="text-sm sm:text-base"><b>{t('chr_canLeave')}</b><span className="block text-foreground/75 text-xs sm:text-sm">{t('chr_saved')}</span></p>
+          </div>
+          <div className="mt-4 flex flex-col items-center gap-2.5">
+            <button onClick={() => { playButtonTap(); onBack(); }} className="btn3d w-full max-w-xl rounded-2xl py-4 short:py-2.5 font-black text-xl text-primary-foreground flex items-center justify-center gap-3" style={{ background: 'var(--grad-cta)' }}>
+              <HomeIcon className="w-7 h-7" /> {t('ob_backHome').toUpperCase()}
+            </button>
+            <button onClick={() => { playButtonTap(); setView('answers'); }} className="w-full max-w-sm rounded-full py-2.5 border-2 border-accent/50 font-bold flex items-center justify-center gap-2 hover:bg-accent/10"><DocIcon className="w-5 h-5" /> {t('chr_myAnswers')}</button>
+          </div>
+        </>
+      ) : (
+        <div className="mt-5 pt-4 border-t border-border grid grid-cols-[1fr_auto_1fr] items-center">
+          <button onClick={share} className="flex items-center justify-center gap-2 font-semibold text-sm sm:text-base hover:text-accent"><ShareIcon className="w-6 h-6" /> {t('chr_shareResult')}</button>
+          <span className="w-px h-8 bg-border" aria-hidden />
+          <button onClick={() => { playButtonTap(); onBack(); }} className="flex items-center justify-center gap-2 font-semibold text-sm sm:text-base hover:text-accent"><HomeIcon className="w-6 h-6" /> {t('ob_backHome')}</button>
+        </div>
       )}
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-[1.4fr_1fr]">
-        <button onClick={() => { playButtonTap(); onBack(); }} className="btn3d rounded-2xl py-3.5 short:py-2.5 font-black text-lg text-primary-foreground" style={{ background: outcome === 'pending' ? 'var(--grad-cta)' : undefined, ...(outcome !== 'pending' ? { background: 'hsl(var(--muted) / 0.4)', boxShadow: 'none', color: 'hsl(var(--foreground))' } : {}) }}>
-          🏠 {t('ob_backHome')}
-        </button>
-        {outcome === 'pending'
-          ? <button onClick={() => { playButtonTap(); setView('answers'); }} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">📄 {t('chr_myAnswers')}</button>
-          : <button onClick={share} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">📤 {t('chr_shareResult')}</button>}
-      </div>
       <p className="mt-3 text-center">
         <button onClick={() => { playButtonTap(); onMyChallenges(); }} className="text-xs sm:text-sm font-bold text-accent hover:underline">📋 {t('mc_viewMine')}</button>
       </p>
@@ -259,7 +292,7 @@ type Row = { city: ChallengeDetail['cities'][number]; me: ChallengeRound | null;
 
 function ChallengeCompare({ detail, rows, rivalName, onOpenMap, onBack }: { detail: ChallengeDetail; rows: Row[]; rivalName: string; onOpenMap: (i: number) => void; onBack: () => void }) {
   const { t } = useI18n();
-  const perPage = typeof window !== 'undefined' && window.innerWidth >= 768 ? 3 : typeof window !== 'undefined' && window.innerHeight <= 500 ? 2 : 1;
+  const perPage = typeof window !== 'undefined' && window.innerHeight <= 500 && window.innerWidth < 1024 ? 2 : 3;
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(rows.length / perPage));
   const slice = rows.slice(page * perPage, page * perPage + perPage);
@@ -273,54 +306,57 @@ function ChallengeCompare({ detail, rows, rivalName, onOpenMap, onBack }: { deta
   return (
     <Shell onBack={onBack} title={t('chc_title')} subtitle={t('chc_sub')}>
       <div className="flex flex-wrap justify-center gap-2 mb-3">
-        <span className="rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-bold">🌍 {t(`mode_${detail.mode}` as never)} · <span className="text-accent">{t(`diff_${detail.difficulty}` as never)}</span> · {t('chc_nCities', { n: rows.length })}</span>
+        <span className="inline-flex items-center gap-2.5 rounded-full border-2 border-accent/50 bg-card/70 px-4 py-1.5 text-sm font-semibold">
+          <GlobeIcon className="w-5 h-5 text-accent" /> {t(`mode_${detail.mode}` as never)} · <span className="text-accent -ml-1">{diffName(detail.difficulty, t)}</span>
+          <span className="w-px h-5 bg-border" aria-hidden />
+          <PinIcon className="w-5 h-5 text-accent" /> {t('chc_nCities', { n: rows.length })}
+        </span>
       </div>
-      <div className="grid grid-cols-2 gap-2 max-w-md mx-auto mb-4">
+      <div className="grid grid-cols-2 gap-2.5 max-w-xl mx-auto mb-4">
         <ScorePill name={t('ch_you')} score={mine.score} me winner={mine.score >= rival.score} />
         <ScorePill name={rivalName} score={rival.score} winner={rival.score >= mine.score} />
       </div>
 
-      <div className={`grid gap-3 ${perPage === 3 ? 'md:grid-cols-3' : perPage === 2 ? 'grid-cols-2' : ''}`}>
+      <div className={`grid gap-3 ${perPage === 2 ? 'grid-cols-2' : 'lg:grid-cols-3'}`}>
         {slice.map((row, i) => {
           const idx = page * perPage + i;
           const mp = row.me?.points ?? 0, rp = row.rv?.points ?? 0;
           const who = mp > rp ? 'me' : rp > mp ? 'rival' : 'tie';
           return (
-            <section key={idx} className="rounded-3xl border border-border bg-card/70 p-3 sm:p-4 flex flex-col gap-2">
-              <CountryPhoto country={row.city.country} size="sm" className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-24 rounded-t-3xl" />
-              <div className="flex items-center gap-2">
-                <Flag country={row.city.country} className="w-8" />
-                <p className="min-w-0 truncate"><span className="font-black text-base sm:text-lg">{row.city.name}</span><span className="text-muted-foreground text-sm"> · {row.city.country}</span></p>
-                <span className="ml-auto text-xs text-muted-foreground font-mono">{idx + 1}/{rows.length}</span>
-              </div>
-              <table className="w-full text-xs sm:text-sm">
-                <thead><tr className="text-[11px] text-muted-foreground"><th className="text-left font-semibold"></th><th className="text-primary font-black">{t('ch_you')}</th><th className="text-accent font-black">{rivalName}</th></tr></thead>
-                <tbody className="font-mono font-bold">
-                  <CmpRow icon="📍" label={t('game_distance')} a={row.me?.distance_km != null ? formatDistance(row.me.distance_km) : '—'} b={row.rv?.distance_km != null ? formatDistance(row.rv.distance_km) : '—'} />
-                  <CmpRow icon="⏱️" label={t('game_time')} a={row.me?.time_s != null ? `${row.me.time_s} s` : '—'} b={row.rv?.time_s != null ? `${row.rv.time_s} s` : '—'} />
-                  <CmpRow icon="🏆" label={t('game_points')} a={mp.toLocaleString(appNumberLocale())} b={rp.toLocaleString(appNumberLocale())} hiA={who === 'me'} hiB={who === 'rival'} />
-                </tbody>
-              </table>
-              <div className="grid grid-cols-[1.3fr_1fr] gap-2 mt-auto">
-                <span className={`rounded-xl py-1.5 text-center text-[11px] sm:text-xs font-black ${who === 'me' ? 'bg-primary text-primary-foreground' : who === 'rival' ? 'bg-accent text-accent-foreground' : 'border border-border text-muted-foreground'}`}>
+            <section key={idx} className="rounded-3xl border-2 border-accent/40 bg-card/75 p-2.5 sm:p-3 flex gap-2.5 lg:flex-col">
+              <CountryPhoto country={row.city.country} size="sm" className="w-24 sm:w-28 lg:w-auto lg:h-24 shrink-0 rounded-2xl" />
+              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <Flag country={row.city.country} className="w-8 shrink-0" />
+                  <p className="min-w-0 truncate flex-1"><span className="font-extrabold text-base sm:text-lg">{row.city.name}</span><span className="text-foreground/75 text-sm"> · {row.city.country}</span></p>
+                  <button onClick={() => { playButtonTap(); onOpenMap(idx); }} className="shrink-0 rounded-xl border-2 border-accent/70 px-2 py-1 text-xs font-bold hover:bg-accent/10 flex items-center gap-1"><MapIcon className="w-4 h-4 text-accent" />{t('chc_viewMap')}</button>
+                </div>
+                <table className="w-full text-xs sm:text-sm">
+                  <thead><tr className="text-xs"><th className="text-left font-semibold"></th><th className="text-primary font-bold">{t('ch_you')}</th><th className="text-accent font-bold truncate">{rivalName}</th></tr></thead>
+                  <tbody className="font-bold">
+                    <CmpRow icon={<PinIcon className="w-4 h-4" />} label={t('game_distance')} a={row.me?.distance_km != null ? formatDistance(row.me.distance_km) : '—'} b={row.rv?.distance_km != null ? formatDistance(row.rv.distance_km) : '—'} hiA={(row.me?.distance_km ?? 1e9) < (row.rv?.distance_km ?? 1e9)} hiB={(row.rv?.distance_km ?? 1e9) < (row.me?.distance_km ?? 1e9)} />
+                    <CmpRow icon={<StopwatchIcon className="w-4 h-4" />} label={t('game_time')} a={row.me?.time_s != null ? `${formatNumber(row.me.time_s, 1)} s` : '—'} b={row.rv?.time_s != null ? `${formatNumber(row.rv.time_s, 1)} s` : '—'} hiA={(row.me?.time_s ?? 1e9) < (row.rv?.time_s ?? 1e9)} hiB={(row.rv?.time_s ?? 1e9) < (row.me?.time_s ?? 1e9)} />
+                    <CmpRow icon={<span aria-hidden>🏆</span>} label={t('game_points')} a={mp.toLocaleString(appNumberLocale())} b={rp.toLocaleString(appNumberLocale())} hiA={who === 'me'} hiB={who === 'rival'} />
+                  </tbody>
+                </table>
+                <span className={`self-start rounded-full px-3 py-1 text-xs font-extrabold flex items-center gap-1.5 ${who === 'me' ? 'bg-primary text-primary-foreground' : who === 'rival' ? 'bg-accent text-accent-foreground' : 'border border-border text-muted-foreground'}`}>
                   🏆 {who === 'me' ? t('chc_morePointsYou') : who === 'rival' ? t('chc_morePointsRival') : t('chc_evenPoints')}
                 </span>
-                <button onClick={() => { playButtonTap(); onOpenMap(idx); }} className="rounded-xl border border-accent/70 text-accent py-1.5 text-[11px] sm:text-xs font-bold hover:bg-accent/10">🗺️ {t('chc_viewMap')}</button>
               </div>
             </section>
           );
         })}
       </div>
 
-      <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <p className="text-[11px] sm:text-xs text-muted-foreground hidden sm:block">ⓘ {t('chc_mapHint')}</p>
-        <div className="flex items-center gap-2 col-start-2">
-          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="w-9 h-9 rounded-xl border border-border bg-muted/20 font-black disabled:opacity-35" aria-label={t('review_prev')}>‹</button>
-          <span className="text-xs sm:text-sm font-bold whitespace-nowrap">{t('chc_range', { from: page * perPage + 1, to: page * perPage + slice.length, total: rows.length })}</span>
-          <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page >= pages - 1} className="w-9 h-9 rounded-xl border border-border bg-muted/20 font-black disabled:opacity-35" aria-label={t('review_next')}>›</button>
-        </div>
-        <button onClick={() => { playButtonTap(); onBack(); }} className="justify-self-end rounded-2xl px-4 py-2 border border-border bg-muted/20 font-bold text-xs sm:text-sm hover:bg-muted">← {t('chc_backToResult')}</button>
+      <div className="mt-4 flex items-center justify-center gap-4">
+        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="w-11 h-11 rounded-full border-2 border-accent/60 flex items-center justify-center disabled:opacity-35" aria-label={t('review_prev')}><ChevronIcon dir="left" className="w-5 h-5" /></button>
+        <span className="text-sm sm:text-base font-bold whitespace-nowrap">{t('chc_range', { from: page * perPage + 1, to: page * perPage + slice.length, total: rows.length })}</span>
+        <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page >= pages - 1} className="w-11 h-11 rounded-full border-2 border-accent/60 flex items-center justify-center disabled:opacity-35" aria-label={t('review_next')}><ChevronIcon className="w-5 h-5" /></button>
       </div>
+      <p className="mt-3 flex items-center justify-center gap-2 text-xs sm:text-sm text-foreground/80"><InfoIcon className="w-5 h-5 text-accent" /> {t('chc_mapHint')}</p>
+      <button onClick={() => { playButtonTap(); onBack(); }} className="mt-4 w-full max-w-xl mx-auto flex items-center justify-center gap-2.5 rounded-2xl py-3 border-2 border-accent/60 font-bold text-base sm:text-lg hover:bg-accent/10">
+        <ArrowRightIcon className="w-5 h-5 rotate-180" /> {t('chc_backToResult')}
+      </button>
     </Shell>
   );
 }
@@ -358,20 +394,20 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
       <div className="flex-1 min-h-0 w-full max-w-6xl mx-auto flex flex-col landscape:flex-row gap-2 short:gap-1.5">
         <div className="relative flex-1 min-h-[180px] landscape:min-h-0 rounded-2xl overflow-hidden border border-border/80 [&>div]:!min-h-0">
           <WorldMapCanvas onMapClick={noop} clickDisabled userClick={me} correctLocation={correct} distanceKm={row.me?.distance_km ?? null} gameMode="world" viewBounds={bounds} pinLabels={pinLabels} rivalClick={rv} />
-          <div className="absolute left-2 bottom-2 rounded-xl border border-border/70 px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold flex items-center gap-3 short:hidden" style={{ background: 'hsl(var(--brand-navy-deep) / 0.8)' }}>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary" aria-hidden /> {t('ch_you')}</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-accent" aria-hidden /> {rivalName}</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full border-2 border-foreground" aria-hidden /> {t('chm_correct')}</span>
+          <div className="absolute left-2 bottom-2 rounded-xl border border-accent/40 px-3 py-2 text-xs sm:text-sm font-semibold flex flex-col gap-1 short:hidden" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
+            <span className="flex items-center gap-2"><LegendPin color="hsl(var(--primary))" className="w-5 h-5" /> {t('ch_you')}</span>
+            <span className="flex items-center gap-2"><LegendPin color="hsl(var(--accent))" className="w-5 h-5" /> {rivalName}</span>
+            <span className="flex items-center gap-2"><LegendPin color="white" className="w-5 h-5" /> {t('chm_correct')}</span>
           </div>
         </div>
         <aside className="shrink-0 landscape:w-[min(38%,22rem)] max-h-[45%] landscape:max-h-none rounded-2xl border border-border/80 bg-card/85 backdrop-blur-md p-3 short:p-2 overflow-y-auto flex flex-col gap-2 short:gap-1.5">
           <h3 className="font-black text-base sm:text-lg short:text-sm">{t('chm_compareLead')} <span className="text-primary">{t('chm_compareTail')}</span></h3>
           <table className="w-full text-xs sm:text-sm">
             <thead><tr className="text-[11px] text-muted-foreground"><th></th><th className="text-primary font-black">{t('ch_you')}</th><th className="text-accent font-black">{rivalName}</th></tr></thead>
-            <tbody className="font-mono font-bold">
-              <CmpRow icon="📍" label={t('game_distance')} a={row.me?.distance_km != null ? formatDistance(row.me.distance_km) : '—'} b={row.rv?.distance_km != null ? formatDistance(row.rv.distance_km) : '—'} />
-              <CmpRow icon="⏱️" label={t('game_time')} a={row.me?.time_s != null ? `${row.me.time_s} s` : '—'} b={row.rv?.time_s != null ? `${row.rv.time_s} s` : '—'} />
-              <CmpRow icon="🏆" label={t('game_points')} a={`+${mp.toLocaleString(appNumberLocale())}`} b={`+${rp.toLocaleString(appNumberLocale())}`} hiA={who === 'me'} hiB={who === 'rival'} />
+            <tbody className="font-bold">
+              <CmpRow icon={<PinIcon className="w-4 h-4" />} label={t('game_distance')} a={row.me?.distance_km != null ? formatDistance(row.me.distance_km) : '—'} b={row.rv?.distance_km != null ? formatDistance(row.rv.distance_km) : '—'} />
+              <CmpRow icon={<StopwatchIcon className="w-4 h-4" />} label={t('game_time')} a={row.me?.time_s != null ? `${formatNumber(row.me.time_s, 1)} s` : '—'} b={row.rv?.time_s != null ? `${formatNumber(row.rv.time_s, 1)} s` : '—'} />
+              <CmpRow icon={<span aria-hidden>🏆</span>} label={t('game_points')} a={`+${mp.toLocaleString(appNumberLocale())}`} b={`+${rp.toLocaleString(appNumberLocale())}`} hiA={who === 'me'} hiB={who === 'rival'} />
             </tbody>
           </table>
           <span className={`self-center rounded-full px-3 py-1 text-[11px] sm:text-xs font-black ${who === 'me' ? 'bg-primary text-primary-foreground' : who === 'rival' ? 'bg-accent text-accent-foreground' : 'border border-border text-muted-foreground'}`}>
@@ -407,57 +443,100 @@ function Shell({ onBack, title, subtitle, children }: { onBack: () => void; titl
   );
 }
 
-function Tile({ icon, label, value }: { icon: string; label: string; value: string }) {
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <section className={`rounded-3xl border-2 border-accent/45 bg-card/75 p-4 sm:p-5 shadow-[0_0_20px_hsl(var(--accent)/0.10)] ${className}`}>{children}</section>;
+}
+
+function diffName(d: string, t: (k: never) => string): string {
+  return t(`home_diff${d.charAt(0).toUpperCase()}${d.slice(1)}` as never);
+}
+
+function Tile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-muted/20 p-2.5 flex items-center gap-2 text-left">
-      <span className="text-2xl" aria-hidden>{icon}</span>
-      <span className="min-w-0"><span className="block text-[11px] text-muted-foreground">{label}</span><span className="block font-mono font-black text-base sm:text-lg truncate">{value}</span></span>
+    <div className="rounded-2xl border border-foreground/15 bg-background/40 px-3 py-2.5 flex items-center gap-3 text-left">
+      {icon}
+      <span className="min-w-0"><span className="block text-xs sm:text-sm text-foreground/75">{label}</span><span className="block font-extrabold text-lg sm:text-xl truncate">{value}</span></span>
     </div>
   );
 }
 
 function PlayerCard({ name, score, tag, mine, showYou, t }: { name: string; score: number; tag: 'winner' | 'done' | 'tie'; mine?: boolean; showYou?: boolean; t: (k: never) => string }) {
   return (
-    <div className={`rounded-2xl border-2 p-3 sm:p-4 text-center ${tag === 'winner' ? 'border-primary bg-primary/10 shadow-[0_0_18px_hsl(var(--primary)/0.3)]' : 'border-border bg-muted/20'}`}>
-      <div className="relative inline-block">
-        <Mascot state={tag === 'winner' ? 'celebrate' : 'wink'} className={`w-12 sm:w-14 ${mine ? '' : 'hue-rotate-[140deg]'}`} />
-        {tag === 'winner' && <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-base" aria-hidden>👑</span>}
+    <div className={`rounded-3xl border-2 p-3 sm:p-4 text-center flex flex-col items-center ${mine ? 'border-primary bg-primary/5 shadow-[0_0_18px_hsl(var(--primary)/0.25)]' : 'border-accent/60 bg-accent/5 shadow-[0_0_18px_hsl(var(--accent)/0.2)]'}`}>
+      <div className="relative">
+        {tag === 'winner' && <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl z-10" aria-hidden>👑</span>}
+        <span className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-[3px] flex items-center justify-center overflow-hidden ${mine ? 'border-primary' : 'border-accent'} bg-background/60`}>
+          <Mascot state={tag === 'winner' ? 'celebrate' : 'wink'} className={`w-[78%] ${mine ? '' : 'grayscale brightness-110'}`} />
+        </span>
       </div>
-      <p className="font-bold text-sm sm:text-base truncate">{name}{showYou && <span className="text-primary"> · {t('ch_you' as never)}</span>}</p>
-      <p className={`font-black font-mono text-3xl sm:text-4xl ${mine ? 'text-primary' : ''}`}>{score.toLocaleString(appNumberLocale())}</p>
-      <p className="text-xs text-muted-foreground -mt-1">{t('game_points' as never).toLowerCase()}</p>
-      <span className={`mt-2 inline-block rounded-full px-3 py-1 text-[11px] sm:text-xs font-black ${tag === 'winner' ? 'bg-primary text-primary-foreground' : tag === 'tie' ? 'border border-primary text-primary' : 'border border-accent text-accent'}`}>
-        {tag === 'winner' ? `🏆 ${t('chr_winner' as never)}` : tag === 'tie' ? `⚌ ${t('chr_tie' as never)}` : `✅ ${t('chr_completed' as never)}`}
+      <p className="mt-1.5 font-bold text-sm sm:text-base truncate max-w-full">{name}{showYou && <span className="text-primary"> · {t('ch_you' as never)}</span>}</p>
+      <p className={`font-extrabold text-[2.1rem] sm:text-5xl leading-none mt-0.5 ${mine ? 'text-primary' : ''}`}>{score.toLocaleString(appNumberLocale())}</p>
+      <p className="text-sm sm:text-base font-bold">{t('game_pointsWord' as never)}</p>
+      <span className={`mt-2 w-full rounded-full px-2 py-1.5 text-xs sm:text-base font-extrabold flex items-center justify-center gap-1.5 ${tag === 'winner' ? 'bg-primary text-primary-foreground' : tag === 'tie' ? 'border-2 border-primary text-primary' : 'border-2 border-accent text-accent'}`}>
+        {tag === 'winner' ? <><span aria-hidden>🏆</span> {t('chr_winner' as never)}</> : tag === 'tie' ? <>⚌ {t('chr_tie' as never)}</> : <><CheckCircleIcon className="w-5 h-5" /> {t('chr_completed' as never)}</>}
       </span>
     </div>
   );
 }
 
-function Participant({ name, ok, label, me }: { name: string; ok: boolean; label: string; me?: boolean }) {
+function Participant({ name, youTag, ok, label, me }: { name: string; youTag?: string; ok: boolean; label: string; me?: boolean }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/20 px-3 py-2">
-      <Mascot state={me ? 'idle' : 'wink'} className={`w-8 shrink-0 ${me ? '' : 'hue-rotate-[140deg] opacity-80'}`} />
-      <span className="flex-1 font-bold truncate">{name}</span>
-      <span className={`rounded-full border px-2.5 py-0.5 text-[11px] sm:text-xs font-bold whitespace-nowrap ${ok ? 'border-accent text-accent' : 'border-border text-muted-foreground'}`}>{ok ? '✅' : '🕒'} {label}</span>
+    <div className="flex items-center gap-3 rounded-2xl border border-foreground/15 bg-background/40 px-3 py-2">
+      <Mascot state={me ? 'idle' : 'wink'} className={`w-9 shrink-0 ${me ? '' : 'grayscale brightness-75'}`} />
+      <span className="flex-1 font-bold truncate">{name}{youTag && <span className="text-primary"> · {youTag}</span>}</span>
+      <span className={`rounded-full border-2 px-2.5 py-1 text-xs sm:text-sm font-bold whitespace-nowrap flex items-center gap-1.5 ${ok ? 'border-accent text-accent' : 'border-foreground/30 text-foreground/85'}`}>
+        {ok ? <CheckCircleIcon className="w-4 h-4" /> : <ClockIcon className="w-4 h-4" />} {label}
+      </span>
     </div>
   );
 }
 
 function ScorePill({ name, score, me, winner }: { name: string; score: number; me?: boolean; winner: boolean }) {
   return (
-    <div className={`flex items-center gap-2 rounded-2xl border-2 px-3 py-2 ${winner ? (me ? 'border-primary' : 'border-accent') : 'border-border'} bg-card/70`}>
-      <Mascot state={winner ? 'celebrate' : 'wink'} className={`w-9 ${me ? '' : 'hue-rotate-[140deg]'}`} />
-      <span className="min-w-0"><span className={`block text-[11px] font-bold truncate ${me ? 'text-primary' : 'text-accent'}`}>{name}</span><span className="block font-mono font-black text-xl leading-none">{score.toLocaleString(appNumberLocale())}</span></span>
+    <div className={`flex items-center gap-2.5 rounded-3xl border-2 px-3 py-2 ${me ? 'border-primary bg-primary/5' : 'border-accent/60 bg-accent/5'}`}>
+      <div className="relative shrink-0">
+        {winner && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-base z-10" aria-hidden>👑</span>}
+        <span className={`w-12 h-12 rounded-full border-2 ${me ? 'border-primary' : 'border-accent'} flex items-center justify-center overflow-hidden bg-background/60`}>
+          <Mascot state={winner ? 'celebrate' : 'wink'} className={`w-[78%] ${me ? '' : 'grayscale brightness-110'}`} />
+        </span>
+      </div>
+      <span className="min-w-0 text-center flex-1">
+        <span className={`block text-xs sm:text-sm font-bold truncate ${me ? 'text-primary' : 'text-accent'}`}>{name}</span>
+        <span className={`block font-extrabold text-2xl sm:text-3xl leading-none ${me ? 'text-primary' : ''}`}>{score.toLocaleString(appNumberLocale())}</span>
+      </span>
     </div>
   );
 }
 
-function CmpRow({ icon, label, a, b, hiA, hiB }: { icon: string; label: string; a: string; b: string; hiA?: boolean; hiB?: boolean }) {
+function CmpRow({ icon, label, a, b, hiA, hiB }: { icon: React.ReactNode; label: string; a: string; b: string; hiA?: boolean; hiB?: boolean }) {
   return (
     <tr className="border-t border-border/60">
-      <td className="py-1 font-sans font-semibold text-muted-foreground whitespace-nowrap">{icon} {label}</td>
+      <td className="py-1 font-semibold text-foreground/80 whitespace-nowrap"><span className="flex items-center gap-1.5">{icon} {label}</span></td>
       <td className={`py-1 text-center ${hiA ? 'text-primary' : ''}`}>{a}</td>
       <td className={`py-1 text-center ${hiB ? 'text-accent' : ''}`}>{b}</td>
     </tr>
   );
 }
+
+type I = { className?: string };
+const svgI = (className: string, children: React.ReactNode) => (
+  <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{children}</svg>
+);
+const CheckIcon = ({ className = '' }: I) => svgI(className, <path d="m5 12.5 4.5 4.5L19 7.5" strokeWidth="3.2" />);
+const CheckCircleIcon = ({ className = '' }: I) => svgI(className, <><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none" /><path d="m7.5 12.5 3 3 6-6.5" stroke="hsl(var(--background))" strokeWidth="2.8" /></>);
+const ClockIcon = ({ className = '' }: I) => svgI(className, <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>);
+const GlobeIcon = ({ className = '' }: I) => svgI(className, <><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></>);
+const RouteIcon = ({ className = '' }: I) => svgI(className, <><path d="M6 20s3.5-3.5 3.5-6.2A3.5 3.5 0 0 0 2.5 13.8C2.5 16.5 6 20 6 20Z" fill="currentColor" stroke="none" /><path d="M18 11s3.5-3.5 3.5-6.2a3.5 3.5 0 0 0-7 0C14.5 7.5 18 11 18 11Z" fill="currentColor" stroke="none" /><path d="M8 19c3 0 3-4 6-4s3-2 4-3" strokeDasharray="2 2.5" /></>);
+const PeopleIcon = ({ className = '' }: I) => (
+  <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill="currentColor" aria-hidden><circle cx="9" cy="8" r="3.5" /><circle cx="17" cy="9" r="2.8" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0Z" /><path d="M15 20a5 5 0 0 1 7-4.6V20Z" /></svg>
+);
+const BarsIcon = ({ className = '' }: I) => (
+  <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill="currentColor" aria-hidden><rect x="3" y="13" width="4" height="8" rx="1" /><rect x="10" y="8" width="4" height="13" rx="1" /><rect x="17" y="4" width="4" height="17" rx="1" /></svg>
+);
+const DocIcon = ({ className = '' }: I) => svgI(className, <><path d="M6 3h8l4 4v14H6Z" /><path d="M14 3v4h4" /><path d="M9 12h6M9 16h6" /></>);
+const PlusIcon = ({ className = '' }: I) => svgI(className, <path d="M12 5v14M5 12h14" strokeWidth="3.2" />);
+const MapIcon = ({ className = '' }: I) => svgI(className, <><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2Z" /><path d="M9 4v14M15 6v14" /></>);
+const LinkIcon = ({ className = '' }: I) => svgI(className, <><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2" /><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" /></>);
+const CopyIcon = ({ className = '' }: I) => svgI(className, <><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2" /></>);
+const ShareIcon = ({ className = '' }: I) => svgI(className, <><circle cx="18" cy="5.5" r="2.5" fill="currentColor" /><circle cx="6" cy="12" r="2.5" fill="currentColor" /><circle cx="18" cy="18.5" r="2.5" fill="currentColor" /><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1" /></>);
+const InfoIcon = ({ className = '' }: I) => svgI(className, <><circle cx="12" cy="12" r="9.5" /><path d="M12 11v6" /><circle cx="12" cy="7.6" r="0.6" fill="currentColor" /></>);

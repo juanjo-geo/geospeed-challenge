@@ -813,6 +813,8 @@ const en: Translations = {
   chr_sameScore: 'Same score',
   chr_pointsDiff: 'points ahead',
   chr_pointsToWin: '{n} points from victory',
+  chr_pointsToWinLead: '',
+  chr_pointsToWinTail: 'points from victory',
   chr_compareLead: 'Comparison',
   chr_compareTail: 'pending',
   chr_finalWhenBoth: 'The final result will appear when you both finish.',

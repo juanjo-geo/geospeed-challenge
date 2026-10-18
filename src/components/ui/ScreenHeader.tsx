@@ -13,6 +13,8 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   /** Alineación del título: centrado (por defecto, como casi todas las maquetas) o a la izquierda */
   align?: 'center' | 'left';
+  /** Ilustración a la derecha del título (maqueta Mis retos) */
+  titleAside?: ReactNode;
 }
 
 /** Evento global para abrir Ajustes desde cualquier pantalla (Index lo escucha). */
@@ -26,7 +28,7 @@ export function requestOpenSettings() {
  * volver (anillo turquesa) · logo centrado · ajustes, y debajo el título grande con la última palabra en
  * amarillo. En computador el logo y los ajustes ya están en la barra superior (AppNav).
  */
-export default function ScreenHeader({ onBack, title, subtitle, right, align = 'center' }: ScreenHeaderProps) {
+export default function ScreenHeader({ onBack, title, subtitle, right, align = 'center', titleAside }: ScreenHeaderProps) {
   const { t } = useI18n();
   const words = title.split(' ');
   const head = words.slice(0, -1).join(' ');
@@ -44,10 +46,15 @@ export default function ScreenHeader({ onBack, title, subtitle, right, align = '
           {right ?? <span className="md:hidden"><HudIconButton icon="gear" label={t('settings_title')} onClick={() => { playButtonTap(); requestOpenSettings(); }} /></span>}
         </div>
       </div>
-      <h1 className={`mt-4 short:mt-1 text-[2.1rem] sm:text-5xl short:text-2xl font-extrabold leading-tight ${centered ? 'text-center' : ''}`}>
-        {head && <>{head} </>}<span className="text-primary">{tail}</span>
-      </h1>
-      {subtitle && <p className={`text-base sm:text-lg short:text-xs text-foreground/80 mt-1 ${centered ? 'text-center' : ''}`}>{subtitle}</p>}
+      <div className={titleAside ? 'flex items-center gap-3' : ''}>
+        <div className="flex-1 min-w-0">
+          <h1 className={`mt-4 short:mt-1 text-[2.1rem] sm:text-5xl short:text-2xl font-extrabold leading-tight ${centered ? 'text-center' : ''}`}>
+            {head && <>{head} </>}<span className="text-primary">{tail}</span>
+          </h1>
+          {subtitle && <p className={`text-base sm:text-lg short:text-xs text-foreground/80 mt-1 ${centered ? 'text-center' : ''}`}>{subtitle}</p>}
+        </div>
+        {titleAside}
+      </div>
     </header>
   );
 }
