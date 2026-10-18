@@ -21,13 +21,15 @@ interface RoundFeedbackCardProps {
   /** Tiempo ya formateado ("4,7 s"); si falta se usa timeUsed */
   timeLabel?: string;
   size?: 'md' | 'lg';
+  /** Alto natural (sin tope ni scroll): lo usa FitToBox para escalar la tarjeta a la pantalla */
+  natural?: boolean;
 }
 
 /**
  * Tarjeta de feedback de ronda (maqueta Feedback_Movil/Computador_APROBADA_v1):
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, streak, streakBonus, diffMult, multLabel, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md' }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, streak, streakBonus, diffMult, multLabel, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
@@ -37,7 +39,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
   const phraseColor = result.distance < 1000 ? 'text-accent' : feedback.color;
 
   return (
-    <div className={`flex flex-col gap-2 rounded-3xl border-2 border-accent/40 bg-card/90 shadow-2xl backdrop-blur-md overflow-y-auto w-full ${lg ? 'p-5 gap-3 max-h-[92%]' : 'p-3 sm:p-4 max-h-full [@media(max-height:420px)]:gap-1 [@media(max-height:420px)]:p-2'}`}>
+    <div className={`flex flex-col gap-2 rounded-3xl border-2 border-accent/40 bg-card/90 shadow-2xl backdrop-blur-md overflow-y-auto w-full ${lg ? `p-5 gap-3 ${natural ? '' : 'max-h-[92%]'}` : `p-3 sm:p-4 ${natural ? '' : 'max-h-full'} [@media(max-height:420px)]:gap-1 [@media(max-height:420px)]:p-2`}`}>
       {/* Foto del país (D7): solo si existe el archivo; oculta en pantallas bajas */}
       <CountryPhoto country={result.city.country} size="sm" className={`-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-20 rounded-t-3xl ${lg ? '' : '[@media(max-height:420px)]:hidden'}`} />
       {lg ? (

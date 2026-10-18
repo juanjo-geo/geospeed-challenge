@@ -21,6 +21,7 @@ import Wordmark from '@/components/ui/Wordmark';
 import RoundFeedbackCard from './RoundFeedbackCard';
 import { HudIconButton, InGameSettings } from './GameHud';
 import { frameAnswer } from '@/lib/mapFraming';
+import FitToBox from '@/components/ui/FitToBox';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -713,6 +714,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
+            <FitToBox center origin="center right">
             <RoundFeedbackCard
               result={lastResult}
               feedback={feedback}
@@ -726,7 +728,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               onNext={advanceRound}
               timeLabel={`${fmtSecs(lastResult)} s`}
               size="lg"
+              natural
             />
+            </FitToBox>
           </div>
         )}
 
@@ -742,7 +746,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             role="dialog"
             aria-label={t('game_resultLabel')}
           >
-            <div className="w-full max-h-full flex">
+            <FitToBox maxScale={isCompact ? 0.88 : 1} center={!isCompact && !isPortraitMobile} origin={isPortraitMobile ? 'bottom center' : isCompact ? 'top right' : 'center right'} className={isPortraitMobile ? 'max-h-[70dvh]' : ''}>
               <RoundFeedbackCard
                 result={lastResult}
                 feedback={feedback}
@@ -756,8 +760,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 onNext={advanceRound}
                 timeLabel={`${fmtSecs(lastResult)} s`}
                 size="md"
+                natural
               />
-            </div>
+            </FitToBox>
           </div>
         )}
       </div>
