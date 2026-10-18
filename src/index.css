@@ -460,6 +460,9 @@
    Las pantallas que conviven con la barra (inicio, perfil, tienda, pass, ajustes)
    se envuelven en .with-app-nav para no quedar tapadas. */
 .with-app-nav { padding-bottom: calc(var(--nav-h) + var(--sab)); }
+/* Las pantallas con min-h-[100dvh] dentro de la barra no deben sumar su alto (antes dejaban desplazar
+   64 px de espacio vacío): descuentan la barra y el área segura */
+.with-app-nav .min-h-\[100dvh\] { min-height: calc(100dvh - var(--nav-h) - var(--sab)); }
 /* Celular en horizontal: la barra inferior ocupa menos alto */
 @media (max-height: 500px) and (max-width: 767px) {
   :root { --nav-h: 50px; }
@@ -480,6 +483,7 @@
 @media (min-width: 768px) {
   :root { --nav-h: 76px; }
   .with-app-nav { padding-bottom: 0; padding-top: var(--nav-h); }
+  .with-app-nav .min-h-\[100dvh\] { min-height: calc(100dvh - var(--nav-h)); }
 }
 
 /* ── JUICE (Fase 1): Botón 3D estilo Duolingo — labio inferior + compresión al presionar ── */

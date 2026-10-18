@@ -46,15 +46,28 @@ export default function ScreenHeader({ onBack, title, subtitle, right, align = '
           {right ?? <span className="md:hidden"><HudIconButton icon="gear" label={t('settings_title')} onClick={() => { playButtonTap(); requestOpenSettings(); }} /></span>}
         </div>
       </div>
-      <div className={titleAside ? 'flex items-center gap-3' : ''}>
-        <div className="flex-1 min-w-0">
-          <h1 className={`mt-4 short:mt-1 text-[2.1rem] sm:text-5xl short:text-2xl font-extrabold leading-tight ${centered ? 'text-center' : ''}`}>
-            {head && <>{head} </>}<span className="text-primary">{tail}</span>
-          </h1>
-          {subtitle && <p className={`text-base sm:text-lg short:text-xs text-foreground/80 mt-1 ${centered ? 'text-center' : ''}`}>{subtitle}</p>}
+      {centered && titleAside ? (
+        /* Centrado con algo al lado (fecha del Diario): va junto al título; el subtítulo usa todo el ancho */
+        <>
+          <div className="mt-4 short:mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <h1 className="text-[2.1rem] sm:text-5xl short:text-2xl font-extrabold leading-tight text-center">
+              {head && <>{head} </>}<span className="text-primary">{tail}</span>
+            </h1>
+            {titleAside}
+          </div>
+          {subtitle && <p className="text-base sm:text-lg short:text-xs text-foreground/80 mt-1 text-center">{subtitle}</p>}
+        </>
+      ) : (
+        <div className={titleAside ? 'flex items-center gap-3' : ''}>
+          <div className="flex-1 min-w-0">
+            <h1 className={`mt-4 short:mt-1 text-[2.1rem] sm:text-5xl short:text-2xl font-extrabold leading-tight ${centered ? 'text-center' : ''}`}>
+              {head && <>{head} </>}<span className="text-primary">{tail}</span>
+            </h1>
+            {subtitle && <p className={`text-base sm:text-lg short:text-xs text-foreground/80 mt-1 ${centered ? 'text-center' : ''}`}>{subtitle}</p>}
+          </div>
+          {titleAside}
         </div>
-        {titleAside}
-      </div>
+      )}
     </header>
   );
 }
