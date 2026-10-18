@@ -385,7 +385,7 @@ const es = {
   settings_haptics: 'Vibración',
   settings_hapticsUnsupported: 'No disponible en este dispositivo',
   settings_reduceMotion: 'Reducir movimiento',
-  settings_reduceMotionDesc: 'Menos animaciones, sin confeti ni zoom automático',
+  settings_reduceMotionDesc: 'Menos animaciones y efectos',
   settings_colorblind: 'Modo daltónico',
   settings_colorblindDesc: 'Colores distinguibles para todos',
   settings_language: 'Idioma',
@@ -400,6 +400,10 @@ const es = {
   settings_guest: 'Jugando como invitado',
   settings_signOutConfirm: '¿Seguro que deseas cerrar sesión?',
   settings_version: 'Versión',
+  settings_pickLanguage: 'Elige tu idioma',
+  settings_pickLanguageSub: 'Cambia todos los textos del juego.',
+  settings_apply: 'APLICAR',
+  settings_hapticsDesc: 'Si el dispositivo lo permite',
   home_settings: 'Ajustes',
 
   // ── Cuenta (Auth) ──
