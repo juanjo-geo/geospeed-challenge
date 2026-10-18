@@ -14,6 +14,10 @@ export default {
       },
     },
     extend: {
+      // Rediseño v2: Poppins en toda la interfaz (maquetas oct 2026)
+      fontFamily: {
+        sans: ["Poppins", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

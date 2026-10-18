@@ -156,7 +156,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-6 short:p-3 game-bg">
       <div className="bg-card border rounded-xl p-8 short:p-5 max-w-sm w-full shadow-2xl animate-fade-in-up">
         <div className="text-center mb-6 short:mb-3">
-          <img src="/logo.png" alt="GeoSpeed" className="w-14 short:w-10 object-contain mx-auto mb-1" />
+          <img src="/mascot/explorer-logo.webp" alt="GeoSpeed" className="w-14 short:w-10 object-contain mx-auto mb-1" />
           <h1 className="leading-none"><Wordmark size="md" /></h1>
           {mode === 'forgot' && <h2 className="text-lg font-black mt-3">{t('auth_forgotTitle')}</h2>}
           {mode === 'set-password' && <h2 className="text-lg font-black mt-3">{t('auth_setPasswordTitle')}</h2>}

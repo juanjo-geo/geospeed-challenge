@@ -1,5 +1,6 @@
 import { prefersReducedMotion } from '@/lib/prefs';
-import { BRAND_RGB, BRAND, rgba } from '@/lib/theme';
+import { CONTINENT_COUNTRIES, getColorGroup } from '@/lib/mapContinents';
+import { BRAND_RGB, BRAND, rgba, MAP_CONTINENT_COLORS } from '@/lib/theme';
 import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import { countries } from '@/data/countries';
 import { type GameMode, type MapBounds, getMapBounds } from '@/data/cities';
@@ -36,32 +37,6 @@ interface WorldMapCanvasProps {
   showZoomControls?: boolean;
   /** Encuadre geográfico fijo (Revisión de ciudad). Sustituye los límites del modo y redibuja nítido. Pasar memoizado. */
   viewBounds?: MapBounds | null;
-}
-
-// ── Continent → country mapping (ISO-style names matching countries.ts) ──
-const CONTINENT_COUNTRIES: Record<string, Set<string>> = {
-  Europe: new Set(['Albania','Andorra','Austria','Belarus','Belgium','Bosnia and Herz.','Bulgaria','Croatia','Cyprus','Czechia','Denmark','Estonia','Finland','France','Germany','Greece','Hungary','Iceland','Ireland','Italy','Kosovo','Latvia','Liechtenstein','Lithuania','Luxembourg','Malta','Moldova','Monaco','Montenegro','Netherlands','North Macedonia','Norway','Poland','Portugal','Romania','Russia','San Marino','Serbia','Slovakia','Slovenia','Spain','Sweden','Switzerland','Ukraine','United Kingdom','Vatican']),
-  Asia: new Set(['Afghanistan','Armenia','Azerbaijan','Bahrain','Bangladesh','Bhutan','Brunei','Cambodia','China','Georgia','India','Indonesia','Iran','Iraq','Israel','Japan','Jordan','Kazakhstan','Kuwait','Kyrgyzstan','Laos','Lebanon','Malaysia','Maldives','Mongolia','Myanmar','Nepal','North Korea','Oman','Pakistan','Palestine','Philippines','Qatar','Saudi Arabia','Singapore','South Korea','Sri Lanka','Syria','Taiwan','Tajikistan','Thailand','Timor-Leste','Turkey','Turkmenistan','United Arab Emirates','Uzbekistan','Vietnam','Yemen']),
-  Africa: new Set(['Algeria','Angola','Benin','Botswana','Burkina Faso','Burundi','Cameroon','Cape Verde','Central African Rep.','Chad','Comoros','Congo','Côte d\'Ivoire','Dem. Rep. Congo','Djibouti','Egypt','Eq. Guinea','Eritrea','eSwatini','Ethiopia','Gabon','Gambia','Ghana','Guinea','Guinea-Bissau','Kenya','Lesotho','Liberia','Libya','Madagascar','Malawi','Mali','Mauritania','Mauritius','Morocco','Mozambique','Namibia','Niger','Nigeria','Rwanda','São Tomé and Príncipe','Senegal','Seychelles','Sierra Leone','Somalia','Somaliland','South Africa','South Sudan','Sudan','Tanzania','Togo','Tunisia','Uganda','W. Sahara','Zambia','Zimbabwe']),
-  Americas: new Set(['Antigua and Barb.','Argentina','Bahamas','Barbados','Belize','Bolivia','Brazil','Canada','Chile','Colombia','Costa Rica','Cuba','Dominica','Dominican Rep.','Ecuador','El Salvador','Grenada','Guatemala','Guyana','Haiti','Honduras','Jamaica','Mexico','Nicaragua','Panama','Paraguay','Peru','Puerto Rico','St. Kitts and Nevis','St. Lucia','St. Vin. and Gren.','Suriname','Trinidad and Tobago','United States of America','Uruguay','Venezuela','Falkland Is.']),
-  Oceania: new Set(['Australia','Fiji','Kiribati','Marshall Is.','Micronesia','Nauru','New Caledonia','New Zealand','Palau','Papua New Guinea','Samoa','Solomon Is.','Tonga','Tuvalu','Vanuatu']),
-};
-
-const SOUTH_AMERICA = new Set(['Argentina','Bolivia','Brazil','Chile','Colombia','Ecuador','Guyana','Paraguay','Peru','Suriname','Uruguay','Venezuela','Falkland Is.']);
-
-/** Grupo de color del mapa (maqueta: 6 bloques + hielo) */
-function getColorGroup(name: string): string {
-  if (SOUTH_AMERICA.has(name)) return 'SouthAmerica';
-  const c = getCountryContinent(name);
-  if (c === 'Americas') return 'NorthAmerica';
-  return c ?? 'Ice';
-}
-
-function getCountryContinent(name: string): string | null {
-  for (const [continent, set] of Object.entries(CONTINENT_COUNTRIES)) {
-    if (set.has(name)) return continent;
-  }
-  return null;
 }
 
 export default function WorldMapCanvas({
@@ -152,15 +127,7 @@ export default function WorldMapCanvas({
   // ── NEON: Continent palette derived from logo (gold/orange/teal) ──
   // Each continent uses tones from the logo's color story
   // Rediseño v2: un color por continente, variaciones suaves por país, hielo gris-azulado.
-  const CONTINENT_COLORS_NEON: Record<string, string[]> = {
-    NorthAmerica: ['#2FB59B', '#3BC4A8', '#28A88F', '#45CDB3'], // verde agua
-    SouthAmerica: ['#F07A6A', '#F58C7A', '#E86B5B', '#F99A88'], // coral
-    Europe:       ['#9B8CE0', '#A99AE8', '#8C7DD6', '#B5A7EE'], // lavanda
-    Asia:         ['#F39A4A', '#F7A95E', '#EF8C3A', '#FAB772'], // naranja
-    Africa:       ['#F2C14E', '#F5CB62', '#EDB63C', '#F8D578'], // amarillo
-    Oceania:      ['#4FA8E8', '#62B5EE', '#3F9BE0', '#79C1F2'], // azul cielo
-    Ice:          ['#C9D6E2', '#D5E0EA', '#BFCDDB', '#DCE5EE'], // Antártida / Groenlandia
-  };
+  const CONTINENT_COLORS_NEON = MAP_CONTINENT_COLORS;
   const FALLBACK_NEON = CONTINENT_COLORS_NEON.Ice;
 
   // Flat palette still needed for non-neon code paths

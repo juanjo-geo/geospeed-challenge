@@ -1,9 +1,14 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-// Tipografía de marca de las maquetas (wordmark y titulares), servida desde el propio dominio:
-// solo latín 700/800 (~16 KB) para que funcione sin red y dentro de la app nativa.
+// Tipografía de las maquetas (Poppins en toda la app), servida desde el propio dominio para que
+// funcione sin red y dentro de la app nativa. Solo latín (incluye tildes y ñ), ~8 KB por peso;
+// el navegador descarga únicamente los pesos que la pantalla usa.
+import "@fontsource/poppins/latin-400.css";
+import "@fontsource/poppins/latin-500.css";
+import "@fontsource/poppins/latin-600.css";
 import "@fontsource/poppins/latin-700.css";
 import "@fontsource/poppins/latin-800.css";
+import "@fontsource/poppins/latin-900.css";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);

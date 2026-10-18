@@ -1,5 +1,6 @@
 import { prefersReducedMotion } from '@/lib/prefs';
-import { BRAND, BRAND_RGB } from '@/lib/theme';
+import { BRAND, BRAND_RGB, MAP_CONTINENT_COLORS } from '@/lib/theme';
+import { getColorGroup } from '@/lib/mapContinents';
 import { useRef, useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
 import { countries } from '@/data/countries';
@@ -126,8 +127,35 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
 
     let startTime: number | null = null;
 
-    const isNeon = document.documentElement.classList.contains('neon');
-    const isLight = document.documentElement.classList.contains('light');
+    const isNeon = true; // paleta única desde F0 (la clase neon es inerte)
+    const isLight = false;
+    const FONT = 'Poppins, system-ui, sans-serif';
+    const fmt = (n: number) => n.toLocaleString(locale === 'en' ? 'en-US' : 'es-CO');
+
+    // Pin en forma de gota con la punta en (x, y) — amarillo = tu respuesta, turquesa = ciudad correcta (como en la partida)
+    const drawPin = (x: number, y: number, color: string, r: number) => {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
+      ctx.shadowBlur = r * 0.8;
+      ctx.shadowOffsetY = r * 0.25;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(x - r * 0.35, y - r * 0.9, x - r, y - r * 1.25, x - r, y - r * 2);
+      ctx.arc(x, y - r * 2, r, Math.PI, 0, false);
+      ctx.bezierCurveTo(x + r, y - r * 1.25, x + r * 0.35, y - r * 0.9, x, y);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.lineWidth = Math.max(1, r * 0.18);
+      ctx.strokeStyle = '#fff';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y - r * 2, r * 0.38, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.restore();
+    };
 
     const animate = (ts: number) => {
       if (!startTime) startTime = ts;
@@ -142,15 +170,21 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Background
-      ctx.fillStyle = isLight ? '#B0D8EC' : isNeon ? BRAND.navyDeep : '#E8D8BC';
+      // Océano azul noche (como el mapa de la partida)
+      const ocean = ctx.createLinearGradient(0, 0, 0, h);
+      ocean.addColorStop(0, BRAND.navyDeep);
+      ocean.addColorStop(0.5, BRAND.navy);
+      ocean.addColorStop(1, BRAND.navyDeep);
+      ctx.fillStyle = ocean;
       ctx.fillRect(0, 0, w, h);
 
-      // Simplified countries — gold/teal tones matching logo palette
-      ctx.fillStyle = isLight ? '#D8E8D0' : isNeon ? '#2A3828' : '#C8A060';
-      ctx.strokeStyle = isLight ? '#8899AA55' : isNeon ? 'rgba(240, 160, 48, 0.3)' : '#2A140844';
-      ctx.lineWidth = isNeon ? 0.8 : 0.5;
-      for (const country of countries) {
+      // Países con el color de su continente (maqueta Inicio v2) y bordes blancos finos
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 0.5;
+      for (let ci = 0; ci < countries.length; ci++) {
+        const country = countries[ci];
+        const palette = MAP_CONTINENT_COLORS[getColorGroup(country.name)] ?? MAP_CONTINENT_COLORS.Ice;
+        ctx.fillStyle = palette[ci % palette.length];
         for (const polygon of country.polygons) {
           if (polygon.length < 4) continue;
           ctx.beginPath();
@@ -178,20 +212,36 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
 
       // City name label (top)
       const nameAlpha = cycleT < 0.1 ? cycleT / 0.1 : cycleT > fadeStart ? Math.max(0, 1 - (cycleT - fadeStart) / (1 - fadeStart)) : 1;
+      // "¿Dónde está " en blanco y la ciudad en amarillo, con sombra para leerse sobre el mapa
       ctx.globalAlpha = nameAlpha;
-      ctx.font = `bold ${Math.max(15, w / 20)}px system-ui`;
-      ctx.fillStyle = isNeon ? BRAND.yellow : isLight ? '#1a3a4a' : BRAND.yellow;
-      ctx.textAlign = 'center';
+      ctx.font = `800 ${Math.max(15, w / 20)}px ${FONT}`;
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
-      ctx.fillText(t('demo_whereIs', { city: city.name }), w / 2, 6);
+      const question = t('demo_whereIs', { city: city.name });
+      const at = question.indexOf(city.name);
+      const parts = at >= 0
+        ? [question.slice(0, at), city.name, question.slice(at + city.name.length)]
+        : [question, '', ''];
+      const totalW = parts.reduce((s, part) => s + ctx.measureText(part).width, 0);
+      let tx = (w - totalW) / 2;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.75)';
+      ctx.shadowBlur = 6;
+      parts.forEach((part, i) => {
+        if (!part) return;
+        ctx.fillStyle = i === 1 ? BRAND.yellow : '#ffffff';
+        ctx.fillText(part, tx, 6);
+        tx += ctx.measureText(part).width;
+      });
+      ctx.restore();
       ctx.globalAlpha = 1;
 
       // Mensaje "¡Al otro lado del mundo!" cuando la localización falla (arco largo)
       if (city.score <= 50 && cycleT >= arcDrawEnd) {
         const mAlpha = cycleT > fadeStart ? Math.max(0, 1 - (cycleT - fadeStart) / (1 - fadeStart)) : 1;
         ctx.globalAlpha = mAlpha;
-        ctx.font = `bold ${Math.max(11, w / 26)}px system-ui`;
-        ctx.fillStyle = '#ef4444';
+        ctx.font = `700 ${Math.max(11, w / 26)}px ${FONT}`;
+        ctx.fillStyle = BRAND.coral;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillText(t('demo_otherSideWorld'), w / 2, 6 + Math.max(15, w / 20) + 3);
@@ -238,15 +288,8 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
           ctx.globalAlpha = 1;
         }
 
-        // User click dot
         ctx.globalAlpha = dotAlpha;
-        ctx.fillStyle = isNeon ? BRAND.turquoise : '#4fc3f7';
-        ctx.beginPath();
-        ctx.arc(ux, uy, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        const pinR = Math.max(4, w / 75);
 
         // Draw arc to correct city
         if (cycleT < arcDrawEnd) {
@@ -270,9 +313,9 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
             const p0 = { x: u0 * u0 * ux + 2 * u0 * t0 * cpx + t0 * t0 * cx, y: u0 * u0 * uy + 2 * u0 * t0 * cpy + t0 * t0 * cy };
             const p1 = { x: u1 * u1 * ux + 2 * u1 * t1 * cpx + t1 * t1 * cx, y: u1 * u1 * uy + 2 * u1 * t1 * cpy + t1 * t1 * cy };
             const alpha = 0.3 + 0.7 * (i / steps);
-            ctx.strokeStyle = isNeon ? `rgba(${BRAND_RGB.yellow},${alpha * dotAlpha})` : `rgba(${BRAND_RGB.yellow},${alpha * dotAlpha})`;
+            ctx.strokeStyle = `rgba(255,255,255,${alpha * dotAlpha})`;
             ctx.lineWidth = 2;
-            ctx.setLineDash([]);
+            ctx.setLineDash([5, 4]);
             ctx.beginPath();
             ctx.moveTo(p0.x, p0.y);
             ctx.lineTo(p1.x, p1.y);
@@ -289,24 +332,22 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
           const cpx = mx - (dy / (dist || 1)) * bulge;
           const cpy = my + (dx / (dist || 1)) * bulge;
 
-          // Full arc
-          ctx.strokeStyle = isNeon ? `rgba(${BRAND_RGB.yellow},${0.7 * dotAlpha})` : `rgba(${BRAND_RGB.yellow},${0.7 * dotAlpha})`;
+          // Arco completo (línea punteada blanca, como en la maqueta)
+          ctx.strokeStyle = `rgba(255,255,255,${0.85 * dotAlpha})`;
           ctx.lineWidth = 2;
-          ctx.setLineDash([]);
+          ctx.setLineDash([5, 4]);
           ctx.beginPath();
           ctx.moveTo(ux, uy);
           ctx.quadraticCurveTo(cpx, cpy, cx, cy);
           ctx.stroke();
+          ctx.setLineDash([]);
 
-          // Correct city dot
-          ctx.fillStyle = BRAND.yellow;
-          ctx.beginPath();
-          ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = '#fff';
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
+          // Ciudad correcta: pin turquesa
+          drawPin(cx, cy, BRAND.turquoise, pinR);
         }
+        ctx.setLineDash([]);
+        // Tu respuesta: pin amarillo
+        drawPin(ux, uy, BRAND.yellow, pinR);
 
         // Score popup
         if (cycleT >= scoreShowStart) {
@@ -316,11 +357,20 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
           const scoreAlpha = dotAlpha * (scoreT < 0.3 ? scoreT / 0.3 : 1);
 
           ctx.globalAlpha = scoreAlpha;
-          ctx.font = `bold ${Math.max(17, w / 15) * popScale}px system-ui`;
-          ctx.fillStyle = city.score >= 500 ? (isNeon ? BRAND.turquoise : '#22c55e') : '#ef4444';
+          ctx.font = `800 ${Math.max(17, w / 15) * popScale}px ${FONT}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(`${city.emoji} +${city.score}`, (ux + cx) / 2, (uy + cy) / 2 + yOff - 10);
+          const label = `+${fmt(city.score)}`;
+          const fontPx = Math.max(17, w / 15);
+          const titleBottom = 6 + Math.max(15, w / 20) + 4;
+          // Nunca encima de la pregunta (ciudades del norte quedan cerca del borde superior)
+          const sx = (ux + cx) / 2, sy = Math.max(titleBottom + fontPx * 0.6, (uy + cy) / 2 + yOff - pinR * 3);
+          ctx.lineJoin = 'round';
+          ctx.lineWidth = Math.max(3, w / 110);
+          ctx.strokeStyle = `rgba(${BRAND_RGB.navyDeep},0.9)`;
+          ctx.strokeText(label, sx, sy);
+          ctx.fillStyle = city.score >= 500 ? BRAND.yellow : BRAND.coral;
+          ctx.fillText(label, sx, sy);
         }
 
         ctx.globalAlpha = 1;
@@ -329,7 +379,7 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
       // Tagline velocidad + precisión — al pie del mapa (sobre el polo sur)
       if (!hideTagline) {
         ctx.globalAlpha = 0.92;
-        ctx.font = `bold ${Math.max(10, w / 30)}px system-ui`;
+        ctx.font = `700 ${Math.max(10, w / 30)}px ${FONT}`;
         ctx.fillStyle = isNeon ? BRAND.yellow : isLight ? '#1a3a4a' : BRAND.yellow;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
@@ -356,7 +406,7 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
     <div ref={containerRef} className="w-full">
       <canvas
         ref={canvasRef}
-        className="w-full rounded-xl border-2 border-primary/60 pointer-events-none"
+        className="w-full block pointer-events-none"
         style={{ height: size.h }}
       />
     </div>

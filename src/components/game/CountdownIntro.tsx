@@ -25,7 +25,7 @@ export default function CountdownIntro({ count, label, onCancel }: CountdownIntr
       {/* Barra superior: marca · etiqueta del modo */}
       <div className="absolute top-0 inset-x-0 flex items-center justify-between px-4 sm:px-6" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}>
         <div className="flex items-center gap-2 animate-fade-in">
-          <img src="/logo.png" alt="" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+          <img src="/mascot/explorer-logo.webp" alt="" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
           <Wordmark size="sm" />
         </div>
         {label && (
