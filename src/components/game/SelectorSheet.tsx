@@ -6,6 +6,11 @@ export interface SelectorOption<K extends string> {
   emoji: string;
   label: string;
   desc: string;
+  /**
+   * Ilustración compuesta (maquetas Región / Dificultad): emoji principal grande y, opcional,
+   * uno secundario pequeño delante. Sustituye a las ilustraciones 3D de la maqueta sin añadir imágenes.
+   */
+  art?: [string, string?];
   /** Bloqueada por nivel (decisión D12: se muestra con candado, no se oculta) */
   locked?: boolean;
   lockLabel?: string;
@@ -88,7 +93,7 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
                 aria-checked={isSel}
                 disabled={opt.locked}
                 onClick={() => { if (!opt.locked) { playButtonTap(); setValue(opt.key); } }}
-                className={`w-full flex items-center gap-3 p-3 short:px-2 short:py-1.5 short:gap-2 rounded-2xl border-2 text-left transition-all active:scale-[0.99] ${
+                className={`w-full flex items-center gap-3 px-3 py-2 short:px-2 short:py-1 short:gap-2 rounded-2xl border-2 text-left transition-all active:scale-[0.99] ${
                   opt.locked
                     ? 'border-border/40 bg-muted/20 opacity-55 cursor-not-allowed'
                     : isSel
@@ -96,9 +101,9 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
                     : 'border-border bg-muted/30 hover:border-accent/50'
                 }`}
               >
-                <span className="text-3xl short:text-2xl w-11 short:w-8 text-center shrink-0" aria-hidden>{opt.locked ? '🔒' : opt.emoji}</span>
+                <OptionArt art={opt.art ?? [opt.emoji]} locked={!!opt.locked} />
                 <span className="flex-1 min-w-0">
-                  <span className="block font-black text-base sm:text-lg short:text-sm leading-tight">{opt.label}</span>
+                  <span className="block font-extrabold text-lg sm:text-xl short:text-sm leading-tight">{opt.label}</span>
                   <span className="block text-xs sm:text-sm short:text-[11px] text-muted-foreground leading-tight">{opt.locked && opt.lockLabel ? opt.lockLabel : opt.desc}</span>
                 </span>
                 <span
@@ -114,7 +119,7 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
 
         {context && (
           <div className="mt-3 short:mt-2 flex items-center gap-3 p-3 short:py-1.5 rounded-2xl border border-border bg-muted/20">
-            <span className="text-2xl" aria-hidden>{context.emoji}</span>
+            <span className="text-3xl short:text-2xl" aria-hidden>{context.emoji}</span>
             <span>
               <span className="block font-bold text-sm">{context.title}</span>
               <span className="block text-xs text-muted-foreground">{context.desc}</span>
@@ -124,7 +129,7 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
 
         <button
           onClick={() => { playButtonTap(); onConfirm(value); }}
-          className="btn3d mt-4 short:mt-2 w-full py-3.5 short:py-2.5 rounded-2xl font-black text-base tracking-wide text-primary-foreground"
+          className="btn3d mt-4 short:mt-2 w-full py-4 short:py-2.5 rounded-2xl font-black text-lg short:text-base tracking-wide text-primary-foreground"
           style={{ background: 'var(--grad-cta)' }}
         >
           {confirmLabel}
@@ -132,5 +137,18 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
         {footnote && <p className="text-center text-xs text-muted-foreground mt-2 short:mt-1">{footnote}</p>}
       </div>
     </div>
+  );
+}
+
+/** Mosaico de la opción: emoji grande con un halo y, si hay, otro pequeño delante (estilo ilustración). */
+function OptionArt({ art, locked }: { art: [string, string?]; locked: boolean }) {
+  const [main, extra] = art;
+  return (
+    <span className={`relative w-16 h-14 short:w-10 short:h-9 shrink-0 flex items-center justify-center ${locked ? 'grayscale' : ''}`} aria-hidden>
+      <span className="absolute inset-x-1 bottom-0.5 h-3 rounded-[50%] bg-accent/25 blur-[3px]" />
+      <span className="relative text-[2.6rem] short:text-2xl leading-none drop-shadow-[0_4px_6px_rgba(0,0,0,0.45)]">{main}</span>
+      {extra && <span className="absolute right-0 bottom-0 text-2xl short:text-base leading-none drop-shadow-[0_3px_4px_rgba(0,0,0,0.5)]">{extra}</span>}
+      {locked && <span className="absolute -top-1 -right-1 text-lg short:text-sm">🔒</span>}
+    </span>
   );
 }
