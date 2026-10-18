@@ -13,7 +13,9 @@ interface CountryPhotoProps {
 
 /**
  * Foto del país (D7). Si no hay archivo para ese país, no renderiza nada: la interfaz
- * se ve igual que antes de tener fotos. Lazy + decoding async para no competir con el mapa.
+ * se ve igual que antes de tener fotos. Decoding async para no competir con el mapa.
+ * Sin loading="lazy": el contenedor está oculto (display:none) hasta que la imagen carga y Chrome
+ * nunca carga una imagen diferida que no se renderiza, así que la foto no aparecía jamás.
  */
 export default function CountryPhoto({ country, size = 'lg', className = '', overlay = true, children }: CountryPhotoProps) {
   const url = countryPhotoUrl(country, size);
@@ -21,11 +23,10 @@ export default function CountryPhoto({ country, size = 'lg', className = '', ove
   const [loaded, setLoaded] = useState(false);
   if (!url || failed) return null;
   return (
-    <div className={`relative overflow-hidden ${className} ${loaded ? '' : 'hidden'}`} aria-hidden>
+    <div className={`relative overflow-hidden shrink-0 ${className} ${loaded ? '' : 'hidden'}`} aria-hidden>
       <img
         src={url}
         alt=""
-        loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => { markPhotoMissing(url); setFailed(true); }}
