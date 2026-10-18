@@ -1077,6 +1077,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (phase === 'ta-final' && taResult) {
       return (
         <FinalResultScreen
+          musicMuted={isMusicMuted}
+          onToggleMusic={toggleMusic}
           variant="timeattack"
           rounds={taResult.rounds}
           totalScore={taResult.totalScore}
@@ -1239,6 +1241,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       const playedChallenge = activeChallenge;
       return (
         <FinalResultScreen
+          musicMuted={isMusicMuted}
+          onToggleMusic={toggleMusic}
           rounds={finalRounds}
           totalScore={finalScore}
           difficulty={difficulty}
@@ -1332,7 +1336,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       {showRotateOverlay && <RotateOverlay t={t} beforeCountdown={phase === 'countdown'} onBack={phase === 'countdown' ? handleCancelCountdown : handleGoHome} />}
 
       {/* Floating music toggle — en partida; fuera de ella la música se controla desde Ajustes */}
-      {phase !== 'splash' && !showNav && !GAME_SCREEN_PHASES.includes(phase) && (
+      {phase !== 'splash' && !showNav && !GAME_SCREEN_PHASES.includes(phase) && phase !== 'final' && phase !== 'ta-final' && (
         <button
           onClick={toggleMusic}
           className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-md transition-all active:scale-90 shadow-lg"
