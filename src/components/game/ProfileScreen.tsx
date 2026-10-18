@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { fetchMyProgress, type MyProgress } from '@/lib/gameResults';
 import { getStreakState } from '@/lib/dailyStreak';
 import { playButtonTap } from '@/lib/sounds';
@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import Mascot from './Mascot';
 import { appNumberLocale, formatNumber } from '@/lib/format';
 import { ChevronIcon, HomeIcon, LegendPin } from '@/components/ui/icons';
-const WorldBackdrop = lazy(() => import('./WorldBackdrop'));
+import HeaderBackdrop from './HeaderBackdrop';
 
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
 const AVATARS = ['mascot', '🌍', '🗺️', '🧭', '✈️', '🚀', '🏔️', '🌋', '🏝️', '🎯', '👑', '⚡', '🔮', '🦅', '🐉', '🎲', '🛸'];
@@ -111,15 +111,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
   return (
     <div className="relative min-h-[100dvh] flex flex-col items-center px-3 py-4 sm:px-4 sm:py-6 md:px-6 overflow-y-auto game-bg">
       {/* Mapa tenue detrás de la cabecera (maqueta Perfil) */}
-      {tab === 'overview' && (
-        <div className="absolute inset-x-0 top-0 h-[420px] md:h-[360px] pointer-events-none overflow-hidden [mask-image:linear-gradient(to_bottom,black_55%,transparent)]" aria-hidden>
-          <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[260vw] md:w-[120vw] h-full opacity-80">
-            <Suspense fallback={null}><WorldBackdrop tone="night" /></Suspense>
-          </div>
-          <LegendPin color="hsl(var(--accent))" className="absolute left-[8%] top-[150px] w-7 h-7 opacity-80" />
-          <LegendPin color="hsl(var(--accent))" className="absolute right-[9%] top-[120px] w-7 h-7 opacity-80" />
-        </div>
-      )}
+      {tab === 'overview' && <HeaderBackdrop />}
       <div className="relative w-full max-w-5xl animate-fade-in-up" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
         <ScreenHeader
           onBack={tab === 'overview' ? onBack : () => setTab('overview')}
