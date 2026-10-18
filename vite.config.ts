@@ -25,14 +25,14 @@ export default defineConfig(({ mode }) => ({
       // para que el build de Vite/Rollup no intente resolverlo y falle.
       external: ["@revenuecat/purchases-capacitor"],
       output: {
-        // Vendors en chunks propios: cambian poco entre despliegues y el navegador los conserva en caché.
-        // Los datos pesados (polígonos del mapa, catálogo de ciudades) también van aparte: solo se
-        // descargan cuando una pantalla los necesita (mapa, splash, demo del inicio).
+        // Vendors aparte del código del juego: cambian poco entre despliegues y el navegador los
+        // conserva en caché. OJO: todo lo que importa React (react, react-dom, radix, router…) debe ir en
+        // EL MISMO chunk. Separar React en su propio chunk creó una importación circular entre chunks y en
+        // producción `React.createContext` era undefined → pantalla azul (incidente 18 oct 2026).
+        // Supabase no depende de React, así que puede ir aparte sin riesgo.
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (/[\/]react(-dom|-router|-router-dom)?[\/]|[\/]scheduler[\/]/.test(id)) return "vendor-react";
             if (id.includes("@supabase")) return "vendor-supabase";
-            if (id.includes("@radix-ui") || id.includes("@tanstack")) return "vendor-ui";
             return "vendor";
           }
           if (id.includes("/src/data/countries.ts")) return "data-countries";

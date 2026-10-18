@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="/logomini.png" />
     <link rel="manifest" href="/manifest.json" />
     <!-- Force neon theme before first paint -->
-    <script>(function(){var d=document.documentElement;d.classList.add('neon');d.style.background='#0B1F3A';try{var l=localStorage.getItem('geospeed_locale');if(!l){l=navigator.language&&navigator.language.startsWith('en')?'en':'es'}d.lang=l;var p=JSON.parse(localStorage.getItem('geospeed_prefs')||'{}');if(p.reduceMotion){d.classList.add('reduce-motion')}}catch(e){}})()</script>
+    <script src="/boot.js"></script>
     <title>GeoSpeed Challenge — Geography Quiz Game</title>
     <meta name="description" content="GeoSpeed Challenge — ¿Cuánto conoces el mundo? Localiza ciudades en el mapa, compite contra el reloj y reta a tus amigos a su ritmo. Clásico, 60s de Caos, Mundial, desafío diario, 400+ ciudades. Gratis." />
     <meta name="keywords" content="geography game, quiz, world cities, map game, trivia, geoguessr alternative, daily challenge, multiplayer, education, geography quiz" />
@@ -36,7 +36,7 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root"><div id="boot-fallback" style="display:none;position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#F4F7FB;background:#0B1F3A"><img src="/logo.png" alt="" width="72" height="72" /><p style="font-size:18px;font-weight:800;margin:0">GeoSpeed no terminó de cargar</p><p style="font-size:14px;opacity:.75;margin:0">Revisa tu conexión y vuelve a intentarlo · Check your connection and try again</p><a href="/" style="margin-top:8px;padding:12px 24px;border-radius:14px;background:#FFD93B;color:#071426;font-weight:900;text-decoration:none">Recargar · Reload</a></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
