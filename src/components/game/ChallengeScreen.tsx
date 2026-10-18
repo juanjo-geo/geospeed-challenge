@@ -5,7 +5,9 @@ import {
 } from '@/lib/challenges';
 import { playButtonTap, playShareSuccess } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
+import { useAuth } from '@/hooks/useAuth';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { HomeIcon, StopwatchIcon } from '@/components/ui/icons';
 import Mascot from './Mascot';
 import ChallengeResultScreen from './ChallengeResultScreen';
 
@@ -30,6 +32,7 @@ interface ChallengeScreenProps {
  */
 export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCreateAnother, onMyChallenges, onRematch }: ChallengeScreenProps) {
   const { t } = useI18n();
+  const { displayName } = useAuth();
   const [challenge, setChallenge] = useState<Challenge | null>(source.type === 'challenge' ? source.challenge : null);
   const [preview, setPreview] = useState<ChallengePreview | null>(null);
   const [detail, setDetail] = useState<ChallengeDetail | null>(null);
@@ -105,29 +108,31 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
   const rounds = challenge?.rounds_total ?? preview?.rounds_total ?? 13;
   const seconds = challenge?.seconds_per_round ?? preview?.seconds_per_round ?? 15;
   const conditions = (
-    <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
-      <h2 className="text-lg sm:text-xl font-black mb-3">⚙️ {t('ch_conditionsLead')} <span className="text-primary">{t('ch_conditionsTail')}</span></h2>
-      <div className="flex flex-col gap-2 text-sm">
-        <Row icon="🌍" label={t('ch_region')} value={mode ? t(`mode_${mode}` as never) : '—'} />
-        <Row icon="🎒" label={t('ch_difficulty')} value={difficulty ? t(`diff_${difficulty}` as never) : '—'} />
-        <Row icon="⏱️" label={t('ch_format')} value={t('ch_formatValue', { n: rounds, s: seconds })} />
+    <Card>
+      <h2 className="flex items-center gap-2.5 text-xl sm:text-2xl font-extrabold mb-3">
+        <GearIcon className="w-6 h-6 text-foreground/85" /> {t('ch_conditionsLead')} <span className="text-primary -ml-1">{t('ch_conditionsTail')}</span>
+      </h2>
+      <div className="flex flex-col gap-2 text-sm sm:text-base">
+        <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_region')} value={mode ? t(`mode_${mode}` as never) : '—'} />
+        <Row icon={<BagIcon className="w-6 h-6 text-accent" />} label={t('ch_difficulty')} value={difficulty ? t(`home_diff${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}` as never) : '—'} />
+        <Row icon={<StopwatchIcon className="w-6 h-6 text-accent" />} label={t('ch_format')} value={t('ch_formatValue', { n: rounds, s: seconds })} />
       </div>
-      <p className="mt-2 text-center text-[11px] sm:text-xs text-muted-foreground">🔒 {t('ch_fixed')}</p>
-    </section>
+      <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground/75"><LockIcon className="w-4 h-4" /> {t('ch_fixed')}</p>
+    </Card>
   );
 
   // ── Errores (código inválido o lleno: mensaje genérico, D3) ──
   if (error) {
     return (
       <Shell onBack={onBack} title={t('ch_unavailableTitle')}>
-        <section className="max-w-md mx-auto rounded-3xl border border-border bg-card/70 p-6 text-center">
-          <Mascot state="sad" className="w-24 mx-auto" />
-          <p className="mt-3 text-sm sm:text-base">{error === 'auth_required' ? t('friends_needLogin') : error === 'network' ? t('friends_errorNetwork') : t('ch_unavailable')}</p>
+        <Card className="max-w-md mx-auto text-center">
+          <Mascot state="sad" className="w-28 mx-auto" />
+          <p className="mt-3 text-base sm:text-lg">{error === 'auth_required' ? t('friends_needLogin') : error === 'network' ? t('friends_errorNetwork') : t('ch_unavailable')}</p>
           {error === 'auth_required' && (
-            <button onClick={() => { playButtonTap(); onSignIn(); }} className="btn3d mt-4 w-full rounded-2xl py-3 font-black text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>{t('friends_signIn')}</button>
+            <button onClick={() => { playButtonTap(); onSignIn(); }} className="btn3d mt-4 w-full rounded-2xl py-3.5 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>{t('friends_signIn')}</button>
           )}
-          <button onClick={() => { playButtonTap(); onBack(); }} className="mt-3 w-full rounded-2xl py-2.5 border border-border bg-muted/20 font-bold text-sm hover:bg-muted">🏠 {t('ob_backHome')}</button>
-        </section>
+          <BackHome onClick={() => { playButtonTap(); onBack(); }} label={t('ob_backHome')} />
+        </Card>
       </Shell>
     );
   }
@@ -136,31 +141,28 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
   if (preview && !challenge) {
     return (
       <Shell onBack={onBack} title={preview.is_rematch ? t('ch_rematchInviteTitle') : t('ch_inviteTitle', { name: preview.creator_name })} subtitle={preview.is_rematch ? t('ch_rematchInviteSub', { name: preview.creator_name }) : t('ch_inviteSub')}>
+        <Hero badge={preview.is_rematch ? `↻ ${t('ch_rematchBadge')}` : t('friends_badge')} />
         <div className="grid gap-4 md:grid-cols-2 md:items-start">
-          <section className="rounded-3xl border border-accent/40 bg-card/70 p-5 text-center flex flex-col items-center">
-            <Mascot state="wink" className="w-24 sm:w-28 short:w-16" />
-            <p className="mt-2 text-lg sm:text-xl font-black">{preview.creator_name}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">{preview.is_rematch ? t('ch_rematchInviteFrom') : t('ch_inviteFrom')}</p>
-            {preview.is_rematch && <span className="mt-2 rounded-full border border-primary text-primary px-3 py-0.5 text-xs font-black">↻ {t('ch_rematchBadge')}</span>}
-            <p className="mt-3 font-mono font-black text-2xl tracking-[0.4em] text-accent">{preview.code}</p>
-          </section>
+          <Card className="text-center flex flex-col items-center">
+            <p className="text-xl sm:text-2xl font-extrabold">{preview.creator_name}</p>
+            <p className="text-sm sm:text-base text-foreground/75">{preview.is_rematch ? t('ch_rematchInviteFrom') : t('ch_inviteFrom')}</p>
+            <CodeBox code={preview.code} />
+          </Card>
           <div className="flex flex-col gap-4">
             {conditions}
             {preview.is_rematch && (
-              <section className="rounded-3xl border border-border bg-card/70 p-4">
-                <h2 className="text-base sm:text-lg font-black mb-2">ⓘ {t('ch_newLead')} <span className="text-primary">{t('ch_newTail')}</span></h2>
-                <p className="text-xs sm:text-sm text-muted-foreground">🏆 {t('ch_prevKept')}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">🙈 {t('ch_hiddenUntilBoth', { name: preview.creator_name })}</p>
-              </section>
+              <Card>
+                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-extrabold mb-2"><InfoIcon className="w-6 h-6 text-accent" /> {t('ch_newLead')} <span className="text-primary -ml-1">{t('ch_newTail')}</span></h2>
+                <p className="text-sm text-foreground/80">🏆 {t('ch_prevKept')}</p>
+                <p className="text-sm text-foreground/80 mt-1">🙈 {t('ch_hiddenUntilBoth', { name: preview.creator_name })}</p>
+              </Card>
             )}
-            <p className="rounded-2xl border border-border bg-muted/20 p-3 text-xs sm:text-sm text-muted-foreground">ⓘ {t('ch_restartNote')}</p>
+            <InfoBox lead={t('ch_restartNote')} />
           </div>
         </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-[1.4fr_1fr]">
-          <button onClick={accept} disabled={busy} className="btn3d rounded-2xl py-3.5 short:py-2.5 font-black text-lg text-primary-foreground disabled:opacity-60" style={{ background: 'var(--grad-cta)' }}>
-            {busy ? '⏳' : '▶'} {t('ch_accept')}
-          </button>
-          <button onClick={() => { playButtonTap(); onBack(); }} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">{t('ch_notNow')}</button>
+        <div className="mt-4 flex flex-col items-center gap-2.5">
+          <PlayButton onClick={accept} busy={busy} label={t('ch_accept')} />
+          <button onClick={() => { playButtonTap(); onBack(); }} className="w-full max-w-md rounded-full py-3 border-2 border-foreground/25 font-bold hover:bg-muted/40">{t('ch_notNow')}</button>
         </div>
         {preview.is_rematch && <p className="mt-2 text-center text-xs text-muted-foreground">{t('ch_staysInMine')}</p>}
       </Shell>
@@ -183,59 +185,60 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
   // ── Reto creado / estado ──
   const meFinished = detail?.my_finished ?? false;
   const rival = detail?.rival ?? null;
-  const youStatus = meFinished ? { label: t('ch_statusDone'), cls: 'border-accent text-accent' } : { label: t('ch_statusNotPlayed'), cls: 'border-primary text-primary' };
-  const rivalStatus = !rival ? { label: t('ch_statusToJoin'), cls: 'border-accent/60 text-accent' }
-    : rival.finished ? { label: t('ch_statusDone'), cls: 'border-accent text-accent' }
-    : rival.accepted === false ? { label: t('ch_statusToAccept'), cls: 'border-accent/60 text-accent' }
-    : { label: t('ch_statusJoined'), cls: 'border-primary text-primary' };
+  const youStatus = meFinished ? { label: t('ch_statusDone'), cls: 'border-accent text-accent', dot: 'bg-accent' } : { label: t('ch_statusNotPlayed'), cls: 'border-primary text-primary', dot: 'bg-primary' };
+  const rivalStatus = !rival ? { label: t('ch_statusToJoin'), cls: 'border-foreground/30 text-foreground/90', dot: 'bg-accent' }
+    : rival.finished ? { label: t('ch_statusDone'), cls: 'border-accent text-accent', dot: 'bg-accent' }
+    : rival.accepted === false ? { label: t('ch_statusToAccept'), cls: 'border-foreground/30 text-foreground/90', dot: 'bg-accent' }
+    : { label: t('ch_statusJoined'), cls: 'border-primary text-primary', dot: 'bg-primary' };
   const isRematch = !!detail?.is_rematch || !!challenge.parent_challenge_id;
 
   return (
     <Shell onBack={onBack} title={isRematch && challenge.is_creator ? t('ch_rematchSentTitle') : challenge.is_creator ? t('ch_createdTitle') : t('ch_statusTitle')} subtitle={isRematch && challenge.is_creator ? t('ch_rematchSentSub') : t('ch_createdSub')}>
+      <Hero badge={isRematch ? `↻ ${t('ch_rematchBadge')}` : t('friends_badge')} />
       <div className="grid gap-4 md:grid-cols-2 md:items-start">
-        <section className="rounded-3xl border border-accent/40 bg-card/70 p-4 sm:p-5 flex flex-col items-center text-center">
-          <Mascot state="celebrate" className="w-24 sm:w-28 short:w-14" />
-          <p className="mt-2 text-lg sm:text-xl font-black">{t('ch_codeLead')} <span className="text-primary">{t('ch_codeTail')}</span></p>
-          <div className="mt-2 flex items-stretch gap-2 w-full max-w-sm">
-            <span className="flex-1 rounded-2xl border border-border bg-muted/30 py-2.5 font-mono font-black text-2xl sm:text-3xl tracking-[0.45em] pl-[0.45em]">{challenge.code}</span>
-            <button onClick={copy} className="rounded-2xl border border-accent/60 text-accent px-3 font-bold text-sm hover:bg-accent/10 active:scale-95">
-              {copied ? '✓' : '📋'} <span className="hidden min-[420px]:inline">{copied ? t('ch_copied') : t('ch_copy')}</span>
-            </button>
+        <Card>
+          <div className="flex items-center gap-3">
+            <LinkIcon className="w-14 h-14 sm:w-16 sm:h-16 text-accent drop-shadow-[0_0_10px_hsl(var(--accent)/0.6)]" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xl sm:text-2xl font-extrabold">{t('ch_codeLead')} <span className="text-primary">{t('ch_codeTail')}</span></p>
+              <div className="mt-2 flex items-stretch gap-2">
+                <span className="flex-1 min-w-0 rounded-2xl border-2 border-foreground/15 bg-background/60 py-2.5 text-center font-extrabold text-2xl sm:text-3xl tracking-[0.35em] pl-[0.35em] truncate">{challenge.code}</span>
+                <button onClick={copy} className="rounded-2xl border-2 border-accent/70 px-3 font-bold text-sm sm:text-base hover:bg-accent/10 active:scale-95 flex items-center gap-1.5">
+                  {copied ? <span aria-hidden>✓</span> : <CopyIcon className="w-5 h-5" />}<span>{copied ? t('ch_copied') : t('ch_copy')}</span>
+                </button>
+              </div>
+            </div>
           </div>
-          <button onClick={share} className="mt-3 w-full max-w-sm rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10 active:scale-[0.98]">
-            🔗 {t('ch_share')}
+          <button onClick={share} className="mt-3 w-full rounded-2xl py-3.5 border-2 border-accent text-accent font-black text-base sm:text-lg hover:bg-accent/10 active:scale-[0.98] flex items-center justify-center gap-2.5">
+            <ShareIcon className="w-6 h-6" /> {t('ch_share')}
           </button>
-          <p className="mt-1.5 text-[11px] sm:text-xs text-muted-foreground">{isRematch && rival ? t('ch_rematchInInbox') : t('ch_shareHint')}</p>
-        </section>
+          <p className="mt-2 text-center text-xs sm:text-sm text-foreground/75">{isRematch && rival ? t('ch_rematchInInbox') : t('ch_shareHint')}</p>
+        </Card>
 
         <div className="flex flex-col gap-4">
           {conditions}
-          <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
-            <h2 className="text-lg sm:text-xl font-black mb-3">👥 {t('ch_participants')}</h2>
+          <Card>
+            <h2 className="flex items-center gap-2.5 text-xl sm:text-2xl font-extrabold mb-3"><PeopleIcon className="w-7 h-7 text-foreground/85" /> {t('ch_participants')}</h2>
             <div className="flex flex-col gap-2">
-              <Participant name={t('ch_you')} status={youStatus} me />
+              <Participant name={displayName ? displayName : t('ch_you')} youTag={displayName ? t('ch_you') : undefined} status={youStatus} me />
               <Participant name={rival?.name ?? t('ch_yourFriend')} status={rivalStatus} />
             </div>
-          </section>
+          </Card>
         </div>
       </div>
 
-      <p className="mt-4 rounded-2xl border border-border bg-muted/20 p-3 text-center text-xs sm:text-sm">
-        ⓘ <b>{t('ch_startNow')}</b> <span className="text-muted-foreground">{t('ch_compareWhenBoth')}</span>
-      </p>
+      <div className="mt-4"><InfoBox lead={t('ch_startNow')} tail={t('ch_compareWhenBoth')} /></div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-[1.4fr_1fr_1fr]">
+      <div className="mt-4 flex flex-col items-center gap-2.5">
         {!meFinished ? (
-          <button onClick={() => { playButtonTap(); onPlay(challenge); }} className="btn3d rounded-2xl py-3.5 short:py-2.5 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
-            ▶ {isRematch ? t('ch_playRematch') : t('ch_playMine')}
-          </button>
+          <PlayButton onClick={() => { playButtonTap(); onPlay(challenge); }} label={isRematch ? t('ch_playRematch') : t('ch_playMine')} />
         ) : (
-          <div className="rounded-2xl border border-accent/50 bg-accent/10 py-3 text-center font-bold text-accent">
+          <div className="w-full max-w-xl rounded-2xl border border-accent/50 bg-accent/10 py-3 text-center font-bold text-accent">
             {detail?.status === 'completed' ? t('ch_resultReady') : t('ch_waitingFriend')}
           </div>
         )}
-        <button onClick={() => { playButtonTap(); onMyChallenges(); }} className="rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">📋 {t('mc_viewMine')}</button>
-        <button onClick={() => { playButtonTap(); onBack(); }} className="rounded-2xl py-3 border border-border bg-muted/20 font-bold hover:bg-muted">🏠 {t('ob_backHome')}</button>
+        <button onClick={() => { playButtonTap(); onMyChallenges(); }} className="w-full max-w-md rounded-full py-3 border-2 border-accent/60 text-accent font-bold hover:bg-accent/10">📋 {t('mc_viewMine')}</button>
+        <BackHome onClick={() => { playButtonTap(); onBack(); }} label={t('ob_backHome')} />
       </div>
     </Shell>
   );
@@ -252,22 +255,92 @@ function Shell({ onBack, title, subtitle, children }: { onBack: () => void; titl
   );
 }
 
-function Row({ icon, label, value }: { icon: string; label: string; value: string }) {
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <section className={`rounded-3xl border-2 border-accent/45 bg-card/75 p-4 sm:p-5 shadow-[0_0_20px_hsl(var(--accent)/0.10)] ${className}`}>{children}</section>;
+}
+
+/** El Explorador con el mapa y la insignia "Reto entre amigos" (maqueta). */
+function Hero({ badge }: { badge: string }) {
+  const words = badge.split(' ');
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/20 px-3 py-2">
-      <span aria-hidden>{icon}</span>
-      <span className="flex-1 text-muted-foreground">{label}</span>
-      <span className="font-black">{value}</span>
+    <div className="relative flex flex-col items-center -mt-2 mb-4 short:hidden" aria-hidden>
+      <div className="relative">
+        <Mascot state="celebrate" className="w-28 sm:w-32" />
+        <span className="absolute -left-5 top-8 text-primary text-lg">✦</span>
+        <LinkIcon className="absolute -right-12 top-4 w-10 h-10 text-accent rotate-12 drop-shadow-[0_0_8px_hsl(var(--accent)/0.6)]" />
+      </div>
+      <span className="-mt-1 rounded-full border-2 border-primary bg-background/90 px-4 py-1 text-xs sm:text-sm font-extrabold tracking-wide">
+        {words.slice(0, -1).join(' ')} <span className="text-primary">{words[words.length - 1]}</span>
+      </span>
     </div>
   );
 }
 
-function Participant({ name, status, me }: { name: string; status: { label: string; cls: string }; me?: boolean }) {
+function CodeBox({ code }: { code: string }) {
+  return <p className="mt-3 rounded-2xl border-2 border-foreground/15 bg-background/60 px-5 py-2.5 font-extrabold text-2xl sm:text-3xl tracking-[0.35em] pl-[calc(1.25rem+0.35em)] text-accent">{code}</p>;
+}
+
+function Row({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/20 px-3 py-2">
-      <Mascot state={me ? 'idle' : 'wink'} className={`w-8 shrink-0 ${me ? '' : 'hue-rotate-[140deg] opacity-80'}`} />
-      <span className="flex-1 font-bold truncate">{name}</span>
-      <span className={`rounded-full border px-2.5 py-0.5 text-[11px] sm:text-xs font-bold whitespace-nowrap ${status.cls}`}>● {status.label}</span>
+    <div className="flex items-center gap-3 rounded-2xl border border-foreground/15 bg-background/40 px-3 py-2.5">
+      {icon}
+      <span className="flex-1 text-foreground/80">{label}</span>
+      <span className="font-extrabold">{value}</span>
     </div>
   );
 }
+
+function Participant({ name, youTag, status, me }: { name: string; youTag?: string; status: { label: string; cls: string; dot: string }; me?: boolean }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-foreground/15 bg-background/40 px-3 py-2">
+      <Mascot state={me ? 'idle' : 'wink'} className={`w-9 shrink-0 ${me ? '' : 'grayscale brightness-75'}`} />
+      <span className="flex-1 font-bold truncate">{name}{youTag && <span className="text-primary"> · {youTag}</span>}</span>
+      <span className={`rounded-full border-2 px-3 py-1 text-xs sm:text-sm font-bold whitespace-nowrap flex items-center gap-1.5 ${status.cls}`}>
+        <span className={`w-2.5 h-2.5 rounded-full ${status.dot}`} aria-hidden />{status.label}
+      </span>
+    </div>
+  );
+}
+
+function InfoBox({ lead, tail }: { lead: string; tail?: string }) {
+  return (
+    <div className="rounded-2xl border-2 border-accent/40 bg-card/60 p-3 sm:p-4 flex items-center gap-3 max-w-xl mx-auto">
+      <InfoIcon className="w-8 h-8 text-accent" />
+      <p className="text-sm sm:text-base">
+        <span className="font-bold">{lead}</span>
+        {tail && <span className="block text-foreground/75 text-xs sm:text-sm">{tail}</span>}
+      </p>
+    </div>
+  );
+}
+
+function PlayButton({ onClick, label, busy = false }: { onClick: () => void; label: string; busy?: boolean }) {
+  return (
+    <button onClick={onClick} disabled={busy} className="btn3d w-full max-w-xl rounded-2xl py-4 short:py-2.5 font-black text-xl sm:text-2xl text-primary-foreground disabled:opacity-60 flex items-center justify-center gap-3" style={{ background: 'var(--grad-cta)' }}>
+      {busy ? <span aria-hidden>⏳</span> : <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor" aria-hidden><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" /></svg>}
+      {label}
+    </button>
+  );
+}
+
+function BackHome({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button onClick={onClick} className="mt-1 w-full max-w-sm rounded-full py-2.5 border-2 border-accent/50 font-bold flex items-center justify-center gap-2 hover:bg-accent/10 active:scale-[0.98]">
+      <HomeIcon className="w-5 h-5" /> {label}
+    </button>
+  );
+}
+
+type I = { className?: string };
+const svg = (className: string, children: React.ReactNode, fill = false) => (
+  <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill={fill ? 'currentColor' : 'none'} stroke={fill ? 'none' : 'currentColor'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{children}</svg>
+);
+const LinkIcon = ({ className = '' }: I) => svg(className, <><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2" /><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" /></>);
+const CopyIcon = ({ className = '' }: I) => svg(className, <><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2" /></>);
+const ShareIcon = ({ className = '' }: I) => svg(className, <><circle cx="18" cy="5.5" r="2.5" fill="currentColor" /><circle cx="6" cy="12" r="2.5" fill="currentColor" /><circle cx="18" cy="18.5" r="2.5" fill="currentColor" /><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1" /></>);
+const GearIcon = ({ className = '' }: I) => svg(className, <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></>);
+const GlobeIcon = ({ className = '' }: I) => svg(className, <><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></>);
+const BagIcon = ({ className = '' }: I) => svg(className, <><rect x="5" y="7" width="14" height="14" rx="3" /><path d="M9 7V5a3 3 0 0 1 6 0v2" /><path d="M9 13h6" /></>);
+const LockIcon = ({ className = '' }: I) => svg(className, <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></>);
+const PeopleIcon = ({ className = '' }: I) => svg(className, <><circle cx="9" cy="8" r="3.5" fill="currentColor" /><circle cx="17" cy="9" r="2.8" fill="currentColor" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0Z" fill="currentColor" /><path d="M15 20a5 5 0 0 1 7-4.6V20Z" fill="currentColor" /></>, true);
+const InfoIcon = ({ className = '' }: I) => svg(className, <><circle cx="12" cy="12" r="9.5" /><path d="M12 11v6" /><circle cx="12" cy="7.6" r="0.6" fill="currentColor" /></>);

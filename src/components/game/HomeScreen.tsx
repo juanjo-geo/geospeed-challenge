@@ -17,6 +17,7 @@ import { useI18n } from '@/i18n';
 import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
+import { REGION_ART, DIFF_ART } from '@/lib/selectionArt';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode) => void;
@@ -40,19 +41,19 @@ interface HomeScreenProps {
 
 /** Dificultades: clave de datos, emoji y nivel de desbloqueo (D12: candado visible). */
 const DIFF_CONFIG: { key: Difficulty; emoji: string; art: [string, string?]; unlockLevel: number }[] = [
-  { key: 'basic',  emoji: '🎒', art: ['🌍', '🎒'], unlockLevel: 1 },
-  { key: 'easy',   emoji: '🧭', art: ['🧭'],       unlockLevel: 2 },
-  { key: 'medium', emoji: '⚡', art: ['🗺️', '⚡'], unlockLevel: 4 },
-  { key: 'hard',   emoji: '🔥', art: ['🔥'],       unlockLevel: 6 },
+  { key: 'basic',  ...DIFF_ART.basic,  unlockLevel: 1 },
+  { key: 'easy',   ...DIFF_ART.easy,   unlockLevel: 2 },
+  { key: 'medium', ...DIFF_ART.medium, unlockLevel: 4 },
+  { key: 'hard',   ...DIFF_ART.hard,   unlockLevel: 6 },
 ];
 
 /** Regiones: emoji y nivel de desbloqueo. */
 const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string; art: [string, string?] }> = {
-  world:    { level: 1, emoji: '🌍', art: ['🌍'] },
-  europe:   { level: 2, emoji: '🏰', art: ['🗼', '🏛️'] },
-  asia:     { level: 3, emoji: '⛩️', art: ['🗻', '⛩️'] },
-  americas: { level: 4, emoji: '🗽', art: ['🗽', '🌴'] },
-  africa:   { level: 5, emoji: '🏜️', art: ['🐪', '🌳'] },
+  world:    { level: 1, ...REGION_ART.world },
+  europe:   { level: 2, ...REGION_ART.europe },
+  asia:     { level: 3, ...REGION_ART.asia },
+  americas: { level: 4, ...REGION_ART.americas },
+  africa:   { level: 5, ...REGION_ART.africa },
 };
 
 const CLASSIC_ROUNDS = 13;

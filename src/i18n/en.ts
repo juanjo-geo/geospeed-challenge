@@ -754,6 +754,8 @@ const en: Translations = {
   friends_codePlaceholder: 'Challenge code',
   friends_join: 'JOIN CHALLENGE',
   friends_info: 'Compare results when you both finish. You can start without waiting for your friend.',
+  friends_infoLead: 'Compare results when you both finish.',
+  friends_infoTail: 'You can start without waiting for your friend.',
   friends_liveDuel: 'Live duel (beta)',
   ch_shareText: 'I challenge you on GeoSpeed: the same cities for both of us, each at our own pace. Code {code}: {link}',
   ch_conditionsLead: 'Challenge',

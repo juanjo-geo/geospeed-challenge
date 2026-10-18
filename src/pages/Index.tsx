@@ -8,6 +8,7 @@ import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/c
 import { type RoundResult } from '@/components/game/GameScreen';
 import CountdownIntro from '@/components/game/CountdownIntro';
 import RotateOverlay from '@/components/game/RotateOverlay';
+import { OPEN_SETTINGS_EVENT } from '@/components/ui/ScreenHeader';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import AppNav, { type NavTab } from '@/components/game/AppNav';
 import Wordmark from '@/components/ui/Wordmark';
@@ -661,6 +662,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => { setProfileTab('overview'); setPhase('profile'); }, []);
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
+  // El engranaje de ScreenHeader (Tienda, Perfil, retos…) pide abrir Ajustes con un evento global
+  useEffect(() => {
+    const open = () => setPhase('settings');
+    window.addEventListener(OPEN_SETTINGS_EVENT, open);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open);
+  }, []);
   const handleMoreModes = useCallback(() => { window.scrollTo(0, 0); setPhase('more-modes'); }, []);
   const handleHowTo = useCallback(() => { window.scrollTo(0, 0); setPhase('howto'); }, []);
   const handleOpenHistory = useCallback(() => { setPhase('history'); window.scrollTo(0, 0); }, []);
