@@ -424,6 +424,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     return (
       <FinalResultScreen
         variant="mundial"
+        musicMuted={musicMuted}
+        onToggleMusic={onToggleMusic}
         rounds={asRounds}
         totalScore={score}
         difficulty={difficulty}

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { countries } from '@/data/countries';
-import { GLOBE, BRAND } from '@/lib/theme';
+import { GLOBE, BRAND, MAP_CONTINENT_COLORS } from '@/lib/theme';
+import { getColorGroup } from '@/lib/mapContinents';
 
 /**
  * Mapa del mundo plano dibujado con los polígonos del juego, como fondo decorativo
@@ -8,10 +9,11 @@ import { GLOBE, BRAND } from '@/lib/theme';
  * y no debe entrar en la carga inicial.
  *  - tone "faint": continentes verdes muy tenues sobre el fondo (cuenta regresiva).
  *  - tone "vivid": océano azul y tierra verde brillante (pantallas de los teléfonos de Girar).
+ *  - tone "continents": colores de continente del juego, apagados (fondo del cierre de partida).
  */
 const BOUNDS = { lonMin: -180, lonMax: 180, latMin: -58, latMax: 84 };
 
-export default function WorldBackdrop({ tone = 'faint', className = '' }: { tone?: 'faint' | 'vivid'; className?: string }) {
+export default function WorldBackdrop({ tone = 'faint', className = '' }: { tone?: 'faint' | 'vivid' | 'continents'; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -49,8 +51,13 @@ export default function WorldBackdrop({ tone = 'faint', className = '' }: { tone
       ctx.fillStyle = tone === 'vivid' ? GLOBE.land : 'rgba(70, 165, 95, 0.22)';
       ctx.strokeStyle = tone === 'vivid' ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.07)';
       ctx.lineWidth = tone === 'vivid' ? 0.4 : 0.6;
-      for (const country of countries) {
+      for (let ci = 0; ci < countries.length; ci++) {
+        const country = countries[ci];
         if (country.name === 'Antarctica') continue;
+        if (tone === 'continents') {
+          const pal = MAP_CONTINENT_COLORS[getColorGroup(country.name)] ?? MAP_CONTINENT_COLORS.Ice;
+          ctx.fillStyle = pal[ci % pal.length];
+        }
         for (const poly of country.polygons) {
           if (poly.length < 3) continue;
           ctx.beginPath();

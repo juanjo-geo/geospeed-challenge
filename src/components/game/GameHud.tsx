@@ -3,13 +3,14 @@ import { useI18n } from '@/i18n';
 import { getPrefs, setPref } from '@/lib/prefs';
 import { playButtonTap } from '@/lib/sounds';
 
-type HudIcon = 'sound' | 'mute' | 'gear' | 'close';
+type HudIcon = 'sound' | 'mute' | 'gear' | 'close' | 'home';
 
 const ICON_PATHS: Record<HudIcon, JSX.Element> = {
   sound: (<><path d="M4 10v4h4l5 4V6L8 10H4Z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" /><path d="M19 6a8.5 8.5 0 0 1 0 12" /></>),
   mute: (<><path d="M4 10v4h4l5 4V6L8 10H4Z" /><path d="m17 9 5 6" /><path d="m22 9-5 6" /></>),
   gear: (<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></>),
   close: (<><path d="M6 6l12 12" /><path d="M18 6 6 18" /></>),
+  home: (<><path d="M3.5 11.5 12 4l8.5 7.5" /><path d="M6 10v9.5h4.5V15h3v4.5H18V10" /></>),
 };
 
 /** Botón redondo del HUD de partida (maqueta Partida: sonido · ajustes · salir, borde turquesa). */
