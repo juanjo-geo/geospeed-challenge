@@ -10,10 +10,11 @@ import { getColorGroup } from '@/lib/mapContinents';
  *  - tone "faint": continentes verdes muy tenues sobre el fondo (cuenta regresiva).
  *  - tone "vivid": océano azul y tierra verde brillante (pantallas de los teléfonos de Girar).
  *  - tone "continents": colores de continente del juego, apagados (fondo del cierre de partida).
+ *  - tone "night": continentes azules tenues (fondo de las pantallas de Cuenta).
  */
 const BOUNDS = { lonMin: -180, lonMax: 180, latMin: -58, latMax: 84 };
 
-export default function WorldBackdrop({ tone = 'faint', className = '' }: { tone?: 'faint' | 'vivid' | 'continents'; className?: string }) {
+export default function WorldBackdrop({ tone = 'faint', className = '' }: { tone?: 'faint' | 'vivid' | 'continents' | 'night'; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -48,8 +49,8 @@ export default function WorldBackdrop({ tone = 'faint', className = '' }: { tone
       const toX = (lon: number) => offX + (lon - BOUNDS.lonMin) * scale;
       const toY = (lat: number) => offY + (BOUNDS.latMax - lat) * scale;
 
-      ctx.fillStyle = tone === 'vivid' ? GLOBE.land : 'rgba(70, 165, 95, 0.22)';
-      ctx.strokeStyle = tone === 'vivid' ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.07)';
+      ctx.fillStyle = tone === 'vivid' ? GLOBE.land : tone === 'night' ? GLOBE.nightLand : 'rgba(70, 165, 95, 0.22)';
+      ctx.strokeStyle = tone === 'vivid' ? 'rgba(255,255,255,0.55)' : tone === 'night' ? GLOBE.nightCoast : 'rgba(255,255,255,0.07)';
       ctx.lineWidth = tone === 'vivid' ? 0.4 : 0.6;
       for (let ci = 0; ci < countries.length; ci++) {
         const country = countries[ci];

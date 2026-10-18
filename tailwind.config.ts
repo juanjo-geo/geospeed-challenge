@@ -38,6 +38,7 @@ export default {
           turquoise: "hsl(var(--brand-turquoise))",
           coral: "hsl(var(--brand-coral))",
           white: "hsl(var(--brand-white))",
+          sky: "hsl(var(--brand-sky))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",

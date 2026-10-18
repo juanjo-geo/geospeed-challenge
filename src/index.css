@@ -27,6 +27,7 @@
     --brand-turquoise: 174 80% 50%;
     --brand-coral: 0 100% 71%;
     --brand-white: 216 47% 97%;
+    --brand-sky: 203 85% 76%;
 
     /* Semánticos (shadcn/Tailwind) */
     --background: var(--brand-navy);
