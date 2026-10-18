@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/i18n';
 import { PASSWORD_MIN } from '@/lib/authRules';
-import AccountScreen, { AccountField, PrimaryButton, SecondaryButton, ErrorNotice } from '@/components/account/AccountScreen';
+import AccountScreen, { AccountField, PrimaryButton, SecondaryButton, ErrorNotice, InfoNote } from '@/components/account/AccountScreen';
 
 type Stage = 'checking' | 'form' | 'success' | 'invalid';
 
@@ -89,10 +89,11 @@ export default function ResetPassword() {
 
   if (stage === 'invalid') {
     return (
-      <AccountScreen art="hourglass" onBack={toLogin} backLabel={t('auth_backToLogin')} title={{ lead: t('acct_invalidLead'), tail: t('acct_invalidTail') }} subtitle={t('reset_invalidDesc')}>
+      <AccountScreen art="envelopeAlert" title={{ lead: t('acct_invalidLead'), tail: t('acct_invalidTail') }} subtitle={<span className="text-foreground/90">{t('reset_invalidDesc')}</span>}>
         <div className="flex flex-col gap-4 short:gap-3">
           <PrimaryButton onClick={() => navigate('/auth?mode=forgot')}>{t('reset_requestNew')}</PrimaryButton>
           <SecondaryButton onClick={toLogin}>{t('auth_backToLogin')}</SecondaryButton>
+          <div className="mt-2 short:mt-0"><InfoNote lines>{t('auth_checkSpam')}</InfoNote></div>
         </div>
       </AccountScreen>
     );

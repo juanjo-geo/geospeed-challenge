@@ -9,7 +9,7 @@ const SplashGlobe = lazy(() => import('@/components/game/SplashGlobe'));
 const WorldBackdrop = lazy(() => import('@/components/game/WorldBackdrop'));
 
 /** Ilustración: Explorador sobre el globo (acceso/registro) o con el objeto del paso de recuperación */
-export type AccountArt = 'globe' | 'envelope' | 'key' | 'keyCheck' | 'hourglass';
+export type AccountArt = 'globe' | 'envelope' | 'key' | 'keyCheck' | 'envelopeAlert';
 
 interface Title { lead: string; tail: string; /** la parte amarilla en su propia línea */ stack?: boolean }
 
@@ -257,10 +257,10 @@ function GlobeArt() {
 }
 
 const PROP_MASCOT: Record<Exclude<AccountArt, 'globe'>, MascotState> = {
-  envelope: 'wink', key: 'wink', keyCheck: 'celebrate', hourglass: 'sad',
+  envelope: 'wink', key: 'wink', keyCheck: 'celebrate', envelopeAlert: 'sad',
 };
 
-/** Explorador con el objeto del paso (sobre con llave · llave · llave con check · reloj de arena) sobre la plataforma */
+/** Explorador con el objeto del paso (sobre con llave · llave · llave con check · sobre con advertencia) sobre la plataforma */
 function PropArt({ art }: { art: Exclude<AccountArt, 'globe'> }) {
   return (
     <div className="relative mx-auto w-[min(72vw,300px,36dvh)] aspect-square lg:w-[min(30vw,380px)] short:w-[min(24vw,160px)]" aria-hidden>
@@ -268,11 +268,11 @@ function PropArt({ art }: { art: Exclude<AccountArt, 'globe'> }) {
       <div className="absolute left-[4%] bottom-[10%] w-[70%]">
         <Mascot state={PROP_MASCOT[art]} className="w-full drop-shadow-[0_12px_20px_rgba(0,0,0,0.5)]" />
       </div>
-      <div className={`absolute ${art === 'envelope' ? 'right-[-6%] bottom-[18%] w-[44%]' : 'right-[2%] bottom-[16%] w-[30%]'}`}>
+      <div className={`absolute ${art === 'envelope' || art === 'envelopeAlert' ? 'right-[-6%] bottom-[18%] w-[44%]' : 'right-[2%] bottom-[16%] w-[30%]'}`}>
         <Sparks className="absolute -top-[46%] left-[22%] w-[62%] text-primary" />
         {art === 'envelope' && <EnvelopeKey />}
         {(art === 'key' || art === 'keyCheck') && <KeyArt />}
-        {art === 'hourglass' && <Hourglass />}
+        {art === 'envelopeAlert' && <EnvelopeAlert />}
         {art === 'keyCheck' && <CheckBadge className="absolute -top-[34%] -right-[40%] w-[64%]" />}
       </div>
     </div>
@@ -343,14 +343,16 @@ function CheckBadge({ className }: { className: string }) {
   );
 }
 
-function Hourglass() {
+/** Sobre con un triángulo de advertencia (maqueta Enlace_No_Disponible) */
+function EnvelopeAlert() {
   return (
-    <svg viewBox="0 0 60 84" className="w-full rotate-[12deg] drop-shadow-[0_8px_14px_rgba(0,0,0,0.45)]" aria-hidden>
-      <path d="M13 11h34c0 17-13 21-13 31s13 14 13 31H13c0-17 13-21 13-31S13 28 13 11Z" strokeWidth="3" style={{ fill: 'hsl(var(--foreground) / 0.22)', stroke: 'hsl(var(--foreground))' }} />
-      <path d="M19 19h22c-2 7-8 11-11 15-3-4-9-8-11-15Z" style={{ fill: 'hsl(var(--primary))' }} />
-      <path d="M17 70c2-9 8-13 13-15 5 2 11 6 13 15Z" style={{ fill: 'hsl(var(--primary))' }} />
-      <rect x="6" y="3" width="48" height="9" rx="3" style={{ fill: 'hsl(var(--brand-yellow-deep))' }} />
-      <rect x="6" y="72" width="48" height="9" rx="3" style={{ fill: 'hsl(var(--brand-yellow-deep))' }} />
+    <svg viewBox="0 0 100 74" className="w-full rotate-[-8deg] drop-shadow-[0_8px_14px_rgba(0,0,0,0.45)]" aria-hidden>
+      <rect x="3" y="4" width="94" height="66" rx="9" style={{ fill: 'hsl(var(--foreground))' }} />
+      <path d="M6 9l44 32 44-32" fill="none" strokeWidth="3" strokeLinejoin="round" style={{ stroke: 'hsl(var(--muted-foreground) / 0.7)' }} />
+      <path d="M6 66l32-26M94 66 62 40" fill="none" strokeWidth="2.4" style={{ stroke: 'hsl(var(--muted-foreground) / 0.45)' }} />
+      <path d="M62 30 84 68H40Z" strokeWidth="3.5" strokeLinejoin="round" style={{ fill: 'hsl(var(--primary))', stroke: 'hsl(var(--brand-yellow-deep))' }} />
+      <path d="M62 43v12" strokeWidth="4.5" strokeLinecap="round" style={{ stroke: 'hsl(var(--brand-navy-deep))' }} />
+      <circle cx="62" cy="61.5" r="2.6" style={{ fill: 'hsl(var(--brand-navy-deep))' }} />
     </svg>
   );
 }
