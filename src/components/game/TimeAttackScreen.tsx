@@ -14,6 +14,7 @@ import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
 import Wordmark from '@/components/ui/Wordmark';
 import { type RoundResult } from './GameScreen';
+import { appNumberLocale } from '@/lib/format';
 
 const GLOBAL_TIME = 60;
 const POOL_SIZE = 40;
@@ -303,7 +304,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
               <div className={`text-center py-1.5 px-2.5 rounded-lg font-bold text-sm ${
                 lastPoints >= 500 ? `${palette.good.twBgSoft} ${palette.good.tw}` : `${palette.bad.twBgSoft} ${palette.bad.tw}`
               }`}>
-                {lastPoints >= 500 ? '🎯' : '😬'} +{lastPoints.toLocaleString()}
+                {lastPoints >= 500 ? '🎯' : '😬'} +{lastPoints.toLocaleString(appNumberLocale())}
               </div>
             )}
             <Mascot
@@ -424,7 +425,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
             <div className="text-center leading-tight">
               <div className="text-sm sm:text-base font-black">{flash === 'good' ? '🎯' : '😬'} {currentCity.name}</div>
               <div className="text-[10px] sm:text-xs opacity-80">{currentCity.country}</div>
-              <div className="text-xs sm:text-sm font-bold mt-0.5">+{lastPoints?.toLocaleString()}{lastDistance !== null ? ` · ${formatDistance(lastDistance)}` : ''}</div>
+              <div className="text-xs sm:text-sm font-bold mt-0.5">+{lastPoints?.toLocaleString(appNumberLocale())}{lastDistance !== null ? ` · ${formatDistance(lastDistance)}` : ''}</div>
             </div>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { appNumberLocale } from '@/lib/format';
 
 const R = 6371; // Earth radius in km
 
@@ -37,7 +38,7 @@ export function getMultiplier(timeUsedSeconds: number): { value: number; label: 
 
 export function formatDistance(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} m`;
-  return `${Math.round(km).toLocaleString()} km`;
+  return `${Math.round(km).toLocaleString(appNumberLocale())} km`;
 }
 
 // ── Multiplicador de puntaje por dificultad ──

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { appNumberLocale } from '@/lib/format';
 
 interface CountUpProps {
   value: number;
@@ -42,6 +43,6 @@ export default function CountUp({ value, durationMs = 500, className, style, for
     };
   }, [value, durationMs]);
 
-  const fmt = format || ((n: number) => n.toLocaleString());
+  const fmt = format || ((n: number) => n.toLocaleString(appNumberLocale()));
   return <span className={className} style={style}>{fmt(display)}</span>;
 }

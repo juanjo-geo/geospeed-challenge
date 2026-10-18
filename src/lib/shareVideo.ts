@@ -14,6 +14,7 @@ import { BRAND_RGB, BRAND, rgba } from '@/lib/theme';
 import { countries } from '@/data/countries';
 import { getMapBounds } from '@/data/cities';
 import { getPlayerLevel } from './levelSystem';
+import { appNumberLocale } from '@/lib/format';
 
 interface VideoRoundData {
   clickLat: number;
@@ -298,7 +299,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
 
         // Distance label on arc midpoint
         const labelPt = bezierPt(0.5);
-        const distText = `${Math.round(bestRound.distance).toLocaleString()} km`;
+        const distText = `${Math.round(bestRound.distance).toLocaleString(appNumberLocale())} km`;
         ctx.font = 'bold 13px system-ui, sans-serif';
         const tw = ctx.measureText(distText).width;
         ctx.fillStyle = 'rgba(0,0,0,0.8)';
@@ -333,7 +334,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
       // Round score
       ctx.fillStyle = BRAND.yellow;
       ctx.font = 'bold 48px system-ui, sans-serif';
-      ctx.fillText(`${bestRound.score.toLocaleString()}`, W / 2, scoreY + 65);
+      ctx.fillText(`${bestRound.score.toLocaleString(appNumberLocale())}`, W / 2, scoreY + 65);
       ctx.fillStyle = '#94a3b8';
       ctx.font = '14px system-ui, sans-serif';
       ctx.fillText('PUNTOS EN ESTA RONDA', W / 2, scoreY + 88);
@@ -341,7 +342,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
       // Total score
       ctx.fillStyle = '#e2e8f0';
       ctx.font = 'bold 24px system-ui, sans-serif';
-      ctx.fillText(`Total: ${data.totalScore.toLocaleString()} pts`, W / 2, scoreY + 130);
+      ctx.fillText(`Total: ${data.totalScore.toLocaleString(appNumberLocale())} pts`, W / 2, scoreY + 130);
 
       // Cities completed
       ctx.fillStyle = '#64748b';
@@ -435,8 +436,8 @@ export async function shareVideo(data: ShareVideoData): Promise<boolean> {
 
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({
-        title: `📍 GeoSpeed — ${data.totalScore.toLocaleString()} pts`,
-        text: `Hice ${data.totalScore.toLocaleString()} puntos en GeoSpeed. ¿Puedes superarlo? 🌍`,
+        title: `📍 GeoSpeed — ${data.totalScore.toLocaleString(appNumberLocale())} pts`,
+        text: `Hice ${data.totalScore.toLocaleString(appNumberLocale())} puntos en GeoSpeed. ¿Puedes superarlo? 🌍`,
         files: [file],
       });
       return true;

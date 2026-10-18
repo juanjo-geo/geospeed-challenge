@@ -21,6 +21,7 @@ import { useI18n } from '@/i18n';
 import { recordGameResult, getContextualOffer, type FrustrationOffer } from '@/lib/frustrationDetector';
 import FrustrationOfferModal from './FrustrationOfferModal';
 import { HudIconButton } from './GameHud';
+import { appNumberLocale } from '@/lib/format';
 // Mapa de continentes tenue de fondo (polígonos en carga diferida)
 const WorldBackdrop = lazy(() => import('./WorldBackdrop'));
 
@@ -165,7 +166,7 @@ export default function FinalResultScreen({
     }, 2500);
 
     const avgD = Math.round(distances.reduce((a, b) => a + b, 0) / Math.max(1, distances.length));
-    announce(t('sr_announceGameOver', { score: totalScore.toLocaleString(), rounds: rounds.length, avg: avgD }), 'assertive');
+    announce(t('sr_announceGameOver', { score: totalScore.toLocaleString(appNumberLocale()), rounds: rounds.length, avg: avgD }), 'assertive');
     return () => clearTimeout(offerTimer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

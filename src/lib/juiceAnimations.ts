@@ -1,5 +1,6 @@
 import { prefersReducedMotion } from './prefs';
 import { BRAND_RGB, BRAND } from '@/lib/theme';
+import { appNumberLocale } from '@/lib/format';
 /**
  * ═══════════════════════════════════════════════════════════════════
  * GeoSpeed — JUICE ANIMATIONS (Phase 4: Polish AAA)
@@ -156,7 +157,7 @@ export function fireScoreFly(
     animation: juice-score-fly 0.9s ease-out forwards;
     white-space: nowrap;
   `;
-  el.textContent = `+${points.toLocaleString()}`;
+  el.textContent = `+${points.toLocaleString(appNumberLocale())}`;
   document.body.appendChild(el);
 
   // Bezier arc animation via JS (CSS can't do arbitrary paths)
@@ -235,7 +236,7 @@ export function fireRoundFlash(
       animation: juice-flash-in 0.25s ease-out 0.05s forwards, juice-flash-out 0.3s ease-in 0.65s forwards;
       opacity: 0;
     ">
-      +${points.toLocaleString()}
+      +${points.toLocaleString(appNumberLocale())}
     </div>
   `;
 

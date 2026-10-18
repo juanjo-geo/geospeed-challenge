@@ -15,6 +15,7 @@ import WorldMapCanvas from './WorldMapCanvas';
 import CityAnswersScreen from './CityAnswersScreen';
 import CityReviewScreen from './CityReviewScreen';
 import { type RoundResult } from './GameScreen';
+import { appNumberLocale } from '@/lib/format';
 
 interface ChallengeResultScreenProps {
   detail: ChallengeDetail;
@@ -98,7 +99,7 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
 
   const share = async () => {
     const text = done
-      ? t('chr_shareFinal', { mine: mine!.score.toLocaleString(), rival: rival!.score.toLocaleString(), name: rivalName })
+      ? t('chr_shareFinal', { mine: mine!.score.toLocaleString(appNumberLocale()), rival: rival!.score.toLocaleString(appNumberLocale()), name: rivalName })
       : t('ch_shareText', { code: detail.code, link: challengeLink(detail.code) });
     try {
       if (navigator.share) await navigator.share({ title: 'GeoSpeed', text, url: challengeLink(detail.code) });
@@ -150,7 +151,7 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
             <div className="flex flex-col items-center text-center">
               <Mascot state="idle" className="w-24 sm:w-28 short:w-16" />
               <p className="mt-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('chr_yourScore')}</p>
-              <p className="font-black font-mono text-4xl sm:text-5xl text-primary">{mine?.score.toLocaleString() ?? '—'} <span className="text-base text-foreground">pts</span></p>
+              <p className="font-black font-mono text-4xl sm:text-5xl text-primary">{mine?.score.toLocaleString(appNumberLocale()) ?? '—'} <span className="text-base text-foreground">pts</span></p>
               <div className="grid grid-cols-2 gap-2 w-full mt-3">
                 <Tile icon="📍" label={t('final_cities')} value={`${mine?.rounds.length ?? 0} / ${detail.rounds_total}`} />
                 <Tile icon="🗺️" label={t('final_avgDist')} value={formatDistance(avgDistance(mine?.rounds ?? []))} />
@@ -168,8 +169,8 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
               </div>
               <p className="mt-3 text-center text-sm sm:text-base">
                 {outcome === 'tie' ? <b>⚌ {t('chr_sameScore')}</b>
-                  : outcome === 'win' ? <><b className="text-primary font-mono text-lg">+{diff.toLocaleString()}</b> {t('chr_pointsDiff')}</>
-                  : <b>{t('chr_pointsToWin', { n: diff.toLocaleString() })}</b>}
+                  : outcome === 'win' ? <><b className="text-primary font-mono text-lg">+{diff.toLocaleString(appNumberLocale())}</b> {t('chr_pointsDiff')}</>
+                  : <b>{t('chr_pointsToWin', { n: diff.toLocaleString(appNumberLocale()) })}</b>}
               </p>
             </>
           )}
@@ -297,7 +298,7 @@ function ChallengeCompare({ detail, rows, rivalName, onOpenMap, onBack }: { deta
                 <tbody className="font-mono font-bold">
                   <CmpRow icon="📍" label={t('game_distance')} a={row.me?.distance_km != null ? formatDistance(row.me.distance_km) : '—'} b={row.rv?.distance_km != null ? formatDistance(row.rv.distance_km) : '—'} />
                   <CmpRow icon="⏱️" label={t('game_time')} a={row.me?.time_s != null ? `${row.me.time_s} s` : '—'} b={row.rv?.time_s != null ? `${row.rv.time_s} s` : '—'} />
-                  <CmpRow icon="🏆" label={t('game_points')} a={mp.toLocaleString()} b={rp.toLocaleString()} hiA={who === 'me'} hiB={who === 'rival'} />
+                  <CmpRow icon="🏆" label={t('game_points')} a={mp.toLocaleString(appNumberLocale())} b={rp.toLocaleString(appNumberLocale())} hiA={who === 'me'} hiB={who === 'rival'} />
                 </tbody>
               </table>
               <div className="grid grid-cols-[1.3fr_1fr] gap-2 mt-auto">
@@ -370,7 +371,7 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
             <tbody className="font-mono font-bold">
               <CmpRow icon="📍" label={t('game_distance')} a={row.me?.distance_km != null ? formatDistance(row.me.distance_km) : '—'} b={row.rv?.distance_km != null ? formatDistance(row.rv.distance_km) : '—'} />
               <CmpRow icon="⏱️" label={t('game_time')} a={row.me?.time_s != null ? `${row.me.time_s} s` : '—'} b={row.rv?.time_s != null ? `${row.rv.time_s} s` : '—'} />
-              <CmpRow icon="🏆" label={t('game_points')} a={`+${mp.toLocaleString()}`} b={`+${rp.toLocaleString()}`} hiA={who === 'me'} hiB={who === 'rival'} />
+              <CmpRow icon="🏆" label={t('game_points')} a={`+${mp.toLocaleString(appNumberLocale())}`} b={`+${rp.toLocaleString(appNumberLocale())}`} hiA={who === 'me'} hiB={who === 'rival'} />
             </tbody>
           </table>
           <span className={`self-center rounded-full px-3 py-1 text-[11px] sm:text-xs font-black ${who === 'me' ? 'bg-primary text-primary-foreground' : who === 'rival' ? 'bg-accent text-accent-foreground' : 'border border-border text-muted-foreground'}`}>
@@ -423,7 +424,7 @@ function PlayerCard({ name, score, tag, mine, showYou, t }: { name: string; scor
         {tag === 'winner' && <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-base" aria-hidden>👑</span>}
       </div>
       <p className="font-bold text-sm sm:text-base truncate">{name}{showYou && <span className="text-primary"> · {t('ch_you' as never)}</span>}</p>
-      <p className={`font-black font-mono text-3xl sm:text-4xl ${mine ? 'text-primary' : ''}`}>{score.toLocaleString()}</p>
+      <p className={`font-black font-mono text-3xl sm:text-4xl ${mine ? 'text-primary' : ''}`}>{score.toLocaleString(appNumberLocale())}</p>
       <p className="text-xs text-muted-foreground -mt-1">{t('game_points' as never).toLowerCase()}</p>
       <span className={`mt-2 inline-block rounded-full px-3 py-1 text-[11px] sm:text-xs font-black ${tag === 'winner' ? 'bg-primary text-primary-foreground' : tag === 'tie' ? 'border border-primary text-primary' : 'border border-accent text-accent'}`}>
         {tag === 'winner' ? `🏆 ${t('chr_winner' as never)}` : tag === 'tie' ? `⚌ ${t('chr_tie' as never)}` : `✅ ${t('chr_completed' as never)}`}
@@ -446,7 +447,7 @@ function ScorePill({ name, score, me, winner }: { name: string; score: number; m
   return (
     <div className={`flex items-center gap-2 rounded-2xl border-2 px-3 py-2 ${winner ? (me ? 'border-primary' : 'border-accent') : 'border-border'} bg-card/70`}>
       <Mascot state={winner ? 'celebrate' : 'wink'} className={`w-9 ${me ? '' : 'hue-rotate-[140deg]'}`} />
-      <span className="min-w-0"><span className={`block text-[11px] font-bold truncate ${me ? 'text-primary' : 'text-accent'}`}>{name}</span><span className="block font-mono font-black text-xl leading-none">{score.toLocaleString()}</span></span>
+      <span className="min-w-0"><span className={`block text-[11px] font-bold truncate ${me ? 'text-primary' : 'text-accent'}`}>{name}</span><span className="block font-mono font-black text-xl leading-none">{score.toLocaleString(appNumberLocale())}</span></span>
     </div>
   );
 }

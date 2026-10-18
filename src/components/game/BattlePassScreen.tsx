@@ -20,6 +20,7 @@ import { playButtonTap, playLevelUp, playShareSuccess } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import { tCategory, tRarity, tCosmeticName, tCosmeticDesc } from '@/lib/gameI18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { appNumberLocale } from '@/lib/format';
 
 interface BattlePassScreenProps {
   onClose: () => void;
@@ -91,7 +92,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
               <span className="text-sm font-bold text-foreground">{tr('bp_level')} {bpLevel.level}</span>
               <span className="text-xs text-muted-foreground">
                 {bpLevel.xpForNext > 0
-                  ? `${bpLevel.xpInLevel.toLocaleString()} / ${bpLevel.xpForNext.toLocaleString()} XP`
+                  ? `${bpLevel.xpInLevel.toLocaleString(appNumberLocale())} / ${bpLevel.xpForNext.toLocaleString(appNumberLocale())} XP`
                   : tr('bp_max')}
               </span>
             </div>
@@ -105,7 +106,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
               />
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              {tr('bp_season')} {bp.seasonId} · {tr('bp_totalXp')}: {bpLevel.totalXP.toLocaleString()}
+              {tr('bp_season')} {bp.seasonId} · {tr('bp_totalXp')}: {bpLevel.totalXP.toLocaleString(appNumberLocale())}
             </p>
           </div>
 

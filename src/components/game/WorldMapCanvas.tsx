@@ -6,6 +6,7 @@ import { countries } from '@/data/countries';
 import { type GameMode, type MapBounds, getMapBounds } from '@/data/cities';
 import { unlockAudio } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
+import { appNumberLocale } from '@/lib/format';
 
 interface WorldMapCanvasProps {
   onMapClick: (lat: number, lon: number, viewportX?: number, viewportY?: number) => void;
@@ -650,7 +651,7 @@ export default function WorldMapCanvas({
         // ── Distance label on arc midpoint ──
         if (distanceKm != null) {
           const labelPt = bezierPt(0.5);
-          const text = `${Math.round(distanceKm).toLocaleString()} km`;
+          const text = `${Math.round(distanceKm).toLocaleString(appNumberLocale())} km`;
           ctx.font = 'bold 13px system-ui';
           const tw = ctx.measureText(text).width;
           ctx.fillStyle = 'rgba(0,0,0,0.75)';
@@ -698,7 +699,7 @@ export default function WorldMapCanvas({
           ctx.strokeStyle = '#fff';
           ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(rx, ry, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          const rl = rivalClick.distanceKm != null ? `${rivalClick.label} · ${Math.round(rivalClick.distanceKm).toLocaleString()} km` : rivalClick.label;
+          const rl = rivalClick.distanceKm != null ? `${rivalClick.label} · ${Math.round(rivalClick.distanceKm).toLocaleString(appNumberLocale())} km` : rivalClick.label;
           drawPill(rl, rx, ry - 36 < 60 ? ry + 14 : ry - 36, BRAND.turquoise, BRAND.navyDeep);
         }
         // ── Etiquetas de los pines (maqueta Feedback_APROBADA_v1) ──

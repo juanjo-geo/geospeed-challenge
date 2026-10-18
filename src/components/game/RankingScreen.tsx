@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot from './Mascot';
+import { appNumberLocale } from '@/lib/format';
 
 interface RankingScreenProps {
   initialMode?: string;
@@ -113,7 +114,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
                   <li key={r.userId} className={`grid grid-cols-[3rem_1fr_6rem] items-center rounded-2xl border px-2 py-1.5 ${r.rank === 1 ? 'border-primary bg-primary/10' : r.rank === 2 ? 'border-border bg-muted/30' : r.rank === 3 ? 'border-accent/60 bg-accent/5' : 'border-border/60 bg-card/60'}`}>
                     <span className="font-black text-center">{MEDAL[r.rank - 1] ?? <span className="inline-flex w-7 h-7 items-center justify-center rounded-full border border-accent/60 text-xs">{r.rank}</span>}</span>
                     <span className="flex items-center gap-2 min-w-0"><Avatar avatar={r.avatar} /><span className="font-bold truncate">{r.displayName}</span></span>
-                    <span className="text-right font-mono font-black text-primary">{r.bestScore.toLocaleString()} <span className="text-xs text-foreground font-bold">pts</span></span>
+                    <span className="text-right font-mono font-black text-primary">{r.bestScore.toLocaleString(appNumberLocale())} <span className="text-xs text-foreground font-bold">pts</span></span>
                   </li>
                 ))}
               </ul>
@@ -140,7 +141,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
                   <Avatar avatar={avatar || "mascot"} size="lg" />
                   <span className="font-bold text-left leading-tight truncate">{myName}{displayName && <span className="text-primary"> · {t('ch_you')}</span>}</span>
                 </div>
-                <p className="mt-1 font-black font-mono text-2xl sm:text-3xl text-primary">{(mine.bestScore ?? 0).toLocaleString()} <span className="text-sm text-foreground font-bold">pts</span></p>
+                <p className="mt-1 font-black font-mono text-2xl sm:text-3xl text-primary">{(mine.bestScore ?? 0).toLocaleString(appNumberLocale())} <span className="text-sm text-foreground font-bold">pts</span></p>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">{t('rank_ofPlayers', { n: mine.totalPlayers })}</p>
               </div>
             )}

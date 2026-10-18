@@ -2,6 +2,7 @@ import { BRAND } from '@/lib/theme';
 import { MODE_CONFIG, getMapBounds } from '@/data/cities';
 import { countries } from '@/data/countries';
 import { getPlayerLevel } from './levelSystem';
+import { appNumberLocale } from '@/lib/format';
 
 interface RoundData {
   clickLat: number;
@@ -126,7 +127,7 @@ export async function generateShareCard(data: ShareCardData): Promise<Blob> {
   // Score — tier colored
   ctx.fillStyle = tier.scoreColor;
   ctx.font = 'bold 64px "Courier New", monospace';
-  ctx.fillText(data.score.toLocaleString(), W / 2, 148);
+  ctx.fillText(data.score.toLocaleString(appNumberLocale()), W / 2, 148);
 
   // Tier badge
   ctx.fillStyle = `rgba(${tier.accentRgb}, 0.15)`;
@@ -187,7 +188,7 @@ export async function generateShareCard(data: ShareCardData): Promise<Blob> {
   ctx.fillStyle = '#64748b';
   ctx.font = '9px system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${level.emoji} Nv.${level.level} ${level.title} — ${level.xp.toLocaleString()} XP`, W / 2, barY + 24);
+  ctx.fillText(`${level.emoji} Nv.${level.level} ${level.title} — ${level.xp.toLocaleString(appNumberLocale())} XP`, W / 2, barY + 24);
 
   // ── Mini-map with round results ──
   if (hasMap && data.rounds) {
@@ -336,8 +337,8 @@ export async function shareResult(data: ShareCardData) {
   if (navigator.share && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({
-        title: `📍 GeoSpeed — ${data.score.toLocaleString()} pts`,
-        text: `Hice ${data.score.toLocaleString()} puntos en GeoSpeed. ¿Puedes superarlo? 🌍`,
+        title: `📍 GeoSpeed — ${data.score.toLocaleString(appNumberLocale())} pts`,
+        text: `Hice ${data.score.toLocaleString(appNumberLocale())} puntos en GeoSpeed. ¿Puedes superarlo? 🌍`,
         files: [file],
       });
       return;
