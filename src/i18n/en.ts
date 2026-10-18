@@ -709,6 +709,8 @@ const en: Translations = {
   profile_badgesTitle: 'Your badges',
   profile_detailedStats: 'Detailed stats',
   profile_detailedStatsDesc: 'Modes, XP, rounds and lives',
+  profile_badgesShort: 'Badges',
+  profile_statsShort: 'Stats',
   ob_badge: 'Practice',
   ob_introTitle: 'Learn the basics',
   ob_introDesc: "We'll show you 3 famous cities. Tap the map where you think each one is. No pressure.",

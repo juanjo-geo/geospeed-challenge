@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { fetchMyProgress, type MyProgress } from '@/lib/gameResults';
 import { getStreakState } from '@/lib/dailyStreak';
 import { playButtonTap } from '@/lib/sounds';
@@ -12,7 +12,9 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import { updateMyProfile } from '@/lib/identity';
 import { useNavigate } from 'react-router-dom';
 import Mascot from './Mascot';
-import { appNumberLocale } from '@/lib/format';
+import { appNumberLocale, formatNumber } from '@/lib/format';
+import { ChevronIcon, HomeIcon, LegendPin } from '@/components/ui/icons';
+const WorldBackdrop = lazy(() => import('./WorldBackdrop'));
 
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
 const AVATARS = ['mascot', '🌍', '🗺️', '🧭', '✈️', '🚀', '🏔️', '🌋', '🏝️', '🎯', '👑', '⚡', '🔮', '🦅', '🐉', '🎲', '🛸'];
@@ -43,11 +45,15 @@ interface ProfileScreenProps {
 }
 
 function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
-  if (avatar === 'mascot') return <Mascot state="wink" className={size === 'lg' ? 'w-[74%]' : 'w-[80%]'} />;
+  if (avatar === 'mascot') return <Mascot state="wink" className={size === 'lg' ? 'w-[84%]' : 'w-[80%]'} />;
   return <span className={size === 'lg' ? 'text-6xl sm:text-7xl' : 'text-xl sm:text-2xl'}>{avatar}</span>;
 }
 
-/** Mi perfil (maqueta Perfil_APROBADA_v1): explorador + nivel, estadísticas y accesos a cada sección. */
+/**
+ * Mi perfil (maquetas Perfil_Movil/Computador_APROBADA_v1): avatar con aro amarillo, nombre, rango y nivel con
+ * medallón de brújula · Tus estadísticas · Explora tu progreso (Historial, Ranking, Mis retos + accesos compactos
+ * a Niveles, Insignias y Estadísticas, que la maqueta no muestra) · Volver al inicio.
+ */
 export default function ProfileScreen({ onBack, initialTab = 'overview', onMyChallenges, onOpenHistory, onOpenRanking }: ProfileScreenProps) {
   const { user, displayName, avatar: serverAvatar, isAnonymous, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -103,8 +109,18 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center px-3 py-4 sm:px-4 sm:py-6 md:px-6 overflow-y-auto game-bg">
-      <div className="w-full max-w-5xl animate-fade-in-up" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
+    <div className="relative min-h-[100dvh] flex flex-col items-center px-3 py-4 sm:px-4 sm:py-6 md:px-6 overflow-y-auto game-bg">
+      {/* Mapa tenue detrás de la cabecera (maqueta Perfil) */}
+      {tab === 'overview' && (
+        <div className="absolute inset-x-0 top-0 h-[420px] md:h-[360px] pointer-events-none overflow-hidden [mask-image:linear-gradient(to_bottom,black_55%,transparent)]" aria-hidden>
+          <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[260vw] md:w-[120vw] h-full opacity-80">
+            <Suspense fallback={null}><WorldBackdrop tone="night" /></Suspense>
+          </div>
+          <LegendPin color="hsl(var(--accent))" className="absolute left-[8%] top-[150px] w-7 h-7 opacity-80" />
+          <LegendPin color="hsl(var(--accent))" className="absolute right-[9%] top-[120px] w-7 h-7 opacity-80" />
+        </div>
+      )}
+      <div className="relative w-full max-w-5xl animate-fade-in-up" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
         <ScreenHeader
           onBack={tab === 'overview' ? onBack : () => setTab('overview')}
           title={tab === 'overview' ? t('profile_title') : SECTION_TITLES[tab]}
@@ -112,105 +128,122 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
         />
 
         {tab === 'overview' ? (
-          <div className="grid gap-4 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:items-start">
-            {/* ── Explorador: avatar, nombre y nivel ── */}
-            <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-6 flex flex-col items-center text-center">
+          <>
+          <div className="grid gap-4 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:items-stretch">
+            {/* ── Explorador: avatar (sobre la tarjeta en el celular, dentro en computador), nombre y nivel ── */}
+            <section className="flex flex-col items-center text-center md:rounded-3xl md:border-2 md:border-accent/50 md:bg-card/70 md:p-6 md:shadow-[0_0_20px_hsl(var(--accent)/0.12)]">
               <button
                 onClick={() => { playButtonTap(); setShowAvatarPicker(v => !v); }}
-                className="relative w-28 h-28 sm:w-36 sm:h-36 short:w-24 short:h-24 rounded-full border-4 border-primary bg-primary/10 flex items-center justify-center shadow-[0_0_24px_hsl(var(--primary)/0.35)] transition-transform hover:scale-[1.03] active:scale-95"
+                className="relative w-36 h-36 sm:w-44 sm:h-44 short:w-24 short:h-24 rounded-full border-[5px] border-primary bg-[radial-gradient(circle_at_50%_40%,hsl(var(--brand-navy-card)),hsl(var(--brand-navy-deep)))] flex items-center justify-center shadow-[0_0_34px_hsl(var(--primary)/0.45)] transition-transform hover:scale-[1.03] active:scale-95"
                 aria-label={t('profile_changeAvatar')}
               >
                 <AvatarFace avatar={avatar} size="lg" />
-                <span className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-xs" aria-hidden>✏️</span>
+                <svg viewBox="0 0 60 16" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[46%] text-primary" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" aria-hidden>
+                  <path d="M6 4l5 6M22 3l2 8M38 3l-2 8M54 4l-5 6" />
+                </svg>
+                <span className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-card border-2 border-accent/60 flex items-center justify-center text-xs" aria-hidden>✏️</span>
               </button>
 
-              {showAvatarPicker && (
-                <div className="w-full mt-4 pt-4 border-t border-border animate-fade-in">
-                  <p className="text-xs text-muted-foreground mb-2">{t('profile_chooseAvatar')}</p>
-                  <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5 sm:gap-2">
-                    {AVATARS.map(a => (
-                      <button
-                        key={a}
-                        onClick={() => selectAvatar(a)}
-                        className={`aspect-square rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                          avatar === a ? 'bg-primary/20 border-2 border-primary' : 'bg-muted/40 border border-transparent hover:border-accent/50'
-                        }`}
-                        aria-label={a === 'mascot' ? t('profile_avatarExplorer') : a}
-                      >
-                        <AvatarFace avatar={a} size="sm" />
-                      </button>
-                    ))}
+              <div className="w-full mt-4 rounded-3xl border-2 border-accent/50 bg-card/70 p-4 shadow-[0_0_20px_hsl(var(--accent)/0.12)] md:mt-3 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none flex flex-col items-center">
+                {showAvatarPicker && (
+                  <div className="w-full mb-3 pb-3 border-b border-accent/20 animate-fade-in">
+                    <p className="text-xs text-muted-foreground mb-2">{t('profile_chooseAvatar')}</p>
+                    <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5 sm:gap-2">
+                      {AVATARS.map(a => (
+                        <button
+                          key={a}
+                          onClick={() => selectAvatar(a)}
+                          className={`aspect-square rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+                            avatar === a ? 'bg-primary/20 border-2 border-primary' : 'bg-muted/40 border border-transparent hover:border-accent/50'
+                          }`}
+                          aria-label={a === 'mascot' ? t('profile_avatarExplorer') : a}
+                        >
+                          <AvatarFace avatar={a} size="sm" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {editingName ? (
-                <form onSubmit={(e) => { e.preventDefault(); saveName(); }} className="mt-3 w-full max-w-xs flex gap-2">
-                  <input autoFocus value={nameDraft} onChange={(e) => setNameDraft(e.target.value.slice(0, 20))} placeholder={t('acc_namePlaceholder')} maxLength={20}
-                    className="flex-1 min-w-0 rounded-xl border border-accent/60 bg-muted/30 px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-accent" />
-                  <button type="submit" className="rounded-xl bg-primary text-primary-foreground px-3 font-black text-sm">{t('acc_save')}</button>
-                </form>
-              ) : (
-                <button onClick={() => { playButtonTap(); setNameDraft(displayName || pendingName || ''); setEditingName(true); }} className="mt-3 group flex items-center gap-2 max-w-full" aria-label={t('acc_editName')}>
-                  <span className="font-black text-2xl sm:text-3xl truncate">{name}</span>
-                  <span className="text-sm opacity-60 group-hover:opacity-100" aria-hidden>✏️</span>
-                </button>
-              )}
-              {editingName && <p className="mt-1 text-[11px] text-muted-foreground">{t('acc_nameHint')}</p>}
-              <span className="mt-1 rounded-full border border-border px-3 py-0.5 text-xs sm:text-sm font-semibold">{levelTitle}</span>
+                {editingName ? (
+                  <form onSubmit={(e) => { e.preventDefault(); saveName(); }} className="w-full max-w-xs flex gap-2">
+                    <input autoFocus value={nameDraft} onChange={(e) => setNameDraft(e.target.value.slice(0, 20))} placeholder={t('acc_namePlaceholder')} maxLength={20}
+                      className="flex-1 min-w-0 rounded-xl border-2 border-accent/60 bg-brand-navy-deep/60 px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-accent" />
+                    <button type="submit" className="rounded-xl bg-primary text-primary-foreground px-3 font-black text-sm">{t('acc_save')}</button>
+                  </form>
+                ) : (
+                  <button onClick={() => { playButtonTap(); setNameDraft(displayName || pendingName || ''); setEditingName(true); }} className="group flex items-center gap-2 max-w-full" aria-label={t('acc_editName')}>
+                    <span className="font-black text-[2rem] sm:text-[2.6rem] leading-tight truncate">{name}</span>
+                    <span className="text-sm opacity-60 group-hover:opacity-100" aria-hidden>✏️</span>
+                  </button>
+                )}
+                {editingName && <p className="mt-1 text-[11px] text-muted-foreground">{t('acc_nameHint')}</p>}
+                <span className="mt-1.5 rounded-full border-2 border-accent/40 bg-brand-navy-deep/50 px-5 py-0.5 text-sm sm:text-base font-semibold">{levelTitle}</span>
 
-              {(!user || isAnonymous) && (
-                <div className="w-full mt-4 rounded-2xl border border-primary/50 bg-primary/10 p-3 text-left">
-                  <p className="font-black text-sm">🔒 {t('acc_guestTitle')}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t('acc_guestDesc')}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => { playButtonTap(); navigateTo('/auth?mode=signup'); }} className="btn3d rounded-xl px-3 py-1.5 text-xs font-black text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>{t('acc_createAccount')}</button>
-                    <button onClick={() => { playButtonTap(); navigateTo('/auth'); }} className="rounded-xl px-3 py-1.5 text-xs font-bold border border-border hover:bg-muted">{t('acc_haveAccount')}</button>
+                <div className="hidden md:block w-full h-px bg-accent/20 mt-5" />
+
+                {/* Nivel: medallón de brújula + barra de XP */}
+                <div className="w-full mt-4 rounded-2xl border border-accent/30 bg-brand-navy-deep/40 p-3 sm:p-4 flex items-center gap-3 sm:gap-4 text-left">
+                  <CompassMedal className="w-16 h-16 sm:w-20 sm:h-20 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-extrabold text-base sm:text-lg leading-tight">
+                      {t('profile_levelN', { n: level.level })} · <span className="text-primary">{levelTitle}</span>
+                    </p>
+                    <div className="mt-2 h-3 rounded-full border border-foreground/30 bg-brand-navy-deep overflow-hidden">
+                      <div className="h-full rounded-full bg-accent transition-all duration-1000" style={{ width: `${level.progress}%`, boxShadow: '0 0 10px hsl(var(--accent) / 0.6)' }} />
+                    </div>
+                    <p className="mt-1.5 text-sm sm:text-base font-bold">{formatNumber(totalXp)} / {formatNumber(level.xpForNext)} XP</p>
+                    <p className="text-xs sm:text-sm text-brand-sky">{t('profile_nextLevelHint')}</p>
+                    {streak > 0 && <p className="mt-1 text-xs sm:text-sm font-bold">🔥 {t('profile_streak', { n: streak })}</p>}
                   </div>
                 </div>
-              )}
-              <div className="w-full mt-4 rounded-2xl border border-border bg-muted/20 p-3 flex items-center gap-3 text-left">
-                <span className="text-4xl sm:text-5xl shrink-0" aria-hidden>{level.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-black text-sm sm:text-base">
-                    {t('profile_levelN', { n: level.level })} · <span className="text-primary">{levelTitle}</span>
-                  </p>
-                  <div className="mt-1.5 h-2.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-accent transition-all duration-1000" style={{ width: `${level.progress}%`, boxShadow: '0 0 10px hsl(var(--accent) / 0.5)' }} />
+
+                {(!user || isAnonymous) && (
+                  <div className="w-full mt-3 rounded-2xl border border-primary/50 bg-primary/10 p-3 text-left">
+                    <p className="font-black text-sm">🔒 {t('acc_guestTitle')}</p>
+                    <p className="text-xs text-foreground/70 mt-0.5">{t('acc_guestDesc')}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button onClick={() => { playButtonTap(); navigateTo('/auth?mode=signup'); }} className="btn3d rounded-xl px-3 py-1.5 text-xs font-black text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>{t('acc_createAccount')}</button>
+                      <button onClick={() => { playButtonTap(); navigateTo('/auth'); }} className="rounded-xl px-3 py-1.5 text-xs font-bold border-2 border-accent/50 hover:bg-accent/10">{t('acc_haveAccount')}</button>
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs sm:text-sm font-mono font-bold">{totalXp.toLocaleString(appNumberLocale())} / {level.xpForNext.toLocaleString(appNumberLocale())} XP</p>
-                  <p className="text-[11px] sm:text-xs text-accent">{t('profile_nextLevelHint')}</p>
-                  {streak > 0 && <p className="mt-1 text-xs sm:text-sm font-bold">🔥 {t('profile_streak', { n: streak })}</p>}
-                </div>
+                )}
               </div>
             </section>
 
             <div className="flex flex-col gap-4">
               {/* ── Tus estadísticas ── */}
-              <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
-                <h2 className="text-xl sm:text-2xl font-black mb-3">{t('profile_statsLead')} <span className="text-primary">{t('profile_statsTail')}</span></h2>
+              <section className="rounded-3xl border-2 border-accent/50 bg-card/70 p-3 sm:p-5 shadow-[0_0_20px_hsl(var(--accent)/0.12)]">
+                <h2 className="text-[1.6rem] sm:text-3xl font-black mb-3 leading-tight">{t('profile_statsLead')} <span className="text-primary">{t('profile_statsTail')}</span></h2>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <StatTile icon="🎮" label={t('profile_gamesPlayed')} value={stats.gamesPlayed.toLocaleString(appNumberLocale())} />
-                  <StatTile icon="🏆" label={t('profile_record')} value={`${stats.bestScore.toLocaleString(appNumberLocale())} pts`} />
-                  <StatTile icon="📍" label={t('profile_avgDistance')} value={formatDistance(avgDist)} hint={t('profile_avgDistanceHint')} />
-                  <StatTile icon="🧭" label={t('profile_level')} value={String(level.level)} />
+                  <StatTile icon={<span className="text-[2rem] sm:text-5xl">🎮</span>} label={t('profile_gamesPlayed')} value={formatNumber(stats.gamesPlayed)} />
+                  <StatTile icon={<span className="text-[2rem] sm:text-5xl">🏆</span>} label={t('profile_record')} value={formatNumber(stats.bestScore)} unit="pts" />
+                  <StatTile icon={<LegendPin color="hsl(var(--accent))" className="w-9 h-9 sm:w-12 sm:h-12" />} label={t('profile_avgDistance')} value={formatDistance(avgDist)} hint={t('profile_avgDistanceHint')} />
+                  <StatTile icon={<span className="text-[2rem] sm:text-5xl">🧭</span>} label={t('profile_level')} value={String(level.level)} />
                 </div>
               </section>
 
-              {/* ── Explora tu progreso ── */}
-              <section className="rounded-3xl border border-border bg-card/70 p-4 sm:p-5">
-                <h2 className="text-xl sm:text-2xl font-black mb-3">{t('profile_exploreLead')} <span className="text-primary">{t('profile_exploreTail')}</span></h2>
+              {/* ── Explora tu progreso: las tres filas de la maqueta + accesos compactos a Niveles, Insignias y Estadísticas ── */}
+              <section className="rounded-3xl border-2 border-accent/50 bg-card/70 p-3 sm:p-5 shadow-[0_0_20px_hsl(var(--accent)/0.12)]">
+                <h2 className="text-[1.6rem] sm:text-3xl font-black mb-3 leading-tight">{t('profile_exploreLead')} <span className="text-primary">{t('profile_exploreTail')}</span></h2>
                 <div className="flex flex-col gap-2">
                   <ExploreRow icon="📊" title={t('profile_historyTitle')} desc={t('profile_historyDesc')} onClick={() => onOpenHistory ? (playButtonTap(), onOpenHistory()) : open('history')} />
                   {onOpenRanking && <ExploreRow icon="🏆" title={t('rank_title')} desc={t('profile_rankingDesc')} onClick={() => { playButtonTap(); onOpenRanking(); }} />}
-                  <ExploreRow icon="🏅" title={t('profile_levels')} desc={t('profile_levelsDesc')} onClick={() => open('levels')} />
-                  <ExploreRow icon="🎖️" title={t('profile_badgesTitle')} desc={`${unlockedBadges}/${badges.length} ${t('profile_badgesUnlocked')}`} onClick={() => open('badges')} />
                   {onMyChallenges && <ExploreRow icon="📋" title={t('home_myChallenges')} desc={t('profile_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />}
-                  <ExploreRow icon="📈" title={t('profile_detailedStats')} desc={t('profile_detailedStatsDesc')} onClick={() => open('stats')} />
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <MiniTile icon="🏅" label={t('profile_levels')} onClick={() => open('levels')} />
+                  <MiniTile icon="🎖️" label={t('profile_badgesShort')} extra={`${unlockedBadges}/${badges.length}`} onClick={() => open('badges')} />
+                  <MiniTile icon="📈" label={t('profile_statsShort')} onClick={() => open('stats')} />
                 </div>
               </section>
             </div>
           </div>
+          <button onClick={() => { playButtonTap(); onBack(); }} className="mt-4 mx-auto md:mx-0 flex items-center gap-2.5 font-semibold text-foreground/90 hover:text-foreground">
+            <HomeIcon className="w-6 h-6" /> {t('more_back')}
+          </button>
+          <div className="h-4" />
+          </>
         ) : (
           <div className="max-w-2xl mx-auto animate-fade-in pb-4">
             {tab === 'stats' && <StatsTab stats={stats} avgDist={avgDist} totalXp={totalXp} energy={energy} history={history} />}
@@ -224,14 +257,14 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
   );
 }
 
-function StatTile({ icon, label, value, hint }: { icon: string; label: string; value: string; hint?: string }) {
+function StatTile({ icon, label, value, unit, hint }: { icon: ReactNode; label: string; value: string; unit?: string; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-muted/20 p-3 flex items-center gap-3 min-w-0">
-      <span className="text-3xl sm:text-4xl shrink-0" aria-hidden>{icon}</span>
+    <div className="rounded-2xl border border-accent/30 bg-brand-navy-deep/40 p-2 sm:p-3 flex items-center gap-2 sm:gap-3 min-w-0">
+      <span className="shrink-0 w-9 sm:w-14 flex justify-center drop-shadow-[0_4px_8px_rgba(0,0,0,0.45)]" aria-hidden>{icon}</span>
       <span className="min-w-0">
-        <span className="block text-xs sm:text-sm text-muted-foreground">{label}</span>
-        <span className="block font-black font-mono text-lg sm:text-2xl truncate">{value}</span>
-        {hint && <span className="block text-[10px] sm:text-[11px] text-muted-foreground leading-tight">{hint}</span>}
+        <span className="block text-xs sm:text-sm font-semibold text-foreground/85">{label}</span>
+        <span className="block font-extrabold text-[1.15rem] sm:text-[1.7rem] leading-tight whitespace-nowrap truncate">{value}{unit && <span className="text-base sm:text-lg"> {unit}</span>}</span>
+        {hint && <span className="block text-[10px] sm:text-[11px] text-foreground/70 leading-tight">{hint}</span>}
       </span>
     </div>
   );
@@ -239,14 +272,39 @@ function StatTile({ icon, label, value, hint }: { icon: string; label: string; v
 
 function ExploreRow({ icon, title, desc, onClick }: { icon: string; title: string; desc: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="w-full flex items-center gap-3 rounded-2xl border border-border bg-muted/20 px-3 py-2.5 text-left hover:border-accent/60 hover:bg-muted/40 transition-colors active:scale-[0.99]">
-      <span className="text-2xl sm:text-3xl shrink-0" aria-hidden>{icon}</span>
+    <button onClick={onClick} className="w-full flex items-center gap-3 sm:gap-4 rounded-2xl border border-accent/30 bg-brand-navy-deep/40 px-3 py-2.5 sm:py-3 text-left hover:border-accent/70 hover:bg-accent/5 transition-colors active:scale-[0.99]">
+      <span className="text-3xl sm:text-4xl w-11 text-center shrink-0 drop-shadow-[0_4px_8px_rgba(0,0,0,0.45)]" aria-hidden>{icon}</span>
       <span className="flex-1 min-w-0">
-        <span className="block font-black text-sm sm:text-base">{title}</span>
-        <span className="block text-xs sm:text-sm text-muted-foreground truncate">{desc}</span>
+        <span className="block font-extrabold text-base sm:text-lg leading-tight">{title}</span>
+        <span className="block text-xs sm:text-sm text-foreground/75 truncate">{desc}</span>
       </span>
-      <span className="text-xl text-muted-foreground" aria-hidden>›</span>
+      <ChevronIcon className="w-6 h-6 text-foreground/80" />
     </button>
+  );
+}
+
+/** Accesos compactos a las secciones que la maqueta no muestra (Niveles · Insignias · Estadísticas) */
+function MiniTile({ icon, label, extra, onClick }: { icon: string; label: string; extra?: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border border-accent/25 bg-brand-navy-deep/30 px-2 py-2 hover:border-accent/60 hover:bg-accent/5 transition-colors active:scale-[0.98]">
+      <span className="text-xl sm:text-2xl leading-none" aria-hidden>{icon}</span>
+      <span className="text-xs sm:text-sm font-bold leading-tight">{label}{extra && <span className="text-foreground/60 font-semibold"> {extra}</span>}</span>
+    </button>
+  );
+}
+
+/** Medallón de brújula del nivel (maqueta Perfil): aro plateado, cara azul y rosa de los vientos */
+function CompassMedal({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={`${className} drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]`} aria-hidden>
+      <circle cx="32" cy="32" r="30" className="text-brand-sky" fill="currentColor" />
+      <circle cx="32" cy="32" r="30" className="text-foreground" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="2" />
+      <circle cx="32" cy="32" r="24" className="text-brand-navy-card" fill="currentColor" />
+      <circle cx="32" cy="32" r="24" className="text-foreground" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.5" />
+      <path d="M32 11 36 28 53 32 36 36 32 53 28 36 11 32 28 28Z" className="text-foreground" fill="currentColor" />
+      <path d="M32 11 36 28 32 32ZM53 32 36 36 32 32ZM32 53 28 36 32 32ZM11 32 28 28 32 32Z" className="text-brand-sky" fill="currentColor" />
+      <circle cx="32" cy="32" r="3" className="text-accent" fill="currentColor" />
+    </svg>
   );
 }
 

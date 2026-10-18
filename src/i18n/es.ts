@@ -707,6 +707,8 @@ const es = {
   profile_badgesTitle: 'Tus insignias',
   profile_detailedStats: 'Estadísticas detalladas',
   profile_detailedStatsDesc: 'Modos, XP, rondas y vidas',
+  profile_badgesShort: 'Insignias',
+  profile_statsShort: 'Estadísticas',
   ob_badge: 'Práctica',
   ob_introTitle: 'Aprende lo básico',
   ob_introDesc: 'Te mostraremos 3 ciudades famosas. Toca el mapa donde creas que está cada una. Sin presión.',
