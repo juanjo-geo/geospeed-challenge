@@ -433,16 +433,28 @@
 /* ── Wordmark GEO·SPEED (maquetas: GEO blanco + SPEED turquesa) ── */
 /* Titulares con la tipografía redondeada y gruesa de las maquetas */
 .font-display { font-family: 'Poppins', system-ui, sans-serif; }
+/* Wordmark "elaborado" de las maquetas (Carga, Girar, Inicio): letra redondeada y gruesa,
+   GEO blanco con relieve (se oscurece hacia abajo) y SPEED turquesa brillante con resplandor. */
 .wordmark {
-  font-family: 'Poppins', 'Arial Black', system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: 'Fredoka', 'Poppins', 'Arial Black', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.005em;
   line-height: 1;
   white-space: nowrap;
-  filter: drop-shadow(0 2px 10px hsl(var(--brand-navy-deep) / 0.6));
+  filter: drop-shadow(0 0.045em 0 hsl(var(--brand-navy-deep) / 0.65)) drop-shadow(0 2px 10px hsl(var(--brand-navy-deep) / 0.6));
 }
-.wordmark-geo { color: hsl(var(--foreground)); }
-.wordmark-speed { color: hsl(var(--accent)); text-shadow: 0 0 18px hsl(var(--accent) / 0.45); }
+.wordmark-geo,
+.wordmark-speed {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.wordmark-geo { background-image: linear-gradient(180deg, hsl(var(--brand-white)) 0%, hsl(var(--brand-white)) 48%, hsl(214 28% 80%) 100%); }
+.wordmark-speed {
+  background-image: linear-gradient(180deg, hsl(182 100% 78%) 0%, hsl(var(--brand-turquoise)) 52%, hsl(178 85% 36%) 100%);
+  filter: drop-shadow(0 0 0.18em hsl(var(--accent) / 0.45));
+}
 
 /* ── Barra de navegación persistente ──
    Las pantallas que conviven con la barra (inicio, perfil, tienda, pass, ajustes)
@@ -499,6 +511,12 @@
   50%      { transform: translateY(-4px); }
 }
 .animate-mascot-float { animation: mascot-float 3s ease-in-out infinite; }
+/* Anillo de la cuenta regresiva: entra justo después del primer número */
+@keyframes ring-in {
+  0%   { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-ring-in { animation: ring-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) 220ms both; }
 /* Poses del Explorador mientras no existan imágenes por pose (Mascot.tsx). Usan las propiedades
    sueltas rotate/scale para no pelear con las animaciones de transform (pop, flotación). */
 .mascot-fx-celebrate { scale: 1.05; filter: drop-shadow(0 0 14px hsl(var(--primary) / 0.75)) saturate(1.15); }

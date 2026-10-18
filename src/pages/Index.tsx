@@ -962,6 +962,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           count={countdown}
           label={activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
           onCancel={handleCancelCountdown}
+          running={!showRotateOverlay}
         />
       );
     }

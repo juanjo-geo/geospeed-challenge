@@ -459,9 +459,7 @@ const en: Translations = {
   auth_errSignupDisabled: 'Sign-up is temporarily disabled. Try Google or Apple.',
 
   // ── Splash ──
-  splash_tap: 'TAP TO START',
   splash_loading: 'Preparing your next adventure…',
-  splash_tagline: 'How well do you\nknow the world?',
 
   // ── Notifications prompt ──
   notif_title: 'Enable notifications?',
@@ -844,6 +842,7 @@ const en: Translations = {
   home_myChallenges: 'My challenges',
   home_myChallengesDesc: 'Invites and results',
   home_inviteFriends: 'Invite friends',
+  home_inviteShort: 'Invite',
   home_stripGames: 'games',
   home_stripRecord: 'record',
   home_stripAvgDist: 'avg. distance',

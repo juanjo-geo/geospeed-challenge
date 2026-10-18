@@ -457,9 +457,7 @@ const es = {
   auth_errSignupDisabled: 'El registro está temporalmente deshabilitado. Intenta con Google o Apple.',
 
   // ── Carga ──
-  splash_tap: 'TOCA PARA EMPEZAR',
   splash_loading: 'Preparando tu próxima aventura…',
-  splash_tagline: '¿Cuánto conoces\nel mundo?',
 
   // ── Notificaciones (prompt) ──
   notif_title: '¿Activar notificaciones?',
@@ -842,6 +840,7 @@ const es = {
   home_myChallenges: 'Mis retos',
   home_myChallengesDesc: 'Invitaciones y resultados',
   home_inviteFriends: 'Invitar amigos',
+  home_inviteShort: 'Invitar',
   home_stripGames: 'partidas',
   home_stripRecord: 'récord',
   home_stripAvgDist: 'distancia media',

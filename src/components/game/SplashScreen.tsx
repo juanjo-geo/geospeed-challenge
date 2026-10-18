@@ -75,7 +75,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       />
 
       {/* Ondas de luz al pie (líneas turquesa con brillo, como en la maqueta) */}
-      <GlowWaves className="h-[22%] landscape:h-[38%]" />
+      <GlowWaves className="h-[15%] landscape:h-[26%]" />
 
       {/* Polvo de estrellas */}
       {STARS.map((pos, k) => (
@@ -125,10 +125,10 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
             <Wordmark size="custom" className="text-[min(13vw,7dvh,5.5rem)] landscape:text-[min(8.5vw,14dvh,6.5rem)]" />
           </h1>
           <p
-            className="font-display mt-[1.5dvh] font-bold leading-[1.15] text-foreground text-[min(7.4vw,3.9dvh,2.75rem)] landscape:text-[min(4.4vw,7.5dvh,3.25rem)] whitespace-pre-line transition-all duration-1000 ease-out"
+            className="font-display mt-[1.5dvh] font-bold leading-tight text-foreground text-[min(4.45vw,2.35dvh,1.65rem)] landscape:text-[min(2.65vw,4.5dvh,1.95rem)] whitespace-nowrap transition-all duration-1000 ease-out"
             style={rise(450, 10)}
           >
-            {t('splash_tagline')}
+            {t('home_tagline')}
           </p>
           <div
             className="mt-[3.5dvh] landscape:mt-[5dvh] w-[min(62vw,34dvh,30rem)] landscape:w-[min(42vw,72dvh,34rem)] h-[clamp(10px,1.8dvh,18px)] rounded-full overflow-hidden border border-accent/25 p-[2px]"
@@ -144,17 +144,12 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
               }}
             />
           </div>
-          <p className="mt-[1.8dvh] font-semibold text-[min(3.8vw,2.1dvh,1.15rem)] landscape:text-[min(2vw,4dvh,1.25rem)] text-[hsl(205_95%_68%)]">
+          <p className="mt-[1.8dvh] font-semibold text-[min(3.8vw,2.1dvh,1.15rem)] landscape:text-[min(2vw,4dvh,1.25rem)] text-[hsl(200_100%_78%)] [text-shadow:0_1px_8px_hsl(var(--brand-navy-deep)),0_0_2px_hsl(var(--brand-navy-deep))]">
             {t('splash_loading')}
           </p>
         </div>
       </div>
 
-      {!tapped && phase === 'hold' && (
-        <p className="absolute bottom-3 short:bottom-1 text-[10px] tracking-widest uppercase animate-pulse text-foreground/40">
-          {t('splash_tap')}
-        </p>
-      )}
     </div>
   );
 }

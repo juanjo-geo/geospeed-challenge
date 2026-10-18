@@ -1,10 +1,7 @@
-import { lazy, Suspense } from 'react';
 import { useI18n } from '@/i18n';
 import Wordmark from '@/components/ui/Wordmark';
 import GlowWaves from '@/components/ui/GlowWaves';
 import Mascot from './Mascot';
-// El mapa de fondo trae los polígonos: aparte, para no cargarlo con Index
-const WorldBackdrop = lazy(() => import('./WorldBackdrop'));
 
 interface CountdownIntroProps {
   /** Número actual: 3, 2, 1 o 0 (0 = ¡GO!). */
@@ -13,6 +10,8 @@ interface CountdownIntroProps {
   label?: string;
   /** Cancelar y volver al inicio (maqueta Cuenta_Regresiva_APROBADA_v1). Opcional. */
   onCancel?: () => void;
+  /** false mientras el conteo está detenido (aviso de girar el teléfono): el anillo y el número entran al arrancar */
+  running?: boolean;
 }
 
 /** Marcas amarillas alrededor del anillo (diagonales, como en la maqueta). */
@@ -20,11 +19,13 @@ const TICKS = [-45, 45, 135, 225];
 
 /**
  * CountdownIntro — Cuenta regresiva 3-2-1-GO unificada para TODOS los modos
- * (maqueta GeoSpeed_Cuenta_Regresiva_APROBADA_v1): mapa tenue de fondo, ondas de luz, "¡Prepárate!",
+ * (maqueta GeoSpeed_Cuenta_Regresiva_APROBADA_v1): fondo oscuro con ondas de luz, "¡Prepárate!",
  * número amarillo grande dentro de un anillo turquesa con marcas, el Explorador al lado y Cancelar.
+ * Sin mapa de fondo (pedido de JuanJo: el mapa verde seguido del mapa a color distraía) y el anillo
+ * entra cuando aparece el primer número, no antes.
  * Es solo presentación: el temporizador (3→2→1→0) lo maneja cada modo y va pasando el valor por `count`.
  */
-export default function CountdownIntro({ count, label, onCancel }: CountdownIntroProps) {
+export default function CountdownIntro({ count, label, onCancel, running = true }: CountdownIntroProps) {
   const { t } = useI18n();
   const isGo = count <= 0;
   // "Clásico · Mundo · Turista": la región (parte central) va en amarillo
@@ -37,11 +38,6 @@ export default function CountdownIntro({ count, label, onCancel }: CountdownIntr
         style={{ background: 'radial-gradient(ellipse 65% 60% at 50% 45%, hsl(212 80% 24%) 0%, hsl(var(--brand-navy)) 55%, transparent 100%)' }}
         aria-hidden
       />
-      <div className="absolute inset-x-0 top-[6%] bottom-[4%] pointer-events-none" aria-hidden>
-        <Suspense fallback={null}>
-          <WorldBackdrop tone="faint" />
-        </Suspense>
-      </div>
       <GlowWaves className="h-[30%] landscape:h-[34%]" />
 
       {/* Barra superior: marca · etiqueta del modo */}
@@ -80,16 +76,18 @@ export default function CountdownIntro({ count, label, onCancel }: CountdownIntr
 
         {/* Anillo con el número; el Explorador se asoma por la derecha */}
         <div className="relative mt-[2.5dvh] w-[min(58vw,46dvh,19rem)] aspect-square flex items-center justify-center">
-          <span className="absolute inset-0 rounded-full border-[3px] border-accent/90 shadow-[0_0_24px_hsl(var(--accent)/0.55),inset_0_0_24px_hsl(var(--accent)/0.25)]" aria-hidden />
-          {TICKS.map(a => (
-            <span key={a} className="absolute inset-0" style={{ transform: `rotate(${a}deg)` }} aria-hidden>
-              <span className="absolute left-1/2 -top-[9%] w-[4%] h-[13%] -translate-x-1/2 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.7)]" />
-            </span>
-          ))}
+          {running && <span className="absolute inset-0 animate-ring-in" aria-hidden>
+            <span className="absolute inset-0 rounded-full border-[3px] border-accent/90 shadow-[0_0_24px_hsl(var(--accent)/0.55),inset_0_0_24px_hsl(var(--accent)/0.25)]" />
+            {TICKS.map(a => (
+              <span key={a} className="absolute inset-0" style={{ transform: `rotate(${a}deg)` }}>
+                <span className="absolute left-1/2 -top-[9%] w-[4%] h-[13%] -translate-x-1/2 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.7)]" />
+              </span>
+            ))}
+          </span>}
           {isGo && (
             <span className="absolute inset-[18%] rounded-full border-4 animate-ring-expand" style={{ borderColor: 'hsl(var(--accent))' }} aria-hidden />
           )}
-          <span
+          {running && <span
             key={count}
             className={`relative font-black leading-none ${isGo
               ? 'text-[min(20vw,16dvh,6.5rem)] animate-go-impact'
@@ -98,7 +96,7 @@ export default function CountdownIntro({ count, label, onCancel }: CountdownIntr
             style={{ color: 'hsl(var(--primary))', textShadow: '0 0.05em 0 hsl(var(--primary-deep)), 0 0.1em 0.3em hsl(var(--brand-navy-deep) / 0.6)' }}
           >
             {isGo ? t('countdown_goShort') : count}
-          </span>
+          </span>}
           <div className="absolute left-[86%] top-[22%] w-[56%]">
             <Mascot state={isGo ? 'celebrate' : 'idle'} className="w-full animate-mascot-float drop-shadow-[0_10px_22px_hsl(var(--brand-navy-deep)/0.7)]" />
           </div>

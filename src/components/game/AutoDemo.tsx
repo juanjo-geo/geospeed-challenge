@@ -74,7 +74,7 @@ function buildDemoSet(): DemoCity[] {
 }
 
 // Bounds recortados: sin océano vacío bajo ~-55 (el marco pega al mapa)
-const DEMO_BOUNDS = { latMin: -56, latMax: 80, lonMin: -180, lonMax: 180 };
+const DEMO_BOUNDS = { latMin: -52, latMax: 76, lonMin: -180, lonMax: 180 };
 
 const DEMO_CITIES = buildDemoSet();
 

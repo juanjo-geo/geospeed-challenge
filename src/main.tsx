@@ -9,6 +9,8 @@ import "@fontsource/poppins/latin-600.css";
 import "@fontsource/poppins/latin-700.css";
 import "@fontsource/poppins/latin-800.css";
 import "@fontsource/poppins/latin-900.css";
+// Letra redondeada del wordmark GEOSPEED (solo el logo)
+import "@fontsource/fredoka/latin-700.css";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
