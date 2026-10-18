@@ -126,7 +126,7 @@ const Support = () => {
             <li>Si es un problema de pago, incluye tu recibo o ID de transaccion</li>
           </ul>
 
-          <PhotoCredits title="Créditos de las fotos de países" intro="Las fotografías de países que aparecen en el juego pertenecen a sus autores y se usan bajo las licencias indicadas." />
+          <PhotoCredits title="Créditos de las fotos de países" intro="Las fotografías de países que aparecen en el juego pertenecen a sus autores y se usan bajo las licencias indicadas (Wikimedia Commons). Las imágenes fueron redimensionadas y convertidas a WebP; las que tienen licencia CC BY-SA se comparten bajo la misma licencia." />
 
           {/* ────────── ENGLISH VERSION ────────── */}
           <div id="english" className="border-t border-[#f5c842]/20 pt-10">
@@ -233,8 +233,9 @@ function PhotoCredits({ title, intro }: { title: string; intro: string }) {
       <ul className="mb-10 grid gap-1 text-xs text-[#d4d4c8] sm:grid-cols-2">
         {credits.map(c => (
           <li key={c.iso}>
-            <span className="font-mono text-[#f5c842]">{c.iso}</span> · {c.author ?? '—'}{c.source ? ` · ${c.source}` : ''}{c.license ? ` · ${c.license}` : ''}
-            {c.url && <> · <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline">↗</a></>}
+            <span className="font-mono text-[#f5c842]">{c.iso}</span>{c.country ? ` ${c.country}` : ''} · {c.author ?? '—'}
+            {c.license && <> · {c.licenseUrl ? <a href={c.licenseUrl} target="_blank" rel="noopener noreferrer" className="underline">{c.license}</a> : c.license}</>}
+            {c.url && <> · <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline">{c.source ?? 'Fuente'} ↗</a></>}
           </li>
         ))}
       </ul>
