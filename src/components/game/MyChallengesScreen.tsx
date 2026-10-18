@@ -5,6 +5,7 @@ import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
 import { appNumberLocale } from '@/lib/format';
+import { ArrowRightIcon, HomeIcon } from '@/components/ui/icons';
 
 interface MyChallengesScreenProps {
   onBack: () => void;
@@ -51,17 +52,16 @@ export default function MyChallengesScreen({ onBack, onOpen, onCreate, onSignIn 
           onBack={onBack}
           title={t('mc_title')}
           subtitle={t('mc_subtitle')}
-          right={items && items.length > 0 ? (
-            <button onClick={() => { playButtonTap(); onCreate(); }} className="hidden sm:inline-flex rounded-2xl border-2 border-primary text-primary px-4 py-2 font-black text-sm hover:bg-primary/10 active:scale-[0.98]">＋ {t('chr_createAnother')}</button>
-          ) : undefined}
+          align="left"
+          titleAside={<Mascot state="celebrate" className="w-24 sm:w-32 shrink-0 mt-2 short:hidden" />}
         />
 
         {/* Filtros con contadores (misma lista que las tarjetas) */}
         <div className="grid grid-cols-3 gap-2 mb-4" role="tablist">
           {filters.map(f => (
             <button key={f.key} role="tab" aria-selected={filter === f.key} onClick={() => { playButtonTap(); setFilter(f.key); }}
-              className={`rounded-2xl border-2 py-2 px-2 text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-colors ${filter === f.key ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-card/60 hover:border-accent'}`}>
-              <span aria-hidden>{f.icon}</span> {f.label} <span className={filter === f.key ? '' : 'text-accent'}>· {f.count}</span>
+              className={`rounded-full border-2 py-2.5 px-2 text-[13px] min-[400px]:text-sm sm:text-base font-bold whitespace-nowrap flex items-center justify-center gap-1 transition-colors ${filter === f.key ? 'border-primary bg-primary text-primary-foreground shadow-[0_0_14px_hsl(var(--primary)/0.35)]' : 'border-accent/50 bg-card/60 hover:border-accent'}`}>
+              {f.label} <span>· {f.count}</span>
             </button>
           ))}
         </div>
@@ -94,15 +94,16 @@ export default function MyChallengesScreen({ onBack, onOpen, onCreate, onSignIn 
           </div>
         )}
 
-        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/60 pt-4">
-          <p className="text-xs sm:text-sm text-muted-foreground">ⓘ {t('mc_footer')}</p>
-          <div className="flex gap-2">
-            {items && items.length > 0 && (
-              <button onClick={() => { playButtonTap(); onCreate(); }} className="sm:hidden rounded-2xl border-2 border-primary text-primary px-4 py-2 font-black text-sm">＋ {t('chr_createAnother')}</button>
-            )}
-            <button onClick={() => { playButtonTap(); onBack(); }} className="rounded-2xl border border-border bg-muted/20 px-4 py-2 font-bold text-sm hover:bg-muted">🏠 {t('ob_backHome')}</button>
-          </div>
-        </div>
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm text-foreground/85"><InfoGlyph /> {t('mc_footer')}</p>
+        {items && items.length > 0 && (
+          <button onClick={() => { playButtonTap(); onCreate(); }} className="btn3d mt-4 w-full max-w-xl mx-auto flex items-center justify-center gap-3 rounded-2xl py-3.5 font-black text-lg sm:text-xl text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
+            <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+            {t('chr_createAnother')}
+          </button>
+        )}
+        <button onClick={() => { playButtonTap(); onBack(); }} className="mt-4 mx-auto flex items-center justify-center gap-2 font-bold hover:text-accent">
+          <HomeIcon className="w-6 h-6" /> {t('ob_backHome')}
+        </button>
       </div>
     </div>
   );
@@ -127,23 +128,32 @@ function ChallengeCard({ item, onOpen }: { item: MyChallenge; onOpen: () => void
 
   return (
     <article className={`min-w-0 rounded-3xl border-2 ${c.border} bg-card/70 p-3 sm:p-4 flex gap-3`}>
-      <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-accent/60 bg-muted/30 flex items-center justify-center overflow-hidden" aria-hidden>
-        {item.state === 'to_accept' ? <span className="text-3xl">✉️</span> : item.state === 'ready' ? <span className="text-3xl">✅</span> : <Mascot state={c.mascot} className="w-11 sm:w-12 hue-rotate-[140deg]" />}
+      <div className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-accent/60 bg-background/50 flex items-center justify-center overflow-hidden shadow-[0_0_12px_hsl(var(--accent)/0.25)]" aria-hidden>
+        {item.state === 'to_accept' ? <span className="text-4xl">💌</span> : item.state === 'ready'
+          ? <svg viewBox="0 0 24 24" className="w-10 h-10 text-accent drop-shadow-[0_0_8px_hsl(var(--accent)/0.7)]" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+          : <span className={`block w-11 sm:w-12 ${item.state === 'to_play' ? '[filter:hue-rotate(125deg)_saturate(1.3)]' : ''}`}><Mascot state={c.mascot} className="w-full" /></span>}
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="min-w-0 font-black text-base sm:text-lg leading-tight break-words">{title}</h3>
-          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${c.pillCls}`}>{c.pill}</span>
+          <h3 className="min-w-0 font-extrabold text-lg sm:text-xl leading-tight break-words">{title}</h3>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap ${c.pillCls}`}>{c.pill}</span>
         </div>
-        <p className="text-xs sm:text-sm text-muted-foreground truncate">🌍 {t(`mode_${item.mode}` as never)} · {t(`diff_${item.difficulty}` as never)} · {item.is_rematch && item.state === 'to_accept' ? t('mc_newCities', { n: item.rounds_total }) : t('chc_nCities', { n: item.rounds_total })}</p>
+        <p className="text-xs sm:text-sm text-foreground/80 truncate flex items-center gap-1.5"><GlobeGlyph /> {t(`mode_${item.mode}` as never)} · {t(`home_diff${item.difficulty.charAt(0).toUpperCase()}${item.difficulty.slice(1)}` as never)} · {item.is_rematch && item.state === 'to_accept' ? t('mc_newCities', { n: item.rounds_total }) : t('chc_nCities', { n: item.rounds_total })}</p>
         {/* En pantallas angostas el botón baja a su propia línea (el texto no cabe junto a él) */}
         <div className="flex flex-col gap-2 mt-1 min-[420px]:flex-row min-[420px]:items-end min-[420px]:justify-between">
-          <p className="min-w-0 text-xs sm:text-sm text-muted-foreground">ⓘ {result ? <span className="font-bold text-foreground">{result} · {item.my_score!.toLocaleString(appNumberLocale())} – {item.rival_score!.toLocaleString(appNumberLocale())}</span> : c.info}</p>
-          <button onClick={onOpen} className={`shrink-0 self-end rounded-xl px-3 py-2 text-xs sm:text-sm font-black whitespace-nowrap active:scale-[0.97] ${c.ctaPrimary ? 'btn3d text-primary-foreground' : 'border-2 border-accent text-accent hover:bg-accent/10'}`} style={c.ctaPrimary ? { background: 'var(--grad-cta)' } : undefined}>
-            {c.cta} →
+          <p className="min-w-0 text-xs sm:text-sm text-foreground/80 flex items-start gap-1.5"><InfoGlyph /> <span>{result ? <span className="font-bold text-foreground">{result} · {item.my_score!.toLocaleString(appNumberLocale())} – {item.rival_score!.toLocaleString(appNumberLocale())}</span> : c.info}</span></p>
+          <button onClick={onOpen} className={`shrink-0 self-end rounded-xl px-3 py-2 text-xs sm:text-sm font-black whitespace-nowrap active:scale-[0.97] flex items-center gap-1.5 ${c.ctaPrimary ? 'btn3d text-primary-foreground' : 'border-2 border-accent text-accent hover:bg-accent/10'}`} style={c.ctaPrimary ? { background: 'var(--grad-cta)' } : undefined}>
+            {c.cta} <ArrowRightIcon className="w-4 h-4" />
           </button>
         </div>
       </div>
     </article>
   );
 }
+
+const InfoGlyph = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9.5" /><path d="M12 11v6" /><circle cx="12" cy="7.6" r="0.6" fill="currentColor" /></svg>
+);
+const GlobeGlyph = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+);
