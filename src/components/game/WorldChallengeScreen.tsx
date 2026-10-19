@@ -528,7 +528,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
               isPortraitMobile ? 'w-full max-w-md max-h-[58vh]' : 'w-[clamp(18rem,40vw,26rem)] max-h-[94%] [@media(max-height:420px)]:gap-1 [@media(max-height:420px)]:p-2'
             }`}>
               {/* Tarjeta del país (D7): foto del país correcto si existe */}
-              <CountryPhoto country={feedback.correctCountry} size="sm" className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-20 rounded-t-3xl [@media(max-height:420px)]:hidden" />
+              <CountryPhoto country={feedback.correctCountry} size="sm" className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-20 rounded-t-3xl [@media(max-height:420px)]:-mx-2 [@media(max-height:420px)]:-mt-2 [@media(max-height:420px)]:h-14 [@media(max-height:330px)]:hidden" />
               <div className="text-center">
                 <span className="text-3xl sm:text-4xl block animate-record-pop [@media(max-height:420px)]:hidden" style={{ filter: 'drop-shadow(0 0 10px currentColor)' }}>
                   {BAND_EMOJI[feedback.band]}

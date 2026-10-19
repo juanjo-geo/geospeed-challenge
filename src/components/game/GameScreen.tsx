@@ -23,6 +23,7 @@ import { HudIconButton, InGameSettings } from './GameHud';
 import { frameAnswer } from '@/lib/mapFraming';
 import FitToBox from '@/components/ui/FitToBox';
 import { appNumberLocale } from '@/lib/format';
+import { preloadCountryPhoto } from '@/lib/countryPhotos';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -138,6 +139,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const scoreElRef = useRef<HTMLParagraphElement>(null);
 
   const currentCity = cities[currentRound];
+  // La foto del país se descarga mientras el jugador busca la ciudad: la tarjeta la muestra sin esperar
+  useEffect(() => { if (currentCity) preloadCountryPhoto(currentCity.country, 'sm'); }, [currentCity]);
 
   // Cosméticos equipados (pin + trail) para que se VEAN en el mapa
   const equippedPin = getEquipped('pin');

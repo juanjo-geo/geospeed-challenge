@@ -5,17 +5,44 @@
  *   public/countries/<ISO>.webp      → grande (≤ 960 px, WebP q74, ~80 KB): repaso de ciudad
  *   public/countries/<ISO>-sm.webp   → mediana (≤ 640 px, WebP q70, ~45 KB): tarjeta de respuesta, Mundial, retos
  *   public/countries/credits.json    → [{ iso, country, author, source, license, licenseUrl, url }]
- * Mientras una foto no exista, `CountryPhoto` no ocupa espacio (el <img> falla y se oculta), así que
- * el juego funciona igual con 0, 50 o 195 fotos. Ver public/countries/README.md.
+ * Un país sin foto (no está en PHOTO_ISOS) no ocupa espacio; si un archivo falla, el recuadro se
+ * cierra. Ver public/countries/README.md.
  */
 import { countryIso } from '@/lib/flags';
 
 export type PhotoSize = 'lg' | 'sm';
 
+/** Países con foto en public/countries (regenerar esta lista si se agregan fotos, ver README). Saberlo
+ *  sin pedir el archivo permite reservar el espacio de la foto desde el principio (la tarjeta no salta). */
+const PHOTO_ISOS = new Set([
+  'AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH BI BJ BN BO BR BS BT',
+  'BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC',
+  'EE EG ER ES ET FI FJ FM FR GA GB GD GE GH GM GN GQ GR GT GW GY HN HR HT HU',
+  'ID IE IL IN IQ IR IS IT JM JO JP KE KG KH KI KM KN KP KR KW KZ LA LB LC LI',
+  'LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MR MT MU MV MW MX MY MZ',
+  'NA NE NG NI NL NO NP NR NZ OM PA PE PG PH PK PL PS PT PW PY QA RO RS RU RW',
+  'SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SY SZ TD TG TH TJ TL TM TN',
+  'TO TR TT TV TZ UA UG US UY UZ VA VC VE VN VU WS YE ZA ZM ZW',
+].join(' ').split(' '));
+
+export function hasCountryPhoto(country: string | null | undefined): boolean {
+  const iso = countryIso(country);
+  return !!iso && PHOTO_ISOS.has(iso);
+}
+
 export function countryPhotoUrl(country: string | null | undefined, size: PhotoSize = 'lg'): string | null {
   const iso = countryIso(country);
-  if (!iso) return null;
+  if (!iso || !PHOTO_ISOS.has(iso)) return null;
   return `/countries/${iso}${size === 'sm' ? '-sm' : ''}.webp`;
+}
+
+/** Descarga la foto por adelantado (p.ej. al mostrar la ciudad) para que la tarjeta la tenga lista. */
+export function preloadCountryPhoto(country: string | null | undefined, size: PhotoSize = 'sm'): void {
+  const url = countryPhotoUrl(country, size);
+  if (!url || missing.has(url) || typeof Image === 'undefined') return;
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = url;
 }
 
 export interface PhotoCredit { iso: string; country?: string; author?: string; source?: string; license?: string; licenseUrl?: string; url?: string }
