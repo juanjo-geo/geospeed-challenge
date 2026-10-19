@@ -144,7 +144,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {rows.map(r => (
-                  <li key={r.userId} className={`grid ${ROW_COLS} items-center gap-3 rounded-2xl border-2 bg-brand-navy-deep/50 px-3 md:px-4 py-1 ${ROW_BORDER[r.rank] ?? 'border-accent/45'}`}>
+                  <li key={`${r.rank}-${r.userId}`} className={`grid ${ROW_COLS} items-center gap-3 rounded-2xl border-2 bg-brand-navy-deep/50 px-3 md:px-4 py-1 ${ROW_BORDER[r.rank] ?? 'border-accent/45'}`}>
                     <RankBadge rank={r.rank} />
                     <Avatar avatar={r.avatar} />
                     <span className="font-bold text-base md:text-lg truncate">{r.displayName}</span>
