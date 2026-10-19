@@ -128,7 +128,9 @@ import { challengeCitiesToGame, mockRecordMyResult, createChallenge, type Challe
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
-import { checkStreak } from '@/lib/dailyStreak';
+import { getStreakState } from '@/lib/dailyStreak';
+import { getPlayerStats } from '@/lib/gameUtils';
+import { isBusyPhase, resetHomeVisit, markHomeInterruption, homeInterruptionShown } from '@/lib/interruptions';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
 import { hapticTap, hapticCelebration } from '@/lib/haptics';
 import { useI18n } from '@/i18n';
@@ -136,7 +138,8 @@ import { useBackgroundMusic, type MusicTrack } from '@/hooks/useBackgroundMusic'
 import {
   supportsNotifications,
   getPermission,
-  hasBeenAsked,
+  canOfferNotifications,
+  snoozeNotificationPrompt,
   requestPermission,
   scheduleDailyReminder,
   scheduleStreakWarning,
@@ -210,6 +213,14 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const { t } = useI18n();
   const tRef = useRef(t);
   tRef.current = t;
+  // Reglas de interrupciones (2026-10-19): los mensajes (toasts) que llegan durante la carga, la cuenta
+  // regresiva o la partida esperan a que el jugador termine. phaseRef se actualiza tras declarar `phase`.
+  const phaseRef = useRef<string>('splash');
+  const deferredToastsRef = useRef<Array<() => void>>([]);
+  const showToastWhenFree = useCallback((show: () => void) => {
+    if (isBusyPhase(phaseRef.current)) deferredToastsRef.current.push(show);
+    else show();
+  }, []);
   // Compras web (Mercado Pago): al volver del checkout, o al reabrir la app con una compra en
   // curso (efectivo/PSE se aprueban más tarde), traer lo que el servidor acreditó y avisarlo.
   // El cliente NUNCA acredita pagos por sí mismo (tabla purchases, refreshEntitlements).
@@ -217,8 +228,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     const tt = (k: Parameters<typeof t>[0], p?: Record<string, string | number>) => tRef.current(k, p);
     const onCredit = (e: Event) => {
       const r = (e as CustomEvent<EntitlementsResult>).detail;
-      if (r?.livesAdded > 0) toast.success(tt('purchase_creditedLives', { count: r.livesAdded }));
-      if (r?.proActivated) toast.success(tt('purchase_creditedPro'));
+      if (r?.livesAdded > 0) showToastWhenFree(() => toast.success(tt('purchase_creditedLives', { count: r.livesAdded })));
+      if (r?.proActivated) showToastWhenFree(() => toast.success(tt('purchase_creditedPro')));
     };
     window.addEventListener(ENTITLEMENTS_EVENT, onCredit);
 
@@ -230,9 +241,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
     let cancelled = false;
     let timer: number | undefined;
-    if (status === 'failure') toast.error(tt('purchase_failed'));
+    if (status === 'failure') showToastWhenFree(() => toast.error(tt('purchase_failed')));
     if (status === 'success' || status === 'pending') {
-      if (status === 'pending') toast(tt('purchase_pending'));
+      if (status === 'pending') showToastWhenFree(() => toast(tt('purchase_pending')));
       // El webhook puede tardar unos segundos en registrar el pago
       let tries = 0;
       const poll = async () => {
@@ -240,7 +251,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         const r = await refreshEntitlements().catch(() => null);
         if (cancelled || (r && (r.livesAdded > 0 || r.proActivated))) return;
         if (tries < 8) timer = window.setTimeout(poll, 3000);
-        else if (status === 'success') toast(tt('purchase_processing'));
+        else if (status === 'success') showToastWhenFree(() => toast(tt('purchase_processing')));
       };
       poll();
     }
@@ -266,6 +277,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const routeParams = useParams<{ date?: string; seed?: string; code?: string }>();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('splash');
+  phaseRef.current = phase;
+  // Al salir de una fase ocupada, se muestran los mensajes que esperaban (con una pausa breve)
+  useEffect(() => {
+    if (isBusyPhase(phase) || deferredToastsRef.current.length === 0) return;
+    const id = setTimeout(() => { deferredToastsRef.current.splice(0).forEach(show => show()); }, 700);
+    return () => clearTimeout(id);
+  }, [phase]);
   const [difficulty, setDifficulty] = useState<Difficulty>('basic');
   const [gameMode, setGameMode] = useState<GameMode>('world');
   const [finalRounds, setFinalRounds] = useState<RoundResult[]>([]);
@@ -275,6 +293,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [taPrevBest, setTaPrevBest] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [showNoLives, setShowNoLives] = useState(false);
+  const showNoLivesRef = useRef(false);
+  showNoLivesRef.current = showNoLives;
+  // Se recuerda en qué pantalla se abrió: si el jugador cambia de pantalla, se cierra (antes quedaba
+  // abierta y otras ventanas se apilaban encima)
+  const noLivesPhaseRef = useRef<string | null>(null);
+  useEffect(() => { if (showNoLives) noLivesPhaseRef.current = phase; }, [showNoLives]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (showNoLives && noLivesPhaseRef.current && noLivesPhaseRef.current !== phase) setShowNoLives(false);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const [isTraining, setIsTraining] = useState(false);
   const [revengeCities, setRevengeCities] = useState<City[] | null>(null);
   const [replayCities, setReplayCities] = useState<City[] | null>(null);
@@ -302,6 +329,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Challenge a Friend state
   const [challengeSeed, setChallengeSeed] = useState<number | null>(null);
   const [challengerScore, setChallengerScore] = useState<number | null>(null);
+  const autoStartedSeedRef = useRef<number | null>(null);
   // Notification permission prompt
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
   const notifPendingRef = useRef(false);
@@ -569,34 +597,40 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (getPermission() === 'granted') subscribeToPush();
   }, []);
 
-  // After a game ends, schedule contextual notifications + offer permission
+  // Al terminar una partida: programar los avisos (si ya hay permiso) o dejar pendiente la oferta del
+  // permiso para cuando el jugador vuelva al inicio. Mundial termina dentro de su pantalla (wc-playing).
   useEffect(() => {
-    if (phase !== 'final') return;
-
-    // Schedule notifications if already granted
+    if (phase !== 'final' && phase !== 'ta-final' && phase !== 'wc-playing') return;
     if (getPermission() === 'granted') {
+      if (phase === 'wc-playing') return;
       scheduleDailyReminder();
-      const streak = checkStreak();
-      if (streak.currentStreak >= 2) {
-        scheduleStreakWarning(streak.currentStreak);
-      }
+      const streak = getStreakState().currentStreak; // solo lectura: no consume el cofre del día
+      if (streak >= 2) scheduleStreakWarning(streak);
       const energy = getEnergy();
       if (energy.lives < energy.maxLives && energy.nextRegenMs > 0) {
-        // Schedule for when ALL lives are full
+        // Schedule for when ALL lives are full (se vuelve a comprobar al momento de avisar)
         const msPerLife = 20 * 60 * 1000;
         const livesNeeded = energy.maxLives - energy.lives;
         const totalMs = energy.nextRegenMs + (livesNeeded - 1) * msPerLife;
         scheduleLivesRegenerated(totalMs);
       }
-    } else if (supportsNotifications() && !hasBeenAsked()) {
-      // Se pide al volver al inicio (no encima del cierre, de la oferta ni de la siguiente cuenta regresiva)
+    } else {
       notifPendingRef.current = true;
     }
   }, [phase]);
 
+  // Oferta del permiso al volver al inicio: solo si en esta visita no salió otra ventana (p. ej. el
+  // cofre), no está abierto "sin vidas" y el jugador ya terminó 3 partidas ("Ahora no" = 7 días; máx. 2 veces)
   useEffect(() => {
-    if (phase !== 'home' || !notifPendingRef.current) { if (phase !== 'home') setShowNotifPrompt(false); return; }
-    const id = setTimeout(() => { notifPendingRef.current = false; setShowNotifPrompt(true); }, 900);
+    if (phase !== 'home') { resetHomeVisit(); setShowNotifPrompt(false); return; }
+    if (!notifPendingRef.current) return;
+    const id = setTimeout(() => {
+      notifPendingRef.current = false;
+      if (homeInterruptionShown() || showNoLivesRef.current) return;
+      if (!canOfferNotifications(getPlayerStats().gamesPlayed)) return;
+      markHomeInterruption();
+      setShowNotifPrompt(true);
+    }, 1200);
     return () => clearTimeout(id);
   }, [phase]);
 
@@ -607,12 +641,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     // Schedule immediately if granted
     if (getPermission() === 'granted') {
       scheduleDailyReminder();
-      const streak = checkStreak();
-      if (streak.currentStreak >= 2) scheduleStreakWarning(streak.currentStreak);
+      const streak = getStreakState().currentStreak;
+      if (streak >= 2) scheduleStreakWarning(streak);
     }
   }, []);
 
   const handleNotifDismiss = useCallback(() => {
+    snoozeNotificationPrompt();
     setShowNotifPrompt(false);
   }, []);
 
@@ -836,7 +871,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   // Auto-start challenge after splash completes (query-param or deep link)
   useEffect(() => {
-    if (challengeSeed !== null && phase === 'home') {
+    // Una sola vez por enlace: antes, al volver al inicio el mismo reto arrancaba otra vez (o salía
+    // "sin vidas" en cada visita al inicio)
+    if (challengeSeed !== null && phase === 'home' && autoStartedSeedRef.current !== challengeSeed) {
+      autoStartedSeedRef.current = challengeSeed;
       unlockAudio();
       if (!consumeLife()) { setShowNoLives(true); return; }
       setIsTraining(false);
@@ -1286,6 +1324,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       const playedChallenge = activeChallenge;
       return (
         <FinalResultScreen
+          noOffers={isTraining}
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
           rounds={finalRounds}

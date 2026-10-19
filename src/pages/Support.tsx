@@ -79,7 +79,7 @@ const Support = () => {
             />
             <FAQItem
               q="Como elimino mi cuenta y mis datos?"
-              a="Envianos un correo a juanjogrimar@gmail.com desde el email asociado a tu cuenta solicitando la eliminacion. Eliminaremos tu cuenta y todos los datos asociados en un plazo de 30 dias."
+              a="En el juego: Ajustes → Cuenta → Eliminar cuenta (se borra de inmediato). Tambien desde la web en geospeed-challenge.vercel.app/eliminar-cuenta, o escribiendonos a juanjogrimar@gmail.com desde el email de tu cuenta: la eliminamos con todos sus datos en un plazo maximo de 30 dias."
             />
             <FAQItem
               q="El modo multijugador no conecta"
@@ -164,7 +164,7 @@ const Support = () => {
               />
               <FAQItem
                 q="How do I delete my account and data?"
-                a="Send us an email at juanjogrimar@gmail.com from the email address associated with your account requesting deletion. We will delete your account and all associated data within 30 days."
+                a="In the game: Settings → Account → Delete account (deleted immediately). You can also use geospeed-challenge.vercel.app/delete-account, or email juanjogrimar@gmail.com from your account email: we delete it with all its data within 30 days at most."
               />
               <FAQItem
                 q="Multiplayer mode won't connect"

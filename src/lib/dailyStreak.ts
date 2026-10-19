@@ -1,4 +1,5 @@
 import { addLives } from './energySystem';
+import { localDate } from './interruptions';
 
 const STORAGE_KEY = 'geospeed_daily_streak';
 
@@ -50,8 +51,8 @@ const STREAK_REWARDS: StreakReward[] = [
  * Get the current date as YYYY-MM-DD
  */
 function getTodayDate(): string {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
+  // Día LOCAL: antes era la fecha UTC y en Colombia el "día nuevo" (y el cofre) llegaba a las 7 p. m.
+  return localDate();
 }
 
 /**
@@ -60,7 +61,7 @@ function getTodayDate(): string {
 function getYesterdayDate(): string {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  return yesterday.toISOString().split('T')[0];
+  return localDate(yesterday);
 }
 
 /**
@@ -136,6 +137,10 @@ export function checkStreak(): StreakCheckResult {
   if (state.lastPlayDate === today) {
     // Already checked in today
     isNewDay = false;
+  } else if (state.lastPlayDate > today) {
+    // Fecha guardada en UTC por la versión anterior ("mañana" en la tarde de Colombia): es hoy
+    state.lastPlayDate = today;
+    isNewDay = false;
   } else if (state.lastPlayDate === yesterday) {
     // Consecutive day - increment streak
     state.currentStreak += 1;
@@ -199,8 +204,8 @@ export function claimDailyReward(): StreakReward | null {
       addLives(reward.lives);
     }
 
-    // Mark as claimed
-    state.rewardsClaimed.push(today);
+    // Mark as claimed (se guardan los últimos 60 días)
+    state.rewardsClaimed = [...state.rewardsClaimed, today].slice(-60);
     saveStateToStorage(state);
   }
 
@@ -208,58 +213,24 @@ export function claimDailyReward(): StreakReward | null {
 }
 
 /**
- * Check if the player's streak is at risk (didn't play yesterday and has a streak > 2).
- * Returns the streak count if at risk, null otherwise.
+ * Cofre del día pendiente: el día ya quedó registrado (checkStreak) pero el premio no se ha reclamado.
+ * Así el cofre no se pierde si el jugador entra por un enlace y el inicio solo se ve un instante.
  */
-export function getStreakAtRisk(): { days: number; canProtect: boolean } | null {
+export function getUnclaimedChestToday(): StreakReward | null {
   const state = getStateFromStorage();
   const today = getTodayDate();
-  const yesterday = getYesterdayDate();
-
-  // Streak is at risk if: last play was yesterday (still safe) AND streak >= 3
-  // OR: last play was 2 days ago (about to break) AND streak >= 3
-  if (state.currentStreak >= 3 && state.lastPlayDate === yesterday) {
-    // Still safe for today, but show reminder
-    return null;
-  }
-
-  // If they haven't played today and streak would be lost
-  if (state.currentStreak >= 3 && state.lastPlayDate !== today && state.lastPlayDate !== yesterday) {
-    return { days: state.currentStreak, canProtect: !isStreakProtected() };
-  }
-
-  return null;
+  if (state.lastPlayDate !== today || state.rewardsClaimed.includes(today)) return null;
+  const reward = getRewardForDay(Math.max(1, state.currentStreak));
+  return reward.lives > 0 ? reward : null;
 }
 
-/**
- * Protect the current streak (simulates a $0.99 purchase).
- * Extends lastPlayDate to today so the streak doesn't break.
- */
-export function protectStreak(): boolean {
+/** Jugador nuevo: el cofre de su primer día no se muestra (empieza con las vidas llenas). */
+export function skipTodayChest(): void {
   const state = getStateFromStorage();
-  if (state.currentStreak < 2) return false;
-
   const today = getTodayDate();
-  state.lastPlayDate = today;
-
-  // Mark protection used
-  try {
-    localStorage.setItem('geospeed_streak_protected', today);
-  } catch { /* ignore */ }
-
+  if (state.rewardsClaimed.includes(today)) return;
+  state.rewardsClaimed = [...state.rewardsClaimed, today].slice(-60);
   saveStateToStorage(state);
-  return true;
-}
-
-/**
- * Check if streak was already protected today
- */
-function isStreakProtected(): boolean {
-  try {
-    return localStorage.getItem('geospeed_streak_protected') === getTodayDate();
-  } catch {
-    return false;
-  }
 }
 
 /**

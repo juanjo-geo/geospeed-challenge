@@ -2,6 +2,9 @@
 // Deploy:  supabase functions deploy send-push
 // Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (supabase secrets set ...)
 // Invocar: POST { "type": "streak" | "lives" | "daily" }  (por cron o manual)
+// Seguridad: SOLO el servidor puede enviar. La llamada debe traer la llave de servicio
+// (Authorization: Bearer <service_role>) o el encabezado x-cron-secret igual al secreto
+// PUSH_CRON_SECRET. Antes cualquiera con la llave pública podía mandar notificaciones a todos.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -20,6 +23,14 @@ const MESSAGES: Record<string, { title: string; body: string; icon: string }> = 
 };
 
 Deno.serve(async (req) => {
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  const cronSecret = Deno.env.get('PUSH_CRON_SECRET');
+  const allowed = (!!token && token === SERVICE_ROLE)
+    || (!!cronSecret && req.headers.get('x-cron-secret') === cronSecret);
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+  }
+
   const { type = 'daily' } = await req.json().catch(() => ({}));
   const msg = MESSAGES[type] ?? MESSAGES.daily;
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);

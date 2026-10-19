@@ -156,8 +156,10 @@ const Privacy = () => {
           <p className="text-[#d4d4c8] leading-relaxed">
             Los datos locales (localStorage) permanecen en tu dispositivo hasta que los borres
             manualmente o desinstales la App. Los datos de cuenta en Supabase se conservan
-            mientras mantengas una cuenta activa. Puedes solicitar la eliminacion de tu cuenta
-            y todos los datos asociados en cualquier momento escribiendo a{" "}
+            mientras mantengas una cuenta activa. Puedes eliminar tu cuenta y todos los datos
+            asociados en cualquier momento desde el juego (Ajustes → Cuenta → Eliminar cuenta), en{" "}
+            <a href="/eliminar-cuenta" className="text-[#f5c842] underline">geospeed-challenge.vercel.app/eliminar-cuenta</a>{" "}
+            o escribiendo a{" "}
             <a href="mailto:juanjogrimar@gmail.com" className="text-[#f5c842] underline">
               juanjogrimar@gmail.com
             </a>.
@@ -339,8 +341,10 @@ const Privacy = () => {
             <p className="text-[#d4d4c8] leading-relaxed">
               Local data (localStorage) remains on your device until you manually clear it or
               uninstall the App. Account data on Supabase is retained as long as you maintain an
-              active account. You may request deletion of your account and all associated data at
-              any time by writing to{" "}
+              active account. You can delete your account and all associated data at any time from
+              the game (Settings → Account → Delete account), at{" "}
+              <a href="/delete-account" className="text-[#f5c842] underline">geospeed-challenge.vercel.app/delete-account</a>{" "}
+              or by writing to{" "}
               <a href="mailto:juanjogrimar@gmail.com" className="text-[#f5c842] underline">
                 juanjogrimar@gmail.com
               </a>.

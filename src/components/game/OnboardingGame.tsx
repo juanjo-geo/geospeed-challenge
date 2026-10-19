@@ -160,7 +160,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
   const advanceToNextRound = useCallback(() => {
     playButtonTap();
     if (currentRound + 1 >= TOTAL_ROUNDS) {
-      try { localStorage.setItem('geospeed_onboarding_done', 'true'); } catch { /* sin almacenamiento */ }
+      try { localStorage.setItem('geospeed_onboarding_done', 'true'); localStorage.setItem('geospeed_tutorial_seen', 'true'); } catch { /* sin almacenamiento */ }
       trackEvent('onboarding_complete', { score, rounds: TOTAL_ROUNDS });
       hapticCelebration();
       fireStarBurst();
@@ -174,7 +174,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
   }, [currentRound, score]);
 
   const skipPractice = useCallback(() => {
-    try { localStorage.setItem('geospeed_onboarding_done', 'true'); } catch { /* sin almacenamiento */ }
+    try { localStorage.setItem('geospeed_onboarding_done', 'true'); localStorage.setItem('geospeed_tutorial_seen', 'true'); } catch { /* sin almacenamiento */ }
     trackEvent('onboarding_skip');
     playButtonTap();
     onComplete();

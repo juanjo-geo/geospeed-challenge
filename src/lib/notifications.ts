@@ -1,19 +1,34 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// GeoSpeed — Push Notifications System
+// GeoSpeed — Notificaciones del navegador
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Context-aware browser notifications:
-//   • Daily challenge reminder (9 AM local time)
-//   • Streak at risk (if no play today by 8 PM)
-//   • Lives regenerated (when full again)
+// Avisos con contexto (reglas acordadas con JuanJo el 2026-10-19):
+//   • Desafío diario: mañana a las 9:00 (hora local).
+//   • Racha en peligro: MAÑANA a las 20:00, y solo si ese día todavía no se abrió el juego
+//     (antes se programaba para hoy justo después de jugar, así que siempre era falsa).
+//   • Vidas completas: cuando se llenan, y solo si siguen llenas al momento de avisar.
+// Son temporizadores de la página: solo pueden salir con la app abierta en segundo plano. Nunca se
+// muestran con el juego en pantalla y las atrasadas (más de 2 h) se descartan en vez de salir al abrir.
+// Textos en el idioma del juego; se arman al momento de mostrar.
 //
-// Uses Notification API + service worker registration.
-// Permission is requested explicitly via UI, never auto-prompted.
+// El permiso se pide desde la UI (Index), a partir de la 3.ª partida: "Ahora no" lo pospone 7 días y
+// se pregunta como máximo 2 veces.
 
 import { supabase } from '@/integrations/supabase/client';
+import { detectLocale, getTranslations, translate } from '@/i18n';
+import { getStreakState } from './dailyStreak';
+import { getEnergy } from './energySystem';
+import { localDate } from './interruptions';
 
 const PERMISSION_KEY = 'geospeed_notif_asked';
+const PROMPT_KEY = 'geospeed_notif_prompt';
 const SCHEDULE_KEY = 'geospeed_notif_schedules';
+const ICON = '/icon-192.png';
+const MAX_ASKS = 2;
+const SNOOZE_MS = 7 * 24 * 3600 * 1000;
+const STALE_MS = 2 * 3600 * 1000;
+/** Partidas terminadas antes de ofrecer los avisos */
+export const NOTIF_MIN_GAMES = 3;
 
 /** Check if browser supports notifications */
 export function supportsNotifications(): boolean {
@@ -26,7 +41,7 @@ export function getPermission(): NotificationPermission {
   return Notification.permission;
 }
 
-/** Has the user already been asked? (avoid re-prompting) */
+/** Has the user already been asked by the browser? */
 export function hasBeenAsked(): boolean {
   try {
     return localStorage.getItem(PERMISSION_KEY) === 'true';
@@ -35,12 +50,46 @@ export function hasBeenAsked(): boolean {
   }
 }
 
+interface PromptState { asks: number; snoozeUntil: number }
+
+function getPromptState(): PromptState {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PROMPT_KEY) || 'null');
+    if (raw && typeof raw.asks === 'number') return { asks: raw.asks, snoozeUntil: Number(raw.snoozeUntil) || 0 };
+  } catch { /* ignore */ }
+  return { asks: 0, snoozeUntil: 0 };
+}
+
+function savePromptState(st: PromptState): void {
+  try { localStorage.setItem(PROMPT_KEY, JSON.stringify(st)); } catch { /* ignore */ }
+}
+
+/**
+ * ¿Se puede ofrecer el aviso de notificaciones? Solo si el navegador aún no decidió (ni aceptado ni
+ * bloqueado), el jugador terminó al menos NOTIF_MIN_GAMES partidas, no lo pospuso hace menos de 7 días
+ * y no se le ha preguntado ya MAX_ASKS veces.
+ */
+export function canOfferNotifications(gamesPlayed: number): boolean {
+  if (!supportsNotifications() || getPermission() !== 'default' || hasBeenAsked()) return false;
+  if (gamesPlayed < NOTIF_MIN_GAMES) return false;
+  const st = getPromptState();
+  return st.asks < MAX_ASKS && Date.now() >= st.snoozeUntil;
+}
+
+/** "Ahora no": se recuerda y no se vuelve a preguntar en 7 días. */
+export function snoozeNotificationPrompt(): void {
+  const st = getPromptState();
+  savePromptState({ asks: st.asks + 1, snoozeUntil: Date.now() + SNOOZE_MS });
+}
+
 /** Request notification permission — call only from explicit UI action */
 export async function requestPermission(): Promise<boolean> {
   if (!supportsNotifications()) return false;
   try {
     localStorage.setItem(PERMISSION_KEY, 'true');
   } catch {}
+  const st = getPromptState();
+  savePromptState({ asks: st.asks + 1, snoozeUntil: st.snoozeUntil });
   const result = await Notification.requestPermission();
   return result === 'granted';
 }
@@ -55,8 +104,8 @@ export function showNotification(
 
   const opts: NotificationOptions = {
     body,
-    icon: options?.icon || '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
+    icon: options?.icon || ICON,
+    badge: ICON,
     tag: options?.tag || 'geospeed',
     data: options?.data,
     silent: false,
@@ -72,19 +121,22 @@ export function showNotification(
   }
 }
 
-// ── Scheduled Notification Helpers ──
+// ── Avisos programados ──
+
+type NotifKind = 'daily' | 'streak' | 'lives';
 
 interface ScheduledNotif {
   id: string;
+  kind: NotifKind;
   fireAt: number; // timestamp ms
-  title: string;
-  body: string;
-  tag: string;
+  params?: Record<string, string | number>;
 }
 
 function getSchedules(): ScheduledNotif[] {
   try {
-    return JSON.parse(localStorage.getItem(SCHEDULE_KEY) || '[]');
+    const items = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || '[]');
+    // Los avisos de la versión anterior (texto fijo en español, sin `kind`) se descartan
+    return Array.isArray(items) ? items.filter((n: ScheduledNotif) => n && typeof n.kind === 'string') : [];
   } catch {
     return [];
   }
@@ -96,79 +148,69 @@ function saveSchedules(items: ScheduledNotif[]): void {
   } catch {}
 }
 
-/** Schedule a notification for a future time (local timers — best effort) */
-export function scheduleNotification(
-  id: string,
-  fireAt: Date,
-  title: string,
-  body: string,
-): void {
+function schedule(id: string, kind: NotifKind, fireAt: Date, params?: Record<string, string | number>): void {
   if (getPermission() !== 'granted') return;
-
   const items = getSchedules().filter(n => n.id !== id);
-  items.push({ id, fireAt: fireAt.getTime(), title, body, tag: id });
+  items.push({ id, kind, fireAt: fireAt.getTime(), params });
   saveSchedules(items);
 }
 
-/** Check and fire any due scheduled notifications */
+/** Título y texto en el idioma actual del juego */
+function texts(n: ScheduledNotif): { title: string; body: string } {
+  const dict = getTranslations(detectLocale());
+  switch (n.kind) {
+    case 'streak': return { title: translate(dict, 'notif_streakTitle', n.params), body: translate(dict, 'notif_streakBody') };
+    case 'lives': return { title: translate(dict, 'notif_livesTitle'), body: translate(dict, 'notif_livesBody') };
+    default: return { title: translate(dict, 'notif_dailyTitle'), body: translate(dict, 'notif_dailyBody') };
+  }
+}
+
+/** ¿Sigue teniendo sentido el aviso al momento de mostrarlo? */
+function stillRelevant(n: ScheduledNotif): boolean {
+  if (n.kind === 'streak') return getStreakState().lastPlayDate !== localDate(); // ya jugó hoy
+  if (n.kind === 'lives') { const e = getEnergy(); return e.regenLives >= e.maxLives; }
+  return true;
+}
+
+/** Revisa los avisos vencidos: muestra los recientes con la app en segundo plano y descarta el resto */
 export function checkScheduledNotifications(): void {
   if (getPermission() !== 'granted') return;
   const now = Date.now();
   const items = getSchedules();
   const due = items.filter(n => n.fireAt <= now);
-  const remaining = items.filter(n => n.fireAt > now);
-
+  if (due.length === 0) return;
+  const inBackground = typeof document !== 'undefined' && document.visibilityState === 'hidden';
   due.forEach(n => {
-    showNotification(n.title, n.body, { tag: n.tag });
+    if (!inBackground || now - n.fireAt > STALE_MS || !stillRelevant(n)) return;
+    const { title, body } = texts(n);
+    showNotification(title, body, { tag: n.id });
   });
-
-  if (due.length > 0) saveSchedules(remaining);
+  saveSchedules(items.filter(n => n.fireAt > now));
 }
 
 // ── Contextual Notification Scheduling ──
 
-/** Schedule daily challenge reminder for tomorrow at 9 AM */
+/** Desafío diario: mañana a las 9:00 */
 export function scheduleDailyReminder(): void {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(9, 0, 0, 0);
-
-  scheduleNotification(
-    'daily-reminder',
-    tomorrow,
-    '🌍 Nuevo desafío diario',
-    '¡Las ciudades de hoy te esperan! No pierdas tu racha.',
-  );
+  schedule('daily-reminder', 'daily', tomorrow);
 }
 
-/** Schedule streak-at-risk warning for today at 8 PM */
+/** Racha en peligro: mañana a las 20:00 (solo sale si ese día no se abrió el juego) */
 export function scheduleStreakWarning(currentStreak: number): void {
   if (currentStreak < 2) return; // Only warn if streak worth protecting
-
-  const today = new Date();
-  today.setHours(20, 0, 0, 0);
-
-  // Only schedule if it's before 8 PM
-  if (Date.now() < today.getTime()) {
-    scheduleNotification(
-      'streak-warning',
-      today,
-      `🔥 Tu racha de ${currentStreak} días está en riesgo`,
-      '¡Juega una partida antes de medianoche para mantenerla!',
-    );
-  }
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(20, 0, 0, 0);
+  schedule('streak-warning', 'streak', tomorrow, { n: currentStreak });
 }
 
-/** Schedule lives-full notification */
+/** Vidas completas (se vuelve a comprobar al momento de avisar) */
 export function scheduleLivesRegenerated(regenMs: number): void {
   if (regenMs <= 0) return;
-
-  scheduleNotification(
-    'lives-full',
-    new Date(Date.now() + regenMs),
-    '❤️ Vidas completas',
-    '¡Tienes 5 vidas listas! Hora de jugar.',
-  );
+  schedule('lives-full', 'lives', new Date(Date.now() + regenMs));
 }
 
 /** Initialize notification check loop (runs every 60s while app is open) */
@@ -176,7 +218,7 @@ let checkInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startNotificationLoop(): void {
   if (checkInterval) return;
-  checkScheduledNotifications(); // Check immediately
+  checkScheduledNotifications(); // Descarta lo vencido al abrir (no lo muestra: la app está en pantalla)
   checkInterval = setInterval(checkScheduledNotifications, 60_000);
 }
 
@@ -225,19 +267,12 @@ export async function subscribeToPush(): Promise<boolean> {
     const json = sub.toJSON();
     if (!json.endpoint) return false;
 
-    let userId: string | null = null;
-    try { const { data } = await supabase.auth.getUser(); userId = data.user?.id ?? null; } catch (_) {}
-
-    const { error: upErr } = await supabase.from('push_subscriptions').upsert(
-      {
-        endpoint: json.endpoint,
-        p256dh: json.keys?.p256dh ?? null,
-        auth: json.keys?.auth ?? null,
-        user_id: userId,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'endpoint' },
-    );
+    // Por función del servidor: la tabla ya no es escribible desde el cliente y el user_id sale de la sesión
+    const { error: upErr } = await supabase.rpc('register_push_subscription', {
+      p_endpoint: json.endpoint,
+      p_p256dh: json.keys?.p256dh ?? null,
+      p_auth: json.keys?.auth ?? null,
+    });
     if (upErr) { console.warn('[push] Guardar suscripción falló', upErr); return false; }
     return true;
   } catch (e) {

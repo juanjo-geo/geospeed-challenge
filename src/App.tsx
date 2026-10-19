@@ -11,6 +11,7 @@ import ScreenReaderAnnouncer from "@/components/game/ScreenReaderAnnouncer";
 import Index from "./pages/Index.tsx";
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const Support = lazy(() => import("./pages/Support.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
@@ -42,6 +43,9 @@ const App = () => (
               <Route path="/reto/:code" element={<Index deepLink={{ type: 'reto' }} />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              {/* Borrar la cuenta desde la web (enlace que pide Google Play) */}
+              <Route path="/eliminar-cuenta" element={<DeleteAccount />} />
+              <Route path="/delete-account" element={<DeleteAccount />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/support" element={<Support />} />
               <Route path="/terms" element={<Terms />} />

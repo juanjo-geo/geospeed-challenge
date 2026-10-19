@@ -26,6 +26,9 @@ export default function Auth() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const initialMode = params.get('mode');
+  // ?next=/eliminar-cuenta: a dónde volver al entrar (solo rutas internas, nunca otro dominio)
+  const nextParam = params.get('next');
+  const afterLogin = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/';
   const [mode, setMode] = useState<Mode>(initialMode === 'forgot' ? 'forgot' : initialMode === 'signup' ? 'signup' : initialMode === 'set-password' ? 'set-password' : 'login');
   // Invitado con sesión anónima: "crear cuenta" enlaza el correo a su usuario (conserva todo)
   const [guest, setGuest] = useState(false);
@@ -69,7 +72,7 @@ export default function Auth() {
           if (error.message === 'Email not confirmed') setError(t('auth_errEmailNotConfirmed'));
           else setError(t('acct_errLoginTitle'), t('acct_errLoginDesc'));
         } else {
-          navigate('/');
+          navigate(afterLogin);
         }
         return;
       }

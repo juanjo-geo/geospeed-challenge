@@ -14,6 +14,8 @@
  *  - "Second chance" rewarded ad after timeout
  */
 
+import { localDate } from './interruptions';
+import { isAdAvailable } from './adSystem';
 import { getEnergy } from './energySystem';
 import { isPro } from './premiumSystem';
 import { trackEvent } from './analytics';
@@ -46,6 +48,8 @@ export interface FrustrationOffer {
 
 const BAD_SCORE_THRESHOLD = 2000; // below this = "bad game"
 const MIN_OFFER_INTERVAL_MS = 90_000; // 90s between offers (no spam)
+/** Reglas de interrupciones (2026-10-19): como máximo una oferta por día (fecha local) */
+const OFFER_DAY_KEY = 'geospeed_offer_day';
 const MAX_OFFERS_PER_SESSION = 4;
 
 function getState(): FrustrationState {
@@ -149,6 +153,7 @@ export function getContextualOffer(): FrustrationOffer | null {
   const now = Date.now();
 
   // Rate limiting — no spam
+  try { if (localStorage.getItem(OFFER_DAY_KEY) === localDate()) return null; } catch { /* ignore */ }
   if (state.offersShown >= MAX_OFFERS_PER_SESSION) return null;
   if (now - state.lastOfferTimestamp < MIN_OFFER_INTERVAL_MS) return null;
 
@@ -187,8 +192,8 @@ export function getContextualOffer(): FrustrationOffer | null {
     };
   }
 
-  // Priority 3: Moderate frustration + low lives — rewarded ad
-  if (level === 'moderate' && energy.lives <= 2) {
+  // Priority 3: Moderate frustration + low lives — rewarded ad (solo si de verdad hay anuncios)
+  if (level === 'moderate' && energy.lives <= 2 && isAdAvailable()) {
     trackEvent('frustration_offer', { type: 'rewarded_ad', level, lives: energy.lives });
     return {
       type: 'rewarded_ad',
@@ -228,6 +233,7 @@ export function markOfferShown(): void {
   state.offersShown += 1;
   state.lastOfferTimestamp = Date.now();
   saveState(state);
+  try { localStorage.setItem(OFFER_DAY_KEY, localDate()); } catch { /* ignore */ }
 }
 
 /**
