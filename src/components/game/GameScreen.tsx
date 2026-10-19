@@ -28,6 +28,10 @@ const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const TRAINING_ROUNDS = 6;
 const AUTO_ADVANCE_SECONDS = 3;
+/** Tiempo para ver la línea y los km entre la respuesta y la ciudad antes de que la tarjeta tape el mapa.
+ *  JuanJo (2026-10-18): 2 s más que antes → 3,2 s; con el anuncio "¡al otro lado del mundo!" (≥ 5.000 km), 6,2 s. */
+const DISTANCE_VIEW_MS = 3200;
+const DISTANCE_VIEW_EPIC_MS = 6200;
 
 /** Quick continent guess from lat/lon — used for map highlight hint */
 function getContinentFromCoords(lat: number, lon: number): string | null {
@@ -104,7 +108,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [timeLeft, setTimeLeft] = useState(effectiveMaxTime);
   const [isWaiting, setIsWaiting] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [distanceRevealActive, setDistanceRevealActive] = useState(false);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
   const [rounds, setRounds] = useState<RoundResult[]>([]);
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState(AUTO_ADVANCE_SECONDS);
@@ -216,11 +219,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
-    // If distance reveal is playing (>5000km), wait for it to finish before showing feedback
-    const delay = distanceRevealActive ? 2800 : 1200;
+    // Primero se ve la distancia sobre el mapa; con el anuncio de error épico (≥ 5.000 km), más tiempo
+    const delay = lastResult.distance >= 5000 ? DISTANCE_VIEW_EPIC_MS : DISTANCE_VIEW_MS;
     const timeout = setTimeout(() => setShowPopup(true), delay);
     return () => clearTimeout(timeout);
-  }, [isWaiting, lastResult, distanceRevealActive]);
+  }, [isWaiting, lastResult]);
 
   useEffect(() => {
     if (!showPopup) return;
@@ -250,7 +253,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       setCurrentRound(r => r + 1);
       setIsWaiting(false);
       setShowPopup(false);
-      setDistanceRevealActive(false);
       setLastResult(null);
       playRoundTransition();
     }
@@ -342,8 +344,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
       // Tier F: Epic fail (>5000km) — cinematic distance reveal (delays feedback panel)
       if (distance >= 5000) {
-        setTimeout(() => { setDistanceRevealActive(true); fireDistanceReveal(distance, t('reveal_otherSide')); }, 400);
-        setTimeout(() => setDistanceRevealActive(false), 2800);
+        setTimeout(() => fireDistanceReveal(distance, t('reveal_otherSide')), 400);
       }
       // Speed multiplier bonus sound (top tier speed)
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 350); }
