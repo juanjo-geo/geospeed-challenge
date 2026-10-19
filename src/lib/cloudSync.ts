@@ -16,7 +16,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { getPlayerStats, type PlayerStats } from './gameUtils';
-import { validateProFromServer } from './premiumSystem';
+import { refreshEntitlements } from './premiumSystem';
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface CloudPlayerData {
@@ -36,14 +36,14 @@ export async function pushToCloud(): Promise<boolean> {
     const stats = getLocalData('geospeed_stats');
     const history = getLocalData('geospeed_history');
     const energy = getLocalData('geospeed_energy');
-    const premium = getLocalData('geospeed_premium');
 
     const payload = {
       user_id: user.id,
       stats: (stats || { gamesPlayed: 0, bestScore: 0, totalDistance: 0, totalRounds: 0 }) as Json,
       history: (history || []) as Json,
       energy: (energy || { lives: 5, lastRegenTimestamp: Date.now() }) as Json,
-      premium: (premium || { isPro: false, proExpiresAt: null, proSource: null }) as Json,
+      // premium NO se sube: lo decide el servidor (compras en `purchases`) y un trigger
+      // impide que el cliente lo cambie. Subirlo borraba el Pro recién comprado.
       updated_at: new Date().toISOString(),
     };
 
@@ -100,18 +100,18 @@ export async function syncOnLogin(): Promise<void> {
       // Cloud has more progress — overwrite local
       setLocalData('geospeed_stats', cloudStats);
       if (cloudData.history) setLocalData('geospeed_history', cloudData.history);
-      if (cloudData.premium) setLocalData('geospeed_premium', cloudData.premium);
-      // Don't overwrite energy (keep local regen timer accurate)
+      // Don't overwrite energy (keep local regen timer accurate); las vidas compradas llegan
+      // por refreshEntitlements y el Pro también (no desde player_data.premium)
     } else if (localStats.gamesPlayed > cloudStats.gamesPlayed) {
       // Local has more progress — push to cloud
       await pushToCloud();
     }
     // If equal, do nothing (already in sync)
-
-    // Validate premium status from server — prevents localStorage hacking
-    await validateProFromServer();
   } catch {
     // Sync failed silently — local data continues to work
+  } finally {
+    // Pro y vidas compradas según el servidor (también evita un Pro falso en localStorage)
+    await refreshEntitlements().catch(() => {});
   }
 }
 

@@ -5,6 +5,8 @@ import {
   getProStatus,
   purchaseLives,
   activatePro,
+  refreshEntitlements,
+  ENTITLEMENTS_EVENT,
   type StoreProduct,
 } from '@/lib/premiumSystem';
 import { getEnergy } from '@/lib/energySystem';
@@ -53,7 +55,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
       if (!result.success) {
         // Si el usuario canceló, no mostramos error.
-        if (!result.cancelled) {
+        if (result.code === 'login_required') {
+          setPurchaseMessage(t('store_loginRequired'));
+        } else if (!result.cancelled) {
           setPurchaseMessage(result.error || t('store_purchaseError'));
         }
         return;
@@ -97,31 +101,30 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
     try {
       const result = await paymentProvider.restorePurchases();
-      if (result.success) {
-        // Check if the restore revealed an active subscription
-        const status = await paymentProvider.getSubscriptionStatus();
-        if (status.isActive) {
-          // Re-activar Pro local según lo restaurado: sin fecha = lifetime;
-          // con fecha = suscripción hasta esa fecha.
-          if (status.expiresAt) {
-            const days = Math.max(1, Math.ceil((new Date(status.expiresAt).getTime() - Date.now()) / 86400000));
-            await activatePro('subscription', days);
-          } else {
-            await activatePro('lifetime');
-          }
-          setProStatus(getProStatus());
-          setPurchaseMessage(t('store_proActivated'));
-        } else {
-          setPurchaseMessage(t('store_noPurchasesToRestore') || 'No purchases to restore');
-        }
-      } else {
+      if (!result.success) {
         setPurchaseMessage(result.error || t('store_purchaseError'));
+        return;
       }
+      // Servidor (compras web) + tienda nativa (RevenueCat): Pro y vidas pendientes
+      const ent = await refreshEntitlements();
+      setProStatus(getProStatus());
+      setEnergy(getEnergy());
+      if (ent.livesAdded > 0) setPurchaseMessage(t('store_livesAdded', { count: String(ent.livesAdded) }));
+      else if (ent.isPro) setPurchaseMessage(t('store_proActivated'));
+      else setPurchaseMessage(t('store_noPurchasesToRestore'));
     } catch {
       setPurchaseMessage(t('store_purchaseError'));
     } finally {
       setRestoring(false);
     }
+  }, []);
+
+  // Al abrir la tienda y cuando llega una compra: traer lo acreditado por el servidor
+  useEffect(() => {
+    const sync = () => { setProStatus(getProStatus()); setEnergy(getEnergy()); };
+    refreshEntitlements().then(sync).catch(() => {});
+    window.addEventListener(ENTITLEMENTS_EVENT, sync);
+    return () => window.removeEventListener(ENTITLEMENTS_EVENT, sync);
   }, []);
 
   // Textos del producto traducidos por id (premiumSystem guarda los de español como respaldo)

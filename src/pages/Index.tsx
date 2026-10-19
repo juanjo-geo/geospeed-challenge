@@ -117,7 +117,8 @@ const HowToPlayScreen = lazyWithReload(() => import('@/components/game/HowToPlay
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
-import { incrementGameCounter, shouldShowInterstitial } from '@/lib/premiumSystem';
+import { incrementGameCounter, shouldShowInterstitial, refreshEntitlements, ENTITLEMENTS_EVENT, PURCHASE_PENDING_KEY, type EntitlementsResult } from '@/lib/premiumSystem';
+import { toast } from 'sonner';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
@@ -125,7 +126,7 @@ import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
 import { challengeCitiesToGame, mockRecordMyResult, createChallenge, type Challenge, type ChallengeDetail, type MyChallenge } from '@/lib/challenges';
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
-import { syncAfterGame, pullFromCloud, setLocalData } from '@/lib/cloudSync';
+import { syncAfterGame } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
 import { checkStreak } from '@/lib/dailyStreak';
 import { playCountdown, playGo, unlockAudio } from '@/lib/sounds';
@@ -206,32 +207,61 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // que un futuro deploy vuelva a auto-recargar si hace falta).
   useEffect(() => { try { sessionStorage.removeItem('geospeed_chunk_reloaded'); } catch {} }, []);
 
-  // Al volver del checkout de Mercado Pago, traer de la nube lo que el webhook acreditó
-  // (vidas / Pro). El cliente NUNCA acredita pagos por sí mismo.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get('purchase');
-    if (!status) return;
-    // Limpiar el parámetro de la URL
-    const url = new URL(window.location.href);
-    url.searchParams.delete('purchase');
-    window.history.replaceState({}, '', url.pathname);
-    if (status === 'success') {
-      // Reintentar la sincronización un par de veces: el webhook puede tardar unos segundos
-      let tries = 0;
-      const trySync = async () => {
-        tries++;
-        const cloud = await pullFromCloud();
-        if (cloud) {
-          if (cloud.energy) setLocalData('geospeed_energy', cloud.energy);
-          if (cloud.premium) setLocalData('geospeed_premium', cloud.premium);
-        }
-        if (tries < 4) setTimeout(trySync, 2500);
-      };
-      trySync();
-    }
-  }, []);
   const { t } = useI18n();
+  const tRef = useRef(t);
+  tRef.current = t;
+  // Compras web (Mercado Pago): al volver del checkout, o al reabrir la app con una compra en
+  // curso (efectivo/PSE se aprueban más tarde), traer lo que el servidor acreditó y avisarlo.
+  // El cliente NUNCA acredita pagos por sí mismo (tabla purchases, refreshEntitlements).
+  useEffect(() => {
+    const tt = (k: Parameters<typeof t>[0], p?: Record<string, string | number>) => tRef.current(k, p);
+    const onCredit = (e: Event) => {
+      const r = (e as CustomEvent<EntitlementsResult>).detail;
+      if (r?.livesAdded > 0) toast.success(tt('purchase_creditedLives', { count: r.livesAdded }));
+      if (r?.proActivated) toast.success(tt('purchase_creditedPro'));
+    };
+    window.addEventListener(ENTITLEMENTS_EVENT, onCredit);
+
+    const status = new URLSearchParams(window.location.search).get('purchase');
+    if (status) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('purchase');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+    let cancelled = false;
+    let timer: number | undefined;
+    if (status === 'failure') toast.error(tt('purchase_failed'));
+    if (status === 'success' || status === 'pending') {
+      if (status === 'pending') toast(tt('purchase_pending'));
+      // El webhook puede tardar unos segundos en registrar el pago
+      let tries = 0;
+      const poll = async () => {
+        tries++;
+        const r = await refreshEntitlements().catch(() => null);
+        if (cancelled || (r && (r.livesAdded > 0 || r.proActivated))) return;
+        if (tries < 8) timer = window.setTimeout(poll, 3000);
+        else if (status === 'success') toast(tt('purchase_processing'));
+      };
+      poll();
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const pending = JSON.parse(localStorage.getItem(PURCHASE_PENDING_KEY) || 'null') as { at?: number } | null;
+        if (!pending) return;
+        if (Date.now() - (pending.at ?? 0) > 7 * 86400000) { localStorage.removeItem(PURCHASE_PENDING_KEY); return; }
+      } catch { return; }
+      refreshEntitlements().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener(ENTITLEMENTS_EVENT, onCredit);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
   const isMobile = useIsMobile();
   const routeParams = useParams<{ date?: string; seed?: string; code?: string }>();
   const navigate = useNavigate();

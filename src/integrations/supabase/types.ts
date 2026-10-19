@@ -418,6 +418,14 @@ export type Database = {
         Args: { p_ticket: string }
         Returns: Json
       }
+      my_entitlements: {
+        Args: Record<string, never>
+        Returns: Json
+      }
+      claim_purchased_lives: {
+        Args: Record<string, never>
+        Returns: number
+      }
       challenge_create: {
         Args: { p: Json }
         Returns: Json

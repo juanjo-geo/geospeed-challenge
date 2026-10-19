@@ -1,9 +1,13 @@
 /**
  * GeoSpeed — Mercado Pago Checkout (crear preferencia de pago)
  *
- * Recibe { productId, userId } y devuelve { url } (init_point) de Mercado Pago.
- * El frontend redirige a esa URL. Al pagar, MP llama al webhook
- * (mercadopago-webhook) que activa el Pro o suma las vidas en player_data.
+ * Recibe { productId } y devuelve { url } (init_point) de Mercado Pago. El comprador sale del
+ * JWT de la sesión (la app crea una sesión de invitado antes de pagar), nunca del body: así
+ * cada pago queda ligado a un usuario real. El frontend redirige a esa URL; al pagar, MP llama
+ * a mercadopago-webhook, que registra la compra una sola vez en public.purchases.
+ *
+ * "Verify JWT" debe estar apagado en esta función (supabase/config.toml): el proyecto firma las
+ * sesiones con ES256 y la verificación legada las rechaza. La sesión se valida aquí con getUser().
  *
  * Cubre Colombia, México y Chile (los precios se definen por moneda local más abajo).
  *
@@ -11,6 +15,8 @@
  *  - MP_ACCESS_TOKEN   (APP_USR-...  o TEST-...  del panel de Mercado Pago)
  *  - APP_URL           (https://geospeed-challenge.vercel.app)
  */
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,9 +52,16 @@ Deno.serve(async (req) => {
     const appUrl = Deno.env.get("APP_URL") || "https://geospeed-challenge.vercel.app";
     if (!accessToken) return json({ error: "Mercado Pago not configured" }, 500);
 
-    const { productId, userId } = await req.json();
+    const { productId } = await req.json();
     const product = PRODUCTS[productId];
     if (!product) return json({ error: `Unknown product: ${productId}` }, 400);
+
+    // Comprador = usuario de la sesión (anónimo o con cuenta). Sin sesión válida no hay cobro.
+    const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: auth } = jwt.startsWith("ey") ? await admin.auth.getUser(jwt) : { data: { user: null } };
+    const userId = auth?.user?.id;
+    if (!userId) return json({ error: "login_required" }, 401);
 
     // Crear la preferencia de pago
     const preference = {
@@ -61,8 +74,8 @@ Deno.serve(async (req) => {
         },
       ],
       // Guardamos a quién acreditar y qué compró (vuelve en el webhook)
-      external_reference: JSON.stringify({ productId, userId: userId || "guest" }),
-      metadata: { product_id: productId, user_id: userId || "guest" },
+      external_reference: JSON.stringify({ productId, userId }),
+      metadata: { product_id: productId, user_id: userId },
       back_urls: {
         success: `${appUrl}/?purchase=success`,
         failure: `${appUrl}/?purchase=failure`,
