@@ -794,7 +794,7 @@ function ModeLabel({ gameMode, compact }: { gameMode: GameMode; compact?: boolea
   );
 }
 
-function ClockIcon({ className = '' }: { className?: string }) {
+export function ClockIcon({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
@@ -802,7 +802,7 @@ function ClockIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function BarsIcon({ className = '' }: { className?: string }) {
+export function BarsIcon({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
       <rect x="3" y="13" width="4" height="8" rx="1.2" /><rect x="10" y="8" width="4" height="13" rx="1.2" /><rect x="17" y="3" width="4" height="18" rx="1.2" />
@@ -810,7 +810,7 @@ function BarsIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function PinIcon({ color }: { color: string }) {
+export function PinIcon({ color }: { color: string }) {
   return (
     <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden>
       <path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22Z" fill={color} stroke="white" strokeWidth="1.5" />

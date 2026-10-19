@@ -66,6 +66,21 @@ const ISO_BY_COUNTRY: Record<string, string> = {
 };
 
 /** Código ISO-3166 alfa-2 del país (nombre en español del catálogo o en inglés del mapa), o null. */
+const displayNamesCache = new Map<string, Intl.DisplayNames | null>();
+/** Nombre del país en el idioma del juego ("United States of America" → "Estados Unidos").
+ *  Usa Intl.DisplayNames con el código ISO; si el navegador no lo soporta, devuelve el nombre tal cual. */
+export function countryDisplayName(country: string | null | undefined, locale: string): string {
+  if (!country) return '';
+  const iso = countryIso(country);
+  if (!iso || iso === 'XK') return country;
+  let dn = displayNamesCache.get(locale);
+  if (dn === undefined) {
+    try { dn = new Intl.DisplayNames([locale], { type: 'region' }); } catch { dn = null; }
+    displayNamesCache.set(locale, dn);
+  }
+  try { return dn?.of(iso) || country; } catch { return country; }
+}
+
 export function countryIso(country: string | undefined | null): string | null {
   if (!country) return null;
   return ISO_BY_COUNTRY[country] ?? null;
