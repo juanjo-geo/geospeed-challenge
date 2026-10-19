@@ -18,5 +18,7 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+: fondo de la pantalla de carga del sistema (el ícono es el adaptativo) -->
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
     </style>
 </resources>
