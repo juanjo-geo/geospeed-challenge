@@ -1,1 +1,7 @@
 project_id = "motyvjfhupmvmfpgftku"
+
+# Los tokens de sesión del proyecto se firman con ES256 (llaves nuevas). Con verify_jwt activo
+# el gateway solo acepta JWT firmados con el secreto legado y rechaza con 401 a todo jugador con
+# sesión (incluidas las anónimas). La función valida sus datos y escribe con service role.
+[functions.submit-score]
+verify_jwt = false
