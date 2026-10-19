@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Azul marino de la marca (--brand-navy-deep): fondo del ícono adaptativo y de la pantalla de carga -->
+    <!-- Azul marino de la marca (brand navy deep): fondo del ícono adaptativo y de la pantalla de carga -->
     <color name="ic_launcher_background">#071426</color>
     <color name="splash_background">#071426</color>
 </resources>
