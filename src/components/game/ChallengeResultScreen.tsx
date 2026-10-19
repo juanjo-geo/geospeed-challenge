@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { type ChallengeDetail, type ChallengeRound, challengeLink } from '@/lib/challenges';
 import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
-import { cityHint } from '@/lib/cityHints';
+import { cityHint, useCityTips } from '@/lib/cityHints';
 import { playButtonTap, playShareSuccess, playVictory, playGameOver } from '@/lib/sounds';
 import { fireCelebration } from '@/lib/confetti';
 import { useI18n } from '@/i18n';
@@ -371,6 +371,7 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
   const rv = useMemo(() => (row.rv?.click_lat != null && row.rv.click_lon != null ? { lat: row.rv.click_lat, lon: row.rv.click_lon, label: rivalName, distanceKm: row.rv.distance_km } : null), [row.rv, rivalName]);
   const bounds = useMemo(() => boundsFor([me, correct, ...(rv ? [rv] : [])]), [me, correct, rv]);
   const pinLabels = useMemo(() => ({ you: t('ch_you'), correct: `${row.city.name} · ${t('chm_correct')}` }), [t, row.city.name]);
+  useCityTips();
   const hint = cityHint({ name: row.city.name, country: row.city.country, lat: row.city.lat, lon: row.city.lon }, locale === 'en' ? 'en' : 'es');
   const mp = row.me?.points ?? 0, rp = row.rv?.points ?? 0;
   const who = mp > rp ? 'me' : rp > mp ? 'rival' : 'tie';

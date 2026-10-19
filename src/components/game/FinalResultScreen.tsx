@@ -22,6 +22,7 @@ import { recordGameResult, getContextualOffer, type FrustrationOffer } from '@/l
 import FrustrationOfferModal from './FrustrationOfferModal';
 import { HudIconButton } from './GameHud';
 import { appNumberLocale } from '@/lib/format';
+import { loadCityTips } from '@/lib/cityHints';
 // Mapa de continentes tenue de fondo (polígonos en carga diferida)
 const WorldBackdrop = lazy(() => import('./WorldBackdrop'));
 
@@ -103,6 +104,8 @@ export default function FinalResultScreen({
   /** Repaso: listado "Tus respuestas por ciudad" o revisión de una ciudad */
   const [review, setReview] = useState<{ view: 'list' | 'city'; idx: number } | null>(null);
 
+  // Pistas escritas a mano para la revisión por ciudad: se descargan mientras el jugador ve el resultado
+  useEffect(() => { loadCityTips(); }, []);
   useEffect(() => {
     if (authName && authName.length >= 3) setInitials(authName.substring(0, 3).toUpperCase());
   }, [authName]);

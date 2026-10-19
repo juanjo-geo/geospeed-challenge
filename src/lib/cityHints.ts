@@ -1,18 +1,43 @@
 /**
  * Pistas "Para recordarla" de la Revisión de ciudad (EDU-01).
  *
- * Mientras no exista el contenido escrito a mano (tarea C1: `hint`/`hintEn` por ciudad), la pista
- * se genera con datos reales del catálogo: país, continente, hemisferio y la ciudad conocida más
- * cercana con distancia y dirección. Para añadir pistas manuales, rellenar HAND_HINTS: tienen
- * prioridad sobre la generada.
+ * Cada ciudad del catálogo tiene una pista escrita a mano (src/data/cityTips.ts, ES/EN): un ancla
+ * del mapa (costa, río, isla, región del país, vecina conocida) para recordar DÓNDE está. Ese archivo
+ * se descarga aparte (import dinámico, ~25 KB) cuando aparece la pantalla final o la revisión; mientras
+ * llega, o para una ciudad sin pista, se genera una con datos del catálogo: país, continente,
+ * hemisferio y la ciudad conocida más cercana con distancia y dirección.
  */
+import { useEffect, useState } from 'react';
 import { worldCities, europeCities, asiaCities, americasCities, africaCities, type City } from '@/data/cities';
 import { haversineDistance } from '@/lib/gameUtils';
 
 type Lang = 'es' | 'en';
 
-/** Pistas escritas a mano (C1). Clave: nombre de la ciudad tal como está en cities.ts. */
-export const HAND_HINTS: Record<string, { es: string; en: string }> = {};
+/** Pistas escritas a mano, cargadas bajo demanda. Clave: nombre de la ciudad tal como está en cities.ts. */
+let TIPS: Record<string, { es: string; en: string }> | null = null;
+let tipsPromise: Promise<void> | null = null;
+
+/** Descarga las pistas escritas a mano (una vez). Llamarla al llegar a la pantalla final las deja listas. */
+export function loadCityTips(): Promise<void> {
+  if (!tipsPromise) {
+    tipsPromise = import('@/data/cityTips')
+      .then(m => { TIPS = m.CITY_TIPS; })
+      .catch(() => { tipsPromise = null; });
+  }
+  return tipsPromise;
+}
+
+/** Re-renderiza el componente cuando llegan las pistas escritas a mano. */
+export function useCityTips(): boolean {
+  const [ready, setReady] = useState(() => TIPS !== null);
+  useEffect(() => {
+    if (TIPS) return;
+    let alive = true;
+    loadCityTips().then(() => { if (alive) setReady(TIPS !== null); });
+    return () => { alive = false; };
+  }, []);
+  return ready;
+}
 
 // Catálogo completo sin duplicados; FAMOUS = las más conocidas (Turista y Rookie).
 const ALL: City[] = (() => {
@@ -89,7 +114,7 @@ function roundKm(km: number): number {
 
 /** Pista para una ciudad del catálogo. */
 export function cityHint(city: Pick<City, 'name' | 'country' | 'lat' | 'lon'>, lang: Lang): string {
-  const hand = HAND_HINTS[city.name];
+  const hand = TIPS?.[city.name];
   if (hand) return hand[lang];
 
   const cont = CONTINENT[continentKey(city.lat, city.lon)][lang];
