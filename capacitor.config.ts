@@ -11,12 +11,12 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
-      backgroundColor: '#07130a',
+      backgroundColor: '#071426',
       showSpinner: false,
     },
     StatusBar: {
       style: 'dark',
-      backgroundColor: '#07130a',
+      backgroundColor: '#071426',
     },
     Keyboard: {
       resize: 'body',
@@ -28,7 +28,7 @@ const config: CapacitorConfig = {
     scheme: 'GeoSpeed',
   },
   android: {
-    backgroundColor: '#07130a',
+    backgroundColor: '#071426',
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: false,
