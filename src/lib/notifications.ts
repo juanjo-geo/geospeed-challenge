@@ -225,19 +225,12 @@ export async function subscribeToPush(): Promise<boolean> {
     const json = sub.toJSON();
     if (!json.endpoint) return false;
 
-    let userId: string | null = null;
-    try { const { data } = await supabase.auth.getUser(); userId = data.user?.id ?? null; } catch (_) {}
-
-    const { error: upErr } = await supabase.from('push_subscriptions').upsert(
-      {
-        endpoint: json.endpoint,
-        p256dh: json.keys?.p256dh ?? null,
-        auth: json.keys?.auth ?? null,
-        user_id: userId,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'endpoint' },
-    );
+    // Por función del servidor: la tabla ya no es escribible desde el cliente y el user_id sale de la sesión
+    const { error: upErr } = await supabase.rpc('register_push_subscription', {
+      p_endpoint: json.endpoint,
+      p_p256dh: json.keys?.p256dh ?? null,
+      p_auth: json.keys?.auth ?? null,
+    });
     if (upErr) { console.warn('[push] Guardar suscripción falló', upErr); return false; }
     return true;
   } catch (e) {

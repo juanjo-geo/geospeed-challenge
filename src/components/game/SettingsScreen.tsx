@@ -13,6 +13,7 @@ import Flag from '@/components/ui/Flag';
 import { ChevronIcon } from '@/components/ui/icons';
 import Mascot from './Mascot';
 import SelectorSheet from './SelectorSheet';
+import DeleteAccountDialog from '@/components/account/DeleteAccountDialog';
 const SplashGlobe = lazy(() => import('./SplashGlobe'));
 
 interface SettingsScreenProps {
@@ -40,6 +41,8 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
   const [prefs, setPrefs] = useState<Prefs>(getPrefs);
   const [musicMuted, setMusicMuted] = useState(isMusicMuted);
   const [langOpen, setLangOpen] = useState(false);
+  // Borrar la cuenta / los datos de invitado (requisito de Google Play)
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const canVibrate = typeof navigator !== 'undefined' && 'vibrate' in navigator;
   const closeLang = useCallback(() => setLangOpen(false), []);
 
@@ -136,6 +139,7 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
                     </span>
                   </div>
                   <LinkRow icon="logout" label={t('home_signOut')} onClick={() => { if (window.confirm(t('settings_signOutConfirm'))) signOut(); }} />
+                  <LinkRow icon="trash" danger label={t('settings_deleteAccount')} onClick={() => { playButtonTap(); setDeleteOpen(true); }} />
                 </>
               ) : (
                 <>
@@ -145,6 +149,10 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
                   </div>
                   <LinkRow icon="userPlus" label={t('acct_createAccount')} onClick={() => go('/auth?mode=signup')} />
                   <LinkRow icon="user" label={t('acc_haveAccount')} onClick={() => go('/auth')} />
+                  {/* Invitado con sesión anónima: sus partidas y retos viven en el servidor */}
+                  {user && isAnonymous && (
+                    <LinkRow icon="trash" danger label={t('settings_deleteGuestData')} onClick={() => { playButtonTap(); setDeleteOpen(true); }} />
+                  )}
                 </>
               )}
           </Section>
@@ -153,6 +161,7 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
         <div className="h-6" />
       </div>
 
+      {deleteOpen && <DeleteAccountDialog guest={isAnonymous} onClose={() => setDeleteOpen(false)} />}
       {langOpen && (
         <SelectorSheet<Locale>
           title={t('settings_pickLanguage')}
@@ -209,17 +218,17 @@ function ToggleRow({ icon, label, desc, on, onToggle, disabled }: {
   );
 }
 
-function LinkRow({ icon, label, onClick }: { icon: SettingIconName; label: string; onClick: () => void }) {
+function LinkRow({ icon, label, onClick, danger = false }: { icon: SettingIconName; label: string; onClick: () => void; danger?: boolean }) {
   return (
-    <button type="button" onClick={onClick} className="w-full flex items-center gap-3 sm:gap-4 px-3 py-3 sm:py-3.5 text-left hover:bg-accent/5 transition-colors">
-      <SettingIcon name={icon} className="w-7 h-7 text-accent shrink-0" />
-      <span className="flex-1 min-w-0 font-bold text-base sm:text-lg leading-tight">{label}</span>
+    <button type="button" onClick={onClick} className={`w-full flex items-center gap-3 sm:gap-4 px-3 py-3 sm:py-3.5 text-left transition-colors ${danger ? 'hover:bg-destructive/10' : 'hover:bg-accent/5'}`}>
+      <SettingIcon name={icon} className={`w-7 h-7 shrink-0 ${danger ? 'text-destructive' : 'text-accent'}`} />
+      <span className={`flex-1 min-w-0 font-bold text-base sm:text-lg leading-tight ${danger ? 'text-destructive' : ''}`}>{label}</span>
       <ChevronIcon className="w-6 h-6 text-foreground/85" />
     </button>
   );
 }
 
-type SettingIconName = 'music' | 'sound' | 'vibrate' | 'motion' | 'eye' | 'globe' | 'help' | 'chat' | 'shield' | 'doc' | 'logout' | 'user' | 'userPlus';
+type SettingIconName = 'music' | 'sound' | 'vibrate' | 'motion' | 'eye' | 'globe' | 'help' | 'chat' | 'shield' | 'doc' | 'logout' | 'user' | 'userPlus' | 'trash';
 
 /** Íconos de línea turquesa de la maqueta */
 function SettingIcon({ name, className }: { name: SettingIconName; className: string }) {
@@ -238,6 +247,7 @@ function SettingIcon({ name, className }: { name: SettingIconName; className: st
       {name === 'logout' && <><path d="M14 4.5h4.5v15H14" /><path d="M10 8l-4 4 4 4M6 12h10" /></>}
       {name === 'user' && <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>}
       {name === 'userPlus' && <><circle cx="10" cy="8" r="4" /><path d="M2.5 21c0-4.4 3.4-7 7.5-7 1.6 0 3 .4 4.2 1M18.5 14v6M15.5 17h6" /></>}
+      {name === 'trash' && <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6" />}
     </svg>
   );
 }

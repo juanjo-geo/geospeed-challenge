@@ -426,6 +426,14 @@ export type Database = {
         Args: Record<string, never>
         Returns: number
       }
+      delete_my_account: {
+        Args: Record<string, never>
+        Returns: undefined
+      }
+      register_push_subscription: {
+        Args: { p_endpoint: string; p_p256dh: string | null; p_auth: string | null }
+        Returns: undefined
+      }
       challenge_create: {
         Args: { p: Json }
         Returns: Json
