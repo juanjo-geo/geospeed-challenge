@@ -25,13 +25,15 @@ interface RoundFeedbackCardProps {
   size?: 'md' | 'lg';
   /** Alto natural (sin tope ni scroll): lo usa FitToBox para escalar la tarjeta a la pantalla */
   natural?: boolean;
+  /** 60s de Caos: el reloj global sigue corriendo, así que sin "Ver cálculo" ni "Avanza en N s" */
+  quick?: boolean;
 }
 
 /**
  * Tarjeta de feedback de ronda (maqueta Feedback_Movil/Computador_APROBADA_v1):
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, streak, streakBonus, diffMult, multLabel, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, streak, streakBonus, diffMult, multLabel, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
@@ -104,6 +106,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
         <Tile lg={lg} label={t('game_time')} value={time} icon={<><circle cx="12" cy="13.5" r="7.5" /><path d="M12 9.5v4l2.5 1.8" /><path d="M9.5 2.5h5" /><path d="M12 2.5v3.5" /></>} />
       </div>
 
+      {!quick && <>
       <button
         onClick={() => { playAccordion(!showCalc); setShowCalc(v => !v); }}
         className="text-xs sm:text-sm font-bold text-accent hover:underline flex items-center justify-center gap-1"
@@ -122,17 +125,18 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
           </div>
         </div>
       </div>
+      </>}
 
       <button
         onClick={onNext}
         className={`btn3d w-full rounded-2xl font-black text-primary-foreground tracking-wide ${lg ? 'py-4 text-xl' : 'py-2.5 sm:py-3 text-base sm:text-lg [@media(max-height:420px)]:py-2 [@media(max-height:420px)]:text-sm'}`}
         style={{ background: 'var(--grad-cta)' }}
-        aria-label={`${t('game_next')}, ${t('game_advanceIn', { seconds: autoAdvanceTimer })}`}
+        aria-label={quick ? t('game_next') : `${t('game_next')}, ${t('game_advanceIn', { seconds: autoAdvanceTimer })}`}
       >
         {t('game_next')} →
-        {!lg && <span className="hidden [@media(max-height:420px)]:inline font-semibold opacity-75"> · {autoAdvanceTimer} s</span>}
+        {!lg && !quick && <span className="hidden [@media(max-height:420px)]:inline font-semibold opacity-75"> · {autoAdvanceTimer} s</span>}
       </button>
-      <p className={`text-center text-muted-foreground ${lg ? 'text-sm' : 'text-[11px] sm:text-xs [@media(max-height:420px)]:hidden'}`}>{t('game_advanceIn', { seconds: autoAdvanceTimer })}</p>
+      {!quick && <p className={`text-center text-muted-foreground ${lg ? 'text-sm' : 'text-[11px] sm:text-xs [@media(max-height:420px)]:hidden'}`}>{t('game_advanceIn', { seconds: autoAdvanceTimer })}</p>}
     </div>
   );
 }

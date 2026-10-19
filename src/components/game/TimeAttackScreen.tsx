@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { getRandomCities, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { getRandomCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import CountUp from '@/components/ui/CountUp';
 import { haversineDistance, calculateBasePoints, getMultiplier, getDifficultyMultiplier, formatDistance } from '@/lib/gameUtils';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat, playCountdown, playGo } from '@/lib/sounds';
@@ -13,11 +13,17 @@ import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
 import Wordmark from '@/components/ui/Wordmark';
-import { type RoundResult } from './GameScreen';
+import { type RoundResult, getRoundFeedback } from './GameScreen';
 import { appNumberLocale } from '@/lib/format';
+import RoundFeedbackCard from './RoundFeedbackCard';
+import FitToBox from '@/components/ui/FitToBox';
+import { frameAnswer } from '@/lib/mapFraming';
+import { preloadCountryPhoto } from '@/lib/countryPhotos';
 
 const GLOBAL_TIME = 60;
 const POOL_SIZE = 40;
+/** Cuánto se ve la tarjeta de respuesta (la misma del Clásico). El reloj global sigue: SIGUIENTE avanza antes. */
+const CAOS_FEEDBACK_MS = 2000;
 
 function getContinentFromCoords(lat: number, lon: number): string | null {
   if (lat > 34 && lon >= -25 && lon <= 50) return 'Europe';
@@ -61,7 +67,11 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
   const [lastCorrect, setLastCorrect] = useState<{ lat: number; lon: number } | null>(null);
   const [lastDistance, setLastDistance] = useState<number | null>(null);
   const [lastPoints, setLastPoints] = useState<number | null>(null);
-  const [flash, setFlash] = useState<'good' | 'bad' | null>(null);
+  // Ronda recién respondida → tarjeta de respuesta (antes era un aviso pequeño arriba)
+  const [lastResult, setLastResult] = useState<RoundResult | null>(null);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const mapAreaRef = useRef<HTMLDivElement>(null);
+  const [mapArea, setMapArea] = useState({ w: 0, h: 0 });
   const [scorePop, setScorePop] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
   const roundStartRef = useRef(Date.now());
@@ -73,6 +83,16 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
   const [countdown, setCountdown] = useState(3);
 
   const currentCity = cities[currentIdx % cities.length];
+  // La foto del país se descarga mientras el jugador busca la ciudad
+  useEffect(() => { if (currentCity) preloadCountryPhoto(currentCity.country, 'sm'); }, [currentCity]);
+  useEffect(() => {
+    const el = mapAreaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setMapArea({ w: e.contentRect.width, h: e.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [taStarted]);
+  useEffect(() => () => clearTimeout(advanceTimerRef.current), []);
 
   const globalTimerRef = useRef<ReturnType<typeof setInterval>>();
   // Keep a stable ref to onGameOver so the timer effect doesn't restart when the prop changes
@@ -154,14 +174,18 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     lastClickViewportRef.current = viewportX != null && viewportY != null ? { x: viewportX, y: viewportY } : undefined;
     playClick();
     hapticTap();
-    const timeUsed = Math.round((Date.now() - roundStartRef.current) / 1000);
+    const elapsedMs = Date.now() - roundStartRef.current;
+    const timeUsed = Math.round(elapsedMs / 1000);
+    const timeExact = Math.round(elapsedMs / 100) / 10;
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     const basePoints = calculateBasePoints(distance);
     const mult = getMultiplier(timeUsed);
     const totalPoints = Math.round(basePoints * mult.value * getDifficultyMultiplier(difficulty));
     setMascotState(distance >= 2000 ? 'sad' : distance < 300 ? 'celebrate' : 'wink');
 
-    roundsRef.current.push({ city: currentCity, clickLat: lat, clickLon: lon, distance, basePoints, multiplier: mult.value, totalPoints, timeUsed });
+    const round: RoundResult = { city: currentCity, clickLat: lat, clickLon: lon, distance, basePoints, multiplier: mult.value, totalPoints, timeUsed, timeExact };
+    roundsRef.current.push(round);
+    setLastResult(round);
     setTimeout(() => {
       // Tier S: Perfect (<50km) — rainbow confetti
       if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
@@ -185,21 +209,44 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     setLastCorrect({ lat: currentCity.lat, lon: currentCity.lon });
     setLastDistance(distance);
     setLastPoints(totalPoints);
-    setFlash(distance < 1000 ? 'good' : 'bad');
     setIsAnimating(true);
     announce(t('sr_timeAttackResult', { city: currentCity.name, distance: Math.round(distance), points: totalPoints, time: globalTime }));
 
-    setTimeout(() => {
-      setIsAnimating(false);
-      setLastClick(null);
-      setLastCorrect(null);
-      setLastDistance(null);
-      setLastPoints(null);
-      setFlash(null);
-      setCurrentIdx(i => i + 1);
-      playRoundTransition();
-    }, 1500);
+    clearTimeout(advanceTimerRef.current);
+    advanceTimerRef.current = setTimeout(advance, CAOS_FEEDBACK_MS);
   }, [isAnimating, currentCity]);
+
+  // Siguiente ciudad (al acabar el tiempo de la tarjeta o al tocar SIGUIENTE)
+  function advance() {
+    clearTimeout(advanceTimerRef.current);
+    setIsAnimating(false);
+    setLastClick(null);
+    setLastCorrect(null);
+    setLastDistance(null);
+    setLastPoints(null);
+    setLastResult(null);
+    setCurrentIdx(i => i + 1);
+    playRoundTransition();
+  }
+
+  // Encuadre de la respuesta junto a la tarjeta (igual que el Clásico)
+  const feedbackBounds = useMemo(() => {
+    if (!lastResult || mapArea.w === 0) return null;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : mapArea.w;
+    const clampPx = (min: number, pref: number, max: number) => Math.max(min, Math.min(pref, max));
+    const cover = isPortraitMobile
+      ? { bottom: 0.5 }
+      : isCompact
+      ? { right: clampPx(288, 0.48 * vw, 416) / mapArea.w }
+      : layoutMode === 'wide'
+      ? { right: clampPx(384, 0.36 * vw, 512) / mapArea.w }
+      : { right: clampPx(352, 0.40 * vw, 480) / mapArea.w };
+    return frameAnswer(
+      { lat: lastResult.clickLat, lon: lastResult.clickLon },
+      { lat: lastResult.city.lat, lon: lastResult.city.lon },
+      mapArea.w, mapArea.h, cover, getMapBounds(gameMode),
+    );
+  }, [lastResult, mapArea.w, mapArea.h, isPortraitMobile, isCompact, layoutMode, gameMode]);
 
   if (!currentCity) return null;
 
@@ -378,7 +425,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
         </div>
       )}
       {/* ──── Map area ──── */}
-      <div className={`relative ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden`}>
+      <div ref={mapAreaRef} className={`relative ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden`}>
 
         {/* Música + salir (con panel lateral) */}
         {!isCompact && (onExit || onToggleMusic) && (
@@ -416,19 +463,50 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
           highlightContinent={gameMode === 'world' && !isAnimating ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
           pinLabels={pinLabels}
           showZoomControls={!isAnimating}
+          viewBounds={feedbackBounds}
         />
 
-        {flash && (
-          <div className={`absolute left-1/2 z-10 -translate-x-1/2 px-4 py-2 text-sm font-bold shadow-2xl animate-fade-in rounded-2xl border backdrop-blur-md top-3 ${
-            flash === 'good' ? 'border-accent/60 text-accent' : 'border-destructive/60 text-destructive'
-          }`} style={pillStyle} role="status">
-            <div className="text-center leading-tight">
-              <div className="text-sm sm:text-base font-black">{flash === 'good' ? '🎯' : '😬'} {currentCity.name}</div>
-              <div className="text-[10px] sm:text-xs opacity-80">{currentCity.country}</div>
-              <div className="text-xs sm:text-sm font-bold mt-0.5">+{lastPoints?.toLocaleString(appNumberLocale())}{lastDistance !== null ? ` · ${formatDistance(lastDistance)}` : ''}</div>
+        {/* Tarjeta de respuesta — la misma del Clásico, en modo rápido */}
+        {isAnimating && lastResult && (() => {
+          const fb = getRoundFeedback(lastResult.distance, palette, t);
+          const mult = getMultiplier(lastResult.timeUsed);
+          const props = {
+            result: lastResult,
+            feedback: fb,
+            mascot: mascotState,
+            streak: 0,
+            streakBonus: 1,
+            diffMult: getDifficultyMultiplier(difficulty),
+            multLabel: mult.label,
+            nearMissMsg: null,
+            autoAdvanceTimer: 0,
+            onNext: advance,
+            timeLabel: `${(lastResult.timeExact ?? lastResult.timeUsed).toLocaleString(appNumberLocale(), { maximumFractionDigits: 1 })} s`,
+            natural: true,
+            quick: true,
+          };
+          return isWide ? (
+            <div className="absolute inset-y-0 right-0 z-10 w-[clamp(24rem,36vw,32rem)] flex items-center animate-slide-in-right p-3 lg:p-4" role="dialog" aria-label={t('game_resultLabel')}>
+              <FitToBox center origin="center right"><RoundFeedbackCard {...props} size="lg" /></FitToBox>
             </div>
-          </div>
-        )}
+          ) : (
+            <div
+              className={`absolute z-10 flex animate-slide-in-right ${
+                isPortraitMobile
+                  ? 'inset-x-0 bottom-0 justify-center pb-2 px-2'
+                  : isCompact
+                  ? 'top-0 bottom-1 right-0 w-[clamp(18rem,48vw,26rem)] items-start p-2'
+                  : 'inset-y-0 items-center right-0 w-[clamp(22rem,40vw,30rem)] p-3'
+              }`}
+              role="dialog"
+              aria-label={t('game_resultLabel')}
+            >
+              <FitToBox maxScale={isCompact ? 0.88 : 1} center={!isCompact && !isPortraitMobile} origin={isPortraitMobile ? 'bottom center' : isCompact ? 'top right' : 'center right'} className={isPortraitMobile ? 'max-h-[70dvh]' : ''}>
+                <RoundFeedbackCard {...props} size="md" />
+              </FitToBox>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

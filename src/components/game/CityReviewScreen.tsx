@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { type RoundResult } from './GameScreen';
 import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
-import { cityHint, playerHint } from '@/lib/cityHints';
+import { cityHint, playerHint, useCityTips } from '@/lib/cityHints';
 import { playAccordion, playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -73,6 +73,7 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
   const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: isMundial ? r.city.country : r.city.name }), [t, isMundial, r.city.country, r.city.name]);
 
   const lang = locale === 'en' ? 'en' : 'es';
+  useCityTips();
   const playerName = r.city.name.replace(/^⚽\s*/, '');
   const hint = isMundial ? playerHint(playerName, r.city.country, r.city.lat, r.city.lon, lang) : cityHint(r.city, lang);
   // Multiplicadores restantes (racha × dificultad) = total / (base × velocidad)

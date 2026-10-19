@@ -313,7 +313,7 @@ export const asiaCities: City[] = [
   { name: "Hong Kong", country: "China", lat: 22.32, lon: 114.17, difficulty: "medium" },
   { name: "Taipéi", country: "Taiwán", lat: 25.03, lon: 121.57, difficulty: "medium" },
   { name: "Chengdú", country: "China", lat: 30.57, lon: 104.07, difficulty: "medium" },
-  { name: "Pnon Pen", country: "Camboya", lat: 11.56, lon: 104.93, difficulty: "medium" },
+  { name: "Nom Pen", country: "Camboya", lat: 11.56, lon: 104.93, difficulty: "medium" },
 
   // === HARD (20 lesser-known cities) ===
   { name: "Biskek", country: "Kirguistán", lat: 42.87, lon: 74.59, difficulty: "hard" },
@@ -392,7 +392,7 @@ export const americasCities: City[] = [
   { name: "Cayena", country: "Guayana Francesa", lat: 4.94, lon: -52.33, difficulty: "hard" },
   { name: "Paramaribo", country: "Surinam", lat: 5.85, lon: -55.20, difficulty: "hard" },
   { name: "Georgetown", country: "Guyana", lat: 6.80, lon: -58.16, difficulty: "hard" },
-  { name: "Belice", country: "Belice", lat: 17.25, lon: -88.77, difficulty: "hard" },
+  { name: "Belmopan", country: "Belice", lat: 17.25, lon: -88.77, difficulty: "hard" },
   { name: "San Salvador", country: "El Salvador", lat: 13.69, lon: -89.19, difficulty: "hard" },
   { name: "Kingston", country: "Jamaica", lat: 18.00, lon: -76.79, difficulty: "hard" },
   { name: "Port-au-Prince", country: "Haití", lat: 18.54, lon: -72.34, difficulty: "hard" },
@@ -418,7 +418,7 @@ export const africaCities: City[] = [
   { name: "Rabat", country: "Marruecos", lat: 34.02, lon: -6.84, difficulty: "easy" },
   { name: "Túnez", country: "Túnez", lat: 36.81, lon: 10.18, difficulty: "easy" },
   { name: "Lagos", country: "Nigeria", lat: 6.52, lon: 3.38, difficulty: "easy" },
-  { name: "Kinshasa", country: "Rep. Dem. del Congo", lat: -4.32, lon: 15.31, difficulty: "easy" },
+  { name: "Kinsasa", country: "Rep. Dem. del Congo", lat: -4.32, lon: 15.31, difficulty: "easy" },
   { name: "Luanda", country: "Angola", lat: -8.84, lon: 13.23, difficulty: "easy" },
   { name: "Dar es Salaam", country: "Tanzania", lat: -6.79, lon: 39.28, difficulty: "easy" },
   { name: "Kampala", country: "Uganda", lat: 0.35, lon: 32.58, difficulty: "easy" },
