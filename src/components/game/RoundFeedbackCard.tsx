@@ -27,20 +27,29 @@ interface RoundFeedbackCardProps {
   natural?: boolean;
   /** 60s de Caos: el reloj global sigue corriendo, así que sin "Ver cálculo" ni "Avanza en N s" */
   quick?: boolean;
+  /** Desafío Mundial: título (país correcto), subtítulo (futbolista), color de la frase y primera ficha */
+  title?: string;
+  subtitle?: string;
+  phraseColor?: string;
+  firstTile?: { label: string; value: string };
+  /** Etiqueta de la base en "Ver cálculo" (Mundial: por zona, no por distancia) */
+  baseLabel?: string;
 }
 
 /**
  * Tarjeta de feedback de ronda (maqueta Feedback_Movil/Computador_APROBADA_v1):
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, streak, streakBonus, diffMult, multLabel, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, streak, streakBonus, diffMult, multLabel, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
   const numberLocale = locale === 'en' ? 'en-US' : 'es-CO';
   const time = timeLabel ?? `${result.timeUsed} s`;
   // Maqueta: las respuestas buenas en turquesa; las lejanas conservan su color de advertencia
-  const phraseColor = result.distance < 1000 ? 'text-accent' : feedback.color;
+  const phraseColor = phraseColorProp ?? (result.distance < 1000 ? 'text-accent' : feedback.color);
+  const heading = title ?? result.city.name;
+  const subheading = subtitle ?? result.city.country;
   const hasPhoto = hasCountryPhoto(result.city.country);
 
   return (
@@ -55,8 +64,8 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
             <Mascot state={mascot} className="w-24 xl:w-28 shrink-0 drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
             <div className="min-w-0">
               <p className={`font-extrabold leading-none text-[2.4rem] ${phraseColor}`}>{feedback.phrase}</p>
-              <h3 className="font-extrabold text-2xl mt-2 leading-tight">{result.city.name}</h3>
-              <p className="text-muted-foreground text-base font-semibold"><Flag country={result.city.country} className="w-5 inline-block align-[-3px] mr-1.5" />{result.city.country}</p>
+              <h3 className="font-extrabold text-2xl mt-2 leading-tight">{heading}</h3>
+              <p className="text-muted-foreground text-base font-semibold"><Flag country={result.city.country} className="w-5 inline-block align-[-3px] mr-1.5" />{subheading}</p>
             </div>
           </div>
           {(streak >= 2 || nearMissMsg) && (
@@ -91,10 +100,10 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
           )}
           {/* En pantallas muy bajas el país va en la misma línea que la ciudad */}
           <h3 className="font-extrabold mt-0.5 text-lg sm:text-xl [@media(max-height:420px)]:text-base [@media(max-height:420px)]:mt-0">
-            {result.city.name}
-            <span className="hidden [@media(max-height:420px)]:inline text-xs font-semibold text-muted-foreground"> · {result.city.country}</span>
+            {heading}
+            <span className="hidden [@media(max-height:420px)]:inline text-xs font-semibold text-muted-foreground"> · {subheading}</span>
           </h3>
-          <p className="text-muted-foreground font-semibold text-xs sm:text-sm [@media(max-height:420px)]:hidden"><Flag country={result.city.country} className="w-4 inline-block align-[-2px] mr-1" />{result.city.country}</p>
+          <p className="text-muted-foreground font-semibold text-xs sm:text-sm [@media(max-height:420px)]:hidden"><Flag country={result.city.country} className="w-4 inline-block align-[-2px] mr-1" />{subheading}</p>
           <p className="font-extrabold text-primary text-3xl sm:text-4xl [@media(max-height:420px)]:text-xl leading-tight mt-0.5" style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
             +{result.totalPoints.toLocaleString(numberLocale)} {t('game_pointsWord')}
           </p>
@@ -102,7 +111,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        <Tile lg={lg} label={t('game_distance')} value={formatDistance(result.distance)} icon={<path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22Zm0-9.6a2.9 2.9 0 1 0 0-5.8 2.9 2.9 0 0 0 0 5.8Z" fill="currentColor" stroke="none" />} />
+        <Tile lg={lg} label={firstTile?.label ?? t('game_distance')} value={firstTile?.value ?? formatDistance(result.distance)} icon={<path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22Zm0-9.6a2.9 2.9 0 1 0 0-5.8 2.9 2.9 0 0 0 0 5.8Z" fill="currentColor" stroke="none" />} />
         <Tile lg={lg} label={t('game_time')} value={time} icon={<><circle cx="12" cy="13.5" r="7.5" /><path d="M12 9.5v4l2.5 1.8" /><path d="M9.5 2.5h5" /><path d="M12 2.5v3.5" /></>} />
       </div>
 
@@ -116,7 +125,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
       </button>
       <div className={`overflow-hidden transition-all duration-300 ${showCalc ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="rounded-2xl border border-border bg-muted/20 px-3 py-2 text-xs sm:text-sm font-mono">
-          <CalcRow label={t('game_calcBase')} value={`${result.basePoints}`} />
+          <CalcRow label={baseLabel ?? t('game_calcBase')} value={`${result.basePoints}`} />
           <CalcRow label={`${t('game_calcSpeed')} · ${time}`} value={`× ${result.multiplier.toFixed(2)}`} hint={multLabel} />
           {streakBonus > 1 && <CalcRow label={t('game_calcStreak')} value={`× ${streakBonus.toFixed(2)}`} />}
           {diffMult !== 1 && <CalcRow label={t('game_calcDifficulty')} value={`× ${diffMult.toFixed(2)}`} />}
