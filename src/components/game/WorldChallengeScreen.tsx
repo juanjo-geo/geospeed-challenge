@@ -145,8 +145,6 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   const [showPopup, setShowPopup] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(AUTO_ADVANCE_SECONDS);
   const [endReason, setEndReason] = useState<'complete' | 'timeout'>('complete');
-  // Al entrar a Mundial: a veces balón ⚽, a veces copa 🏆 en el Pacífico
-  const [pacificDecor, setPacificDecor] = useState<'ball' | 'trophy'>(() => (Math.random() < 0.5 ? 'trophy' : 'ball'));
   const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [failShake, setFailShake] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
@@ -192,7 +190,6 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     setLastFb(null);
     setShowPopup(false);
     setIsAnimating(false);
-    setPacificDecor(Math.random() < 0.5 ? 'trophy' : 'ball'); // re-sortea balón/copa cada partida
     setCountdown(3);
     setStage('countdown');
   }, [onNoLives]);
@@ -763,7 +760,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
         </div>
       )}
 
-      {/* ──── Mapa (con el tinte de cancha del Mundial) ──── */}
+      {/* ──── Mapa: el mismo de los demás modos (JuanJo quitó el verde de cancha y la decoración del Pacífico) ──── */}
       <div ref={mapAreaRef} className={`relative w-full ${hasSidebar ? 'h-full' : 'flex-1 min-h-0'} min-w-0 overflow-hidden`}>
         {/* Sonido · ajustes · salir (con barra lateral) */}
         {hasSidebar && (
@@ -809,8 +806,6 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
           gameMode="world"
           highlightContinent={!isAnimating && current ? (COUNTRY_CONTINENT[current.country] ?? null) : null}
           pinEmoji={BALL}
-          fieldGreen
-          pacificDecor={pacificDecor}
           pinLabels={pinLabels}
           showZoomControls={!isAnimating}
           viewBounds={feedbackBounds}
