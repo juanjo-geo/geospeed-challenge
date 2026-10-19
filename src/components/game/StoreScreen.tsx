@@ -11,7 +11,7 @@ import {
 } from '@/lib/premiumSystem';
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
-import { paymentProvider } from '@/lib/paymentProvider';
+import { paymentProvider, paymentProviderKind } from '@/lib/paymentProvider';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
 function msUntilEndOfDay(): number {
@@ -284,6 +284,10 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               >
                 {restoring ? '⏳ ' : '🔄 '}{t('store_restorePurchases')}
               </button>
+              {/* Web: se muestra en US$ pero la cuenta de Mercado Pago (Colombia) cobra en COP */}
+              {paymentProviderKind === 'mercadopago' && (
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-3 max-w-xl mx-auto">{t('store_webCurrencyNote')}</p>
+              )}
               <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-3 pb-4">{t('store_paymentNote')}</p>
             </div>
           </div>
