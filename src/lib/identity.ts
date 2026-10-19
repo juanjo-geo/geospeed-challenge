@@ -18,12 +18,13 @@ const NAME_KEY = 'geospeed_pending_display_name';
 
 export type GuestSessionResult = 'existing' | 'created' | 'unavailable';
 
-export async function ensureGuestSession(): Promise<GuestSessionResult> {
+/** `force`: ignora la pausa de 6 h tras un fallo (p.ej. antes de pagar, donde vale la pena reintentar). */
+export async function ensureGuestSession(opts: { force?: boolean } = {}): Promise<GuestSessionResult> {
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session) return 'existing';
     const until = Number(localStorage.getItem(ANON_OFF_KEY) || 0);
-    if (until > Date.now()) return 'unavailable';
+    if (until > Date.now() && !opts.force) return 'unavailable';
     const { error } = await supabase.auth.signInAnonymously();
     if (error) {
       // Desactivado en el panel (o sin red): no insistir durante 6 h

@@ -9,6 +9,8 @@
  * Auto-detects the correct provider based on environment variables and platform.
  */
 
+import { PURCHASE_PENDING_KEY } from './premiumSystem';
+
 // ─── Types ──────────────────────────────────────────────────────────
 
 export interface PurchaseResult {
@@ -19,6 +21,8 @@ export interface PurchaseResult {
   cancelled?: boolean;
   transactionId?: string;
   error?: string;
+  /** 'login_required' = no se pudo crear la sesión (sin red o invitados desactivados) */
+  code?: 'login_required';
 }
 
 export interface SubscriptionStatus {
@@ -207,19 +211,31 @@ class MercadoPagoProvider implements PaymentProvider {
     if (!this.initialized) await this.initialize();
 
     try {
-      // Pide a la Edge Function de Supabase que cree la preferencia de pago.
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { user } } = await supabase.auth.getUser();
+      // Toda compra necesita un usuario en el servidor al que acreditarla: sin sesión se crea
+      // la de invitado (aunque un intento anterior fallido la haya pausado 6 h).
+      const { ensureGuestSession } = await import('@/lib/identity');
+      if ((await ensureGuestSession({ force: true })) === 'unavailable') {
+        return { success: false, code: 'login_required' };
+      }
 
+      // La Edge Function crea la preferencia; el comprador sale del JWT de la sesión.
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
-        body: { productId, userId: user?.id ?? null },
+        body: { productId },
       });
-      if (error) return { success: false, error: error.message };
+      if (error) {
+        const status = (error as { context?: { status?: number } }).context?.status;
+        if (status === 401) return { success: false, code: 'login_required' };
+        return { success: false, error: error.message };
+      }
       if (data?.error) return { success: false, error: data.error };
       if (!data?.url) return { success: false, error: 'No se pudo iniciar el pago' };
 
       // Redirige al checkout de Mercado Pago. La acreditación la hace el webhook
       // del servidor tras el pago real — el cliente NO debe acreditar nada aquí.
+      // La marca permite recoger la compra al volver, aunque MP no regrese a la app
+      // (pagos en efectivo o PSE que se aprueban más tarde).
+      try { localStorage.setItem(PURCHASE_PENDING_KEY, JSON.stringify({ productId, at: Date.now() })); } catch { /* ignore */ }
       window.location.href = data.url as string;
       return { success: true, redirecting: true };
     } catch (err: any) {
@@ -228,26 +244,23 @@ class MercadoPagoProvider implements PaymentProvider {
   }
 
   async restorePurchases(): Promise<PurchaseResult> {
-    // En web, el estado Pro se valida server-side desde player_data al iniciar sesión.
-    // No hay "restaurar" como en las tiendas; el servidor ya es la fuente de verdad.
+    // En web no hay "restaurar" como en las tiendas: el servidor (tabla purchases) ya es la
+    // fuente de verdad y refreshEntitlements() trae el Pro y las vidas pendientes.
     return { success: true };
   }
 
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { isActive: false, expiresAt: null, source: null };
-      const { data } = await supabase
-        .from('player_data')
-        .select('premium')
-        .eq('user_id', user.id)
-        .single();
-      const premium = (data?.premium as { isPro?: boolean; proExpiresAt?: string | null }) || null;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return { isActive: false, expiresAt: null, source: null };
+      const { data, error } = await supabase.rpc('my_entitlements');
+      if (error || !data) return { isActive: false, expiresAt: null, source: null };
+      const ent = data as unknown as { is_pro?: boolean; expires_at?: string | null };
       return {
-        isActive: premium?.isPro === true,
-        expiresAt: premium?.proExpiresAt ?? null,
-        source: premium?.isPro ? 'mercadopago' : null,
+        isActive: ent.is_pro === true,
+        expiresAt: ent.is_pro ? (ent.expires_at ?? null) : null,
+        source: ent.is_pro ? 'mercadopago' : null,
       };
     } catch {
       return { isActive: false, expiresAt: null, source: null };
