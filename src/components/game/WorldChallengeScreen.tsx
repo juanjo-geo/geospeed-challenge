@@ -451,7 +451,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     <div className={`fixed inset-0 z-40 flex flex-col game-bg ${failShake ? 'animate-screen-shake' : ''}`}>
       {isPortraitMobile && rotateOverlay}
       {/* Barra superior v2: marca · pregunta · sonido/salir  |  modo · ronda · tiempo · puntos */}
-      <div className="shrink-0 flex flex-col gap-1 px-2 pb-1" style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}>
+      <div className="relative z-20 shrink-0 flex flex-col gap-1 bg-brand-navy-deep border-b-2 border-accent/30 shadow-[0_4px_14px_rgba(0,0,0,0.35)] px-2" style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingBottom: '0.4rem', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 shrink-0">
             <img src="/mascot/explorer-logo.webp" alt="" className="w-6 h-6 object-contain" />

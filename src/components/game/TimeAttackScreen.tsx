@@ -331,54 +331,54 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
         </div>
       )}
 
-      {/* ──── Map area ──── */}
-      <div className="relative h-full min-w-0 overflow-hidden">
-        {/* ── HUD compacto (móvil horizontal), mismo patrón que el Clásico ── */}
-        {isCompact && (
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-1"
-            style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <img src="/mascot/explorer-logo.webp" alt="" className="w-6 h-6 object-contain" />
-                <Wordmark size="xs" className="hidden min-[520px]:inline" />
-              </div>
-              <div className="flex-1 min-w-0 flex justify-center">
-                <div className="max-w-full truncate rounded-full border border-accent/40 px-3 py-1 text-sm font-black backdrop-blur-md" style={pillStyle}>
-                  {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>
-                </div>
-              </div>
-              {onToggleMusic && (
-                <button onClick={onToggleMusic} className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-sm backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={musicMuted ? t('music_on') : t('music_off')}>
-                  {musicMuted ? '🔇' : '🔊'}
-                </button>
-              )}
-              {onExit && (
-                <button onClick={confirmExit} className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-base backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={t('game_exit')}>
-                  ×
-                </button>
-              )}
+      {/* ── Encabezado compacto (barra sólida encima del mapa; antes flotaba y tapaba el norte del mapa) (móvil horizontal), mismo patrón que el Clásico ── */}
+      {isCompact && (
+        <div
+          className="relative z-20 shrink-0 flex flex-col gap-1 bg-brand-navy-deep border-b-2 border-accent/30 shadow-[0_4px_14px_rgba(0,0,0,0.35)]"
+          style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingBottom: '0.4rem', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <img src="/mascot/explorer-logo.webp" alt="" className="w-6 h-6 object-contain" />
+              <Wordmark size="xs" className="hidden min-[520px]:inline" />
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold">
-              <span className="hidden min-[560px]:inline rounded-full px-2 py-0.5 border border-destructive/50 backdrop-blur-md whitespace-nowrap" style={pillStyle}>
-                ⚡ <span className="text-destructive">{t('ta_hud')}</span> · {diffLabel}
-              </span>
-              <span className="rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md whitespace-nowrap" style={pillStyle}>
-                🏙️ <span className="text-primary">{roundsRef.current.length}</span> {t('ta_cities')}
-              </span>
-              <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md" style={pillStyle}>
-                <span className={`font-mono whitespace-nowrap ${isLow ? 'animate-pulse' : ''}`} style={{ color: timeColor }}>⏱ {globalTime} s</span>
-                <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${timePercent}%`, background: timeColor }} />
-                </div>
+            <div className="flex-1 min-w-0 flex justify-center">
+              <div className="max-w-full truncate rounded-full border border-accent/40 px-3 py-1 text-sm font-black backdrop-blur-md" style={pillStyle}>
+                {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>
               </div>
-              <span className="relative rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={pillStyle}>
-                ⭐ <span className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
-              </span>
             </div>
+            {onToggleMusic && (
+              <button onClick={onToggleMusic} className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-sm backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={musicMuted ? t('music_on') : t('music_off')}>
+                {musicMuted ? '🔇' : '🔊'}
+              </button>
+            )}
+            {onExit && (
+              <button onClick={confirmExit} className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-base backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={t('game_exit')}>
+                ×
+              </button>
+            )}
           </div>
-        )}
+          <div className="flex items-center gap-1.5 text-[11px] font-bold">
+            <span className="hidden min-[560px]:inline rounded-full px-2 py-0.5 border border-destructive/50 backdrop-blur-md whitespace-nowrap" style={pillStyle}>
+              ⚡ <span className="text-destructive">{t('ta_hud')}</span> · {diffLabel}
+            </span>
+            <span className="rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md whitespace-nowrap" style={pillStyle}>
+              🏙️ <span className="text-primary">{roundsRef.current.length}</span> {t('ta_cities')}
+            </span>
+            <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md" style={pillStyle}>
+              <span className={`font-mono whitespace-nowrap ${isLow ? 'animate-pulse' : ''}`} style={{ color: timeColor }}>⏱ {globalTime} s</span>
+              <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${timePercent}%`, background: timeColor }} />
+              </div>
+            </div>
+            <span className="relative rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={pillStyle}>
+              ⭐ <span className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
+            </span>
+          </div>
+        </div>
+      )}
+      {/* ──── Map area ──── */}
+      <div className={`relative ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden`}>
 
         {/* Música + salir (con panel lateral) */}
         {!isCompact && (onExit || onToggleMusic) && (
@@ -419,7 +419,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
         />
 
         {flash && (
-          <div className={`absolute left-1/2 z-10 -translate-x-1/2 px-4 py-2 text-sm font-bold shadow-2xl animate-fade-in rounded-2xl border backdrop-blur-md ${isCompact ? 'top-[4.9rem]' : 'top-3'} ${
+          <div className={`absolute left-1/2 z-10 -translate-x-1/2 px-4 py-2 text-sm font-bold shadow-2xl animate-fade-in rounded-2xl border backdrop-blur-md top-3 ${
             flash === 'good' ? 'border-accent/60 text-accent' : 'border-destructive/60 text-destructive'
           }`} style={pillStyle} role="status">
             <div className="text-center leading-tight">

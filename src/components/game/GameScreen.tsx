@@ -28,6 +28,10 @@ const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const TRAINING_ROUNDS = 6;
 const AUTO_ADVANCE_SECONDS = 3;
+/** Tiempo para ver la línea y los km entre la respuesta y la ciudad antes de que la tarjeta tape el mapa.
+ *  JuanJo (2026-10-18): 2 s más que antes → 3,2 s; con el anuncio "¡al otro lado del mundo!" (≥ 5.000 km), 6,2 s. */
+const DISTANCE_VIEW_MS = 3200;
+const DISTANCE_VIEW_EPIC_MS = 6200;
 
 /** Quick continent guess from lat/lon — used for map highlight hint */
 function getContinentFromCoords(lat: number, lon: number): string | null {
@@ -104,7 +108,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [timeLeft, setTimeLeft] = useState(effectiveMaxTime);
   const [isWaiting, setIsWaiting] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [distanceRevealActive, setDistanceRevealActive] = useState(false);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
   const [rounds, setRounds] = useState<RoundResult[]>([]);
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState(AUTO_ADVANCE_SECONDS);
@@ -216,11 +219,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   useEffect(() => {
     if (!isWaiting || !lastResult) return;
-    // If distance reveal is playing (>5000km), wait for it to finish before showing feedback
-    const delay = distanceRevealActive ? 2800 : 1200;
+    // Primero se ve la distancia sobre el mapa; con el anuncio de error épico (≥ 5.000 km), más tiempo
+    const delay = lastResult.distance >= 5000 ? DISTANCE_VIEW_EPIC_MS : DISTANCE_VIEW_MS;
     const timeout = setTimeout(() => setShowPopup(true), delay);
     return () => clearTimeout(timeout);
-  }, [isWaiting, lastResult, distanceRevealActive]);
+  }, [isWaiting, lastResult]);
 
   useEffect(() => {
     if (!showPopup) return;
@@ -250,7 +253,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       setCurrentRound(r => r + 1);
       setIsWaiting(false);
       setShowPopup(false);
-      setDistanceRevealActive(false);
       setLastResult(null);
       playRoundTransition();
     }
@@ -342,8 +344,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
       // Tier F: Epic fail (>5000km) — cinematic distance reveal (delays feedback panel)
       if (distance >= 5000) {
-        setTimeout(() => { setDistanceRevealActive(true); fireDistanceReveal(distance, t('reveal_otherSide')); }, 400);
-        setTimeout(() => setDistanceRevealActive(false), 2800);
+        setTimeout(() => fireDistanceReveal(distance, t('reveal_otherSide')), 400);
       }
       // Speed multiplier bonus sound (top tier speed)
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 350); }
@@ -408,7 +409,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const cover = isPortraitMobile
       ? { bottom: 0.5 }
       : isCompact
-      ? { right: clampPx(288, 0.48 * vw, 416) / mapArea.w, top: 76 / mapArea.h }
+      ? { right: clampPx(288, 0.48 * vw, 416) / mapArea.w }
       : isWide
       ? { right: clampPx(384, 0.36 * vw, 512) / mapArea.w }
       : { right: clampPx(352, 0.40 * vw, 480) / mapArea.w };
@@ -593,53 +594,53 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         </div>
       )}
 
+      {/* ── Encabezado compacto (barra sólida encima del mapa; antes flotaba y tapaba el norte del mapa) (móvil horizontal) — maqueta Partida_Movil_APROBADA_v1 ── */}
+      {isCompact && (
+        <div
+          className="relative z-20 shrink-0 flex flex-col gap-1 bg-brand-navy-deep border-b-2 border-accent/30 shadow-[0_4px_14px_rgba(0,0,0,0.35)]"
+          style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingBottom: '0.4rem', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <img src="/mascot/explorer-logo.webp" alt="" className="w-6 h-6 object-contain" />
+              <Wordmark size="xs" className="hidden min-[520px]:inline" />
+            </div>
+            <div className="flex-1 min-w-0 flex justify-center">
+              <div className="max-w-full truncate rounded-full border-2 border-accent/50 px-4 py-1 text-[15px] font-extrabold backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
+                {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
+                {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>
+                {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {currentCity.country}</span>}
+              </div>
+            </div>
+            {onToggleMusic && <HudIconButton size="sm" icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+            <HudIconButton size="sm" icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
+            {onExit && <HudIconButton size="sm" icon="close" label={t('game_exit')} onClick={confirmExit} />}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] font-bold">
+            <span className="hidden min-[560px]:inline rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
+              <span className="text-primary">{modeLabel}</span> · {diffLabel}
+            </span>
+            <span className="rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
+              {t('game_round')} <span className="text-primary">{currentRound + 1}</span><span className="text-muted-foreground"> / {totalRounds}</span>
+            </span>
+            <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
+              <span className={`font-mono whitespace-nowrap ${timeLeft <= 3 && !isWaiting ? 'text-destructive animate-pulse' : timeLeft <= 5 && !isWaiting ? 'text-destructive' : ''}`}>⏱ {timeLeft} s</span>
+              <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${(timeLeft / effectiveMaxTime) * 100}%`, background: timeLeft <= 5 ? 'hsl(var(--destructive))' : 'hsl(var(--accent))', transition: isWaiting ? 'none' : 'width 200ms linear' }} />
+              </div>
+            </div>
+            <span className="relative rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
+              ⭐ <span ref={scoreElRef} className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
+              {floatPoints !== null && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-accent animate-float-up whitespace-nowrap">+{floatPoints.toLocaleString(appNumberLocale())}</span>
+              )}
+            </span>
+          </div>
+        </div>
+      )}
       {/* ──── Map area (all modes) — h-full gives WorldMapCanvas explicit height in grid ──── */}
       {/* w-full: con margin auto, un ítem de grid se encoge al tamaño del canvas (800 px) en ultrawide */}
-      <div ref={mapAreaRef} className="relative w-full h-full min-w-0 overflow-hidden" style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
-        {/* ── HUD compacto (móvil horizontal) — maqueta Partida_Movil_APROBADA_v1 ── */}
-        {isCompact && (
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-1"
-            style={{ paddingTop: 'max(0.35rem, var(--sat))', paddingLeft: 'max(0.5rem, var(--sal))', paddingRight: 'max(0.5rem, var(--sar))' }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <img src="/mascot/explorer-logo.webp" alt="" className="w-6 h-6 object-contain" />
-                <Wordmark size="xs" className="hidden min-[520px]:inline" />
-              </div>
-              <div className="flex-1 min-w-0 flex justify-center">
-                <div className="max-w-full truncate rounded-full border-2 border-accent/50 px-4 py-1 text-[15px] font-extrabold backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
-                  {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
-                  {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>
-                  {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {currentCity.country}</span>}
-                </div>
-              </div>
-              {onToggleMusic && <HudIconButton size="sm" icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
-              <HudIconButton size="sm" icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
-              {onExit && <HudIconButton size="sm" icon="close" label={t('game_exit')} onClick={confirmExit} />}
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold">
-              <span className="hidden min-[560px]:inline rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
-                <span className="text-primary">{modeLabel}</span> · {diffLabel}
-              </span>
-              <span className="rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
-                {t('game_round')} <span className="text-primary">{currentRound + 1}</span><span className="text-muted-foreground"> / {totalRounds}</span>
-              </span>
-              <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
-                <span className={`font-mono whitespace-nowrap ${timeLeft <= 3 && !isWaiting ? 'text-destructive animate-pulse' : timeLeft <= 5 && !isWaiting ? 'text-destructive' : ''}`}>⏱ {timeLeft} s</span>
-                <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${(timeLeft / effectiveMaxTime) * 100}%`, background: timeLeft <= 5 ? 'hsl(var(--destructive))' : 'hsl(var(--accent))', transition: isWaiting ? 'none' : 'width 200ms linear' }} />
-                </div>
-              </div>
-              <span className="relative rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
-                ⭐ <span ref={scoreElRef} className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
-                {floatPoints !== null && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-accent animate-float-up whitespace-nowrap">+{floatPoints.toLocaleString(appNumberLocale())}</span>
-                )}
-              </span>
-            </div>
-          </div>
-        )}
+      <div ref={mapAreaRef} className={`relative w-full ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden`} style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
 
         {/* Música + salir (escritorio / tablet con panel lateral) */}
         {!isCompact && (
@@ -741,7 +742,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               isPortraitMobile
                 ? 'inset-x-0 bottom-0 justify-center pb-2 px-2'
                 : isCompact
-                ? 'top-[4.75rem] bottom-1 right-0 w-[clamp(18rem,48vw,26rem)] items-start p-2'
+                ? 'top-0 bottom-1 right-0 w-[clamp(18rem,48vw,26rem)] items-start p-2'
                 : 'inset-y-0 items-center right-0 w-[clamp(22rem,40vw,30rem)] p-3'
             }`}
             role="dialog"
