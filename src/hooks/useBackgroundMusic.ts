@@ -254,16 +254,53 @@ function toggleMuted(): boolean {
   return isMuted;
 }
 
-// ── Visibilidad/foco: reanudar al volver de segundo plano o desbloqueo ──
+// ── Segundo plano: pausar ──
+// Con audioSession.type = 'playback' (sounds.ts) + mediaSession, iOS trata la página como un
+// reproductor y deja sonar la música con la app en segundo plano o el teléfono bloqueado.
+// Al ocultarse: ganancia a 0, contexto suspendido y control del bloqueo en "pausa".
+// No se usan ensureCtx/ensureGain aquí: pasan por getSharedAudioContext, que REANUDA el contexto.
+let backgroundPaused = false;
+function pauseForBackground() {
+  if (!isPlaying || backgroundPaused) return;
+  backgroundPaused = true;
+  stopFade();
+  if (gain && ctx) {
+    try { gain.gain.setValueAtTime(0, ctx.currentTime); } catch (_) { gain.gain.value = 0; }
+  }
+  try { ctx?.suspend().catch(() => {}); } catch (_) {}
+  try {
+    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+      (navigator as unknown as { mediaSession: { playbackState: string } }).mediaSession.playbackState = 'paused';
+    }
+  } catch (_) {}
+}
+
+/** Al volver al frente: reanuda el contexto y sube la música con fundido (si no está silenciada). */
+function resumeFromBackground() {
+  if (!backgroundPaused) return;
+  backgroundPaused = false;
+  revive();
+  if (isPlaying && !isMuted && !systemPaused) fadeTo(BASE_VOLUME);
+}
+
+// ── Visibilidad/foco: pausar al ir a segundo plano, reanudar al volver o desbloquear ──
 let visibilityInstalled = false;
 function installVisibilityHandler() {
   if (visibilityInstalled || typeof document === 'undefined') return;
   visibilityInstalled = true;
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && isPlaying) revive();
+    if (document.hidden) { pauseForBackground(); return; }
+    if (backgroundPaused) resumeFromBackground();
+    else if (isPlaying) revive();
   });
   if (typeof window !== 'undefined') {
-    window.addEventListener('focus', () => { if (isPlaying) revive(); });
+    // pagehide: iOS a veces cierra/congela la PWA sin un visibilitychange fiable
+    window.addEventListener('pagehide', pauseForBackground);
+    window.addEventListener('focus', () => {
+      if (document.hidden) return;
+      if (backgroundPaused) resumeFromBackground();
+      else if (isPlaying) revive();
+    });
   }
   // Recuperación tras interrupción de iOS (notificación push, llamada, Siri): si el
   // contexto compartido se recreó o la música quedó muda, reconstruir el grafo en el
