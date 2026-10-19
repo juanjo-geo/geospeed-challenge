@@ -26,7 +26,7 @@ export interface StoreProduct {
   description: string;
   emoji: string;
   lives?: number;             // only for life packs
-  price: string;              // display string
+  price: string;              // display string (en US$: en Latinoamérica "$" se lee como pesos)
   priceCents: number;         // actual price in cents (for payment processor)
   highlight?: boolean;        // featured product
   badge?: string;             // e.g. "POPULAR", "MEJOR VALOR"
@@ -42,7 +42,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     description: 'Recarga inmediata',
     emoji: '❤️',
     lives: 5,
-    price: '$0.99',
+    price: 'US$0.99',
     priceCents: 99,
   },
   {
@@ -52,7 +52,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     description: '3× más por menos',
     emoji: '💖',
     lives: 15,
-    price: '$1.99',
+    price: 'US$1.99',
     priceCents: 199,
     badge: 'POPULAR',
   },
@@ -63,7 +63,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     description: 'Pack mega',
     emoji: '💝',
     lives: 50,
-    price: '$4.99',
+    price: 'US$4.99',
     priceCents: 499,
     badge: 'MEJOR VALOR',
   },
@@ -74,7 +74,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     label: 'Pro Mensual',
     description: 'Vidas infinitas · Sin anuncios · Modos exclusivos',
     emoji: '⭐',
-    price: '$2.99/mes',
+    price: 'US$2.99/mes',
     priceCents: 299,
     highlight: true,
   },
@@ -84,7 +84,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     label: 'Pro Anual',
     description: 'Ahorra 50% vs mensual',
     emoji: '🌟',
-    price: '$17.99/año',
+    price: 'US$17.99/año',
     priceCents: 1799,
     badge: '-50%',
   },
@@ -94,7 +94,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     label: 'Pro para siempre',
     description: 'Pago único · Todo desbloqueado · Para siempre',
     emoji: '👑',
-    price: '$29.99',
+    price: 'US$29.99',
     priceCents: 2999,
   },
 ];

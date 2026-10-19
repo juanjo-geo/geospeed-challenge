@@ -306,3 +306,9 @@ function detectProvider(): PaymentProvider {
 // ─── Singleton export ───────────────────────────────────────────────
 
 export const paymentProvider = detectProvider();
+
+/** Proveedor activo (los nombres de clase no sirven: se minifican en producción). */
+export const paymentProviderKind: 'revenuecat' | 'mercadopago' | 'mock' =
+  paymentProvider instanceof RevenueCatProvider ? 'revenuecat'
+  : paymentProvider instanceof MercadoPagoProvider ? 'mercadopago'
+  : 'mock';
