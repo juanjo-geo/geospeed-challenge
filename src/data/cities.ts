@@ -584,7 +584,9 @@ export function getMapBounds(mode: GameMode): MapBounds {
     case 'africa':
       return { latMin: -38, latMax: 40, lonMin: -25, lonMax: 60 };
     default:
-      return { latMin: -90, latMax: 85, lonMin: -180, lonMax: 180 };
+      // Hasta ~62° S: la ciudad más austral es Ushuaia (54,8° S); la Antártida no se juega y su espacio
+      // queda para el encabezado sólido de la partida (el mapa conserva su tamaño y baja).
+      return { latMin: -62, latMax: 85, lonMin: -180, lonMax: 180 };
   }
 }
 
