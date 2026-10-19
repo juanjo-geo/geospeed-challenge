@@ -51,16 +51,15 @@ export function checkIncomingReferral(): void {
     if (ref !== myCode) {
       const existing = localStorage.getItem(REFERRED_BY_KEY);
       if (!existing) {
+        // Solo se recuerda quién invitó. Antes se sumaba la invitación en el teléfono del INVITADO, que
+        // veía "Reclamar +2 vidas" sin haber jugado; contarle al que invita requiere el servidor.
         localStorage.setItem(REFERRED_BY_KEY, ref);
-        // Increment the referrer's count (only works if same browser — for cross-device,
-        // this would need server-side tracking. Good enough for MVP.)
-        incrementReferralCount();
       }
     }
     // Clean URL
     const url = new URL(window.location.href);
     url.searchParams.delete('ref');
-    window.history.replaceState({}, '', url.pathname);
+    window.history.replaceState({}, '', url.pathname + url.search); // conserva ?ch= y demás
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { type RoundResult } from './GameScreen';
 import CountUp from '@/components/ui/CountUp';
@@ -19,6 +19,9 @@ import { type GameMode } from '@/data/cities';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
 import { recordGameResult, getContextualOffer, type FrustrationOffer } from '@/lib/frustrationDetector';
+import { showRewardedAd } from '@/lib/adSystem';
+import { addLives } from '@/lib/energySystem';
+import { useNavigate } from 'react-router-dom';
 import FrustrationOfferModal from './FrustrationOfferModal';
 import { HudIconButton } from './GameHud';
 import { appNumberLocale } from '@/lib/format';
@@ -38,6 +41,8 @@ interface FinalResultScreenProps {
   onPlayAgain?: () => void;
   /** classic (por defecto) · timeattack (60s de Caos) · mundial. Cambia títulos, tiles y ranking. */
   variant?: 'classic' | 'timeattack' | 'mundial';
+  /** Sin ofertas de tienda en este cierre (entrenamiento) */
+  noOffers?: boolean;
   /** Tiles de resumen personalizados (sustituyen Ciudades / Distancia media) */
   tiles?: { emoji: string; label: string; value: string }[];
   /** Mejor puntaje previo del modo (si no, se usa el récord global de stats) */
@@ -79,6 +84,7 @@ export default function FinalResultScreen({
   onOpenStore,
   onViewChallenge,
   challengerScore,
+  noOffers = false,
   totalRounds = 13,
   variant = 'classic',
   tiles,
@@ -103,6 +109,9 @@ export default function FinalResultScreen({
   const [frustrationOffer, setFrustrationOffer] = useState<FrustrationOffer | null>(null);
   /** Repaso: listado "Tus respuestas por ciudad" o revisión de una ciudad */
   const [review, setReview] = useState<{ view: 'list' | 'city'; idx: number } | null>(null);
+  const reviewOpenRef = useRef(false);
+  reviewOpenRef.current = review !== null;
+  const navigate = useNavigate();
 
   // Pistas escritas a mano para la revisión por ciudad: se descargan mientras el jugador ve el resultado
   useEffect(() => { loadCityTips(); }, []);
@@ -163,7 +172,11 @@ export default function FinalResultScreen({
     });
 
     recordGameResult({ score: totalScore, avgDistance, reason });
+    // Oferta (reglas 2026-10-19): nunca tras una buena partida (récord, o el Clásico completado) ni tras
+    // el entrenamiento; máximo una al día (frustrationDetector) y no por debajo de la revisión de ciudades.
+    const goodGame = isNewRecord || (variant === 'classic' && reason === 'complete');
     const offerTimer = setTimeout(() => {
+      if (noOffers || goodGame || reviewOpenRef.current) return;
       const offer = getContextualOffer();
       if (offer) setFrustrationOffer(offer);
     }, 2500);
@@ -527,9 +540,10 @@ export default function FinalResultScreen({
             <div className="mt-3 rounded-2xl border border-accent/30 bg-accent/5 p-3 text-center animate-fade-in animation-delay-500">
               <p className="text-xs sm:text-sm font-bold mb-1">{t('final_nudgeTitle')}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">{t('final_nudgeDesc')}</p>
-              <a href="/auth?mode=signup" className="inline-block px-4 py-2 rounded-xl text-xs font-bold border border-accent/50 text-accent hover:bg-accent/10 transition-colors active:scale-[0.97]">
+              {/* Sin recargar la página (antes un <a> reiniciaba la app: carga, cofre y avisos otra vez) */}
+              <button type="button" onClick={() => navigate('/auth?mode=signup')} className="inline-block px-4 py-2 rounded-xl text-xs font-bold border border-accent/50 text-accent hover:bg-accent/10 transition-colors active:scale-[0.97]">
                 {t('final_nudgeCta')}
-              </a>
+              </button>
             </div>
           )}
         </section>
@@ -542,6 +556,8 @@ export default function FinalResultScreen({
           onAccept={(action) => {
             setFrustrationOffer(null);
             if ((action === 'store' || action === 'pro') && onOpenStore) onOpenStore();
+            // "Ver video → +1 vida": solo se ofrece si hay anuncios; la vida llega al terminar el video
+            if (action === 'ad') showRewardedAd().then(res => { if (res === 'completed') addLives(1); });
           }}
           onDismiss={() => setFrustrationOffer(null)}
         />

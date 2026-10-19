@@ -3,7 +3,8 @@ import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
 import { getPlayerStats, getDailyPlayerCount } from '@/lib/gameUtils';
 import { getPlayerLevel } from '@/lib/levelSystem';
 import DailyChestModal from './DailyChestModal';
-import { checkStreak, claimDailyReward, getStreakAtRisk, protectStreak, type StreakReward } from '@/lib/dailyStreak';
+import { checkStreak, claimDailyReward, getUnclaimedChestToday, skipTodayChest, type StreakReward } from '@/lib/dailyStreak';
+import { homeInterruptionShown, markHomeInterruption } from '@/lib/interruptions';
 import EnergyBar from './EnergyBar';
 import { lazy, Suspense } from 'react';
 // La demo dibuja el mapa (polígonos pesados): se carga aparte para que el inicio pinte antes
@@ -74,6 +75,9 @@ function loadSelection(): { mode: GameMode; difficulty: Difficulty } | null {
  * (región + dificultad en hojas) · Diario / Amigos / Mis retos / Más modos · franja de nivel con
  * estadísticas y accesos a ranking, historial e invitar amigos. Todo visible desde la primera visita (D13).
  */
+/** El día del cofre se registra una vez por apertura de la app (ver efecto del cofre). */
+let dayRegisteredThisSession = false;
+
 export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { t, locale } = useI18n();
   const stats = getPlayerStats();
@@ -108,20 +112,28 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [dailyPlayers, setDailyPlayers] = useState<number>(0);
   // D6: el diario cambia a medianoche UTC; se muestra la hora local equivalente
   const dailyRolloverTime = (() => { const n = new Date(); const next = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1)); return next.toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-CO', { hour: '2-digit', minute: '2-digit' }); })();
-  const [streakRisk, setStreakRisk] = useState<{ days: number; canProtect: boolean } | null>(null);
-  const [streakProtected, setStreakProtected] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     getDailyPlayerCount().then(setDailyPlayers);
   }, []);
 
+  // Cofre diario (reglas de interrupciones, 2026-10-19):
+  //  · el día se registra una sola vez por apertura de la app, con la fecha LOCAL: si la sesión cruza la
+  //    medianoche, el cofre del día nuevo llega la próxima vez que se abra la app, no a mitad de la sesión;
+  //  · si el premio no se reclamó (p. ej. se entró por un enlace y el inicio se vio un instante), sigue
+  //    pendiente y aparece en la próxima visita al inicio;
+  //  · un jugador nuevo no recibe cofre su primer día (empieza con las vidas llenas);
+  //  · cuenta como la única ventana de esta visita al inicio.
   useEffect(() => {
-    if (isNewPlayer) return;
-    const result = checkStreak();
-    if (result.isNewDay && result.reward && result.reward.lives > 0) setStreakReward(result.reward);
-    const risk = getStreakAtRisk();
-    if (risk) setStreakRisk(risk);
+    if (!dayRegisteredThisSession) {
+      dayRegisteredThisSession = true;
+      checkStreak();
+      if (isNewPlayer) skipTodayChest();
+    }
+    if (isNewPlayer || homeInterruptionShown()) return;
+    const pending = getUnclaimedChestToday();
+    if (pending) { markHomeInterruption(); setStreakReward(pending); }
   }, [isNewPlayer]);
 
 
@@ -307,33 +319,6 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       {/* ── Cofre diario ── */}
       {streakReward && !streakDismissed && (
         <DailyChestModal reward={streakReward} onOpen={() => claimDailyReward()} onClose={() => setStreakDismissed(true)} />
-      )}
-
-      {/* ── Racha en riesgo ── */}
-      {streakRisk && !streakProtected && (
-        <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-3 animate-fade-in-up">
-          <div className="bg-destructive/10 border-2 border-destructive/50 rounded-2xl p-3 sm:p-4 text-center relative overflow-hidden">
-            <span className="text-2xl sm:text-3xl block mb-1">⚠️</span>
-            <p className="font-black text-sm sm:text-base text-destructive">{t('home_streakRiskTitle', { days: streakRisk.days })}</p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{t('home_streakRiskDesc')}</p>
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
-                className="flex-1 py-2 rounded-xl font-bold text-xs bg-destructive text-destructive-foreground active:scale-[0.97] transition-all"
-              >
-                {t('home_streakPlay')}
-              </button>
-              {streakRisk.canProtect && (
-                <button
-                  onClick={() => { playButtonTap(); protectStreak(); setStreakProtected(true); setStreakRisk(null); }}
-                  className="flex-1 py-2 rounded-xl font-bold text-xs border-2 border-primary/50 text-primary hover:bg-primary/10 active:scale-[0.97] transition-all"
-                >
-                  {t('home_streakProtect')}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
       )}
 
       {/* ── Franja de nivel: nivel + XP · (computador) estadísticas · ranking / historial / invitar ── */}
