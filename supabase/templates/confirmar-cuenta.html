@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>¡Confirma tu cuenta!</title>
+</head>
+<body style="margin:0;padding:0;background:#071426;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#071426;">
+  <tr>
+    <td align="center" style="padding:28px 14px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#122B4D;border:2px solid #19E6D2;border-radius:18px;">
+        <tr>
+          <td align="center" style="padding:28px 26px 8px 26px;">
+            <img src="https://geospeed-challenge.vercel.app/email-logo.png" width="72" height="72" alt="GeoSpeed Challenge" style="display:block;border:0;border-radius:16px;">
+            <p style="margin:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;letter-spacing:1px;color:#F4F7FB;">GEO<span style="color:#19E6D2;">SPEED</span></p>
+            <p style="margin:2px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9DB0C9;">¿Cuánto conoces el mundo?</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 30px 6px 30px;font-family:Arial,Helvetica,sans-serif;">
+            <h1 style="margin:0 0 10px 0;font-size:22px;line-height:1.3;color:#F4F7FB;text-align:center;">¡Confirma tu cuenta!</h1>
+            <p style="margin:0 0 22px 0;font-size:15px;line-height:1.55;color:#F4F7FB;text-align:center;">Gracias por unirte a GeoSpeed Challenge. Confirma tu correo para guardar tu progreso, aparecer en el ranking y retar a tus amigos.</p>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:0 30px 8px 30px;">
+            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#FFD93B;color:#071426;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:800;text-decoration:none;padding:14px 30px;border-radius:14px;">CONFIRMAR MI CORREO</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 30px 6px 30px;font-family:Arial,Helvetica,sans-serif;">
+            <p style="margin:0 0 10px 0;font-size:13px;line-height:1.5;color:#9DB0C9;text-align:center;">Si no creaste una cuenta en GeoSpeed Challenge, ignora este correo.</p>
+            <p style="margin:0 0 4px 0;font-size:12px;line-height:1.5;color:#9DB0C9;text-align:center;">Si el botón no funciona, copia este enlace en tu navegador:</p>
+            <p style="margin:0 0 18px 0;font-size:12px;line-height:1.5;text-align:center;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#19E6D2;">{{ .ConfirmationURL }}</a></p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:14px 30px 24px 30px;border-top:1px solid #23466f;font-family:Arial,Helvetica,sans-serif;">
+            <p style="margin:0 0 4px 0;font-size:13px;line-height:1.5;color:#F4F7FB;text-align:center;"><strong>Confirm your account</strong></p>
+            <p style="margin:0 0 10px 0;font-size:12px;line-height:1.5;color:#9DB0C9;text-align:center;">Thanks for joining GeoSpeed Challenge. If you didn't sign up, ignore this email. <a href="{{ .ConfirmationURL }}" style="color:#19E6D2;">Confirm my email</a></p>
+            <p style="margin:0;font-size:11px;line-height:1.5;color:#9DB0C9;text-align:center;">GeoSpeed Challenge · geospeed-challenge.vercel.app</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
