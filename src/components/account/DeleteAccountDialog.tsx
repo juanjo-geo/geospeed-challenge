@@ -12,8 +12,10 @@ import { deleteMyAccount } from '@/lib/accountDeletion';
  */
 const portal = (node: ReactNode) => (typeof document === 'undefined' ? node : createPortal(node, document.body));
 
-export default function DeleteAccountDialog({ guest = false, onClose }: { guest?: boolean; onClose: () => void }) {
+export default function DeleteAccountDialog({ guest: guestProp = false, onClose }: { guest?: boolean; onClose: () => void }) {
   const { t } = useI18n();
+  // Se fija al abrir: al borrar se cierra la sesión y quien abrió el aviso deja de saber si era invitado
+  const [guest] = useState(guestProp);
   const [typed, setTyped] = useState('');
   const [stage, setStage] = useState<'confirm' | 'working' | 'done' | 'error'>('confirm');
   const word = t('del_confirmWord');
