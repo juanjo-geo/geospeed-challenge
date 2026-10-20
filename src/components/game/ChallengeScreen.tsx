@@ -128,7 +128,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
     return (
       <Shell onBack={onBack} title={t('ch_unavailableTitle')}>
         <Card className="max-w-md mx-auto text-center">
-          <Mascot state="sad" className="w-28 mx-auto" />
+          <Mascot state="confused" className="w-28 mx-auto" />
           <p className="mt-3 text-base sm:text-lg">{error === 'auth_required' ? t('friends_needLogin') : error === 'network' ? t('friends_errorNetwork') : t('ch_unavailable')}</p>
           {error === 'auth_required' && (
             <button onClick={() => { playButtonTap(); onSignIn(); }} className="btn3d mt-4 w-full rounded-2xl py-3.5 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>{t('friends_signIn')}</button>
@@ -297,7 +297,7 @@ function Hero({ badge }: { badge: string }) {
   return (
     <div className="relative flex flex-col items-center -mt-2 mb-4 short:hidden" aria-hidden>
       <div className="relative">
-        <Mascot state="celebrate" className="w-28 sm:w-32" />
+        <Mascot state="cheer" className="w-28 sm:w-32" />
         <span className="absolute -left-5 top-8 text-primary text-lg">✦</span>
         <LinkIcon className="absolute -right-12 top-4 w-10 h-10 text-accent rotate-12 drop-shadow-[0_0_8px_hsl(var(--accent)/0.6)]" />
       </div>

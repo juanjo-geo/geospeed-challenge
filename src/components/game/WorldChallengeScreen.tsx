@@ -33,7 +33,7 @@ import RoundFeedbackCard from './RoundFeedbackCard';
 import { HudIconButton, InGameSettings } from './GameHud';
 import { type RoundResult, ClockIcon, BarsIcon, PinIcon } from './GameScreen';
 import FitToBox from '@/components/ui/FitToBox';
-import { frameAnswer } from '@/lib/mapFraming';
+import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming';
 import { countryDisplayName, countryIso } from '@/lib/flags';
 import { preloadCountryPhoto } from '@/lib/countryPhotos';
 import { appNumberLocale } from '@/lib/format';
@@ -341,11 +341,14 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     setScorePop(true);
     setTimeout(() => setScorePop(false), 600);
     setStreak(res.newStreak);
+    // Exacto o racha → salta · vecino → alegre · mismo continente → confundido · otro continente →
+    // triste · océano → sorprendido
     setMascotState(
-      res.band === 'far' || res.band === 'ocean' ? 'sad'
-        : res.newStreak >= 3 ? 'fire'
-        : res.band === 'exact' ? 'celebrate'
-        : 'wink'
+      res.band === 'exact' || (res.newStreak >= 3 && res.band === 'neighbor') ? 'cheer'
+        : res.band === 'neighbor' ? 'happy'
+        : res.band === 'continent' ? 'confused'
+        : res.band === 'far' ? 'down'
+        : 'surprised'
     );
     setUserClick({ lat, lon });
     setCorrectLoc(centroid);
@@ -440,23 +443,19 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   }, [showPopup]);
 
   // Encuadre de la respuesta: el mapa deja libre lo que tapa la tarjeta (como el Clásico)
+  const cover = useMemo(
+    () => (showPopup && lastRound && mapArea.w > 0 ? feedbackCover(isPortraitMobile ? 'portrait' : isCompact ? 'compact' : isWide ? 'wide' : 'medium', mapArea.w) : null),
+    [showPopup, lastRound, mapArea.w, isPortraitMobile, isCompact, isWide],
+  );
   const feedbackBounds = useMemo(() => {
-    if (!showPopup || !lastRound || mapArea.w === 0) return null;
-    const vw = typeof window !== 'undefined' ? window.innerWidth : mapArea.w;
-    const clampPx = (min: number, pref: number, max: number) => Math.max(min, Math.min(pref, max));
-    const cover = isPortraitMobile
-      ? { bottom: 0.5 }
-      : isCompact
-      ? { right: clampPx(288, 0.48 * vw, 416) / mapArea.w }
-      : isWide
-      ? { right: clampPx(384, 0.36 * vw, 512) / mapArea.w }
-      : { right: clampPx(352, 0.40 * vw, 480) / mapArea.w };
+    if (!cover || !lastRound) return null;
     return frameAnswer(
       { lat: lastRound.clickLat, lon: lastRound.clickLon },
       { lat: lastRound.city.lat, lon: lastRound.city.lon },
       mapArea.w, mapArea.h, cover, getMapBounds('world'),
     );
-  }, [showPopup, lastRound, mapArea.w, mapArea.h, isPortraitMobile, isCompact, isWide]);
+  }, [cover, lastRound, mapArea.w, mapArea.h]);
+  const labelAvoid = useMemo(() => (cover ? { ...cover, corner: PIN_LEGEND_CORNER } : null), [cover]);
 
   const pinLabels = useMemo(
     () => ({ you: t('game_yourAnswer'), correct: lastRound ? cname(lastRound.city.country) : t('wc_correctCountry') }),
@@ -478,7 +477,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
         <div className="modal-panel w-full max-w-lg rounded-3xl border-2 border-accent/50 bg-card/95 backdrop-blur-md p-5 sm:p-7 short:p-4 shadow-2xl text-center animate-fade-in-up">
           <div className="flex items-center justify-center gap-3 sm:gap-4">
             <span className="relative shrink-0">
-              <Mascot state="wink" className="w-16 sm:w-20 short:w-12 drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
+              <Mascot state="cheer" className="w-16 sm:w-20 short:w-12 drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
               <span className="absolute -right-2 bottom-0 text-2xl short:text-xl" aria-hidden>{BALL}</span>
             </span>
             <span className="text-left min-w-0">
@@ -809,6 +808,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
           pinLabels={pinLabels}
           showZoomControls={!isAnimating}
           viewBounds={feedbackBounds}
+          labelAvoid={labelAvoid}
         />
 
         {/* Tarjeta de respuesta — la misma del Clásico */}

@@ -31,6 +31,8 @@ type View = 'result' | 'compare' | 'map' | 'answers' | 'answer-city';
 type Outcome = 'pending' | 'win' | 'lose' | 'tie';
 
 const noop = () => {};
+/** Las etiquetas del mapa del reto evitan la leyenda (tú · rival · correcta) de la esquina */
+const CHALLENGE_LEGEND_AVOID = { corner: { w: 210, h: 112 } };
 
 function toRoundResults(d: ChallengeDetail, rounds: ChallengeRound[]): RoundResult[] {
   return rounds.map(r => ({
@@ -134,7 +136,8 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
   // ── Resultado ──
   const title = outcome === 'pending' ? t('chr_pendingTitle') : outcome === 'win' ? t('chr_winTitle') : outcome === 'lose' ? t('chr_loseTitle') : t('chr_tieTitle');
   const subtitle = outcome === 'pending' ? t('chr_pendingSub') : outcome === 'win' ? t('chr_winSub') : outcome === 'lose' ? t('chr_loseSub') : t('chr_tieSub');
-  const mascot = outcome === 'win' ? 'celebrate' : outcome === 'lose' ? 'sad' : outcome === 'tie' ? 'wink' : 'idle';
+  // Gana → salta · pierde → decidido (¡revancha!) · empate → sorprendido · esperando al rival → dormido
+  const mascot = outcome === 'win' ? 'cheer' : outcome === 'lose' ? 'angry' : outcome === 'tie' ? 'surprised' : 'sleepy';
   const fmt = (n: number) => n.toLocaleString(appNumberLocale());
 
   return (
@@ -394,7 +397,7 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
 
       <div className="flex-1 min-h-0 w-full max-w-6xl mx-auto flex flex-col landscape:flex-row gap-2 short:gap-1.5">
         <div className="relative flex-1 min-h-[180px] landscape:min-h-0 rounded-2xl overflow-hidden border border-border/80 [&>div]:!min-h-0">
-          <WorldMapCanvas onMapClick={noop} clickDisabled userClick={me} correctLocation={correct} distanceKm={row.me?.distance_km ?? null} gameMode="world" viewBounds={bounds} pinLabels={pinLabels} rivalClick={rv} />
+          <WorldMapCanvas onMapClick={noop} clickDisabled userClick={me} correctLocation={correct} distanceKm={row.me?.distance_km ?? null} gameMode="world" viewBounds={bounds} pinLabels={pinLabels} rivalClick={rv} labelAvoid={CHALLENGE_LEGEND_AVOID} />
           <div className="absolute left-2 bottom-2 rounded-xl border border-accent/40 px-3 py-2 text-xs sm:text-sm font-semibold flex flex-col gap-1 short:hidden" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
             <span className="flex items-center gap-2"><LegendPin color="hsl(var(--primary))" className="w-5 h-5" /> {t('ch_you')}</span>
             <span className="flex items-center gap-2"><LegendPin color="hsl(var(--accent))" className="w-5 h-5" /> {rivalName}</span>

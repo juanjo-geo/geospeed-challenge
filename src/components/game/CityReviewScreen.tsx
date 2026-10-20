@@ -44,6 +44,8 @@ function reviewBounds(a: { lat: number; lon: number }, b: { lat: number; lon: nu
 }
 
 const noop = () => {};
+/** Las etiquetas del mapa evitan la leyenda de la esquina inferior izquierda */
+const LEGEND_AVOID = { corner: { w: 210, h: 88 } };
 
 /** "Revisa tu ubicación" (maqueta Revision_Ciudad_APROBADA_v1): sin temporizador, ciudad por ciudad. */
 export default function CityReviewScreen({ rounds, index, isMundial = false, onIndexChange, onBackToList, onClose }: CityReviewScreenProps) {
@@ -131,6 +133,7 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
             viewBounds={bounds}
             pinLabels={pinLabels}
             pinEmoji={isMundial ? '⚽' : null}
+            labelAvoid={LEGEND_AVOID}
           />
           <div className="absolute left-3 bottom-3 rounded-xl border border-accent/40 px-3 py-2 text-xs sm:text-sm font-semibold flex flex-col gap-1.5 short:hidden" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
             <span className="flex items-center gap-2"><LegendPin color="hsl(var(--primary))" className="w-5 h-5" /> {t('game_yourAnswer')}</span>

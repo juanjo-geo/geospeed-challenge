@@ -10,7 +10,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useUltraWide } from '@/hooks/useUltraWide';
 import WorldMapCanvas from './WorldMapCanvas';
-import Mascot, { type MascotState } from './Mascot';
+import Mascot, { type MascotState, reactionForDistance } from './Mascot';
 import CountUp from '@/components/ui/CountUp';
 import TimerBar from './TimerBar';
 import { useA11y } from '@/contexts/AccessibilityContext';
@@ -20,7 +20,7 @@ import { getEquipped } from '@/lib/cosmetics';
 import Wordmark from '@/components/ui/Wordmark';
 import RoundFeedbackCard from './RoundFeedbackCard';
 import { HudIconButton, InGameSettings } from './GameHud';
-import { frameAnswer } from '@/lib/mapFraming';
+import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming';
 import FitToBox from '@/components/ui/FitToBox';
 import { appNumberLocale } from '@/lib/format';
 import { preloadCountryPhoto } from '@/lib/countryPhotos';
@@ -311,12 +311,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const newStreak = distance < 1500 ? streak + 1 : Math.max(0, Math.floor(streak / 2));
     setStreak(newStreak);
     // Reacción emocional de la mascota (juice Capa 6)
-    setMascotState(
-      distance >= 2000 ? 'sad'
-        : newStreak >= 3 ? 'fire'
-        : distance < 300 ? 'celebrate'
-        : 'wink'
-    );
+    setMascotState(reactionForDistance(distance, newStreak));
 
     // Streak bonus: +10% per level starting at streak ≥ 2, capped at x1.60
     const streakBonus = newStreak >= 2 ? Math.min(1.6, 1 + (newStreak - 1) * 0.10) : 1;
@@ -405,23 +400,20 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const numberLocale = locale === 'en' ? 'en-US' : 'es-CO';
   const fmtSecs = (r: RoundResult) => (r.timeExact ?? r.timeUsed).toLocaleString(numberLocale, { maximumFractionDigits: 1 });
   // Respuesta: el mapa se acerca a tu punto y a la ciudad correcta, dejando libre lo que tapa la tarjeta
+  const cover = useMemo(
+    () => (showPopup && lastResult && mapArea.w > 0 ? feedbackCover(isPortraitMobile ? 'portrait' : isCompact ? 'compact' : isWide ? 'wide' : 'medium', mapArea.w) : null),
+    [showPopup, lastResult, mapArea.w, isPortraitMobile, isCompact, isWide],
+  );
   const feedbackBounds = useMemo(() => {
-    if (!showPopup || !lastResult || mapArea.w === 0) return null;
-    const vw = typeof window !== 'undefined' ? window.innerWidth : mapArea.w;
-    const clampPx = (min: number, pref: number, max: number) => Math.max(min, Math.min(pref, max));
-    const cover = isPortraitMobile
-      ? { bottom: 0.5 }
-      : isCompact
-      ? { right: clampPx(288, 0.48 * vw, 416) / mapArea.w }
-      : isWide
-      ? { right: clampPx(384, 0.36 * vw, 512) / mapArea.w }
-      : { right: clampPx(352, 0.40 * vw, 480) / mapArea.w };
+    if (!cover || !lastResult) return null;
     return frameAnswer(
       { lat: lastResult.clickLat, lon: lastResult.clickLon },
       { lat: lastResult.city.lat, lon: lastResult.city.lon },
       mapArea.w, mapArea.h, cover, getMapBounds(gameMode),
     );
-  }, [showPopup, lastResult, mapArea.w, mapArea.h, isPortraitMobile, isCompact, isWide, gameMode]);
+  }, [cover, lastResult, mapArea.w, mapArea.h, gameMode]);
+  // Las etiquetas del mapa evitan la tarjeta y la leyenda de pines (no hay leyenda en vertical)
+  const labelAvoid = useMemo(() => (cover ? { ...cover, corner: isPortraitMobile ? undefined : PIN_LEGEND_CORNER } : null), [cover, isPortraitMobile]);
 
   // Near-miss detection — motivate the player when they were close to a better tier
   const nearMissMsg = (() => {
@@ -710,6 +702,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           pinLabels={pinLabels}
           showZoomControls={!isWaiting}
           viewBounds={feedbackBounds}
+          labelAvoid={labelAvoid}
         />
 
         {/* Tarjeta de feedback — panel lateral en pantallas anchas */}

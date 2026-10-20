@@ -195,7 +195,7 @@ export default function FinalResultScreen({
 
   const userIsPro = isPro();
   const scoreDelta = previousBest > 0 ? totalScore - previousBest : 0;
-  const mascot: MascotState = outcome === 'record' ? 'celebrate' : outcome === 'timeout' ? 'sad' : 'wink';
+  const mascot: MascotState = outcome === 'record' ? 'cheer' : outcome === 'timeout' ? 'down' : 'happy';
   const modeLabel = variant === 'mundial' || mode === 'mundial'
     ? t('wc_modeName')
     : variant === 'timeattack'

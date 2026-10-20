@@ -283,7 +283,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         <section id="game-modes" className="rounded-3xl border border-accent/40 bg-card/70 p-3 sm:p-5 mb-2 sm:mb-3 lg:mb-0 animate-fade-in-up animation-delay-150 flex flex-col shadow-[0_0_24px_hsl(var(--accent)/0.10)]" aria-label={t('home_nextAdventure')}>
           <div className="grid grid-cols-[3.9rem_1fr] min-[400px]:grid-cols-[4.4rem_1fr] sm:grid-cols-[5.5rem_1fr] lg:grid-cols-[5rem_1fr] gap-x-2.5 sm:gap-x-3 gap-y-1.5 sm:gap-y-2 items-center">
             <div className="row-span-2 lg:row-span-1 self-center">
-              <Mascot state="wink" className="w-full animate-mascot-float drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
+              <Mascot state="happy" className="w-full animate-mascot-float drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
             </div>
             <h2 className="text-[min(5.6vw,1.6rem)] sm:text-[1.9rem] lg:text-[min(1.85vw,1.9rem)] font-extrabold leading-tight whitespace-nowrap">
               {t('home_nextAdventureLead')} <span className="text-primary">{t('home_nextAdventureTail')}</span>

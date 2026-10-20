@@ -138,13 +138,13 @@ export default function HistoryScreen({ onBack, onPlay, onMyChallenges }: Histor
 
         <div className="mt-3 sm:mt-4">
           {error ? (
-            <EmptyState mascot="sad" title={t('mc_loadError')} cta={t('mc_retry')} ctaIcon="retry" onCta={() => load(filters)} onBack={onBack} t={t as T} />
+            <EmptyState mascot="confused" title={t('mc_loadError')} cta={t('mc_retry')} ctaIcon="retry" onCta={() => load(filters)} onBack={onBack} t={t as T} />
           ) : items === null ? (
-            <div className="flex justify-center py-12"><Mascot state="idle" className="w-20 animate-mascot-float" /></div>
+            <div className="flex justify-center py-12"><Mascot state="reading" className="w-20 animate-mascot-float" /></div>
           ) : items.length === 0 ? (
             anyGames === false || !filtered
-              ? <EmptyState mascot="idle" lead={t('hist_emptyLead')} tail={t('hist_emptyTail')} desc={t('hist_emptyDesc')} cta={t('hist_playNow')} ctaIcon="play" onCta={onPlay} onBack={onBack} t={t as T} />
-              : <EmptyState mascot="wink" title={t('hist_noMatchTitle')} desc={t('hist_noMatchDesc')} cta={t('hist_clearFilters')} onCta={() => setFilters({})} onBack={onBack} t={t as T} />
+              ? <EmptyState mascot="reading" lead={t('hist_emptyLead')} tail={t('hist_emptyTail')} desc={t('hist_emptyDesc')} cta={t('hist_playNow')} ctaIcon="play" onCta={onPlay} onBack={onBack} t={t as T} />
+              : <EmptyState mascot="thinking" title={t('hist_noMatchTitle')} desc={t('hist_noMatchDesc')} cta={t('hist_clearFilters')} onCta={() => setFilters({})} onBack={onBack} t={t as T} />
           ) : (
             <>
               {/* Celular: tarjetas agrupadas por día */}
