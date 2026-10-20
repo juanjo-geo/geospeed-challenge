@@ -63,6 +63,18 @@ const ISO_BY_COUNTRY: Record<string, string> = {
   'Japan': 'JP', 'Yemen': 'YE', 'Saudi Arabia': 'SA', 'N. Cyprus': 'CY', 'Cyprus': 'CY', 'Morocco': 'MA',
   'Egypt': 'EG', 'Libya': 'LY', 'Ethiopia': 'ET', 'Djibouti': 'DJ', 'Somaliland': 'SO', 'Rwanda': 'RW',
   'Bosnia and Herz.': 'BA', 'Macedonia': 'MK', 'Kosovo': 'XK', 'Trinidad and Tobago': 'TT', 'S. Sudan': 'SS', 'Antarctica': 'AQ',
+  // ── Países y territorios que solo trae el mapa detallado (1:50m, vistas con zoom): para nombrarlos en el idioma del juego
+  'Vatican': 'VA', 'Micronesia': 'FM', 'Singapore': 'SG', 'Andorra': 'AD', 'Monaco': 'MC', 'Liechtenstein': 'LI',
+  'San Marino': 'SM', 'Bahrain': 'BH', 'Hong Kong': 'HK', 'Macao': 'MO', 'Mauritius': 'MU', 'Maldives': 'MV',
+  'Comoros': 'KM', 'Cabo Verde': 'CV', 'Barbados': 'BB', 'Grenada': 'GD', 'Dominica': 'DM', 'Saint Lucia': 'LC',
+  'Tonga': 'TO', 'Samoa': 'WS', 'Palau': 'PW', 'Kiribati': 'KI', 'Nauru': 'NR', 'Marshall Is.': 'MH',
+  'Faeroe Is.': 'FO', 'Åland': 'AX', 'Jersey': 'JE', 'Guernsey': 'GG', 'Isle of Man': 'IM', 'Aruba': 'AW',
+  'Curaçao': 'CW', 'Bermuda': 'BM', 'Cayman Is.': 'KY', 'Fr. Polynesia': 'PF', 'Antigua and Barb.': 'AG',
+  'St. Kitts and Nevis': 'KN', 'St. Vin. and Gren.': 'VC', 'São Tomé and Principe': 'ST', 'N. Mariana Is.': 'MP',
+  'U.S. Virgin Is.': 'VI', 'Guam': 'GU', 'American Samoa': 'AS', 'S. Geo. and the Is.': 'GS', 'Br. Indian Ocean Ter.': 'IO',
+  'Saint Helena': 'SH', 'Pitcairn Is.': 'PN', 'Anguilla': 'AI', 'British Virgin Is.': 'VG', 'Turks and Caicos Is.': 'TC',
+  'Montserrat': 'MS', 'Niue': 'NU', 'Cook Is.': 'CK', 'St. Pierre and Miquelon': 'PM', 'Wallis and Futuna Is.': 'WF',
+  'St-Martin': 'MF', 'St-Barthélemy': 'BL', 'Heard I. and McDonald Is.': 'HM', 'Norfolk Island': 'NF', 'Sint Maarten': 'SX',
 };
 
 /** Código ISO-3166 alfa-2 del país (nombre en español del catálogo o en inglés del mapa), o null. */

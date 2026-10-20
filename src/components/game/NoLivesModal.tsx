@@ -63,7 +63,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
        <div>
         <div className="flex justify-center mb-2 sm:mb-3 short:mb-1">
           <div className={lifeRestored ? '' : 'animate-mascot-sway'}>
-            <Mascot state={lifeRestored ? 'celebrate' : 'sad'} className="w-16 sm:w-20 short:w-14" />
+            <Mascot state={lifeRestored ? 'cheer' : 'sleepy'} className="w-16 sm:w-20 short:w-14" />
           </div>
         </div>
         <h2 className="text-lg sm:text-xl font-black mb-1.5 sm:mb-2 short:mb-1" style={{ color: 'hsl(var(--primary))' }}>

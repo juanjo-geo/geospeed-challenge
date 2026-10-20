@@ -98,7 +98,7 @@ export default function CountdownIntro({ count, label, onCancel, running = true 
             {isGo ? t('countdown_goShort') : count}
           </span>}
           <div className="absolute left-[86%] top-[22%] w-[56%]">
-            <Mascot state={isGo ? 'celebrate' : 'idle'} className="w-full animate-mascot-float drop-shadow-[0_10px_22px_hsl(var(--brand-navy-deep)/0.7)]" />
+            <Mascot state={isGo ? 'cheer' : 'thinking'} className="w-full animate-mascot-float drop-shadow-[0_10px_22px_hsl(var(--brand-navy-deep)/0.7)]" />
           </div>
         </div>
 

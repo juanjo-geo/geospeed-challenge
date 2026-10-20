@@ -1,5 +1,23 @@
 import type { MapBounds } from '@/data/cities';
 
+export type FeedbackLayout = 'portrait' | 'compact' | 'wide' | 'medium';
+
+/**
+ * Fracción del mapa que tapa la tarjeta de respuesta en cada diseño de la partida (Clásico, 60s de Caos,
+ * Mundial): abajo en vertical, a la derecha en los demás. La usan frameAnswer y las etiquetas del mapa.
+ */
+export function feedbackCover(layout: FeedbackLayout, mapW: number): { right?: number; bottom?: number } {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : mapW;
+  const clampPx = (min: number, pref: number, max: number) => Math.max(min, Math.min(pref, max));
+  if (layout === 'portrait') return { bottom: 0.5 };
+  if (layout === 'compact') return { right: clampPx(288, 0.48 * vw, 416) / mapW };
+  if (layout === 'wide') return { right: clampPx(384, 0.36 * vw, 512) / mapW };
+  return { right: clampPx(352, 0.40 * vw, 480) / mapW };
+}
+
+/** Esquina inferior izquierda que ocupa la leyenda de pines durante la respuesta (px) */
+export const PIN_LEGEND_CORNER = { w: 196, h: 80 };
+
 /**
  * Encuadre del mapa para la respuesta de una ronda (maquetas Feedback): acerca la vista a tu respuesta
  * y a la ciudad correcta, dejando libre la parte del mapa que tapa la tarjeta de resultado.

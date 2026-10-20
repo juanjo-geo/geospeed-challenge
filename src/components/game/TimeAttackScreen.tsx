@@ -8,7 +8,7 @@ import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 import CountdownIntro from './CountdownIntro';
-import Mascot, { type MascotState } from './Mascot';
+import Mascot, { type MascotState, reactionForDistance } from './Mascot';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
 import { useI18n } from '@/i18n';
@@ -17,7 +17,7 @@ import { type RoundResult, getRoundFeedback } from './GameScreen';
 import { appNumberLocale } from '@/lib/format';
 import RoundFeedbackCard from './RoundFeedbackCard';
 import FitToBox from '@/components/ui/FitToBox';
-import { frameAnswer } from '@/lib/mapFraming';
+import { frameAnswer, feedbackCover } from '@/lib/mapFraming';
 import { preloadCountryPhoto } from '@/lib/countryPhotos';
 
 const GLOBAL_TIME = 60;
@@ -181,7 +181,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     const basePoints = calculateBasePoints(distance);
     const mult = getMultiplier(timeUsed);
     const totalPoints = Math.round(basePoints * mult.value * getDifficultyMultiplier(difficulty));
-    setMascotState(distance >= 2000 ? 'sad' : distance < 300 ? 'celebrate' : 'wink');
+    setMascotState(reactionForDistance(distance));
 
     const round: RoundResult = { city: currentCity, clickLat: lat, clickLon: lon, distance, basePoints, multiplier: mult.value, totalPoints, timeUsed, timeExact };
     roundsRef.current.push(round);
@@ -230,23 +230,18 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
   }
 
   // Encuadre de la respuesta junto a la tarjeta (igual que el Clásico)
+  const cover = useMemo(
+    () => (lastResult && mapArea.w > 0 ? feedbackCover(isPortraitMobile ? 'portrait' : isCompact ? 'compact' : layoutMode === 'wide' ? 'wide' : 'medium', mapArea.w) : null),
+    [lastResult, mapArea.w, isPortraitMobile, isCompact, layoutMode],
+  );
   const feedbackBounds = useMemo(() => {
-    if (!lastResult || mapArea.w === 0) return null;
-    const vw = typeof window !== 'undefined' ? window.innerWidth : mapArea.w;
-    const clampPx = (min: number, pref: number, max: number) => Math.max(min, Math.min(pref, max));
-    const cover = isPortraitMobile
-      ? { bottom: 0.5 }
-      : isCompact
-      ? { right: clampPx(288, 0.48 * vw, 416) / mapArea.w }
-      : layoutMode === 'wide'
-      ? { right: clampPx(384, 0.36 * vw, 512) / mapArea.w }
-      : { right: clampPx(352, 0.40 * vw, 480) / mapArea.w };
+    if (!cover || !lastResult) return null;
     return frameAnswer(
       { lat: lastResult.clickLat, lon: lastResult.clickLon },
       { lat: lastResult.city.lat, lon: lastResult.city.lon },
       mapArea.w, mapArea.h, cover, getMapBounds(gameMode),
     );
-  }, [lastResult, mapArea.w, mapArea.h, isPortraitMobile, isCompact, layoutMode, gameMode]);
+  }, [cover, lastResult, mapArea.w, mapArea.h, gameMode]);
 
   if (!currentCity) return null;
 
@@ -464,6 +459,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
           pinLabels={pinLabels}
           showZoomControls={!isAnimating}
           viewBounds={feedbackBounds}
+          labelAvoid={cover}
         />
 
         {/* Tarjeta de respuesta — la misma del Clásico, en modo rápido */}

@@ -82,7 +82,7 @@ export default function MyChallengesScreen({ onBack, onOpen, onCreate, onSignIn 
 
         {error ? (
           <section className="max-w-md mx-auto rounded-3xl border border-destructive/50 bg-card/70 p-6 text-center" role="alert">
-            <Mascot state="sad" className="w-20 mx-auto" />
+            <Mascot state="confused" className="w-20 mx-auto" />
             <p className="mt-3 text-sm sm:text-base">{error === 'auth_required' ? t('friends_needLogin') : t('mc_loadError')}</p>
             <div className="mt-4 grid gap-2">
               {error === 'auth_required'
@@ -134,11 +134,11 @@ export default function MyChallengesScreen({ onBack, onOpen, onCreate, onSignIn 
 function ChallengeCard({ item, onOpen }: { item: MyChallenge; onOpen: () => void }) {
   const { t } = useI18n();
   const rival = item.rival_name ?? t('ch_yourFriend');
-  const cfg: Record<ChallengeState, { pill: string; pillCls: string; info: string; cta: string; ctaPrimary: boolean; mascot: 'wink' | 'idle' | 'celebrate'; border: string }> = {
-    to_accept: { pill: t('mc_toAccept'), pillCls: 'bg-primary text-primary-foreground', info: t('mc_toAcceptInfo'), cta: t('mc_viewInvite'), ctaPrimary: true, mascot: 'wink', border: 'border-primary' },
-    to_play: { pill: t('mc_toPlay'), pillCls: 'border border-primary text-primary', info: t('mc_toPlayInfo'), cta: t('ch_playMine'), ctaPrimary: true, mascot: 'idle', border: 'border-accent/50' },
-    waiting: { pill: t('mc_waiting', { name: rival }), pillCls: 'border border-border text-muted-foreground', info: t('mc_waitingInfo'), cta: t('mc_viewStatus'), ctaPrimary: false, mascot: 'wink', border: 'border-accent/40' },
-    ready: { pill: t('mc_ready'), pillCls: 'bg-accent text-accent-foreground', info: t('mc_readyInfo'), cta: t('mc_viewResult'), ctaPrimary: false, mascot: 'celebrate', border: 'border-accent' },
+  const cfg: Record<ChallengeState, { pill: string; pillCls: string; info: string; cta: string; ctaPrimary: boolean; mascot: 'surprised' | 'thinking' | 'sleepy' | 'cheer'; border: string }> = {
+    to_accept: { pill: t('mc_toAccept'), pillCls: 'bg-primary text-primary-foreground', info: t('mc_toAcceptInfo'), cta: t('mc_viewInvite'), ctaPrimary: true, mascot: 'surprised', border: 'border-primary' },
+    to_play: { pill: t('mc_toPlay'), pillCls: 'border border-primary text-primary', info: t('mc_toPlayInfo'), cta: t('ch_playMine'), ctaPrimary: true, mascot: 'thinking', border: 'border-accent/50' },
+    waiting: { pill: t('mc_waiting', { name: rival }), pillCls: 'border border-border text-muted-foreground', info: t('mc_waitingInfo'), cta: t('mc_viewStatus'), ctaPrimary: false, mascot: 'sleepy', border: 'border-accent/40' },
+    ready: { pill: t('mc_ready'), pillCls: 'bg-accent text-accent-foreground', info: t('mc_readyInfo'), cta: t('mc_viewResult'), ctaPrimary: false, mascot: 'cheer', border: 'border-accent' },
   };
   const c = cfg[item.state];
   const title = item.state === 'to_accept' && item.is_rematch

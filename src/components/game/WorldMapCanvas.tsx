@@ -7,6 +7,18 @@ import { type GameMode, type MapBounds, getMapBounds } from '@/data/cities';
 import { unlockAudio } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import { appNumberLocale } from '@/lib/format';
+import { getHiResMap, loadHiResMap, traceCountry, traceArcs, countryAt, labelSpots, boxesIntersect, type HiResMap } from '@/lib/hiResMap';
+import { layoutPills, layoutTexts, rectAround, nearestOnRect, type PillRequest, type PlacedPill, type Rect, type Pt } from '@/lib/mapLabels';
+import { countryDisplayName } from '@/lib/flags';
+
+/** Índice de cada país en countries.ts: el mapa detallado usa el mismo color que la vista del mundo */
+const LOW_INDEX = new Map(countries.map((c, i) => [c.name, i]));
+const PILL_FONT = '700 12px Poppins, system-ui, sans-serif';
+const PILL_FONT_LG = '700 13px Poppins, system-ui, sans-serif';
+const DIST_FONT = '700 13px Poppins, system-ui, sans-serif';
+const DIST_FONT_LG = '700 14px Poppins, system-ui, sans-serif';
+/** Vista acercada (lo visible abarca ≤ 160° de longitud): contornos detallados y nombres de países */
+const ZOOMED_LON_SPAN = 160;
 
 interface WorldMapCanvasProps {
   onMapClick: (lat: number, lon: number, viewportX?: number, viewportY?: number) => void;
@@ -38,6 +50,12 @@ interface WorldMapCanvasProps {
   showZoomControls?: boolean;
   /** Encuadre geográfico fijo (Revisión de ciudad). Sustituye los límites del modo y redibuja nítido. Pasar memoizado. */
   viewBounds?: MapBounds | null;
+  /**
+   * Partes del mapa tapadas por la interfaz, que las etiquetas evitan: fracciones del mapa cubiertas por
+   * la tarjeta de respuesta (`right`/`top`/`bottom`, las mismas que frameAnswer) y una esquina inferior
+   * izquierda en px (leyenda de pines). Pasar memoizado.
+   */
+  labelAvoid?: { right?: number; top?: number; bottom?: number; corner?: { w: number; h: number } } | null;
 }
 
 export default function WorldMapCanvas({
@@ -59,8 +77,9 @@ export default function WorldMapCanvas({
   rivalClick,
   showZoomControls = true,
   viewBounds,
+  labelAvoid,
 }: WorldMapCanvasProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +126,25 @@ export default function WorldMapCanvas({
   const latToY = useCallback((lat: number) => offsetY + (bounds.latMax - lat) * scale, [offsetY, bounds.latMax, scale]);
   const xToLon = useCallback((x: number) => (x - offsetX) / scale + bounds.lonMin, [offsetX, bounds.lonMin, scale]);
   const yToLat = useCallback((y: number) => bounds.latMax - (y - offsetY) / scale, [offsetY, bounds.latMax, scale]);
+
+  // ── Mapa detallado (1:50m) para las vistas acercadas: se descarga una vez, poco después de abrir el mapa
+  // (o de inmediato si ya está acercado), para que esté listo cuando llegue la primera respuesta.
+  const zoomedView = dimensions.w / scale <= ZOOMED_LON_SPAN;
+  const [hiRes, setHiRes] = useState<HiResMap | null>(getHiResMap);
+  useEffect(() => {
+    if (hiRes) return;
+    let alive = true;
+    const id = setTimeout(() => { loadHiResMap().then((m) => { if (alive) setHiRes(m); }).catch(() => {}); }, zoomedView ? 0 : 1500);
+    return () => { alive = false; clearTimeout(id); };
+  }, [hiRes, zoomedView]);
+  const detailMap = zoomedView ? hiRes : null;
+  // Lo visible del lienzo en grados (con margen), para no recorrer lo que queda fuera
+  const visibleBox = useCallback((w: number, h: number): [number, number, number, number] => [
+    bounds.lonMin - offsetX / scale - 1,
+    bounds.latMax - (h - offsetY) / scale - 1,
+    bounds.lonMin + (w - offsetX) / scale + 1,
+    bounds.latMax + offsetY / scale + 1,
+  ], [bounds.lonMin, bounds.latMax, offsetX, offsetY, scale]);
 
   // Reactively detect theme changes so the map redraws when toggled
   const theme = useSyncExternalStore(
@@ -193,6 +231,48 @@ export default function WorldMapCanvas({
     }
     ctx.fillRect(0, 0, w, h);
 
+    if (detailMap) {
+      // ── Vista acercada: contornos 1:50m. Primero los rellenos; luego costas y fronteras, cada arco una
+      // sola vez (sin líneas dobles) con uniones redondeadas.
+      const vis = visibleBox(w, h);
+      const X = (lon: number) => offsetX + (lon - bounds.lonMin) * scale;
+      const Y = (lat: number) => offsetY + (bounds.latMax - lat) * scale;
+      for (const c of detailMap.countries) {
+        if (!boxesIntersect(c.bbox, vis)) continue;
+        const k = LOW_INDEX.get(c.name) ?? (LOW_INDEX.get(c.ref) ?? 0) + 1;
+        if (neon) {
+          const colors = CONTINENT_COLORS_NEON[getColorGroup(c.ref)] ?? FALLBACK_NEON;
+          ctx.fillStyle = colors[k % colors.length];
+        } else {
+          ctx.fillStyle = MAP_PALETTE[k % MAP_PALETTE.length];
+        }
+        ctx.beginPath();
+        if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
+      }
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = neon ? 'rgba(255,255,255,0.5)' : light ? '#8899AA' : '#2A1408';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      traceArcs(ctx, detailMap, detailMap.coastArcs, X, Y, vis);
+      ctx.stroke();
+      ctx.strokeStyle = neon ? 'rgba(255,255,255,0.92)' : light ? '#8899AA' : '#2A1408';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      traceArcs(ctx, detailMap, detailMap.borderArcs, X, Y, vis);
+      ctx.stroke();
+      if (highlightContinent && CONTINENT_COUNTRIES[highlightContinent]) {
+        const set = CONTINENT_COUNTRIES[highlightContinent];
+        for (const c of detailMap.countries) {
+          if (!boxesIntersect(c.bbox, vis)) continue;
+          ctx.fillStyle = set.has(c.ref)
+            ? (neon ? 'rgba(255,255,255,0.14)' : light ? 'rgba(0,150,255,0.28)' : rgba(BRAND_RGB.yellow, 0.34))
+            : (neon ? rgba(BRAND_RGB.navyDeep, 0.38) : light ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.42)');
+          ctx.beginPath();
+          if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
+        }
+      }
+    } else {
     // ── Two-pass rendering to eliminate sub-pixel gaps at country borders ──
     // Pass 1: Fill all polygons.
     for (let ci = 0; ci < countries.length; ci++) {
@@ -280,6 +360,7 @@ export default function WorldMapCanvas({
         }
       }
     }
+    }
 
     // Graticule — extends across the ENTIRE canvas, not just geographic bounds
     ctx.strokeStyle = neon ? rgba(BRAND_RGB.turquoise, 0.08) : light ? 'rgba(60,90,110,0.18)' : 'rgba(100,70,30,0.20)';
@@ -327,7 +408,8 @@ export default function WorldMapCanvas({
 
     if (gameMode === 'world') {
       const fontSize = Math.max(10, Math.round(w / 78));
-      drawLabels([
+      // En la vista acercada de una respuesta no van los continentes: ahí se nombran los países
+      if (!(viewBounds && zoomedView)) drawLabels([
         { name: 'AMÉRICA\nDEL NORTE', lat: 45, lon: -100 },
         { name: 'AMÉRICA\nDEL SUR', lat: -15, lon: -58 },
         { name: 'EUROPA', lat: 54, lon: 15 },
@@ -351,7 +433,7 @@ export default function WorldMapCanvas({
         { name: 'MAR DEL\nNORTE', lat: 58, lon: 3 },
         { name: 'MAR\nBÁLTICO', lat: 58, lon: 20 },
         { name: 'MAR\nNEGRO', lat: 43, lon: 35 },
-      ], Math.max(10, Math.round(w / 70)));
+      ], Math.max(10, Math.round(w / 70)), true);
     } else if (gameMode === 'asia') {
       drawLabels([
         { name: 'OCÉANO\nÍNDICO', lat: -5, lon: 75 },
@@ -360,7 +442,7 @@ export default function WorldMapCanvas({
         { name: 'MAR DE\nCHINA', lat: 15, lon: 115 },
         { name: 'MAR DE\nJAPÓN', lat: 40, lon: 135 },
         { name: 'GOLFO\nPÉRSICO', lat: 27, lon: 51 },
-      ], Math.max(10, Math.round(w / 70)));
+      ], Math.max(10, Math.round(w / 70)), true);
     } else if (gameMode === 'africa') {
       drawLabels([
         { name: 'ÁFRICA\nDEL NORTE', lat: 30, lon: 10 },
@@ -368,20 +450,24 @@ export default function WorldMapCanvas({
         { name: 'ÁFRICA\nORIENTAL', lat: 0, lon: 38 },
         { name: 'ÁFRICA\nCENTRAL', lat: 0, lon: 18 },
         { name: 'ÁFRICA\nAUSTRAL', lat: -25, lon: 25 },
+      ], Math.max(10, Math.round(w / 70)));
+      drawLabels([
         { name: 'OCÉANO\nATLÁNTICO', lat: 5, lon: -20 },
         { name: 'OCÉANO\nÍNDICO', lat: -15, lon: 52 },
         { name: 'MAR\nMEDITERRÁNEO', lat: 37, lon: 18 },
         { name: 'MAR\nROJO', lat: 20, lon: 40 },
-      ], Math.max(10, Math.round(w / 70)));
+      ], Math.max(10, Math.round(w / 70)), true);
     } else if (gameMode === 'americas') {
       drawLabels([
         { name: 'AMÉRICA\nDEL NORTE', lat: 50, lon: -105 },
         { name: 'AMÉRICA\nCENTRAL', lat: 15, lon: -85 },
         { name: 'AMÉRICA\nDEL SUR', lat: -20, lon: -58 },
+      ], Math.max(10, Math.round(w / 70)));
+      drawLabels([
         { name: 'OCÉANO\nPACÍFICO', lat: 10, lon: -155 },
         { name: 'OCÉANO\nATLÁNTICO', lat: 20, lon: -38 },
         { name: 'MAR\nCARIBE', lat: 18, lon: -72 },
-      ], Math.max(10, Math.round(w / 70)));
+      ], Math.max(10, Math.round(w / 70)), true);
     }
 
     // Decoración del Pacífico sur — solo modo Mundial (balón o copa PNG; emoji de respaldo)
@@ -408,7 +494,7 @@ export default function WorldMapCanvas({
       }
       // sin fallback emoji: evita ver el "balón antiguo"; el PNG carga en milisegundos
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen, pacificDecor, decorReady]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
@@ -477,6 +563,118 @@ export default function WorldMapCanvas({
     const cx = lonToX(correctLocation.lon);
     const cy = latToY(correctLocation.lat);
 
+    // ── Curva de la respuesta (la misma que dibuja la animación) ──
+    const ddx = cx - ux, ddy = cy - uy;
+    const dist0 = Math.sqrt(ddx * ddx + ddy * ddy);
+    const bulge0 = Math.min(dist0 * 0.2, 60);
+    const cpx0 = (ux + cx) / 2 - (ddy / (dist0 || 1)) * bulge0;
+    const cpy0 = (uy + cy) / 2 + (ddx / (dist0 || 1)) * bulge0;
+    const curvePt = (t: number): Pt => {
+      const u = 1 - t;
+      return { x: u * u * ux + 2 * u * t * cpx0 + t * t * cx, y: u * u * uy + 2 * u * t * cpy0 + t * t * cy };
+    };
+
+    // ── Etiquetas (src/lib/mapLabels.ts): se ubican una vez para esta respuesta, evitando los pines, la
+    // línea, la tarjeta de respuesta, los botones de zoom y la leyenda ──
+    const W = dimensions.w, H = dimensions.h;
+    const avTop = Math.min(0.4, labelAvoid?.top ?? 0), avBottom = Math.min(0.6, labelAvoid?.bottom ?? 0);
+    const area: Rect = { x: 4, y: H * avTop + 4, w: W * (1 - Math.min(0.6, labelAvoid?.right ?? 0)) - 8, h: H * (1 - avTop - avBottom) - 8 };
+    const rx = rivalClick ? lonToX(rivalClick.lon) : 0;
+    const ry = rivalClick ? latToY(rivalClick.lat) : 0;
+    const hard: Rect[] = [rectAround({ x: ux, y: uy }, 12), rectAround({ x: cx, y: cy }, 17)];
+    if (rivalClick) hard.push(rectAround({ x: rx, y: ry }, 11));
+    if (showZoomControls) { const zw = window.innerWidth >= 640 ? 168 : 140; hard.push({ x: W - zw, y: H - 62, w: zw, h: 62 }); }
+    if (labelAvoid?.corner) hard.push({ x: 0, y: H - labelAvoid.corner.h, w: labelAvoid.corner.w, h: labelAvoid.corner.h });
+    const soft: Rect[] = [];
+    for (let i = 1; i < 12; i++) soft.push(rectAround(curvePt(i / 12), 5));
+    if (rivalClick) for (let i = 1; i < 8; i++) soft.push(rectAround({ x: rx + ((cx - rx) * i) / 8, y: ry + ((cy - ry) * i) / 8 }, 5));
+    const textW = (text: string, font: string) => { ctx.font = font; return ctx.measureText(text).width; };
+    // Mapas pequeños (celular en horizontal): letra de 12 px; en los demás, 13 px
+    const compactMap = Math.min(W, H) < 420;
+    const pillFont = compactMap ? PILL_FONT : PILL_FONT_LG, distFont = compactMap ? DIST_FONT : DIST_FONT_LG;
+    const pillH = compactMap ? 24 : 26;
+    const distText = distanceKm != null ? `${Math.round(distanceKm).toLocaleString(appNumberLocale())} km` : null;
+    const rivalText = rivalClick
+      ? (rivalClick.distanceKm != null ? `${rivalClick.label} · ${Math.round(rivalClick.distanceKm).toLocaleString(appNumberLocale())} km` : rivalClick.label)
+      : null;
+    const reqs: PillRequest[] = [];
+    if (pinLabels) {
+      reqs.push({ key: 'correct', w: textW(pinLabels.correct, pillFont) + 18, h: pillH, anchor: { x: cx, y: cy }, r: 17, away: { x: ux, y: uy }, prefer: -1 });
+      reqs.push({ key: 'you', w: textW(pinLabels.you, pillFont) + 18, h: pillH, anchor: { x: ux, y: uy }, r: 12, away: { x: cx, y: cy }, prefer: 1 });
+    }
+    if (rivalText) reqs.push({ key: 'rival', w: textW(rivalText, pillFont) + 18, h: pillH, anchor: { x: rx, y: ry }, r: 11, away: { x: cx, y: cy }, prefer: -1 });
+    if (distText) {
+      // La distancia va sobre la curva; si los pines están muy juntos, alrededor de ellos
+      const dw = textW(distText, distFont) + 18, dh = pillH + 2;
+      const mid = curvePt(0.5);
+      const spots: Pt[] = [0.5, 0.4, 0.6, 0.32, 0.68].map(curvePt);
+      const nx = -ddy / (dist0 || 1), ny = ddx / (dist0 || 1);
+      for (const k of [1, -1]) spots.push({ x: mid.x + nx * k * (dh / 2 + 12), y: mid.y + ny * k * (dh / 2 + 12) });
+      for (const rad of [40, 66, 96]) {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+          spots.push({ x: mid.x + dx * (rad * 0.6 + dw / 2), y: mid.y + dy * rad * 0.75 });
+        }
+      }
+      reqs.push({ key: 'distance', w: dw, h: dh, anchor: mid, r: 0, spots, ignoreSoft: true });
+    }
+    const pills = layoutPills(reqs, hard, soft, area);
+    const pill = (key: string) => pills.find((pl) => pl.key === key);
+
+    // ── Nombres de países en la vista acercada: el país de la ciudad (foco, en mayúsculas), el que
+    // tocaste y los vecinos. Sin choques con pines, etiquetas ni la línea; si no caben, se omiten.
+    type CountryLabel = { text: string; x: number; y: number; font: string; spacing: string };
+    let countryLabels: CountryLabel[] = [];
+    if (detailMap) {
+      const map = detailMap;
+      const vis = visibleBox(W, H);
+      const focus = countryAt(map, correctLocation.lon, correctLocation.lat);
+      const clicked = countryAt(map, userClick.lon, userClick.lat);
+      const order: number[] = [];
+      const add = (i: number) => { if (i >= 0 && !order.includes(i) && boxesIntersect(map.countries[i].bbox, vis)) order.push(i); };
+      add(focus);
+      add(clicked);
+      if (focus >= 0) map.neighbors[focus].forEach(add);
+      if (rivalClick) add(countryAt(map, rivalClick.lon, rivalClick.lat));
+      if (clicked >= 0 && clicked !== focus) map.neighbors[clicked].forEach(add);
+      const small = compactMap;
+      const free = { x0: area.x, y0: area.y, x1: area.x + area.w, y1: area.y + area.h };
+      const blockers: Rect[] = [
+        rectAround({ x: ux, y: uy }, 18), rectAround({ x: cx, y: cy }, 22),
+        ...(rivalClick ? [rectAround({ x: rx, y: ry }, 16)] : []),
+        ...hard.slice(rivalClick ? 3 : 2),
+        ...pills.map((pl) => ({ x: pl.rect.x - 4, y: pl.rect.y - 4, w: pl.rect.w + 8, h: pl.rect.h + 8 })),
+        ...soft,
+      ];
+      const seen = new Set<string>();
+      const meta = new Map<string, { text: string; font: string; spacing: string }>();
+      const items: { key: string; w: number; h: number; spots: Pt[] }[] = [];
+      for (const i of order.slice(0, 16)) {
+        const name = countryDisplayName(map.countries[i].name, locale);
+        if (seen.has(name)) continue;
+        seen.add(name);
+        const isFocus = i === focus;
+        const text = isFocus ? name.toLocaleUpperCase(locale) : name;
+        const font = isFocus ? `800 ${small ? 12 : 14}px Poppins, system-ui, sans-serif` : `600 ${small ? 10.5 : 12}px Poppins, system-ui, sans-serif`;
+        const spacing = isFocus ? '1px' : '0px';
+        ctx.font = font;
+        ctx.letterSpacing = spacing;
+        const tw = ctx.measureText(text).width;
+        ctx.letterSpacing = '0px';
+        const th = isFocus ? (small ? 16 : 19) : (small ? 14 : 16);
+        let spots: Pt[] = labelSpots(map.countries[i], lonToX, latToY, vis, W, H, free, isFocus ? 6 : 4);
+        if (isFocus && spots.length) {
+          // País pequeño o tapado por los pines: probar también justo arriba y abajo de su centro
+          const b = spots[0];
+          spots = [...spots, { x: b.x, y: b.y - th - 10 }, { x: b.x, y: b.y + th + 10 }, { x: b.x, y: b.y - 2 * th - 14 }, { x: b.x, y: b.y + 2 * th + 14 }];
+        } else if (!isFocus) {
+          spots = (spots as { x: number; y: number; depth: number }[]).filter((sp) => sp.depth >= Math.min(7, th / 2));
+        }
+        items.push({ key: String(i), w: tw + 6, h: th, spots });
+        meta.set(String(i), { text, font, spacing });
+      }
+      countryLabels = layoutTexts(items, blockers, area).map((pl) => ({ ...meta.get(pl.key)!, x: pl.x, y: pl.y }));
+    }
+
     const lineDuration = 2000; // 2s to draw the line
     let startTime: number | null = null;
 
@@ -492,6 +690,22 @@ export default function WorldMapCanvas({
       canvas.style.height = `${dimensions.h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
+
+      if (countryLabels.length) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round';
+        for (const l of countryLabels) {
+          ctx.font = l.font;
+          ctx.letterSpacing = l.spacing;
+          ctx.lineWidth = 3.5;
+          ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+          ctx.strokeText(l.text, l.x, l.y);
+          ctx.fillStyle = BRAND.navyDeep;
+          ctx.fillText(l.text, l.x, l.y);
+        }
+        ctx.letterSpacing = '0px';
+      }
 
       // ── Curved arc control point (offset perpendicular to midpoint) ──
       const mx = (ux + cx) / 2;
@@ -648,47 +862,34 @@ export default function WorldMapCanvas({
         ctx.moveTo(cx, cy + 16); ctx.lineTo(cx, cy + crossLen);
         ctx.stroke();
 
-        // ── Distance label on arc midpoint ──
-        if (distanceKm != null) {
-          const labelPt = bezierPt(0.5);
-          const text = `${Math.round(distanceKm).toLocaleString(appNumberLocale())} km`;
-          ctx.font = 'bold 13px system-ui';
-          const tw = ctx.measureText(text).width;
-          ctx.fillStyle = 'rgba(0,0,0,0.75)';
-          const bx = labelPt.x - tw / 2 - 8;
-          const by = labelPt.y - 12;
-          const bw = tw + 16;
-          const bh = 24;
-          ctx.beginPath();
-          if (ctx.roundRect) {
-            ctx.roundRect(bx, by, bw, bh, 6);
-          } else {
-            ctx.rect(bx, by, bw, bh);
+        const drawPill = (pl: PlacedPill | undefined, text: string, bg: string, fg: string, font: string, radius: number) => {
+          if (!pl) return;
+          const bw = pl.rect.w, bh = pl.rect.h;
+          const bx = Math.min(Math.max(2, pl.rect.x), W - bw - 2);
+          const by = Math.min(Math.max(2, pl.rect.y), H - bh - 2);
+          if (pl.leader) {
+            // Etiqueta alejada de su pin: línea guía desde el borde del pin
+            const e = nearestOnRect({ x: bx, y: by, w: bw, h: bh }, pl.anchor);
+            const len = Math.hypot(e.x - pl.anchor.x, e.y - pl.anchor.y) || 1;
+            ctx.strokeStyle = bg;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(pl.anchor.x + ((e.x - pl.anchor.x) / len) * pl.r, pl.anchor.y + ((e.y - pl.anchor.y) / len) * pl.r);
+            ctx.lineTo(e.x, e.y);
+            ctx.stroke();
           }
-          ctx.fill();
-          ctx.fillStyle = '#fff';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(text, labelPt.x, labelPt.y);
-        }
-        const drawPill = (text: string, x: number, y: number, bg: string, fg: string) => {
-          ctx.font = 'bold 12px system-ui';
-          const tw = ctx.measureText(text).width;
-          const bw = tw + 16, bh = 22;
-          const bx = Math.min(Math.max(4, x - bw / 2), dimensions.w - bw - 4);
-          const by = Math.min(Math.max(4, y), dimensions.h - bh - 4);
           ctx.fillStyle = bg;
           ctx.beginPath();
-          if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 11); else ctx.rect(bx, by, bw, bh);
+          if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, radius); else ctx.rect(bx, by, bw, bh);
           ctx.fill();
+          ctx.font = font;
           ctx.fillStyle = fg;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(text, bx + bw / 2, by + bh / 2);
+          ctx.fillText(text, bx + bw / 2, by + bh / 2 + 0.5);
         };
-        // ── Respuesta del rival (maqueta Reto_Revision_Mapa): línea punteada turquesa + pin + etiqueta ──
+        // ── Respuesta del rival (maqueta Reto_Revision_Mapa): línea punteada turquesa + pin ──
         if (rivalClick) {
-          const rx = lonToX(rivalClick.lon), ry = latToY(rivalClick.lat);
           ctx.save();
           ctx.setLineDash([7, 6]);
           ctx.lineWidth = 2.5;
@@ -699,14 +900,13 @@ export default function WorldMapCanvas({
           ctx.strokeStyle = '#fff';
           ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(rx, ry, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          const rl = rivalClick.distanceKm != null ? `${rivalClick.label} · ${Math.round(rivalClick.distanceKm).toLocaleString(appNumberLocale())} km` : rivalClick.label;
-          drawPill(rl, rx, ry - 36 < 60 ? ry + 14 : ry - 36, BRAND.turquoise, BRAND.navyDeep);
         }
-        // ── Etiquetas de los pines (maqueta Feedback_APROBADA_v1) ──
+        // ── Etiquetas (maqueta Feedback_APROBADA_v1), ya ubicadas sin choques ──
+        if (distText) drawPill(pill('distance'), distText, 'rgba(0,0,0,0.78)', '#fff', distFont, 8);
+        if (rivalText) drawPill(pill('rival'), rivalText, BRAND.turquoise, BRAND.navyDeep, pillFont, pillH / 2);
         if (pinLabels) {
-          drawPill(pinLabels.you, ux, uy + 14, BRAND.yellow, BRAND.navyDeep);
-          // Si la ciudad está pegada al borde superior (bajo el HUD), la etiqueta va debajo del pin
-          drawPill(pinLabels.correct, cx, cy - 40 < 60 ? cy + 28 : cy - 40, BRAND.turquoise, BRAND.navyDeep);
+          drawPill(pill('correct'), pinLabels.correct, BRAND.turquoise, BRAND.navyDeep, pillFont, pillH / 2);
+          drawPill(pill('you'), pinLabels.you, BRAND.yellow, BRAND.navyDeep, pillFont, pillH / 2);
         }
         // Keep animating for 3s after line completes (beacon pulse)
         if (elapsed < lineDuration + 3000) {
@@ -742,7 +942,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct, rivalClick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct, rivalClick, detailMap, labelAvoid, locale, showZoomControls, visibleBox]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);
@@ -1228,20 +1428,22 @@ export default function WorldMapCanvas({
 /** Mini-map inset for regional modes — shows where the region is on the globe */
 function MiniMap({ gameMode }: { gameMode: GameMode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const regionBounds = getMapBounds(gameMode);
-  const worldBounds = getMapBounds('world');
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const w = canvas.width;
-    const h = canvas.height;
+    const regionBounds = getMapBounds(gameMode);
+    const worldBounds = getMapBounds('world');
+    // Tamaño fijo en px CSS: antes se leía canvas.width (ya multiplicado por el DPR) y, como el efecto se
+    // repetía en cada render, el lienzo se duplicaba hasta romperse (ícono de imagen rota en Europa).
+    const w = 120;
+    const h = 65;
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = w * dpr;
     canvas.height = h * dpr;
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // World background
     ctx.fillStyle = 'rgba(30,60,80,0.9)';
@@ -1283,13 +1485,11 @@ function MiniMap({ gameMode }: { gameMode: GameMode }) {
     ctx.setLineDash([]);
     ctx.fillStyle = rgba(BRAND_RGB.yellow, 0.12);
     ctx.fillRect(rx, ry, rw, rh);
-  }, [gameMode, regionBounds, worldBounds]);
+  }, [gameMode]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={120}
-      height={65}
       className="absolute bottom-2 left-2 rounded-lg border border-white/20 shadow-lg pointer-events-none"
       style={{ opacity: 0.85, width: 120, height: 65 }}
     />

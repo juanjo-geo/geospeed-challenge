@@ -20,9 +20,9 @@ interface HowToPlayScreenProps {
 export default function HowToPlayScreen({ onBack, onStartTraining }: HowToPlayScreenProps) {
   const { t } = useI18n();
   const steps: { n: number; icon: string; title: string; desc: string; mascot: MascotState; prop: string }[] = [
-    { n: 1, icon: '📘', title: t('home_step1'), desc: t('home_step1Desc'), mascot: 'idle', prop: '📖' },
-    { n: 2, icon: '👆', title: t('home_step2'), desc: t('home_step2Desc'), mascot: 'wink', prop: '📍' },
-    { n: 3, icon: '⭐', title: t('home_step3'), desc: t('home_step3Desc'), mascot: 'celebrate', prop: '✨' },
+    { n: 1, icon: '📘', title: t('home_step1'), desc: t('home_step1Desc'), mascot: 'reading', prop: '📖' },
+    { n: 2, icon: '👆', title: t('home_step2'), desc: t('home_step2Desc'), mascot: 'happy', prop: '📍' },
+    { n: 3, icon: '⭐', title: t('home_step3'), desc: t('home_step3Desc'), mascot: 'cheer', prop: '✨' },
   ];
 
   return (

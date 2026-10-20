@@ -196,7 +196,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           <img src="/mascot/explorer-logo.webp" alt="" className="w-7 h-7 object-contain" />
           <Wordmark size="sm" />
         </div>
-        <Mascot state="wink" className="w-20 sm:w-24 short:w-14 mx-auto animate-mascot-float" />
+        <Mascot state="happy" className="w-20 sm:w-24 short:w-14 mx-auto animate-mascot-float" />
         <span className="inline-block mt-2 rounded-full border border-accent/50 bg-accent/10 px-3 py-0.5 text-xs font-bold text-accent">🎓 {t('ob_badge')}</span>
         <h1 className="text-2xl sm:text-3xl short:text-xl font-black mt-2 leading-tight">{titleWithAccent(t('ob_introTitle'))}</h1>
         <p className="text-sm short:text-xs text-muted-foreground mt-2 leading-relaxed">{t('ob_introDesc')}</p>
@@ -225,7 +225,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
   if (phase === 'celebration') {
     return (
       <OnboardingCard>
-        <Mascot state="celebrate" className="w-24 sm:w-28 short:w-16 mx-auto" />
+        <Mascot state="cheer" className="w-24 sm:w-28 short:w-16 mx-auto" />
         <h1 className="text-3xl sm:text-4xl short:text-2xl font-black mt-2 leading-tight">{titleWithAccent(t('ob_readyTitle'))}</h1>
         <p className="mt-2 text-sm sm:text-base">
           {t('ob_youScored')}: <span className="font-black font-mono text-xl text-primary">{score.toLocaleString(appNumberLocale())}</span> <span className="text-muted-foreground">pts</span>
@@ -335,7 +335,7 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
           </div>
           <p className="w-full text-center text-xs text-muted-foreground shrink-0">💡 {hintText}</p>
           <div className="flex-1" />
-          <Mascot state={showHint ? 'wink' : 'idle'} className="w-[42cqi] max-w-[120px] mx-auto mb-2 animate-mascot-float" />
+          <Mascot state={showHint ? 'thinking' : 'happy'} className="w-[42cqi] max-w-[120px] mx-auto mb-2 animate-mascot-float" />
           <div className="w-full shrink-0">
             <TimerBar timeLeft={timeLeft} maxTime={MAX_TIME} isRunning={phase === 'playing'} />
           </div>
