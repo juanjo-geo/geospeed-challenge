@@ -11,11 +11,13 @@ import {
 import {
   playClick, playGood, playBad, playMedium,
   playTick, playTimeExpired, playButtonTap, playRoundTransition,
-  playVictory, playStreak, playWhistle, playVuvuzela, playCountdown, playGo,
+  playVictory, playWhistle, playVuvuzela, playCountdown, playGo,
 } from '@/lib/sounds';
-import { hapticTap, hapticSuccess, hapticError, hapticCelebration } from '@/lib/haptics';
+import { hapticTap, hapticError } from '@/lib/haptics';
 import { fireGoldBurst, fireRedBurst, fireCelebration, fireDistanceReveal } from '@/lib/confetti';
-import { fireScoreFly, fireMultiplierFeedback, fireStreakBorder, fireRoundFlash } from '@/lib/juiceAnimations';
+import { fireScoreFly, fireMultiplierFeedback, fireRoundFlash } from '@/lib/juiceAnimations';
+import { playComboFeedback, resetComboJuice } from '@/lib/comboJuice';
+import ComboFx, { useComboFx } from './ComboFx';
 import { haversineDistance, addGameHistory, getGameHistory } from '@/lib/gameUtils';
 import { COMBO_LEVELS, comboLevelOf, SCORING_VERSION } from '@/lib/scoring';
 import FinalResultScreen from './FinalResultScreen';
@@ -162,6 +164,10 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   const clickViewportRef = useRef<{ x: number; y: number } | undefined>(undefined);
   /** Mejor puntaje previo de Mundial (del historial local) para detectar récord en el cierre */
   const prevBestRef = useRef(0);
+  // Juice del combo (puntaje v2): mismos efectos que el Clásico; el Mundial conserva sus sonidos de fútbol
+  const [comboHit, setComboHit] = useState(0);
+  const { fxClass, fire: fireComboFx } = useComboFx();
+  useEffect(() => { resetComboJuice(); return () => resetComboJuice(); }, []);
   const mapAreaRef = useRef<HTMLDivElement>(null);
   const [mapArea, setMapArea] = useState({ w: 0, h: 0 });
 
@@ -329,7 +335,11 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     const timeUsed = Math.min(MAX_TIME, Math.round(elapsedMs / 1000));
     const timeExact = Math.min(MAX_TIME, Math.round(elapsedMs / 100) / 10);
     // Puntaje v2: el tiempo se puntúa en décimas (timeExact), igual que en el servidor
+    const prevLevel = comboLevelOf(streak);
     const res = scoreWorldRound(current.country, lat, lon, timeExact, streak);
+    playComboFeedback({ quality: res.quality, comboLevel: res.comboLevel, broke: res.brokeCombo }, prevLevel, { ding: false });
+    fireComboFx(res.comboLevel, res.brokeCombo, res.quality !== 'miss');
+    if (res.quality !== 'miss' && res.comboLevel >= 2) setComboHit((h) => h + 1);
     resultsRef.current.push({ ...res, player: current.name, country: current.country, clickLat: lat, clickLon: lon, timeExact });
     const mult = { value: res.multiplier };
     const centroid = getCountryCentroid(current.country);
@@ -363,17 +373,17 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     setIsAnimating(true);
 
     if (res.band === 'exact') {
-      playVictory(); playVuvuzela(); hapticCelebration();
+      playVictory(); playVuvuzela();
       fireCelebration(from);
     } else if (res.band === 'neighbor') {
-      playGood(); hapticSuccess();
+      playGood();
       fireGoldBurst(from);
     } else if (res.band === 'continent') {
-      playMedium(); hapticTap();
+      if (!res.brokeCombo) { playMedium(); hapticTap(); }
     } else {
-      playBad(); hapticError();
+      // Si rompió un combo ya sonó la campana descendente suave (nunca un buzzer)
+      if (!res.brokeCombo) { playBad(); hapticError(); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
       fireRedBurst(from);
-      setFailShake(true); setTimeout(() => setFailShake(false), 450);
     }
 
     // Los puntos vuelan al marcador (barra lateral o encabezado)
@@ -384,9 +394,6 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     }
     if (mult.value >= 1.5) {
       setTimeout(() => fireMultiplierFeedback(mult.value, res.newStreak, from), 150);
-    }
-    if (res.newStreak >= 2) {
-      setTimeout(() => { fireStreakBorder(res.newStreak); playStreak(res.newStreak); }, 380);
     }
     if ((res.band === 'far' || res.band === 'ocean') && dist != null && dist >= 4000) {
       setTimeout(() => fireDistanceReveal(dist, t('reveal_otherSide')), 420);
@@ -459,6 +466,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     );
   }, [cover, lastRound, mapArea.w, mapArea.h]);
   const labelAvoid = useMemo(() => (cover ? { ...cover, corner: PIN_LEGEND_CORNER } : null), [cover]);
+  const pinFx = useMemo(() => (lastRound && lastRound.quality !== 'miss' ? { level: lastRound.comboLevel ?? 0 } : null), [lastRound]);
 
   const pinLabels = useMemo(
     () => ({ you: t('game_yourAnswer'), correct: lastRound ? cname(lastRound.city.country) : t('wc_correctCountry') }),
@@ -759,7 +767,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
       )}
 
       {/* ──── Mapa: el mismo de los demás modos (JuanJo quitó el verde de cancha y la decoración del Pacífico) ──── */}
-      <div ref={mapAreaRef} className={`relative w-full ${hasSidebar ? 'h-full' : 'flex-1 min-h-0'} min-w-0 overflow-hidden`}>
+      <div ref={mapAreaRef} className={`relative w-full ${hasSidebar ? 'h-full' : 'flex-1 min-h-0'} min-w-0 overflow-hidden ${fxClass}`}>
+        <ComboFx level={comboLevelOf(streak)} hit={comboHit} active={!isAnimating} />
         {/* Sonido · ajustes · salir (con barra lateral) */}
         {hasSidebar && (
           <div className="absolute z-20 flex items-center gap-2.5" style={{ top: 'max(0.75rem, var(--sat))', right: 'max(0.75rem, var(--sar))' }}>
@@ -808,6 +817,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
           showZoomControls={!isAnimating}
           viewBounds={feedbackBounds}
           labelAvoid={labelAvoid}
+          pinFx={pinFx}
         />
 
         {/* Tarjeta de respuesta — la misma del Clásico */}

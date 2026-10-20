@@ -3,8 +3,10 @@ import { getRandomCities, getMapBounds, type Difficulty, type GameMode, MODE_CON
 import CountUp from '@/components/ui/CountUp';
 import { haversineDistance, formatDistance } from '@/lib/gameUtils';
 import { closeness, scaleForMode, scoreRound, difficultyHundredths, comboLevelOf, COMBO_LEVELS, PERFECT_KM } from '@/lib/scoring';
-import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat, playCountdown, playGo } from '@/lib/sounds';
-import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
+import { playClick, playBad, playMedium, playTick, playHeartbeat, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat, playCountdown, playGo } from '@/lib/sounds';
+import { hapticTap, hapticError, hapticTick } from '@/lib/haptics';
+import { playComboFeedback, resetComboJuice } from '@/lib/comboJuice';
+import ComboFx, { useComboFx } from './ComboFx';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -65,6 +67,9 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
   // Combo (puntaje v2): aciertos buenos seguidos; en ref para que el clic lea siempre el valor actual
   const [combo, setCombo] = useState(0);
   const comboRef = useRef(0);
+  const [comboHit, setComboHit] = useState(0);
+  const { fxClass, fire: fireComboFx } = useComboFx();
+  useEffect(() => { resetComboJuice(); return () => resetComboJuice(); }, []);
   const [globalTime, setGlobalTime] = useState(GLOBAL_TIME);
   const [isAnimating, setIsAnimating] = useState(false);
   const [lastClick, setLastClick] = useState<{ lat: number; lon: number } | null>(null);
@@ -183,6 +188,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     const timeExact = Math.round(elapsedMs / 100) / 10;
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     // Puntaje v2: cercanía × rapidez (tiempo de esta ciudad) × combo × dificultad
+    const prevLevel = comboLevelOf(comboRef.current);
     const sc = scoreRound(closeness(distance, scaleForMode(gameMode)), timeExact, comboRef.current, difficultyHundredths(difficulty));
     comboRef.current = sc.combo;
     setCombo(sc.combo);
@@ -196,20 +202,20 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     };
     roundsRef.current.push(round);
     setLastResult(round);
+    // Juice del combo en el mismo instante del clic (como el Clásico)
+    playComboFeedback(sc, prevLevel, { perfect: distance < PERFECT_KM });
+    fireComboFx(sc.comboLevel, sc.broke, sc.quality !== 'miss');
+    if (sc.quality !== 'miss' && sc.comboLevel >= 2) setComboHit(h => h + 1);
     setTimeout(() => {
-      // Tier S: Perfect (<50km) — rainbow confetti
-      if (distance < PERFECT_KM) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
-      // Tier A: Excellent (<300km) — gold confetti
-      else if (distance < 300) { playGood(); hapticCelebration(); fireGoldBurst(lastClickViewportRef.current); }
-      // Tier B: Good (<1000km)
-      else if (distance < 1000) { playGood(); hapticSuccess(); }
-      // Tier C: Medium (<3000km)
-      else if (distance < 3000) { playMedium(); hapticTap(); }
-      // Tier D: Far — red burst
-      else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
-      // Tier F: Epic fail (>5000km) — cinematic distance reveal
+      if (distance < PERFECT_KM) fireStarBurst(lastClickViewportRef.current);
+      else if (sc.quality === 'good' && sc.comboLevel >= 3) fireGoldBurst(lastClickViewportRef.current);
+      if (sc.quality === 'miss') {
+        if (distance >= 3000) {
+          if (!sc.broke) { playBad(); hapticError(); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
+          fireRedBurst(lastClickViewportRef.current);
+        } else if (!sc.broke) { playMedium(); hapticTap(); }
+      }
       if (distance >= 5000) { setTimeout(() => fireDistanceReveal(distance, t('reveal_otherSide')), 400); }
-      // Speed bonus sound
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 300); }
     }, 150);
     setScore(s => s + totalPoints);
@@ -239,6 +245,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     playRoundTransition();
   }
 
+  const pinFx = useMemo(() => (lastResult && lastResult.quality !== 'miss' ? { level: lastResult.comboLevel ?? 0 } : null), [lastResult]);
   // Encuadre de la respuesta junto a la tarjeta (igual que el Clásico)
   const cover = useMemo(
     () => (lastResult && mapArea.w > 0 ? feedbackCover(isPortraitMobile ? 'portrait' : isCompact ? 'compact' : layoutMode === 'wide' ? 'wide' : 'medium', mapArea.w) : null),
@@ -444,7 +451,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
         </div>
       )}
       {/* ──── Map area ──── */}
-      <div ref={mapAreaRef} className={`relative ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden`}>
+      <div ref={mapAreaRef} className={`relative ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden ${fxClass}`}>
+        <ComboFx level={comboLevelOf(combo)} hit={comboHit} active={!isAnimating} />
 
         {/* Música + salir (con panel lateral) */}
         {!isCompact && (onExit || onToggleMusic) && (
@@ -484,6 +492,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
           showZoomControls={!isAnimating}
           viewBounds={feedbackBounds}
           labelAvoid={cover}
+          pinFx={pinFx}
         />
 
         {/* Tarjeta de respuesta — la misma del Clásico, en modo rápido */}

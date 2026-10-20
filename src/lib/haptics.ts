@@ -35,3 +35,15 @@ export function hapticCelebration() {
 export function hapticTick() {
   if (canVibrate()) navigator.vibrate(8);
 }
+
+/**
+ * Combo (puntaje v2): vibración por nivel — ligera en acierto normal y ×1,2, media en ×1,5 y ×2,0,
+ * fuerte en ¡EN LLAMAS!; combo roto = doble ligera.
+ */
+export function hapticCombo(kind: number | 'broke') {
+  if (!canVibrate()) return;
+  if (kind === 'broke') { navigator.vibrate([15, 70, 15]); return; }
+  if (kind >= 4) navigator.vibrate([45, 35, 70]);
+  else if (kind >= 2) navigator.vibrate(35);
+  else navigator.vibrate(18);
+}

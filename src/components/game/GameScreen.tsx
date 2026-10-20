@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { City, getRandomCities, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance } from '@/lib/gameUtils';
 import { closeness, scaleForMode, scoreRound, difficultyHundredths, speedMultiplier, comboLevelOf, COMBO_LEVELS, GOOD_MIN, PERFECT_KM, type Quality } from '@/lib/scoring';
-import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
-import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
+import { playClick, playBad, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
+import { hapticTap, hapticError, hapticTick } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
-import { fireMultiplierFeedback, fireScoreFly, fireRoundFlash, fireStreakBorder } from '@/lib/juiceAnimations';
+import { fireMultiplierFeedback, fireScoreFly, fireRoundFlash } from '@/lib/juiceAnimations';
+import { playComboFeedback, resetComboJuice } from '@/lib/comboJuice';
+import ComboFx, { useComboFx } from './ComboFx';
 import { useGameLayoutMode, useIsPortraitMobile, type GameLayoutMode } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -128,6 +130,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   // Combo (puntaje v2): aciertos buenos seguidos. En ref para que el clic siempre lea el valor actual.
   const [combo, setCombo] = useState(0);
   const comboRef = useRef(0);
+  // Juice del combo: destello en cada acierto con combo, contador que se apaga al romperse
+  const [comboHit, setComboHit] = useState(0);
+  const [brokeLevel, setBrokeLevel] = useState<number | null>(null);
+  const { fxClass, fire: fireComboFx } = useComboFx();
+  useEffect(() => { resetComboJuice(); return () => resetComboJuice(); }, []);
   const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [failShake, setFailShake] = useState(false);
   const [showHint, setShowHint] = useState(false);
@@ -318,6 +325,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const timeExact = Math.round(elapsedS * 10) / 10;
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     // Puntaje v2: cercanía × rapidez × combo × dificultad (src/lib/scoring.ts; el servidor lo recalcula igual)
+    const prevLevel = comboLevelOf(comboRef.current);
     const sc = scoreRound(closeness(distance, scaleForMode(gameMode)), timeExact, comboRef.current, difficultyHundredths(difficulty));
     const newStreak = sc.combo;
     comboRef.current = sc.combo;
@@ -345,32 +353,32 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       brokeCombo: sc.broke,
     };
 
+    // Juice del combo en el mismo instante del clic: sonido (tono por nivel), vibración, música y
+    // efectos visuales juntos (src/lib/comboJuice.ts, ComboFx)
+    playComboFeedback(sc, prevLevel, { perfect: distance < PERFECT_KM });
+    fireComboFx(sc.comboLevel, sc.broke, sc.quality !== 'miss');
+    if (sc.quality !== 'miss' && sc.comboLevel >= 2) setComboHit(h => h + 1);
+    if (sc.broke) { setBrokeLevel(prevLevel); setTimeout(() => setBrokeLevel(null), 600); }
+
     setTimeout(() => {
-      // Tier S: Perfect (<50km) — rainbow confetti + perfect chord
-      if (distance < PERFECT_KM) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
-      // Tier A: Excellent (<300km) — gold confetti + good sound
-      else if (distance < 300) { playGood(); hapticCelebration(); fireGoldBurst(lastClickViewportRef.current); }
-      // Tier B: Good (<1000km) — good sound, no confetti
-      else if (distance < 1000) { playGood(); hapticSuccess(); }
-      // Tier C: Medium (<3000km) — neutral feedback
-      else if (distance < 3000) { playMedium(); hapticTap(); }
-      // Tier D: Far (3000km+) — bad sound + red burst
-      else { playBad(); hapticError(); fireRedBurst(lastClickViewportRef.current); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
-      // Tier F: Epic fail (>5000km) — cinematic distance reveal (delays feedback panel)
+      // Confeti: cercanía perfecta (estrellas) o acierto bueno desde ¡Turbo! (oro)
+      if (distance < PERFECT_KM) fireStarBurst(lastClickViewportRef.current);
+      else if (sc.quality === 'good' && sc.comboLevel >= 3) fireGoldBurst(lastClickViewportRef.current);
+      // Fallo: si rompió un combo ya sonó la campana descendente (nunca un buzzer); si no, el sonido de siempre
+      if (sc.quality === 'miss') {
+        if (distance >= 3000) {
+          if (!sc.broke) { playBad(); hapticError(); setFailShake(true); setTimeout(() => setFailShake(false), 450); }
+          fireRedBurst(lastClickViewportRef.current);
+        } else if (!sc.broke) { playMedium(); hapticTap(); }
+      }
+      // Error épico (≥ 5.000 km): anuncio de la distancia (retrasa la tarjeta)
       if (distance >= 5000) {
         setTimeout(() => fireDistanceReveal(distance, t('reveal_otherSide')), 400);
       }
-      // Speed multiplier bonus sound (top tier speed)
+      // Rapidez alta: sonido extra y anuncio del multiplicador de velocidad
       if (mult.value >= 1.8) { setTimeout(() => playMultiplierX2(), 350); }
-      // ── Phase 4: Multiplier mega-feedback (top of screen, finishes before feedback popup) ──
       if (mult.value >= 1.5) {
         setTimeout(() => fireMultiplierFeedback(mult.value, newStreak, lastClickViewportRef.current), 150);
-      }
-      // Streak sound: pitch rises with each consecutive good round
-      if (newStreak >= 2) { setTimeout(() => playStreak(newStreak), 300); }
-      // ── Phase 4: Streak fire border glow ──
-      if (newStreak >= 3) {
-        setTimeout(() => fireStreakBorder(newStreak), 400);
       }
     }, 200);
     setScore(s => s + totalPoints);
@@ -402,6 +410,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const showStreak = comboLevel >= 1;
   const comboKey = COMBO_LEVELS[comboLevel].key;
   const comboMultNow = COMBO_LEVELS[comboLevel].tenths / 10;
+  // Contador visible: el combo actual o, durante 0,6 s, el que se acaba de romper (se apaga)
+  const counterLevel = showStreak ? comboLevel : brokeLevel ?? 0;
+  const counterKey = COMBO_LEVELS[counterLevel].key;
+  const counterMult = COMBO_LEVELS[counterLevel].tenths / 10;
+  const counterOut = !showStreak && brokeLevel != null && brokeLevel >= 1;
+  const pinFx = useMemo(() => (lastResult && lastResult.quality !== 'miss' ? { level: lastResult.comboLevel ?? 0 } : null), [lastResult]);
   const modeLabel = t(`mode_${gameMode}` as never) || MODE_CONFIG.find(m => m.key === gameMode)?.label || gameMode;
   const diffLabel = t(`diff_${difficulty}` as never) || difficulty;
   const isTouchDevice = typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
@@ -572,7 +586,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             <span className="text-[12cqi] leading-none" aria-hidden>⭐</span>
             <span className="min-w-0 leading-tight">
               <span className="block text-[6.6cqi] font-semibold uppercase tracking-wide">{t('game_points')}</span>
-              <span ref={scoreElRef} className={`block text-[11.5cqi] font-extrabold text-primary leading-none ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite">
+              <span ref={scoreElRef} className={`block text-[11.5cqi] font-extrabold leading-none transition-colors ${scorePop && comboLevel >= 1 ? 'text-accent' : 'text-primary'} ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite">
                 <CountUp value={score} />
               </span>
             </span>
@@ -595,12 +609,16 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
 
           {/* Combo (puntaje v2): nivel, multiplicador y aciertos buenos seguidos */}
-          {showStreak && (
-            <div key={comboLevel} className="w-full shrink-0 rounded-2xl border-2 border-primary/40 bg-background/40 px-[5cqi] py-[3cqi] flex items-center gap-[3.5cqi] animate-score-pop">
-              <span className="text-[11cqi] leading-none" aria-hidden>🔥</span>
+          {(showStreak || counterOut) && (
+            <div
+              key={counterOut ? 'out' : comboLevel}
+              className={`combo-counter w-full shrink-0 rounded-2xl border-2 border-primary/40 bg-background/40 px-[5cqi] py-[3cqi] flex items-center gap-[3.5cqi] ${counterOut ? 'animate-combo-out' : 'animate-score-pop'} ${counterLevel >= 4 && !counterOut ? 'combo-fire' : ''}`}
+            >
+              {/* El contador crece con el nivel: el fuego y el nombre del nivel se agrandan (sin salirse de la barra) */}
+              <span className={`leading-none ${counterLevel >= 4 && !counterOut ? 'combo-flame' : ''}`} style={{ fontSize: `${10 + counterLevel}cqi` }} aria-hidden>🔥</span>
               <span className="min-w-0 leading-tight">
-                <span className="block text-[8cqi] font-extrabold text-primary truncate">{comboKey ? t(comboKey) : ''} <span className="text-accent">×{comboMultNow.toLocaleString(numberLocale)}</span></span>
-                <span className="block text-[6.2cqi] font-semibold text-muted-foreground">{t('game_streakCount', { n: combo })}</span>
+                <span className="block font-extrabold text-primary truncate transition-[font-size] duration-300" style={{ fontSize: `${7.6 + 0.6 * counterLevel}cqi` }}>{counterKey ? t(counterKey) : ''}</span>
+                <span className="block text-[6.2cqi] font-semibold text-muted-foreground truncate"><span className="text-accent font-extrabold">×{counterMult.toLocaleString(numberLocale)}</span> · {counterOut ? t('combo_broken') : t('game_streakCount', { n: combo })}</span>
               </span>
             </div>
           )}
@@ -643,7 +661,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               </div>
             </div>
             <span className="relative rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
-              ⭐ <span ref={scoreElRef} className={`text-primary font-black ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
+              ⭐ <span ref={scoreElRef} className={`font-black transition-colors ${scorePop && comboLevel >= 1 ? 'text-accent' : 'text-primary'} ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
               {floatPoints !== null && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-accent animate-float-up whitespace-nowrap">+{floatPoints.toLocaleString(appNumberLocale())}</span>
               )}
@@ -653,7 +671,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       )}
       {/* ──── Map area (all modes) — h-full gives WorldMapCanvas explicit height in grid ──── */}
       {/* w-full: con margin auto, un ítem de grid se encoge al tamaño del canvas (800 px) en ultrawide */}
-      <div ref={mapAreaRef} className={`relative w-full ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden`} style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
+      <div ref={mapAreaRef} className={`relative w-full ${isCompact || isPortraitMobile ? 'flex-1 min-h-0' : 'h-full'} min-w-0 overflow-hidden ${fxClass}`} style={{ maxWidth: maxMapWidth, margin: isUltraWide ? '0 auto' : undefined }}>
+        <ComboFx level={comboLevel} hit={comboHit} active={!isWaiting} />
 
         {/* Música + salir (escritorio / tablet con panel lateral) */}
         {!isCompact && (
@@ -665,10 +684,14 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         )}
 
         {/* Racha (móvil): abajo a la izquierda, como la maqueta */}
-        {isCompact && showStreak && !isWaiting && (
+        {isCompact && (showStreak || counterOut) && (
           <div className="absolute z-[6] pointer-events-none" style={{ bottom: 'max(0.5rem, var(--sab))', left: 'max(0.5rem, var(--sal))' }}>
-            <span key={comboLevel} className="rounded-full px-3 py-1.5 text-xs font-bold border-2 border-accent/40 backdrop-blur-md animate-score-pop" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
-              🔥 <span className="text-primary">{comboKey ? t(comboKey) : ''}</span> <span className="text-accent">×{comboMultNow.toLocaleString(numberLocale)}</span> · {combo}
+            <span
+              key={counterOut ? 'out' : comboLevel}
+              className={`combo-counter inline-block rounded-full px-3 py-1.5 text-xs font-bold border-2 border-accent/40 backdrop-blur-md ${counterOut ? 'animate-combo-out' : 'animate-score-pop'} ${counterLevel >= 4 && !counterOut ? 'combo-fire' : ''}`}
+              style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)', transform: `scale(${1 + 0.04 * counterLevel})`, transformOrigin: 'left bottom' }}
+            >
+              <span className={counterLevel >= 4 && !counterOut ? 'combo-flame' : ''}>🔥</span> <span className="text-primary">{counterKey ? t(counterKey) : ''}</span> <span className="text-accent">×{counterMult.toLocaleString(numberLocale)}</span>{!counterOut && <> · {combo}</>}
             </span>
           </div>
         )}
@@ -721,6 +744,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           showZoomControls={!isWaiting}
           viewBounds={feedbackBounds}
           labelAvoid={labelAvoid}
+          pinFx={pinFx}
         />
 
         {/* Tarjeta de feedback — panel lateral en pantallas anchas */}

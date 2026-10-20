@@ -540,3 +540,52 @@
   50%      { transform: translateY(-3px); }
 }
 .animate-bounce-soft { animation: bounce-soft 1s ease-in-out infinite; }
+
+/* ── Combo (puntaje v2, especificación §7): todo con curva de resorte o rebote, nada lineal ── */
+/* Destello del brillo de los bordes en cada acierto con combo */
+@keyframes combo-flash {
+  0%   { opacity: 0; }
+  25%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-combo-flash { animation: combo-flash 650ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* ¡Turbo!: el fondo del mapa late */
+@keyframes combo-pulse {
+  0%   { filter: brightness(1); }
+  30%  { filter: brightness(1.18) saturate(1.15); }
+  100% { filter: brightness(1); }
+}
+.animate-combo-pulse { animation: combo-pulse 520ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+/* ¡EN LLAMAS!: leve zoom con rebote */
+@keyframes combo-zoom {
+  0%   { transform: scale(1); filter: brightness(1); }
+  35%  { transform: scale(1.035); filter: brightness(1.2) saturate(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.animate-combo-zoom { animation: combo-zoom 480ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+/* Combo roto: temblor corto de 150 ms */
+@keyframes combo-break {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  45% { transform: translateX(5px); }
+  70% { transform: translateX(-3px); }
+}
+.animate-combo-break { animation: combo-break 150ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+/* Contador del combo: crece con el nivel (resorte) y arde en ¡EN LLAMAS! */
+.combo-counter { transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 420ms ease-out, border-color 300ms; }
+@keyframes combo-fire {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 138, 61, 0.55), inset 0 0 8px rgba(255, 138, 61, 0.25); }
+  50%      { box-shadow: 0 0 22px rgba(255, 110, 40, 0.85), inset 0 0 14px rgba(255, 170, 70, 0.4); }
+}
+.combo-fire { border-color: rgba(255, 138, 61, 0.9) !important; animation: combo-fire 900ms ease-in-out infinite; }
+@keyframes combo-flame {
+  0%, 100% { transform: scale(1) rotate(-4deg); }
+  50%      { transform: scale(1.22) rotate(5deg); }
+}
+.combo-flame { display: inline-block; animation: combo-flame 520ms ease-in-out infinite; }
+/* Combo roto: el contador se apaga */
+@keyframes combo-out {
+  0%   { opacity: 1; transform: scale(1); filter: grayscale(0); }
+  100% { opacity: 0; transform: scale(0.85); filter: grayscale(1); }
+}
+.animate-combo-out { animation: combo-out 600ms cubic-bezier(0.55, 0, 1, 0.45) both; }

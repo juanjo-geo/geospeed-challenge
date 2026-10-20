@@ -56,6 +56,8 @@ interface WorldMapCanvasProps {
    * izquierda en px (leyenda de pines). Pasar memoizado.
    */
   labelAvoid?: { right?: number; top?: number; bottom?: number; corner?: { w: number; h: number } } | null;
+  /** Juice del combo (puntaje v2): onda expansiva en tu pin al acertar y chispas desde ×1,2. Pasar memoizado. */
+  pinFx?: { level: number } | null;
 }
 
 export default function WorldMapCanvas({
@@ -78,6 +80,7 @@ export default function WorldMapCanvas({
   showZoomControls = true,
   viewBounds,
   labelAvoid,
+  pinFx,
 }: WorldMapCanvasProps) {
   const { t, locale } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -531,6 +534,9 @@ export default function WorldMapCanvas({
   // Animated line progress
   const lineProgressRef = useRef(0);
   const animFrameRef = useRef<number>(0);
+  // Onda del combo: arranca con cada clic nuevo (no se repite al re-encuadrar la misma respuesta)
+  const fxClickRef = useRef<{ lat: number; lon: number } | null>(null);
+  const fxStartRef = useRef(0);
 
   // Render with animated line
   useEffect(() => {
@@ -562,6 +568,8 @@ export default function WorldMapCanvas({
     const uy = latToY(userClick.lat);
     const cx = lonToX(correctLocation.lon);
     const cy = latToY(correctLocation.lat);
+    if (fxClickRef.current !== userClick) { fxClickRef.current = userClick; fxStartRef.current = performance.now(); }
+    const fxOn = !!pinFx && !prefersReducedMotion();
 
     // ── Curva de la respuesta (la misma que dibuja la animación) ──
     const ddx = cx - ux, ddy = cy - uy;
@@ -811,6 +819,33 @@ export default function WorldMapCanvas({
         ctx.stroke();
       }
 
+      // ── Juice del combo: onda expansiva (todo acierto) y chispas (desde ×1,2) en tu pin ──
+      const fxT = (performance.now() - fxStartRef.current) / 700;
+      if (fxOn && fxT < 1 && pinFx) {
+        const e = 1 - Math.pow(1 - fxT, 3);
+        const fxRgb = pinFx.level >= 4 ? '255,138,61' : pinFx.level >= 1 ? BRAND_RGB.turquoise : BRAND_RGB.yellow;
+        ctx.save();
+        ctx.strokeStyle = `rgba(${fxRgb},${0.9 * (1 - fxT)})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(ux, uy, 10 + e * 46, 0, Math.PI * 2);
+        ctx.stroke();
+        if (pinFx.level >= 1) {
+          const n = 8 + pinFx.level * 2;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = 2.5;
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2 + 0.3;
+            const r1 = 12 + e * 22, r2 = 16 + e * (30 + pinFx.level * 4);
+            ctx.beginPath();
+            ctx.moveTo(ux + Math.cos(a) * r1, uy + Math.sin(a) * r1);
+            ctx.lineTo(ux + Math.cos(a) * r2, uy + Math.sin(a) * r2);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+
       // Show correct pin and distance label only when line is complete
       if (progress >= 1) {
         // Correct pin — large vivid beacon impossible to miss
@@ -942,7 +977,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct, rivalClick, detailMap, labelAvoid, locale, showZoomControls, visibleBox]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct, rivalClick, detailMap, labelAvoid, locale, showZoomControls, visibleBox, pinFx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);
