@@ -148,7 +148,7 @@ Preguntas originales de la fase 1 (para referencia):
 | Fase | Estado | Fecha |
 |---|---|---|
 | 0 | Hecha (metadatos 250+ ciudades, retos con amigos) | 2026-10-20 |
-| 1 | En curso: bloque a (fórmula, combo, desglose) hecho; faltan b (efectos por nivel) y c (servidor + Temporada 1) | 2026-10-20 |
+| 1 | Código hecho (a fórmula y combo · b efectos por nivel · c servidor y Temporada 1). Falta `npx supabase db push` y publicar | 2026-10-20 |
 | 2 | Propuesta | |
 | 3 | Propuesta | |
 | 4 | Propuesta | |

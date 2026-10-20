@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { MODE_CONFIG, type Difficulty } from '@/data/cities';
-import { fetchLeaderboardTop, fetchMyRank, type LeaderboardTopRow, type RankPeriod } from '@/lib/gameResults';
+import { fetchLeaderboardTop, fetchMyRank, type LeaderboardTopRow, type RankPeriod, type RankSeason } from '@/lib/gameResults';
 import { hasSession } from '@/lib/history';
 import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
@@ -43,6 +43,9 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
   const [boardKey, setBoardKey] = useState(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty | ''>(initialDifficulty);
   const [period, setPeriod] = useState<RankPeriod>('all');
+  // Temporada 1 (puntaje v2) o Histórico (escala anterior, ya cerrado: sin filtro de mes/semana)
+  const [season, setSeason] = useState<RankSeason>('t1');
+  const effPeriod: RankPeriod = season === 'historic' ? 'all' : period;
   const [rows, setRows] = useState<LeaderboardTopRow[] | null>(null);
   const [mine, setMine] = useState<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null | 'guest'>(null);
   const [error, setError] = useState(false);
@@ -68,10 +71,10 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
           return;
         }
         const diff = difficulty || null;
-        const [top, logged] = await Promise.all([fetchLeaderboardTop(board.mode, diff, period, 10, board.gameType), hasSession()]);
+        const [top, logged] = await Promise.all([fetchLeaderboardTop(board.mode, diff, effPeriod, 10, board.gameType, season), hasSession()]);
         if (cancelled) return;
         setRows(top);
-        setMine(logged ? await fetchMyRank(board.mode, diff, period, board.gameType) : 'guest');
+        setMine(logged ? await fetchMyRank(board.mode, diff, effPeriod, board.gameType, season) : 'guest');
       } catch {
         if (cancelled) return;
         setError(true);
@@ -80,7 +83,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
       }
     })();
     return () => { cancelled = true; };
-  }, [board.key, board.mode, board.gameType, difficulty, period]);
+  }, [board.key, board.mode, board.gameType, difficulty, effPeriod, season]);
 
   const boardOptions: SelectorOption<string>[] = boards.map(b => ({ key: b.key, emoji: b.emoji, art: b.art, label: b.label, desc: b.gameType === 'timeattack' ? t('rank_caosDesc') : '' }));
   const diffName = (d: Difficulty) => board.mode === 'mundial' ? t(`wc_diff_${d}` as never) : t(DIFF_LABEL[d] as never);
@@ -122,11 +125,19 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
           <section className="md:rounded-3xl md:border-2 md:border-accent/50 md:bg-card/70 md:p-5 md:shadow-[0_0_20px_hsl(var(--accent)/0.12)]">
             <div className="flex items-center justify-between gap-2 mb-2">
               <h2 className="text-[1.7rem] sm:text-3xl font-black">{t('rank_top10')}</h2>
-              <div className="flex gap-0.5 rounded-xl border border-accent/40 bg-brand-navy-deep/60 p-0.5" role="tablist">
-                {([['all', t('home_rankingAllTime')], ['month', t('home_rankingMonth')], ['week', t('home_rankingWeek')]] as [RankPeriod, string][]).map(([k, l]) => (
-                  <button key={k} role="tab" aria-selected={period === k} onClick={() => { playButtonTap(); setPeriod(k); }} className={`rounded-lg px-2 py-1 text-[11px] sm:text-xs font-bold ${period === k ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{l}</button>
-                ))}
-              </div>
+              {season === 't1' && (
+                <div className="flex gap-0.5 rounded-xl border border-accent/40 bg-brand-navy-deep/60 p-0.5" role="tablist">
+                  {([['all', t('rank_periodSeason')], ['month', t('home_rankingMonth')], ['week', t('home_rankingWeek')]] as [RankPeriod, string][]).map(([k, l]) => (
+                    <button key={k} role="tab" aria-selected={period === k} onClick={() => { playButtonTap(); setPeriod(k); }} className={`rounded-lg px-2 py-1 text-[11px] sm:text-xs font-bold ${period === k ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{l}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Temporada 1 (puntaje nuevo) o el ranking anterior, que queda como Histórico */}
+            <div className="grid grid-cols-2 gap-1 mb-3 rounded-xl border border-primary/40 bg-brand-navy-deep/60 p-1" role="tablist" aria-label={t('rank_seasonLabel')}>
+              {([['t1', t('rank_seasonT1')], ['historic', t('rank_seasonHistoric')]] as [RankSeason, string][]).map(([k, l]) => (
+                <button key={k} role="tab" aria-selected={season === k} onClick={() => { playButtonTap(); setSeason(k); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${season === k ? 'bg-primary/20 text-primary' : 'text-foreground/70 hover:text-foreground'}`}>{l}</button>
+              ))}
             </div>
             <div className={`hidden md:grid ${ROW_COLS} gap-3 px-4 pb-2 text-sm font-semibold text-accent`}>
               <span className="text-center">{t('rank_position')}</span><span /><span>{t('rank_player')}</span><span className="text-right pr-1">{t('game_points')}</span>
