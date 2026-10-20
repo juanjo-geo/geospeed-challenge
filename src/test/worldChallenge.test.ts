@@ -101,15 +101,15 @@ describe('evaluateTerritory — bandas', () => {
   });
 });
 
-describe('nextStreak — vecino mantiene racha', () => {
-  it('Exacto sube la racha', () => {
+describe('nextStreak — combo v2: exacto sube, vecino mantiene', () => {
+  it('Exacto sube el combo', () => {
     expect(nextStreak('exact', 3)).toBe(4);
   });
-  it('Vecino TAMBIÉN sube la racha (decisión de producto)', () => {
-    expect(nextStreak('neighbor', 3)).toBe(4);
+  it('Vecino (regular) mantiene el combo sin subirlo', () => {
+    expect(nextStreak('neighbor', 3)).toBe(3);
   });
-  it('Mismo continente divide la racha a la mitad', () => {
-    expect(nextStreak('continent', 4)).toBe(2);
+  it('Mismo continente (fallo) rompe el combo', () => {
+    expect(nextStreak('continent', 4)).toBe(0);
   });
   it('Lejos reinicia la racha', () => {
     expect(nextStreak('far', 5)).toBe(0);
@@ -120,21 +120,27 @@ describe('nextStreak — vecino mantiene racha', () => {
 });
 
 describe('scoreWorldRound — pipeline completo', () => {
-  it('Exacto rápido (3s) sin racha = 1000 × 1.81 = 1810', () => {
+  it('Exacto rápido (3s) sin combo = 1000 × 1,81 = 1810', () => {
     const r = scoreWorldRound('Argentina', PT.argentina[0], PT.argentina[1], 3, 0);
     expect(r.band).toBe('exact');
     expect(r.multiplier).toBe(1.81);
-    expect(r.streakBonus).toBe(1);
+    expect(r.comboMult).toBe(1);
     expect(r.totalPoints).toBe(1810);
     expect(r.newStreak).toBe(1);
   });
 
-  it('aplica bonus de racha con streak alto (tope ×1.60)', () => {
-    // streak entrante 10 → newStreak 11 → bonus = min(1.6, 1 + 10*0.1) = 1.6
+  it('aplica el combo v2 (8+ exactos seguidos = ×2,5)', () => {
     const r = scoreWorldRound('Argentina', PT.argentina[0], PT.argentina[1], 3, 10);
     expect(r.newStreak).toBe(11);
-    expect(r.streakBonus).toBe(1.6);
-    expect(r.totalPoints).toBe(Math.round(1000 * 1.81 * 1.6));
+    expect(r.comboMult).toBe(2.5);
+    expect(r.totalPoints).toBe(Math.round(1000 * 1.81 * 2.5));
+  });
+
+  it('vecino mantiene el multiplicador del combo actual', () => {
+    const r = scoreWorldRound('Argentina', 0, 0, 3, 4, 'Chile');
+    expect(r.newStreak).toBe(4);
+    expect(r.comboMult).toBe(1.5);
+    expect(r.totalPoints).toBe(Math.round(600 * 1.81 * 1.5));
   });
 
   it('Océano da 0 puntos sin importar velocidad', () => {

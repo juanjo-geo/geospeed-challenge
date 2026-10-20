@@ -1117,3 +1117,90 @@ export function playStressBeat(secondsLeft: number) {
     }
   } catch (_) { /* ignore */ }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMBO (puntaje v2, Temporada 1) — un solo "ding" con el tono escalado por nivel
+// ═══════════════════════════════════════════════════════════════════════════
+// Especificación §7: un único sonido cuyo tono sube +6 % por nivel de combo (playbackRate 1,00 · 1,06 ·
+// 1,12 · 1,18 · 1,24) y un sonido descendente suave (nunca un buzzer) cuando el combo se rompe.
+
+let dingBuffer: AudioBuffer | null = null;
+let dingRate = 0;
+
+/** Campana sintetizada una vez por frecuencia de muestreo (La5 con armónicos y caída exponencial) */
+function getDingBuffer(c: AudioContext): AudioBuffer | null {
+  if (dingBuffer && dingRate === c.sampleRate) return dingBuffer;
+  try {
+    const dur = 0.7;
+    const n = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, n, c.sampleRate);
+    const d = buf.getChannelData(0);
+    const f = 880;
+    const partials: [number, number, number][] = [[1, 1, 5], [2, 0.42, 7], [3, 0.2, 9], [4.2, 0.1, 12]];
+    for (let i = 0; i < n; i++) {
+      const t = i / c.sampleRate;
+      const attack = Math.min(1, t / 0.004);
+      let v = 0;
+      for (const [ratio, amp, decay] of partials) v += amp * Math.exp(-t * decay) * Math.sin(2 * Math.PI * f * ratio * t);
+      d[i] = (v / 1.72) * attack;
+    }
+    dingBuffer = buf;
+    dingRate = c.sampleRate;
+    return buf;
+  } catch (_) {
+    return null;
+  }
+}
+
+function playDing(rateFrom: number, rateTo: number, gain: number, glideS = 0) {
+  if (!isSfxEnabled()) return;
+  unlockAudio();
+  const c = getCtx();
+  if (!c) return;
+  const buf = getDingBuffer(c);
+  if (!buf) return;
+  try {
+    const s = c.createBufferSource();
+    s.buffer = buf;
+    s.playbackRate.setValueAtTime(rateFrom, c.currentTime);
+    if (glideS > 0) s.playbackRate.linearRampToValueAtTime(rateTo, c.currentTime + glideS);
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol(gain), c.currentTime);
+    s.connect(g);
+    g.connect(getOutputNode(c));
+    s.start();
+  } catch (_) { /* ignore */ }
+}
+
+/** Acierto: "ding" con el tono del nivel de combo (0–4) */
+export function playComboDing(level: number) {
+  const lvl = Math.max(0, Math.min(4, level));
+  playDing(1 + 0.06 * lvl, 1 + 0.06 * lvl, 0.16 + lvl * 0.012);
+  // A partir de ×1,5 una segunda nota más aguda que hace el acierto "más grande"
+  if (lvl >= 2) setTimeout(() => playDing((1 + 0.06 * lvl) * 1.5, (1 + 0.06 * lvl) * 1.5, 0.07 + lvl * 0.01), 70);
+}
+
+/** Combo roto: la misma campana bajando de tono, suave */
+export function playComboBreak() {
+  playDing(1, 0.62, 0.11, 0.38);
+}
+
+/** Destello corto para la cercanía perfecta (encima del ding) */
+export function playCoinSparkle() {
+  if (!isSfxEnabled()) return;
+  setTimeout(() => playCoinBell(vary(3600, 0.08), 0.18, 0.05), 50);
+  setTimeout(() => playCoinBell(vary(4600, 0.08), 0.15, 0.04), 110);
+}
+
+/** Capa rítmica al subir a ¡Turbo! o ¡EN LLAMAS!: un remate breve de bombo y platillo */
+export function playComboRhythm(level: number) {
+  if (!isSfxEnabled() || level < 3) return;
+  const beat = 115;
+  const hits = level >= 4 ? 6 : 4;
+  for (let i = 0; i < hits; i++) {
+    setTimeout(() => {
+      playImpact(i % 2 === 0 ? 70 : 95, 0.1, i % 2 === 0 ? 0.16 : 0.09);
+      playFilteredNoise(0.04, i % 2 === 0 ? 0.025 : 0.04, 7000, 'highpass');
+    }, i * beat);
+  }
+}

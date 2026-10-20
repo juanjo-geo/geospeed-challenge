@@ -11,6 +11,8 @@
  * de aquí (`fetchMyProgress`, `fetchMyHistory`, `fetchLeaderboardTop`, `fetchMyRank`).
  */
 import { supabase } from '@/integrations/supabase/client';
+import { SCORING_VERSION } from '@/lib/scoring';
+import { placeIdOf } from '@/data/cities';
 import type { Json } from '@/integrations/supabase/types';
 import type { RoundResult } from '@/components/game/GameScreen';
 import type { TimeAttackResult } from '@/components/game/TimeAttackScreen';
@@ -22,6 +24,8 @@ export type EndReason = 'complete' | 'timeout' | 'abandoned';
 
 export interface SaveRoundInput {
   round_no: number;
+  /** Lugar del catálogo (tabla `places`): el servidor mide la distancia contra sus coordenadas */
+  place_id?: string | null;
   city_name: string;
   city_country?: string | null;
   city_lat?: number | null;
@@ -73,8 +77,11 @@ function toPayload(input: SaveGameInput, clientId: string): Json {
     end_reason: input.endReason,
     seed: input.seed ?? null,
     challenge_id: input.challengeId ?? null,
+    // Puntaje v2 (Temporada 1): el servidor recalcula cada ronda desde el clic, la ciudad y el tiempo
+    scoring_version: SCORING_VERSION,
     rounds: input.rounds.map(r => ({
       round_no: r.round_no,
+      place_id: r.place_id ?? null,
       city_name: r.city_name,
       city_country: r.city_country ?? null,
       city_lat: r.city_lat ?? null,
@@ -82,7 +89,8 @@ function toPayload(input: SaveGameInput, clientId: string): Json {
       click_lat: r.click_lat ?? null,
       click_lon: r.click_lon ?? null,
       distance_km: r.distance_km == null ? null : Math.round(r.distance_km * 10) / 10,
-      time_s: r.time_s == null ? null : Math.round(r.time_s * 100) / 100,
+      // En décimas: es exactamente el tiempo con el que se puntuó la ronda
+      time_s: r.time_s == null ? null : Math.round(r.time_s * 10) / 10,
       base_points: r.base_points ?? null,
       multiplier: r.multiplier ?? null,
       points: Math.round(r.points),
@@ -166,6 +174,7 @@ export async function flushPendingResults(): Promise<number> {
 export function roundsFromResults(rounds: RoundResult[]): SaveRoundInput[] {
   return rounds.map((r, i) => ({
     round_no: i + 1,
+    place_id: placeIdOf(r.city),
     city_name: r.city.name,
     city_country: r.city.country,
     city_lat: r.city.lat,
@@ -173,10 +182,11 @@ export function roundsFromResults(rounds: RoundResult[]): SaveRoundInput[] {
     click_lat: r.clickLat,
     click_lon: r.clickLon,
     distance_km: r.distance,
-    time_s: r.timeUsed,
+    time_s: r.timeExact ?? r.timeUsed,
     base_points: r.basePoints,
     multiplier: r.multiplier,
     points: r.totalPoints,
+    extra: r.combo != null ? { combo: r.combo, combo_mult: r.comboMult ?? 1 } : null,
   }));
 }
 
@@ -247,9 +257,11 @@ export interface LeaderboardTopRow {
 }
 
 export type RankPeriod = 'all' | 'week' | 'month';
+/** Temporada 1 = puntaje v2 (cercanía × rapidez × combo); Histórico = escala anterior + tabla vieja */
+export type RankSeason = 't1' | 'historic';
 /** gameType: null = ranking de ciudades (o Mundial si mode='mundial'); 'timeattack' = 60s de Caos (tabla aparte, B2) */
-export async function fetchLeaderboardTop(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', limit = 10, gameType: string | null = null): Promise<LeaderboardTopRow[]> {
-  const { data, error } = await supabase.rpc('leaderboard_top', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_limit: limit, p_game_type: gameType });
+export async function fetchLeaderboardTop(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', limit = 10, gameType: string | null = null, season: RankSeason = 't1'): Promise<LeaderboardTopRow[]> {
+  const { data, error } = await supabase.rpc('leaderboard_top', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_limit: limit, p_game_type: gameType, p_season: season });
   if (error || !data) return [];
   return (data as Array<Record<string, unknown>>).map(r => ({
     rank: Number(r.rank), userId: String(r.user_id), displayName: String(r.display_name ?? ''),
@@ -257,10 +269,10 @@ export async function fetchLeaderboardTop(mode = 'world', difficulty: string | n
   }));
 }
 
-export async function fetchMyRank(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', gameType: string | null = null): Promise<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null> {
+export async function fetchMyRank(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', gameType: string | null = null, season: RankSeason = 't1'): Promise<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
-  const { data, error } = await supabase.rpc('my_rank', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_game_type: gameType });
+  const { data, error } = await supabase.rpc('my_rank', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_game_type: gameType, p_season: season });
   if (error || !data) return null;
   const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
   if (!row) return null;

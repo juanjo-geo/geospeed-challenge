@@ -8,15 +8,12 @@ import CountryPhoto from '@/components/ui/CountryPhoto';
 import { hasCountryPhoto } from '@/lib/countryPhotos';
 import { playAccordion } from '@/lib/sounds';
 import { appNumberLocale } from '@/lib/format';
+import { COMBO_LEVELS } from '@/lib/scoring';
 
 interface RoundFeedbackCardProps {
   result: RoundResult;
   feedback: { emoji: string; phrase: string; color: string };
   mascot: MascotState;
-  streak: number;
-  streakBonus: number;
-  diffMult: number;
-  multLabel: string;
   nearMissMsg: string | null;
   autoAdvanceTimer: number;
   onNext: () => void;
@@ -39,8 +36,9 @@ interface RoundFeedbackCardProps {
 /**
  * Tarjeta de feedback de ronda (maqueta Feedback_Movil/Computador_APROBADA_v1):
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
+ * Puntaje v2: el combo y el desglose (cercanía × rapidez × combo × dificultad) salen del propio resultado.
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, streak, streakBonus, diffMult, multLabel, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
@@ -51,6 +49,15 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
   const heading = title ?? result.city.name;
   const subheading = subtitle ?? result.city.country;
   const hasPhoto = hasCountryPhoto(result.city.country);
+  const fmtX = (n: number) => `× ${n.toLocaleString(numberLocale, { minimumFractionDigits: n % 1 ? 1 : 0, maximumFractionDigits: 2 })}`;
+  const comboLevel = result.comboLevel ?? 0;
+  const comboKey = COMBO_LEVELS[comboLevel]?.key;
+  const comboMult = result.comboMult ?? 1;
+  const diffMult = result.diffMult ?? 1;
+  // "🔥 ¡Imparable! × 1,5 · 5 aciertos seguidos" o, si se rompió, el aviso suave
+  const comboLine = comboKey
+    ? <>🔥 {t(comboKey)} {fmtX(comboMult)} · {t('game_streakCount', { n: result.combo ?? 0 })}</>
+    : result.brokeCombo ? <span className="text-muted-foreground">💨 {t('combo_broken')}</span> : null;
 
   return (
     <div className={`flex flex-col gap-2 rounded-3xl border-2 border-accent/40 bg-card/90 shadow-2xl backdrop-blur-md overflow-y-auto w-full ${lg ? `p-5 gap-3 ${natural ? '' : 'max-h-[92%]'}` : `p-3 sm:p-4 ${natural ? '' : 'max-h-full'} [@media(max-height:420px)]:gap-1 [@media(max-height:420px)]:p-2`}`}>
@@ -68,10 +75,10 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
               <p className="text-muted-foreground text-base font-semibold"><Flag country={result.city.country} className="w-5 inline-block align-[-3px] mr-1.5" />{subheading}</p>
             </div>
           </div>
-          {(streak >= 2 || nearMissMsg) && (
+          {(comboLine || nearMissMsg) && (
             <div className="text-center -my-1">
-              {streak >= 2 && (
-                <p className="animate-score-pop font-bold text-primary text-sm">🔥 {t('game_streakCount', { n: streak })}{streakBonus > 1 && ` · +${Math.round((streakBonus - 1) * 100)}%`}</p>
+              {comboLine && (
+                <p className="animate-score-pop font-bold text-primary text-sm">{comboLine}</p>
               )}
               {nearMissMsg && <p className="font-bold text-primary/90 animate-pulse text-sm">💨 {nearMissMsg}</p>}
             </div>
@@ -90,10 +97,8 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
             <span className="absolute -right-4 top-3 text-primary text-[10px] [@media(max-height:420px)]:hidden" aria-hidden>✦</span>
           </div>
           <p className={`font-extrabold ${phraseColor} text-2xl sm:text-3xl [@media(max-height:420px)]:text-lg leading-tight`}>{feedback.phrase}</p>
-          {streak >= 2 && (
-            <p className="animate-score-pop font-bold text-primary text-[11px] sm:text-xs">
-              🔥 {t('game_streakCount', { n: streak })}{streakBonus > 1 && ` · +${Math.round((streakBonus - 1) * 100)}%`}
-            </p>
+          {comboLine && (
+            <p className="animate-score-pop font-bold text-primary text-[11px] sm:text-xs">{comboLine}</p>
           )}
           {nearMissMsg && (
             <p className="font-bold text-primary/90 animate-pulse text-[11px] sm:text-xs">💨 {nearMissMsg}</p>
@@ -125,10 +130,10 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
       </button>
       <div className={`overflow-hidden transition-all duration-300 ${showCalc ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="rounded-2xl border border-border bg-muted/20 px-3 py-2 text-xs sm:text-sm font-mono">
-          <CalcRow label={baseLabel ?? t('game_calcBase')} value={`${result.basePoints}`} />
-          <CalcRow label={`${t('game_calcSpeed')} · ${time}`} value={`× ${result.multiplier.toFixed(2)}`} hint={multLabel} />
-          {streakBonus > 1 && <CalcRow label={t('game_calcStreak')} value={`× ${streakBonus.toFixed(2)}`} />}
-          {diffMult !== 1 && <CalcRow label={t('game_calcDifficulty')} value={`× ${diffMult.toFixed(2)}`} />}
+          <CalcRow label={baseLabel ?? t('game_calcBase')} value={result.basePoints.toLocaleString(numberLocale)} />
+          <CalcRow label={`${t('game_calcSpeed')} · ${time}`} value={fmtX(result.multiplier)} />
+          <CalcRow label={comboKey ? `${t('game_calcStreak')} · ${t(comboKey)}` : t('game_calcStreak')} value={fmtX(comboMult)} />
+          {diffMult !== 1 && <CalcRow label={t('game_calcDifficulty')} value={fmtX(diffMult)} />}
           <div className="flex justify-between border-t border-border/60 mt-1 pt-1 font-black text-primary">
             <span>{t('game_total')}</span><span>{result.totalPoints.toLocaleString(appNumberLocale())}</span>
           </div>
@@ -150,10 +155,10 @@ export default function RoundFeedbackCard({ result, feedback, mascot, streak, st
   );
 }
 
-function CalcRow({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function CalcRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2 py-0.5">
-      <span className="text-muted-foreground truncate">{label}{hint ? <span className="ml-1 opacity-70">({hint})</span> : null}</span>
+      <span className="text-muted-foreground truncate">{label}</span>
       <span className="font-bold shrink-0">{value}</span>
     </div>
   );

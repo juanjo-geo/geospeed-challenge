@@ -25,6 +25,11 @@ let buffer: AudioBuffer | null = null;
 let bufferPromise: Promise<AudioBuffer | null> | null = null;
 let source: AudioBufferSourceNode | null = null;
 let gain: GainNode | null = null;
+// Filtro entre el track y el volumen: con el combo la música "se abre" (puntaje v2, ver setMusicIntensity)
+let filter: BiquadFilterNode | null = null;
+let intensity = 0;
+const FILTER_HZ = [7500, 7500, 7500, 11000, 20000];
+const INTENSITY_BOOST = [1, 1, 1, 1.12, 1.28];
 let isPlaying = false;
 let isMuted = false;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
@@ -41,6 +46,7 @@ function ensureCtx(): AudioContext | null {
   if (c && c !== ctx) {
     ctx = c;
     gain = null;   // pertenecían al contexto anterior
+    filter = null;
     source = null; // (el AudioBuffer sí se reutiliza entre contextos)
   } else if (c) {
     ctx = c;
@@ -56,8 +62,17 @@ function ensureGain(): GainNode | null {
     gain.gain.value = 0;
     gain.connect(c.destination);
   }
+  if (!filter) {
+    filter = c.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = FILTER_HZ[intensity];
+    filter.connect(gain);
+  }
   return gain;
 }
+
+/** Volumen objetivo de la música según el nivel de combo actual */
+const targetVolume = () => BASE_VOLUME * INTENSITY_BOOST[intensity];
 
 /** Carga y decodifica el track una sola vez (buffer compartible entre contextos). */
 function loadBuffer(): Promise<AudioBuffer | null> {
@@ -116,7 +131,7 @@ function startSource() {
   const s = c.createBufferSource();
   s.buffer = buffer;
   s.loop = true;
-  s.connect(g);
+  s.connect(filter ?? g);
   try { s.start(0); } catch (_) {}
   source = s;
 }
@@ -142,15 +157,15 @@ function revive() {
   if (!source) {
     if (buffer) {
       startSource();
-      if (!isMuted) fadeTo(BASE_VOLUME);
+      if (!isMuted) fadeTo(targetVolume());
     } else {
       loadBuffer().then((b) => {
-        if (b && isPlaying) { startSource(); if (!isMuted) fadeTo(BASE_VOLUME); }
+        if (b && isPlaying) { startSource(); if (!isMuted) fadeTo(targetVolume()); }
       });
     }
   }
   // Si el usuario pausó desde el bloqueo, al volver restauramos la música.
-  if (systemPaused && !isMuted) { systemPaused = false; fadeTo(BASE_VOLUME); }
+  if (systemPaused && !isMuted) { systemPaused = false; fadeTo(targetVolume()); }
   markPlaying();
 }
 
@@ -180,7 +195,7 @@ function setupMediaSession() {
     ms.setActionHandler('play', () => {
       systemPaused = false;
       revive();
-      if (!isMuted) fadeTo(BASE_VOLUME);
+      if (!isMuted) fadeTo(targetVolume());
       try { ms.playbackState = 'playing'; } catch (_) {}
     });
     ms.setActionHandler('pause', () => {
@@ -202,7 +217,7 @@ function startMusic() {
     if (!b || !isPlaying) { if (!b) installPlayRetry(); return; }
     startSource();
     if (source) {
-      if (!isMuted) fadeTo(BASE_VOLUME);
+      if (!isMuted) fadeTo(targetVolume());
       setupMediaSession();
       markPlaying();
     } else {
@@ -245,8 +260,27 @@ function setMuted(muted: boolean) {
     fadeTo(0); // ganancia 0 pero el source sigue en loop → nada que reactivar
   } else if (isPlaying) {
     if (!source) revive();
-    fadeTo(BASE_VOLUME);
+    fadeTo(targetVolume());
   }
+}
+
+/**
+ * Puntaje v2 — juice por combo: la música suena algo apagada (filtro a 7,5 kHz) y se abre con el combo:
+ * ¡Turbo! (nivel 3) a 11 kHz y +12 % de volumen, ¡EN LLAMAS! (4) completa y +28 %. Al romperse el combo
+ * o terminar la partida vuelve a 0. No toca nada si la música está silenciada o en pausa.
+ */
+export function setMusicIntensity(level: number) {
+  const lvl = Math.max(0, Math.min(4, Math.round(level)));
+  if (lvl === intensity) return;
+  intensity = lvl;
+  const c = ctx;
+  if (!c) return;
+  try {
+    filter?.frequency.setTargetAtTime(FILTER_HZ[lvl], c.currentTime, 0.25);
+    if (gain && isPlaying && !isMuted && !systemPaused && !backgroundPaused && !fadeInterval) {
+      gain.gain.setTargetAtTime(targetVolume(), c.currentTime, 0.3);
+    }
+  } catch (_) { /* ignore */ }
 }
 
 function toggleMuted(): boolean {
@@ -280,7 +314,7 @@ function resumeFromBackground() {
   if (!backgroundPaused) return;
   backgroundPaused = false;
   revive();
-  if (isPlaying && !isMuted && !systemPaused) fadeTo(BASE_VOLUME);
+  if (isPlaying && !isMuted && !systemPaused) fadeTo(targetVolume());
 }
 
 // ── Visibilidad/foco: pausar al ir a segundo plano, reanudar al volver o desbloquear ──
