@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { appNumberLocale } from '@/lib/format';
+import { SCORING_VERSION, SEASON_1_START } from '@/lib/scoring';
 
 const R = 6371; // Earth radius in km
 
@@ -13,44 +14,12 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/**
- * Continuous scoring curve — every km closer = more points.
- * Formula: max(0, 1000 × (1 − d/7000)^1.5)
- * 0km=1000, 50km=989, 200km=935, 500km=832, 1000km=660, 2000km=366, 5000km=55, 7000km+=0
- */
-export function calculateBasePoints(distanceKm: number): number {
-  if (distanceKm >= 7000) return 0;
-  return Math.round(1000 * Math.pow(1 - distanceKm / 7000, 1.5));
-}
-
-/**
- * Gradual speed multiplier — every second counts.
- * Formula: clamp(0.4, 2.2 − t × 0.13, 2.2)
- * 1s=x2.07, 3s=x1.81, 5s=x1.55, 8s=x1.16, 10s=x0.90, 14s+=x0.40
- */
-export function getMultiplier(timeUsedSeconds: number): { value: number; label: string; emoji: string } {
-  const raw = 2.2 - timeUsedSeconds * 0.13;
-  const value = Math.round(Math.max(0.4, Math.min(2.2, raw)) * 100) / 100;
-  const emoji = value >= 1.8 ? '🚀' : value >= 1.3 ? '⚡' : value >= 1.0 ? '🎯' : value >= 0.7 ? '🐢' : '🦕';
-  const label = `×${value.toFixed(1)}`;
-  return { value, label, emoji };
-}
+// El puntaje de cada ronda (cercanía × rapidez × combo × dificultad) vive en src/lib/scoring.ts (puntaje v2,
+// Temporada 1). La curva anterior 1000 × (1 − d/7000)^1.5 quedó en las tablas "Histórico".
 
 export function formatDistance(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} m`;
   return `${Math.round(km).toLocaleString(appNumberLocale())} km`;
-}
-
-// ── Multiplicador de puntaje por dificultad ──
-// Premia jugar en niveles más difíciles: el puntaje final se multiplica por esto.
-export const DIFFICULTY_MULTIPLIER: Record<string, number> = {
-  basic: 1.0,
-  easy: 1.1,
-  medium: 1.25,
-  hard: 1.5,
-};
-export function getDifficultyMultiplier(difficulty: string): number {
-  return DIFFICULTY_MULTIPLIER[difficulty] ?? 1.0;
 }
 
 export interface LeaderboardEntry {
@@ -60,6 +29,8 @@ export interface LeaderboardEntry {
   mode: string;
   date: string;
   user_id?: string;
+  /** Versión del puntaje (2 = Temporada 1). Las entradas sin versión son de la escala anterior. */
+  v?: number;
 }
 
 export interface PlayerStats {
@@ -67,6 +38,9 @@ export interface PlayerStats {
   bestScore: number;
   totalDistance: number;
   totalRounds: number;
+  /** Puntaje v2 (Temporada 1): el récord se reinicia y el anterior queda en legacyBest */
+  scoringVersion?: number;
+  legacyBest?: number;
 }
 
 // --- Leaderboard (Supabase Cloud) ---
@@ -82,6 +56,8 @@ export async function getLeaderboard(mode?: string, period: LeaderboardPeriod = 
       .limit(10);
     if (mode) query = query.eq('mode', mode);
     if (difficulty) query = query.eq('difficulty', difficulty);
+    // Temporada 1 (puntaje v2): las iniciales anteriores tienen otra escala de puntos
+    query = query.gte('created_at', SEASON_1_START);
 
     // Time-period filter
     if (period === 'week') {
@@ -127,7 +103,7 @@ function mergeLeaderboards(a: LeaderboardEntry[], b: LeaderboardEntry[], mode?: 
 
 export async function addToLeaderboard(entry: LeaderboardEntry): Promise<boolean> {
   // 1) Guardar SIEMPRE en local primero — así el score nunca se pierde aunque la nube falle
-  saveLeaderboardLocal(entry);
+  saveLeaderboardLocal({ ...entry, v: SCORING_VERSION });
 
   // 2) Intentar enviar a la nube (best-effort)
   try {
@@ -184,7 +160,7 @@ export async function qualifiesForLeaderboard(score: number, mode?: string, diff
 function getLeaderboardLocal(mode?: string, difficulty?: string): LeaderboardEntry[] {
   try {
     const all: LeaderboardEntry[] = JSON.parse(localStorage.getItem('geospeed_leaderboard') || '[]');
-    const filtered = all.filter(e => (!mode || (e.mode || 'world') === mode) && (!difficulty || e.difficulty === difficulty));
+    const filtered = all.filter(e => e.v === SCORING_VERSION && (!mode || (e.mode || 'world') === mode) && (!difficulty || e.difficulty === difficulty));
     return filtered.sort((a, b) => b.score - a.score).slice(0, 10);
   } catch { return []; }
 }
@@ -192,11 +168,18 @@ function getLeaderboardLocal(mode?: string, difficulty?: string): LeaderboardEnt
 // --- Player Stats (localStorage — personal) ---
 
 export function getPlayerStats(): PlayerStats {
+  let stats: PlayerStats;
   try {
-    return JSON.parse(localStorage.getItem('geospeed_stats') || '{"gamesPlayed":0,"bestScore":0,"totalDistance":0,"totalRounds":0}');
+    stats = JSON.parse(localStorage.getItem('geospeed_stats') || '{"gamesPlayed":0,"bestScore":0,"totalDistance":0,"totalRounds":0}');
   } catch {
-    return { gamesPlayed: 0, bestScore: 0, totalDistance: 0, totalRounds: 0 };
+    return { gamesPlayed: 0, bestScore: 0, totalDistance: 0, totalRounds: 0, scoringVersion: SCORING_VERSION };
   }
+  // Temporada 1 (puntaje v2): el récord personal arranca de nuevo; el anterior se guarda aparte
+  if (stats.scoringVersion !== SCORING_VERSION) {
+    stats = { ...stats, legacyBest: stats.bestScore, bestScore: 0, scoringVersion: SCORING_VERSION };
+    try { localStorage.setItem('geospeed_stats', JSON.stringify(stats)); } catch { /* sin almacenamiento */ }
+  }
+  return stats;
 }
 
 export function updatePlayerStats(score: number, distances: number[]) {
@@ -218,6 +201,8 @@ export interface GameHistoryEntry {
   mode: string;
   avgDistance: number;
   type: 'classic' | 'timeattack' | 'daily';
+  /** Versión del puntaje (2 = Temporada 1); las anteriores no cuentan para los récords */
+  v?: number;
 }
 
 const MAX_HISTORY = 20;
@@ -232,7 +217,7 @@ export function getGameHistory(): GameHistoryEntry[] {
 
 export function addGameHistory(entry: GameHistoryEntry) {
   const history = getGameHistory();
-  history.unshift(entry);
+  history.unshift({ ...entry, v: entry.v ?? SCORING_VERSION });
   localStorage.setItem('geospeed_history', JSON.stringify(history.slice(0, MAX_HISTORY)));
 }
 

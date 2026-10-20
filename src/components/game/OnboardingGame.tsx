@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { haversineDistance, calculateBasePoints, formatDistance } from '@/lib/gameUtils';
+import { haversineDistance, formatDistance } from '@/lib/gameUtils';
+import { closeness, SCALE_KM } from '@/lib/scoring';
 import { playClick, playGood, playPerfect, playBad, playRoundTransition, playButtonTap } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst } from '@/lib/confetti';
@@ -137,8 +138,8 @@ export default function OnboardingGame({ onComplete, onGoHome }: OnboardingGameP
     hapticTap();
 
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
-    // Bonus de práctica: ×1.5 para que los puntos se sientan bien
-    const totalPoints = Math.round(calculateBasePoints(distance) * 1.5);
+    // Práctica: cercanía v2 (escala del mundo) ×1,5 para que los puntos se sientan bien, sin reloj ni combo
+    const totalPoints = Math.round(closeness(distance, SCALE_KM.world) * 1.5);
 
     setLastClick({ lat, lon });
     setLastDistance(distance);

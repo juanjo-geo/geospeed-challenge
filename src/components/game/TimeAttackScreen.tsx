@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getRandomCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import CountUp from '@/components/ui/CountUp';
-import { haversineDistance, calculateBasePoints, getMultiplier, getDifficultyMultiplier, formatDistance } from '@/lib/gameUtils';
+import { haversineDistance, formatDistance } from '@/lib/gameUtils';
+import { closeness, scaleForMode, scoreRound, difficultyHundredths, comboLevelOf, COMBO_LEVELS, PERFECT_KM } from '@/lib/scoring';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playMultiplierX2, playRoundTransition, playTimeExpired, playStressBeat, playCountdown, playGo } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
@@ -61,6 +62,9 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
   const [currentIdx, setCurrentIdx] = useState(0);
   const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [score, setScore] = useState(0);
+  // Combo (puntaje v2): aciertos buenos seguidos; en ref para que el clic lea siempre el valor actual
+  const [combo, setCombo] = useState(0);
+  const comboRef = useRef(0);
   const [globalTime, setGlobalTime] = useState(GLOBAL_TIME);
   const [isAnimating, setIsAnimating] = useState(false);
   const [lastClick, setLastClick] = useState<{ lat: number; lon: number } | null>(null);
@@ -178,17 +182,23 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     const timeUsed = Math.round(elapsedMs / 1000);
     const timeExact = Math.round(elapsedMs / 100) / 10;
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
-    const basePoints = calculateBasePoints(distance);
-    const mult = getMultiplier(timeUsed);
-    const totalPoints = Math.round(basePoints * mult.value * getDifficultyMultiplier(difficulty));
-    setMascotState(reactionForDistance(distance));
+    // Puntaje v2: cercanía × rapidez (tiempo de esta ciudad) × combo × dificultad
+    const sc = scoreRound(closeness(distance, scaleForMode(gameMode)), timeExact, comboRef.current, difficultyHundredths(difficulty));
+    comboRef.current = sc.combo;
+    setCombo(sc.combo);
+    const mult = { value: sc.speed };
+    const totalPoints = sc.points;
+    setMascotState(sc.comboLevel >= 4 ? 'cheer' : reactionForDistance(distance, sc.combo));
 
-    const round: RoundResult = { city: currentCity, clickLat: lat, clickLon: lon, distance, basePoints, multiplier: mult.value, totalPoints, timeUsed, timeExact };
+    const round: RoundResult = {
+      city: currentCity, clickLat: lat, clickLon: lon, distance, basePoints: sc.closeness, multiplier: sc.speed, totalPoints, timeUsed, timeExact,
+      combo: sc.combo, comboMult: sc.comboMult, comboLevel: sc.comboLevel, quality: sc.quality, diffMult: sc.diffMult, brokeCombo: sc.broke,
+    };
     roundsRef.current.push(round);
     setLastResult(round);
     setTimeout(() => {
       // Tier S: Perfect (<50km) — rainbow confetti
-      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
+      if (distance < PERFECT_KM) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
       // Tier A: Excellent (<300km) — gold confetti
       else if (distance < 300) { playGood(); hapticCelebration(); fireGoldBurst(lastClickViewportRef.current); }
       // Tier B: Good (<1000km)
@@ -287,6 +297,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
           <div className="flex items-center justify-between">
             <p className="text-[10px] text-muted-foreground">🌍 {currentCity.country}</p>
             <div className="flex items-center gap-1.5">
+              {comboLevelOf(combo) >= 1 && <span key={comboLevelOf(combo)} className="text-[10px] font-bold text-primary animate-score-pop">🔥 ×{(COMBO_LEVELS[comboLevelOf(combo)].tenths / 10).toLocaleString(appNumberLocale())}</span>}
               <span className="text-[10px] text-muted-foreground">{roundsRef.current.length} {t('ta_cities')}</span>
               <span className="font-mono font-bold tabular-nums inline-block" style={{ fontSize: '1.05rem', lineHeight: 1, color: timeColor }}>
                 ⏱ {globalTime}s
@@ -339,6 +350,14 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
             <p className="text-[10cqi] font-semibold text-foreground/50 uppercase tracking-widest leading-none mb-1">{t('ta_cities')}</p>
             <p className="text-[15cqi] font-mono font-bold leading-none">{roundsRef.current.length}</p>
           </div>
+
+          {/* ── Combo (puntaje v2) ── */}
+          {comboLevelOf(combo) >= 1 && (
+            <div key={comboLevelOf(combo)} className="w-full text-center shrink-0 mb-2 pb-2 border-b border-border/40 animate-score-pop">
+              <p className="text-[9cqi] font-extrabold text-primary leading-tight">🔥 {t(COMBO_LEVELS[comboLevelOf(combo)].key as never)} <span className="text-accent">×{(COMBO_LEVELS[comboLevelOf(combo)].tenths / 10).toLocaleString(appNumberLocale())}</span></p>
+              <p className="text-[7cqi] text-muted-foreground font-semibold">{t('game_streakCount', { n: combo })}</p>
+            </div>
+          )}
 
           {/* ── Feedback + mascota (una fila) ── */}
           <div className="w-full flex items-center justify-center gap-2.5 shrink-0 mb-2 min-h-[46px]">
@@ -407,6 +426,11 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
             <span className="rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md whitespace-nowrap" style={pillStyle}>
               🏙️ <span className="text-primary">{roundsRef.current.length}</span> {t('ta_cities')}
             </span>
+            {comboLevelOf(combo) >= 1 && (
+              <span key={comboLevelOf(combo)} className="rounded-full px-2 py-0.5 border border-primary/60 backdrop-blur-md whitespace-nowrap animate-score-pop" style={pillStyle}>
+                🔥 <span className="text-primary">×{(COMBO_LEVELS[comboLevelOf(combo)].tenths / 10).toLocaleString(appNumberLocale())}</span>
+              </span>
+            )}
             <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2 py-0.5 border border-border/60 backdrop-blur-md" style={pillStyle}>
               <span className={`font-mono whitespace-nowrap ${isLow ? 'animate-pulse' : ''}`} style={{ color: timeColor }}>⏱ {globalTime} s</span>
               <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
@@ -465,15 +489,10 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
         {/* Tarjeta de respuesta — la misma del Clásico, en modo rápido */}
         {isAnimating && lastResult && (() => {
           const fb = getRoundFeedback(lastResult.distance, palette, t);
-          const mult = getMultiplier(lastResult.timeUsed);
           const props = {
             result: lastResult,
             feedback: fb,
             mascot: mascotState,
-            streak: 0,
-            streakBonus: 1,
-            diffMult: getDifficultyMultiplier(difficulty),
-            multLabel: mult.label,
             nearMissMsg: null,
             autoAdvanceTimer: 0,
             onNext: advance,

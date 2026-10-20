@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { City, getRandomCities, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
-import { haversineDistance, calculateBasePoints, getMultiplier, getDifficultyMultiplier, formatDistance } from '@/lib/gameUtils';
+import { haversineDistance } from '@/lib/gameUtils';
+import { closeness, scaleForMode, scoreRound, difficultyHundredths, speedMultiplier, comboLevelOf, COMBO_LEVELS, GOOD_MIN, PERFECT_KM, type Quality } from '@/lib/scoring';
 import { playClick, playGood, playBad, playPerfect, playMedium, playTick, playHeartbeat, playStreak, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
 import { hapticTap, hapticSuccess, hapticError, hapticTick, hapticCelebration } from '@/lib/haptics';
 import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '@/lib/confetti';
@@ -49,12 +50,22 @@ export interface RoundResult {
   clickLat: number;
   clickLon: number;
   distance: number;
+  /** Puntaje v2: cercanía 0–1.000 (en el Mundial, los puntos de la banda) */
   basePoints: number;
+  /** Puntaje v2: rapidez (×0,4–×2,2) */
   multiplier: number;
   totalPoints: number;
   timeUsed: number;
-  /** Segundos con un decimal, solo para mostrar ("Respuesta 4,7 s"). La puntuación usa timeUsed. */
+  /** Segundos con un decimal ("Respuesta 4,7 s"); el puntaje v2 usa este tiempo (en décimas) */
   timeExact?: number;
+  /** Puntaje v2: aciertos buenos seguidos tras la ronda, multiplicador y nivel de combo (0–4) */
+  combo?: number;
+  comboMult?: number;
+  comboLevel?: number;
+  quality?: Quality;
+  diffMult?: number;
+  /** Esta ronda rompió un combo de 2 o más */
+  brokeCombo?: boolean;
 }
 
 interface GameScreenProps {
@@ -79,7 +90,7 @@ interface GameScreenProps {
 
 export function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
   const p = palette;
-  if (distance < 50) return { emoji: '🎯', phrase: t?.('game_perfect') ?? '¡PERFECTO!', color: p?.good.tw ?? 'text-green-400' };
+  if (distance < PERFECT_KM) return { emoji: '🎯', phrase: t?.('game_perfect') ?? '¡PERFECTO!', color: p?.good.tw ?? 'text-green-400' };
   if (distance < 300) return { emoji: '🔥', phrase: t?.('game_incredible') ?? '¡Increíble!', color: p?.good.tw ?? 'text-green-400' };
   if (distance < 1000) return { emoji: '👏', phrase: t?.('game_veryGood') ?? '¡Muy bien!', color: p?.fair.tw ?? 'text-emerald-400' };
   if (distance < 2000) return { emoji: '👍', phrase: t?.('game_good') ?? 'Bien hecho', color: p?.medium.tw ?? 'text-yellow-400' };
@@ -114,7 +125,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState(AUTO_ADVANCE_SECONDS);
   const [scorePop, setScorePop] = useState(false);
   const [floatPoints, setFloatPoints] = useState<number | null>(null);
-  const [streak, setStreak] = useState(0);
+  // Combo (puntaje v2): aciertos buenos seguidos. En ref para que el clic siempre lea el valor actual.
+  const [combo, setCombo] = useState(0);
+  const comboRef = useRef(0);
   const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [failShake, setFailShake] = useState(false);
   const [showHint, setShowHint] = useState(false);
@@ -304,34 +317,37 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const timeUsed = Math.round(elapsedS);
     const timeExact = Math.round(elapsedS * 10) / 10;
     const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
-    const basePoints = calculateBasePoints(distance);
-    const mult = getMultiplier(timeUsed);
-
-    // Resilient streak: threshold 1500km, fail = halve (not reset), cap x1.60
-    const newStreak = distance < 1500 ? streak + 1 : Math.max(0, Math.floor(streak / 2));
-    setStreak(newStreak);
-    // Reacción emocional de la mascota (juice Capa 6)
-    setMascotState(reactionForDistance(distance, newStreak));
-
-    // Streak bonus: +10% per level starting at streak ≥ 2, capped at x1.60
-    const streakBonus = newStreak >= 2 ? Math.min(1.6, 1 + (newStreak - 1) * 0.10) : 1;
-    const totalPoints = Math.round(basePoints * mult.value * streakBonus * getDifficultyMultiplier(difficulty));
+    // Puntaje v2: cercanía × rapidez × combo × dificultad (src/lib/scoring.ts; el servidor lo recalcula igual)
+    const sc = scoreRound(closeness(distance, scaleForMode(gameMode)), timeExact, comboRef.current, difficultyHundredths(difficulty));
+    const newStreak = sc.combo;
+    comboRef.current = sc.combo;
+    setCombo(sc.combo);
+    // Reacción de la mascota: en EN LLAMAS siempre celebra
+    setMascotState(sc.comboLevel >= 4 ? 'cheer' : reactionForDistance(distance, newStreak));
+    const mult = { value: sc.speed };
+    const totalPoints = sc.points;
 
     const result: RoundResult = {
       city: currentCity,
       clickLat: lat,
       clickLon: lon,
       distance,
-      basePoints,
-      multiplier: mult.value,
+      basePoints: sc.closeness,
+      multiplier: sc.speed,
       totalPoints,
       timeUsed,
       timeExact,
+      combo: sc.combo,
+      comboMult: sc.comboMult,
+      comboLevel: sc.comboLevel,
+      quality: sc.quality,
+      diffMult: sc.diffMult,
+      brokeCombo: sc.broke,
     };
 
     setTimeout(() => {
       // Tier S: Perfect (<50km) — rainbow confetti + perfect chord
-      if (distance < 50) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
+      if (distance < PERFECT_KM) { playPerfect(); hapticCelebration(); fireStarBurst(lastClickViewportRef.current); }
       // Tier A: Excellent (<300km) — gold confetti + good sound
       else if (distance < 300) { playGood(); hapticCelebration(); fireGoldBurst(lastClickViewportRef.current); }
       // Tier B: Good (<1000km) — good sound, no confetti
@@ -374,18 +390,18 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     // Screen reader announcement
     const fb = getRoundFeedback(distance, palette, t);
     announce(t('sr_announceResult', { feedback: fb.phrase, city: currentCity.name, country: currentCity.country, distance: Math.round(distance), points: totalPoints, round: currentRound + 1, total: totalRounds }));
-  }, [isWaiting, currentCity, onRoundComplete, t]);
+  }, [isWaiting, currentCity, onRoundComplete, t, gameMode, difficulty]);
 
   useEffect(() => { setMascotState('idle'); }, [currentRound]);
 
   if (!currentCity) return null;
 
-  const mult = lastResult ? getMultiplier(lastResult.timeUsed) : null;
-  const diffMult = getDifficultyMultiplier(difficulty);
   const feedback = lastResult ? getRoundFeedback(lastResult.distance, palette, t) : null;
-  const showStreak = streak >= 2;
-  const streakPct = streak >= 2 ? Math.min(60, (streak - 1) * 10) : 0;
-  const streakBonusNow = streak >= 2 ? Math.min(1.6, 1 + (streak - 1) * 0.10) : 1;
+  // Combo visible desde "Buen ritmo" (2 aciertos buenos seguidos)
+  const comboLevel = comboLevelOf(combo);
+  const showStreak = comboLevel >= 1;
+  const comboKey = COMBO_LEVELS[comboLevel].key;
+  const comboMultNow = COMBO_LEVELS[comboLevel].tenths / 10;
   const modeLabel = t(`mode_${gameMode}` as never) || MODE_CONFIG.find(m => m.key === gameMode)?.label || gameMode;
   const diffLabel = t(`diff_${difficulty}` as never) || difficulty;
   const isTouchDevice = typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
@@ -415,20 +431,22 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   // Las etiquetas del mapa evitan la tarjeta y la leyenda de pines (no hay leyenda en vertical)
   const labelAvoid = useMemo(() => (cover ? { ...cover, corner: isPortraitMobile ? undefined : PIN_LEGEND_CORNER } : null), [cover, isPortraitMobile]);
 
-  // Near-miss detection — motivate the player when they were close to a better tier
+  // Casi: motivar cuando faltó poco para el siguiente escalón (puntaje v2)
   const nearMissMsg = (() => {
     if (!lastResult) return null;
     const d = lastResult.distance;
-    const t2 = lastResult.timeUsed;
-    // Close to perfect distance (<50km threshold)
-    if (d >= 50 && d < 80) return '¡A ' + Math.round(d - 50) + 'km del PERFECTO!';
-    // Close to speed x2 tier (needs <~3s for x1.8+)
-    if (t2 >= 4 && t2 <= 5 && d < 500) {
-      const betterMult = getMultiplier(t2 - 2).value;
-      if (betterMult > (mult?.value ?? 0)) return '¡' + (t2 - 3) + 's más rápido = ×' + betterMult.toFixed(1) + '!';
+    const scale = scaleForMode(gameMode);
+    // A pocos km de la cercanía perfecta (1.000 a menos de 25 km)
+    if (d >= PERFECT_KM && d < PERFECT_KM * 2) return t('game_nearPerfect', { km: Math.max(1, Math.round(d - PERFECT_KM)) });
+    // Acierto regular que estuvo cerca de ser bueno (y sumar al combo)
+    const goodKm = scale * Math.log(1000 / (GOOD_MIN - 0.5));
+    if (lastResult.quality === 'regular' && d - goodKm < scale * 0.12) return t('game_nearGood', { km: Math.max(1, Math.round(d - goodKm)) });
+    // Rápido pero no tanto: 2 s menos subían la rapidez
+    const te = lastResult.timeExact ?? lastResult.timeUsed;
+    if (te >= 3 && te <= 6 && lastResult.quality === 'good') {
+      const better = speedMultiplier(te - 2);
+      return t('game_nearSpeed', { s: 2, mult: better.toLocaleString(numberLocale, { maximumFractionDigits: 2 }) });
     }
-    // Close to excellent (<300km threshold)
-    if (d >= 300 && d < 400) return '¡A ' + Math.round(d - 300) + 'km del EXCELENTE!';
     return null;
   })();
   const isTimerCritical = timeLeft <= 3 && !isWaiting;
@@ -576,13 +594,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </span>
           </div>
 
-          {/* Racha */}
+          {/* Combo (puntaje v2): nivel, multiplicador y aciertos buenos seguidos */}
           {showStreak && (
-            <div className="w-full shrink-0 rounded-2xl border-2 border-primary/40 bg-background/40 px-[5cqi] py-[3cqi] flex items-center gap-[3.5cqi] animate-score-pop">
+            <div key={comboLevel} className="w-full shrink-0 rounded-2xl border-2 border-primary/40 bg-background/40 px-[5cqi] py-[3cqi] flex items-center gap-[3.5cqi] animate-score-pop">
               <span className="text-[11cqi] leading-none" aria-hidden>🔥</span>
-              <span className="text-[7cqi] font-bold leading-tight">
-                <span className="text-primary text-[9.5cqi] font-extrabold">{streak}</span> {t('game_streakCount', { n: streak }).replace(/^\d+\s*/, '')}
-                {streakPct > 0 && <span className="ml-1 text-accent">+{streakPct}%</span>}
+              <span className="min-w-0 leading-tight">
+                <span className="block text-[8cqi] font-extrabold text-primary truncate">{comboKey ? t(comboKey) : ''} <span className="text-accent">×{comboMultNow.toLocaleString(numberLocale)}</span></span>
+                <span className="block text-[6.2cqi] font-semibold text-muted-foreground">{t('game_streakCount', { n: combo })}</span>
               </span>
             </div>
           )}
@@ -649,8 +667,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Racha (móvil): abajo a la izquierda, como la maqueta */}
         {isCompact && showStreak && !isWaiting && (
           <div className="absolute z-[6] pointer-events-none" style={{ bottom: 'max(0.5rem, var(--sab))', left: 'max(0.5rem, var(--sal))' }}>
-            <span className="rounded-full px-3 py-1.5 text-xs font-bold border-2 border-accent/40 backdrop-blur-md animate-score-pop" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
-              🔥 <span className="text-primary">{streak}</span> {t('game_streakCount', { n: streak }).replace(/^\d+\s*/, '')}
+            <span key={comboLevel} className="rounded-full px-3 py-1.5 text-xs font-bold border-2 border-accent/40 backdrop-blur-md animate-score-pop" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
+              🔥 <span className="text-primary">{comboKey ? t(comboKey) : ''}</span> <span className="text-accent">×{comboMultNow.toLocaleString(numberLocale)}</span> · {combo}
             </span>
           </div>
         )}
@@ -717,10 +735,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               result={lastResult}
               feedback={feedback}
               mascot={mascotState}
-              streak={streak}
-              streakBonus={streakBonusNow}
-              diffMult={diffMult}
-              multLabel={mult?.label ?? ''}
               nearMissMsg={nearMissMsg}
               autoAdvanceTimer={autoAdvanceTimer}
               onNext={advanceRound}
@@ -749,10 +763,6 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 result={lastResult}
                 feedback={feedback}
                 mascot={mascotState}
-                streak={streak}
-                streakBonus={streakBonusNow}
-                diffMult={diffMult}
-                multLabel={mult?.label ?? ''}
                 nearMissMsg={nearMissMsg}
                 autoAdvanceTimer={autoAdvanceTimer}
                 onNext={advanceRound}

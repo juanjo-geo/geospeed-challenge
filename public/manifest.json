@@ -1,7 +1,7 @@
 {
   "name": "GeoSpeed Challenge",
   "short_name": "GeoSpeed",
-  "description": "¿Cuánto conoces el mundo? Localiza ciudades en el mapa, compite contra el reloj, reta a tus amigos en duelos 1v1. 5 modos de juego, desafío diario, 180+ ciudades.",
+  "description": "¿Cuánto conoces el mundo? Localiza ciudades en el mapa, compite contra el reloj y reta a tus amigos a su ritmo. 5 modos de juego, desafío diario, 250+ ciudades.",
   "start_url": "/",
   "scope": "/",
   "id": "/",

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, ty
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { addGameHistory, getGameHistory } from '@/lib/gameUtils';
+import { SCORING_VERSION } from '@/lib/scoring';
 import { checkIncomingReferral } from '@/lib/referralSystem';
 import { recordInstallDate, checkRetention } from '@/lib/retentionTracker';
 import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
@@ -1129,7 +1130,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onToggleMusic={toggleMusic}
           onGameOver={(result) => {
             setTaResult(result);
-            setTaPrevBest(Math.max(0, ...getGameHistory().filter(h => h.type === 'timeattack').map(h => h.score)));
+            setTaPrevBest(Math.max(0, ...getGameHistory().filter(h => h.type === 'timeattack' && h.v === SCORING_VERSION).map(h => h.score)));
             const avgD = result.rounds.length > 0 ? result.rounds.reduce((s, r) => s + r.distance, 0) / result.rounds.length : 0;
             addGameHistory({
               date: new Date().toISOString(),

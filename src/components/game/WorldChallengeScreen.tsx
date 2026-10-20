@@ -16,7 +16,8 @@ import {
 import { hapticTap, hapticSuccess, hapticError, hapticCelebration } from '@/lib/haptics';
 import { fireGoldBurst, fireRedBurst, fireCelebration, fireDistanceReveal } from '@/lib/confetti';
 import { fireScoreFly, fireMultiplierFeedback, fireStreakBorder, fireRoundFlash } from '@/lib/juiceAnimations';
-import { getMultiplier, haversineDistance, addGameHistory, getGameHistory } from '@/lib/gameUtils';
+import { haversineDistance, addGameHistory, getGameHistory } from '@/lib/gameUtils';
+import { COMBO_LEVELS, comboLevelOf, SCORING_VERSION } from '@/lib/scoring';
 import FinalResultScreen from './FinalResultScreen';
 import Wordmark from '@/components/ui/Wordmark';
 import { saveGameResult } from '@/lib/gameResults';
@@ -68,9 +69,6 @@ interface WCFeedback {
   band: TerritoryBand;
   player: string;
   tappedCountry: string | null;
-  streak: number;
-  streakBonus: number;
-  multLabel: string;
 }
 
 /** Color de la frase por banda (paleta de marca, como la tarjeta del Clásico). */
@@ -169,7 +167,8 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
 
   const current = roster[roundIdx];
   const showStreak = streak >= 2;
-  const streakPct = streak >= 2 ? Math.min(60, (streak - 1) * 10) : 0;
+  // Puntaje v2: multiplicador del combo actual (×1,2 desde 2 aciertos exactos seguidos)
+  const comboMultNow = COMBO_LEVELS[comboLevelOf(streak)].tenths / 10;
   const topStreakName = streakKey(streak);
   const diffLabel = t(WC_DIFF_KEY[difficulty] as never);
 
@@ -255,7 +254,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     const rounds = resultsRef.current;
     const exactCount = rounds.filter((r) => r.band === 'exact').length;
     // Las estadísticas (sin distancias) las actualiza el cierre unificado (FinalResultScreen)
-    prevBestRef.current = Math.max(0, ...getGameHistory().filter((h) => h.mode === WC_MODE).map((h) => h.score));
+    prevBestRef.current = Math.max(0, ...getGameHistory().filter((h) => h.mode === WC_MODE && h.v === SCORING_VERSION).map((h) => h.score));
     addGameHistory({
       date: new Date().toISOString(),
       score: finalScore,
@@ -281,11 +280,11 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
         city_country: r.country,
         click_lat: r.clickLat,
         click_lon: r.clickLon,
-        time_s: r.timeUsed,
+        time_s: r.timeExact ?? r.timeUsed,
         base_points: r.basePoints,
         multiplier: r.multiplier,
         points: r.totalPoints,
-        extra: { band: r.band, tapped: r.tappedCountry },
+        extra: { band: r.band, tapped: r.tappedCountry, combo: r.newStreak, combo_mult: r.comboMult },
       })),
     });
     setStage('over');
@@ -329,9 +328,10 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     const elapsedMs = Math.max(0, Date.now() - roundStartRef.current - pausedMsRef.current - pausedNow);
     const timeUsed = Math.min(MAX_TIME, Math.round(elapsedMs / 1000));
     const timeExact = Math.min(MAX_TIME, Math.round(elapsedMs / 100) / 10);
-    const res = scoreWorldRound(current.country, lat, lon, timeUsed, streak);
+    // Puntaje v2: el tiempo se puntúa en décimas (timeExact), igual que en el servidor
+    const res = scoreWorldRound(current.country, lat, lon, timeExact, streak);
     resultsRef.current.push({ ...res, player: current.name, country: current.country, clickLat: lat, clickLon: lon, timeExact });
-    const mult = getMultiplier(timeUsed);
+    const mult = { value: res.multiplier };
     const centroid = getCountryCentroid(current.country);
     const dist = centroid ? haversineDistance(lat, lon, centroid.lat, centroid.lon) : null;
 
@@ -355,8 +355,11 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     setDistanceKm(dist);
     // Ronda en forma del Clásico para la tarjeta: la "ciudad" es el país correcto (foto y bandera)
     const city: City = { name: current.country, country: current.country, lat: centroid?.lat ?? lat, lon: centroid?.lon ?? lon, difficulty };
-    setLastRound({ city, clickLat: lat, clickLon: lon, distance: dist ?? 0, basePoints: res.basePoints, multiplier: res.multiplier, totalPoints: res.totalPoints, timeUsed, timeExact });
-    setLastFb({ band: res.band, player: current.name, tappedCountry: res.tappedCountry, streak: res.newStreak, streakBonus: res.streakBonus, multLabel: mult.label });
+    setLastRound({
+      city, clickLat: lat, clickLon: lon, distance: dist ?? 0, basePoints: res.basePoints, multiplier: res.multiplier, totalPoints: res.totalPoints, timeUsed, timeExact,
+      combo: res.newStreak, comboMult: res.comboMult, comboLevel: res.comboLevel, quality: res.quality, diffMult: 1, brokeCombo: res.brokeCombo,
+    });
+    setLastFb({ band: res.band, player: current.name, tappedCountry: res.tappedCountry });
     setIsAnimating(true);
 
     if (res.band === 'exact') {
@@ -602,10 +605,6 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     baseLabel: t('wc_calcBase'),
     firstTile: { label: t('wc_tappedLabel'), value: lastFb.tappedCountry ? cname(lastFb.tappedCountry) : t('wc_ocean') },
     mascot: mascotState,
-    streak: lastFb.streak,
-    streakBonus: lastFb.streakBonus,
-    diffMult: 1,
-    multLabel: lastFb.multLabel,
     nearMissMsg: null,
     autoAdvanceTimer: autoAdvance,
     onNext: advance,
@@ -711,7 +710,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
               <span className="text-[7cqi] font-bold leading-tight">
                 <span className="text-primary text-[9.5cqi] font-extrabold">{streak}</span>
                 {topStreakName && <span className="ml-1">{t(topStreakName as never)}</span>}
-                {streakPct > 0 && <span className="ml-1 text-accent">+{streakPct}%</span>}
+                {comboMultNow > 1 && <span className="ml-1 text-accent">×{comboMultNow.toLocaleString(locale === 'en' ? 'en-US' : 'es-CO')}</span>}
               </span>
             </div>
           )}
@@ -774,7 +773,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
         {!hasSidebar && showStreak && !isAnimating && (
           <div className="absolute z-[6] pointer-events-none" style={{ bottom: 'max(0.5rem, var(--sab))', left: 'max(0.5rem, var(--sal))' }}>
             <span className="rounded-full px-3 py-1.5 text-xs font-bold border-2 border-accent/40 backdrop-blur-md animate-score-pop" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
-              🔥 <span className="text-primary">{streak}</span>{topStreakName && <> {t(topStreakName as never)}</>}
+              🔥 <span className="text-primary">{streak}</span>{topStreakName && <> {t(topStreakName as never)}</>}{comboMultNow > 1 && <span className="text-accent"> ×{comboMultNow.toLocaleString(locale === 'en' ? 'en-US' : 'es-CO')}</span>}
             </span>
           </div>
         )}

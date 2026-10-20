@@ -122,6 +122,11 @@ export default function FinalResultScreen({
   const distances = rounds.map(r => r.distance);
   const avgDistance = distances.length > 0 ? distances.reduce((a, b) => a + b, 0) / distances.length : 0;
   const bestRound = rounds.length > 0 ? rounds.reduce((best, r) => r.totalPoints > best.totalPoints ? r : best, rounds[0]) : null;
+  // Desglose del puntaje v2: cercanía promedio, rapidez promedio y combo máximo
+  const avgCloseness = rounds.length ? Math.round(rounds.reduce((s, r) => s + r.basePoints, 0) / rounds.length) : 0;
+  const avgSpeed = rounds.length ? rounds.reduce((s, r) => s + r.multiplier, 0) / rounds.length : 0;
+  const maxCombo = rounds.reduce((m, r) => Math.max(m, r.combo ?? 0), 0);
+  const maxComboMult = rounds.reduce((m, r) => Math.max(m, r.comboMult ?? 1), 1);
 
   const handleSave = async () => {
     if (initials.length !== 3 || saving) return;
@@ -316,7 +321,7 @@ export default function FinalResultScreen({
           <div className="text-center mt-4">
             <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-[0.18em]">{t('final_totalScore')}</p>
             <p className={`text-4xl sm:text-5xl font-extrabold text-primary leading-tight ${outcome === 'record' ? 'text-glow animate-score-pop' : ''}`} aria-live="polite">
-              <CountUp value={totalScore} durationMs={900} format={fmt} /> {t('game_pointsWord')}
+              <CountUp value={totalScore} durationMs={1200} format={fmt} /> {t('game_pointsWord')}
             </p>
             {previousBest > 0 && (
               <p className="text-sm sm:text-base mt-1 text-foreground/85">
@@ -338,6 +343,21 @@ export default function FinalResultScreen({
               </div>
             ))}
           </div>
+
+          {rounds.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-2.5" role="group" aria-label={t('game_seeCalc')}>
+              {[
+                { label: t('final_avgCloseness'), value: fmt(avgCloseness) },
+                { label: t('final_avgSpeed'), value: `×${avgSpeed.toLocaleString(appNumberLocale(), { maximumFractionDigits: 2 })}` },
+                { label: t('final_maxCombo'), value: maxCombo >= 2 ? `×${maxComboMult.toLocaleString(appNumberLocale())} · ${maxCombo}` : '—' },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl border border-accent/25 bg-background/30 px-2 py-1.5 text-center">
+                  <span className="block text-[10px] sm:text-xs text-muted-foreground leading-tight">{s.label}</span>
+                  <span className="block font-extrabold text-sm sm:text-base text-accent leading-tight">{s.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {bestRound && (
             <button

@@ -1,6 +1,6 @@
 import { countries } from '@/data/countries';
 import { countryAdjacency } from '@/data/countryAdjacency';
-import { getMultiplier } from '@/lib/gameUtils';
+import { scoreRound, type Quality } from '@/lib/scoring';
 
 /**
  * Motor de evaluación territorial del módulo "Desafío Mundial".
@@ -8,16 +8,16 @@ import { getMultiplier } from '@/lib/gameUtils';
  * A diferencia del modo ciudades (puntuación por DISTANCIA), aquí se evalúa por
  * TERRITORIO: qué país tocó el jugador respecto al país correcto del futbolista.
  *
- * Bandas (base 1000, coherente con ciudades), luego × multiplicador de velocidad
- * (idéntico a gameUtils.getMultiplier) y × bonus de racha (idéntico a GameScreen):
+ * Bandas (base 1000, coherente con ciudades), luego puntaje v2 como en ciudades (src/lib/scoring.ts):
+ * × rapidez × combo (el Mundial no usa el multiplicador de dificultad):
  *   🎯 Exacto           → país correcto                → 1000
  *   🟢 Vecino           → comparte frontera (adyacencia)→ 600
  *   🟡 Mismo continente → otro país del continente      → 300
  *   🔴 Lejos            → otro continente               → 50
  *   ⚫ Océano           → fuera de territorio / timeout  → 0
  *
- * Racha (decisión de producto): Exacto y Vecino MANTIENEN la racha (la suben);
- * Mismo continente la divide a la mitad; Lejos/Océano la reinician.
+ * Combo (puntaje v2, Temporada 1): Exacto (1.000) es acierto bueno y lo sube; Vecino (600) es regular y lo
+ * mantiene; Mismo continente, Lejos y Océano (< 400) lo rompen.
  */
 export type TerritoryBand = 'exact' | 'neighbor' | 'continent' | 'far' | 'ocean';
 
@@ -30,9 +30,16 @@ export interface TerritoryEval {
 }
 
 export interface WorldRoundResult extends TerritoryEval {
+  /** Rapidez (×0,4–×2,2) */
   multiplier: number;
+  /** Multiplicador de combo aplicado (×1,0–×2,5); `streakBonus` es el nombre antiguo */
+  comboMult: number;
   streakBonus: number;
+  comboLevel: number;
+  quality: Quality;
+  brokeCombo: boolean;
   totalPoints: number;
+  /** Aciertos buenos seguidos tras la ronda (combo) */
   newStreak: number;
   timeUsed: number;
 }
@@ -290,18 +297,17 @@ export function evaluateTerritory(
   return { band, tappedCountry, basePoints: BAND_POINTS[band] };
 }
 
-/** Nueva racha según la banda. Exacto/Vecino suben; continente /2; lejos/océano reinician. */
+/** Combo según la banda (puntaje v2): exacto sube, vecino mantiene, el resto lo rompe. */
 export function nextStreak(band: TerritoryBand, currentStreak: number): number {
-  if (band === 'exact' || band === 'neighbor') return currentStreak + 1;
-  if (band === 'continent') return Math.floor(currentStreak / 2);
+  if (band === 'exact') return currentStreak + 1;
+  if (band === 'neighbor') return currentStreak;
   return 0;
 }
 
 /**
- * Puntúa una ronda completa del Desafío Mundial.
- * Mantiene el mismo pipeline que el modo ciudades:
- *   total = round(basePoints × multiplicadorVelocidad × bonusRacha)
- * El bonus de racha es idéntico a GameScreen: +10% por nivel desde racha ≥2, tope ×1.60.
+ * Puntúa una ronda completa del Desafío Mundial con el puntaje v2 (como el modo ciudades):
+ *   total = puntos de la banda × rapidez × combo (sin multiplicador de dificultad).
+ * `timeUsedSeconds` admite decimales (se puntúa en décimas, igual que el servidor).
  */
 export function scoreWorldRound(
   correctCountry: string,
@@ -312,17 +318,18 @@ export function scoreWorldRound(
   tappedCountryOverride?: string | null,
 ): WorldRoundResult {
   const evalRes = evaluateTerritory(correctCountry, lat, lon, tappedCountryOverride);
-  const mult = getMultiplier(timeUsedSeconds);
-  const newStreak = nextStreak(evalRes.band, currentStreak);
-  const streakBonus = newStreak >= 2 ? Math.min(1.6, 1 + (newStreak - 1) * 0.10) : 1;
-  const totalPoints = Math.round(evalRes.basePoints * mult.value * streakBonus);
+  const sc = scoreRound(evalRes.basePoints, timeUsedSeconds, currentStreak, 100);
 
   return {
     ...evalRes,
-    multiplier: mult.value,
-    streakBonus,
-    totalPoints,
-    newStreak,
+    multiplier: sc.speed,
+    comboMult: sc.comboMult,
+    streakBonus: sc.comboMult,
+    comboLevel: sc.comboLevel,
+    quality: sc.quality,
+    brokeCombo: sc.broke,
+    totalPoints: sc.points,
+    newStreak: sc.combo,
     timeUsed: timeUsedSeconds,
   };
 }
