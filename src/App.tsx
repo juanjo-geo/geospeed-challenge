@@ -38,6 +38,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/daily" element={<Index deepLink={{ type: 'daily' }} />} />
               <Route path="/daily/:date" element={<Index deepLink={{ type: 'daily' }} />} />
+              <Route path="/d/:n" element={<Index deepLink={{ type: 'dailyInvite' }} />} />
               <Route path="/challenge/:seed" element={<Index deepLink={{ type: 'challenge' }} />} />
               <Route path="/duel/:code" element={<Index deepLink={{ type: 'duel' }} />} />
               <Route path="/reto/:code" element={<Index deepLink={{ type: 'reto' }} />} />

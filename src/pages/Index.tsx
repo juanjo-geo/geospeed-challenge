@@ -10,6 +10,14 @@ import { type RoundResult } from '@/components/game/GameScreen';
 import CountdownIntro from '@/components/game/CountdownIntro';
 import RotateOverlay from '@/components/game/RotateOverlay';
 import DailyIntroScreen from '@/components/game/DailyIntroScreen';
+import DailyResultPanel, { type DailyFinish } from '@/components/game/DailyResultPanel';
+import StreakLostModal from '@/components/game/StreakLostModal';
+import { OPEN_STREAK_EVENT } from '@/components/game/StreakChip';
+import { gameDay, dailyNumber, dailySeed, dailyBestKey } from '@/lib/gameDay';
+import { fetchDailyStatus, getCachedDailyStatus, gridFromRounds, parseDailyInvite, DAILY_STATUS_EVENT, type DailyInvite, type DailyStatus } from '@/lib/dailyChallenge';
+import { syncStreakReminder, askNativeReminderPermissionOnce } from '@/lib/streakReminder';
+import { trackEvent } from '@/lib/analytics';
+import { useAuth } from '@/hooks/useAuth';
 import { OPEN_SETTINGS_EVENT } from '@/components/ui/ScreenHeader';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import AppNav, { type NavTab } from '@/components/game/AppNav';
@@ -113,6 +121,7 @@ const StoreScreen = lazyWithReload(() => import('@/components/game/StoreScreen')
 const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePassScreen'));
 const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
 const SettingsScreen = lazyWithReload(() => import('@/components/game/SettingsScreen'));
+const StreakScreen = lazyWithReload(() => import('@/components/game/StreakScreen'));
 const MoreModesScreen = lazyWithReload(() => import('@/components/game/MoreModesScreen'));
 const HowToPlayScreen = lazyWithReload(() => import('@/components/game/HowToPlayScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
@@ -149,22 +158,16 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
-// Generate a deterministic seed from today's date so all players get the same cities
+// Mismas ciudades para todos: semilla del día de juego (medianoche de Colombia, src/lib/gameDay.ts)
 function getDailySeed(): number {
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  let hash = 0;
-  for (let i = 0; i < today.length; i++) {
-    hash = ((hash << 5) - hash) + today.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
+  return dailySeed(gameDay());
 }
 
 function PhaseTransition({ children, phaseKey }: { children: React.ReactNode; phaseKey: string }) {
@@ -203,7 +206,7 @@ const difficultyLabelsEs: Record<Difficulty, string> = {
 };
 
 export interface DeepLinkProps {
-  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' };
+  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' };
 }
 
 const Index = ({ deepLink }: DeepLinkProps = {}) => {
@@ -275,7 +278,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     };
   }, []);
   const isMobile = useIsMobile();
-  const routeParams = useParams<{ date?: string; seed?: string; code?: string }>();
+  const routeParams = useParams<{ date?: string; seed?: string; code?: string; n?: string }>();
+  const { user, isAnonymous: isAnonymousUser, displayName: authDisplayName } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('splash');
   phaseRef.current = phase;
@@ -294,6 +298,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [taPrevBest, setTaPrevBest] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [showNoLives, setShowNoLives] = useState(false);
+  // Desafío diario (Fase 2): día/número/semilla fijados al empezar (si la partida cruza la medianoche
+  // sigue siendo el diario de ese día), resultado para el cierre, racha del servidor y link de un amigo
+  const dailyRunRef = useRef<{ day: string; no: number; seed: number } | null>(null);
+  const [dailyFinish, setDailyFinish] = useState<DailyFinish | null>(null);
+  const [dailyAfter, setDailyAfter] = useState<DailyStatus | null>(null);
+  const [dailyInvite, setDailyInvite] = useState<DailyInvite | null>(null);
+  const [streakLost, setStreakLost] = useState<{ lost: number; best: number; on: string } | null>(null);
   const showNoLivesRef = useRef(false);
   showNoLivesRef.current = showNoLives;
   // Se recuerda en qué pantalla se abrió: si el jugador cambia de pantalla, se cierra (antes quedaba
@@ -542,11 +553,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setFinalRounds(rounds);
     setFinalScore(total);
     setEndReason(reason);
-    // Determine if this was a daily challenge
-    const today = new Date().toISOString().split('T')[0];
-    const isDailyGame = phase === 'daily' || (difficulty === 'medium' && gameMode === 'world');
-    const dailyKey = `geospeed_daily_${today}`;
-
+    // El diario tiene su propio cierre (fase 'daily'); antes cualquier partida Crack + Mundo se tomaba
+    // por diario y daba una vida extra.
+    setDailyFinish(null);
     addGameHistory({
       date: new Date().toISOString(),
       score: total,
@@ -554,14 +563,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       difficulty,
       mode: gameMode,
       avgDistance: Math.round(avgDist),
-      type: isDailyGame && !localStorage.getItem(dailyKey) ? 'daily' : 'classic',
+      type: 'classic',
     });
-
-    // Grant daily challenge bonus: +1 life (first completion only)
-    if (isDailyGame && !localStorage.getItem(dailyKey)) {
-      localStorage.setItem(dailyKey, String(total));
-      addLives(1);
-    }
 
     // Track game for ad cadence, battle pass XP, analytics, and sync to cloud
     incrementGameCounter();
@@ -591,6 +594,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge]);
 
   // ── Notifications: start check loop + schedule after each game ──
+  // Recordatorio de la racha: se reprograma cada vez que cambia el estado del diario (al abrir, al terminarlo)
+  useEffect(() => {
+    syncStreakReminder();
+    const on = () => syncStreakReminder();
+    window.addEventListener(DAILY_STATUS_EVENT, on);
+    return () => window.removeEventListener(DAILY_STATUS_EVENT, on);
+  }, []);
   useEffect(() => {
     startNotificationLoop();
     // Reintenta guardar la suscripción push en cada apertura (idempotente) si ya hay permiso —
@@ -605,8 +615,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (getPermission() === 'granted') {
       if (phase === 'wc-playing') return;
       scheduleDailyReminder();
-      const streak = getStreakState().currentStreak; // solo lectura: no consume el cofre del día
-      if (streak >= 2) scheduleStreakWarning(streak);
       const energy = getEnergy();
       if (energy.lives < energy.maxLives && energy.nextRegenMs > 0) {
         // Schedule for when ALL lives are full (se vuelve a comprobar al momento de avisar)
@@ -642,8 +650,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     // Schedule immediately if granted
     if (getPermission() === 'granted') {
       scheduleDailyReminder();
-      const streak = getStreakState().currentStreak;
-      if (streak >= 2) scheduleStreakWarning(streak);
+      syncStreakReminder();
     }
   }, []);
 
@@ -735,6 +742,29 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     window.addEventListener(OPEN_SETTINGS_EVENT, open);
     return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open);
   }, []);
+  // El chip 🔥 (Inicio, barra, cierre del diario) abre la pantalla de la racha
+  useEffect(() => {
+    const open = () => { window.scrollTo(0, 0); setPhase('streak'); };
+    window.addEventListener(OPEN_STREAK_EVENT, open);
+    return () => window.removeEventListener(OPEN_STREAK_EVENT, open);
+  }, []);
+  // Racha perdida: pantalla empática una vez por racha (cuenta como la ventana de esta visita al inicio)
+  useEffect(() => {
+    if (phase !== 'home') return;
+    let alive = true;
+    const id = setTimeout(async () => {
+      const st = (await fetchDailyStatus()) ?? getCachedDailyStatus();
+      if (!alive || !st || st.lost_streak < 2 || !st.lost_on) return;
+      try { if (localStorage.getItem('geospeed_streak_lost_seen') === st.lost_on) return; } catch { return; }
+      if (homeInterruptionShown() || showNoLivesRef.current) return;
+      markHomeInterruption();
+      setStreakLost({ lost: st.lost_streak, best: st.best_streak, on: st.lost_on });
+    }, 900);
+    return () => { alive = false; clearTimeout(id); };
+  }, [phase]);
+  const closeStreakLost = useCallback(() => {
+    setStreakLost((s) => { if (s) { try { localStorage.setItem('geospeed_streak_lost_seen', s.on); } catch { /* sin almacenamiento */ } } return null; });
+  }, []);
   const handleMoreModes = useCallback(() => { window.scrollTo(0, 0); setPhase('more-modes'); }, []);
   const handleHowTo = useCallback(() => { window.scrollTo(0, 0); setPhase('howto'); }, []);
   // Tarjeta del Inicio → presentación del Desafío diario (maqueta); JUGAR DESAFÍO llama a handleDailyChallenge
@@ -789,7 +819,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setGameMode('world');
     setIsTraining(false);
     setIsSpeedDemon(false);
-    gameSeedRef.current = getDailySeed(); // "Reta a un amigo" tras el Diario comparte las ciudades del día
+    const day = gameDay();
+    dailyRunRef.current = { day, no: dailyNumber(day), seed: dailySeed(day) };
+    setDailyFinish(null);
+    setDailyAfter(null);
+    gameSeedRef.current = dailyRunRef.current.seed; // "Reta a un amigo" tras el Diario comparte las ciudades del día
     gameKeyRef.current += 1;
     countdownNextRef.current = 'daily'; // el Diario ahora muestra la cuenta regresiva primero
     setPhase('countdown');
@@ -893,6 +927,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (phase !== 'home' || deepLinkProcessed.current || !deepLink) return;
     deepLinkProcessed.current = true;
 
+    if (deepLink.type === 'dailyInvite') {
+      // /d/<número>?r=Juanjo&h=8&t=42&g=… → presentación del diario de hoy con el resultado del amigo
+      const no = Number(routeParams.n);
+      const invite = parseDailyInvite(no, window.location.search);
+      setDailyInvite(invite);
+      trackEvent('daily_link_open', { daily_no: no, today: dailyNumber(gameDay()) });
+      setPhase('daily-intro');
+      navigate('/', { replace: true });
+      return;
+    }
     if (deepLink.type === 'daily') {
       // /daily or /daily/2026-05-12 → start daily challenge
       unlockAudio();
@@ -1010,7 +1054,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'daily-intro') {
-      return <DailyIntroScreen onBack={handleGoHome} onPlay={handleDailyChallenge} />;
+      return <DailyIntroScreen onBack={handleGoHome} onPlay={handleDailyChallenge} invite={dailyInvite} />;
+    }
+
+    if (phase === 'streak') {
+      return <StreakScreen onBack={handleGoHome} onPlayDaily={handleDailyIntro} />;
     }
 
     if (phase === 'howto') {
@@ -1244,9 +1292,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'daily') {
+      const run = dailyRunRef.current ?? { day: gameDay(), no: dailyNumber(gameDay()), seed: getDailySeed() };
       return (
         <GameScreen
-          key={`daily-${getDailySeed()}`}
+          key={`daily-${run.seed}`}
           difficulty="medium"
           gameMode="world"
           onRoundComplete={() => {}}
@@ -1270,14 +1319,22 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               avgDistance: Math.round(avgDist),
               type: 'daily',
             });
-            // Save daily best to localStorage + grant +1 life on first daily completion
-            const todayKey = `geospeed_daily_${new Date().toISOString().split('T')[0]}`;
+            // Mejor puntaje del día (local) + 1 vida la primera vez que se termina el diario de hoy
+            const todayKey = dailyBestKey(run.day);
             const prevBest = parseInt(localStorage.getItem(todayKey) || '0', 10);
-            if (!prevBest) {
-              // First completion today — reward +1 life
-              addLives(1);
-            }
+            if (!prevBest) addLives(1);
             if (total > prevBest) localStorage.setItem(todayKey, total.toString());
+            // Cierre: cuadritos al instante; la racha llega del servidor al guardar
+            const grid = gridFromRounds(rounds, 13);
+            setDailyFinish({
+              dailyNo: run.no,
+              hits: rounds.filter((r) => r.basePoints >= 400).length,
+              total: 13,
+              timeMs: Math.round(rounds.reduce((s, r) => s + (r.timeExact ?? r.timeUsed), 0) * 1000),
+              grid,
+            });
+            setDailyAfter(null);
+            trackEvent('daily_complete', { daily_no: run.no, hits: rounds.filter((r) => r.basePoints >= 400).length, from_link: !!dailyInvite });
             saveGameResult({
               gameType: 'daily',
               mode: 'world',
@@ -1287,12 +1344,17 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               roundsTotal: 13,
               avgDistanceKm: avgDist,
               endReason: reason,
-              seed: getDailySeed(),
+              seed: run.seed,
+              dailyNo: run.no,
               rounds: roundsFromResults(rounds),
+            }).then(() => fetchDailyStatus()).then((st) => {
+              setDailyAfter(st);
+              // App instalada: tras el primer diario con racha, pedir el permiso del recordatorio (una vez)
+              if (st && st.current_streak >= 1) askNativeReminderPermissionOnce();
             });
             setPhase('final');
           }}
-          seed={getDailySeed()}
+          seed={run.seed}
         />
       );
     }
@@ -1337,11 +1399,21 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onNewGame={handleNewGame}
           onGoHome={handleGoHome}
           onRevenge={revengeUsed || activeChallenge ? undefined : handleRevenge}
-          onShareChallenge={canShareChallenge ? handleFriends : undefined}
+          onShareChallenge={canShareChallenge && !dailyFinish ? handleFriends : undefined}
           onViewChallenge={playedChallenge ? handleViewChallenge : undefined}
           onOpenStore={handleOpenStore}
           challengerScore={challengerScore}
           totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
+          topPanel={dailyFinish ? (
+            <DailyResultPanel
+              result={dailyFinish}
+              status={dailyAfter}
+              invite={dailyInvite}
+              playerName={authDisplayName || t('ch_you')}
+              isGuest={!user || isAnonymousUser}
+              onCreateAccount={() => navigate('/auth')}
+            />
+          ) : undefined}
         />
       );
     }
@@ -1388,6 +1460,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       </PhaseErrorBoundary>
       {showNav && <AppNav active={activeNavTab} onNavigate={handleNav} onOpenSettings={handleOpenSettings} />}
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
+      {streakLost && phase === 'home' && (
+        <StreakLostModal lost={streakLost.lost} best={streakLost.best} onClose={closeStreakLost} onPlay={() => { closeStreakLost(); handleDailyIntro(); }} />
+      )}
 
       {/* Notification permission prompt — shown after first game */}
       {showNotifPrompt && (

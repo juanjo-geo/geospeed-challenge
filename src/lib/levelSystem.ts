@@ -1,3 +1,4 @@
+import { dailyBestKey } from '@/lib/gameDay';
 import { getPlayerStats, getGameHistory } from './gameUtils';
 import { addLives } from './energySystem';
 
@@ -162,7 +163,7 @@ export function getPlayerBadges(): Badge[] {
   const played50 = stats.gamesPlayed >= 50;
   const scored5k = stats.bestScore >= 5000;
   const scored10k = stats.bestScore >= 10000;
-  const playedDaily = !!localStorage.getItem(`geospeed_daily_${new Date().toISOString().split('T')[0]}`);
+  const playedDaily = !!localStorage.getItem(dailyBestKey());
   const playedHard = history.some(g => g.difficulty === 'hard');
   const streak3 = history.length >= 3 && history.slice(0, 3).every(g => g.score > 0);
 

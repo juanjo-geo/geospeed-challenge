@@ -1,0 +1,158 @@
+/**
+ * Desafío diario con racha (Fase 2, docs/GeoSpeed_Plan_Competencia.md §2).
+ *
+ * La racha vive en el servidor (daily_status / save_game_result con `daily_no`): suma 1 por cada día con el
+ * diario terminado, se gastan protectores al faltar un día y los hitos dan insignias, marcos y títulos.
+ * Aquí: lectura y caché del estado, catálogo de hitos/marcos/títulos y el texto para compartir.
+ */
+import { supabase } from '@/integrations/supabase/client';
+import { gameDay, dailyNumber } from '@/lib/gameDay';
+
+export interface DailyBadge { id: string; earned_at: string; seen: boolean }
+export interface DailyTodayResult { score: number; hits: number; total: number; time_ms: number; grid: string; daily_no: number }
+export interface DailyStatus {
+  today: string;
+  daily_no: number;
+  current_streak: number;
+  best_streak: number;
+  last_day: string | null;
+  freezes: number;
+  freeze_cap: number;
+  freeze_refill_on: string | null;
+  lost_streak: number;
+  lost_on: string | null;
+  today_result: DailyTodayResult | null;
+  played: string[];
+  frozen: string[];
+  badges: DailyBadge[];
+  active_title: string | null;
+  active_frame: string | null;
+}
+
+const CACHE_KEY = 'geospeed_daily_status';
+/** Se dispara al cambiar el estado (para el Inicio, el encabezado y el calendario) */
+export const DAILY_STATUS_EVENT = 'geospeed:daily-status';
+
+export function getCachedDailyStatus(): DailyStatus | null {
+  try {
+    const s = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null') as DailyStatus | null;
+    // Del día anterior: la racha puede haber cambiado; sirve para pintar mientras llega la nueva
+    return s;
+  } catch { return null; }
+}
+
+/** Racha que mostrar ya (caché): si el último diario fue antes de ayer, en riesgo o perdida → se ve hasta refrescar */
+export function cachedStreak(): number {
+  const s = getCachedDailyStatus();
+  return s ? s.current_streak : 0;
+}
+
+/** Lee el estado del servidor (necesita sesión; sin ella devuelve null) y lo guarda en caché */
+export async function fetchDailyStatus(): Promise<DailyStatus | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const { data, error } = await supabase.rpc('daily_status');
+    if (error || !data) return null;
+    const st = data as unknown as DailyStatus;
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(st)); } catch { /* sin almacenamiento */ }
+    window.dispatchEvent(new CustomEvent(DAILY_STATUS_EVENT, { detail: st }));
+    return st;
+  } catch {
+    return null;
+  }
+}
+
+/** ¿Ya terminó el diario de hoy? (servidor o, sin sesión, el registro local) */
+export function playedToday(st: DailyStatus | null = getCachedDailyStatus()): boolean {
+  const today = gameDay();
+  if (st && st.today === today && st.today_result) return true;
+  try { return !!localStorage.getItem(`geospeed_daily_${today}`); } catch { return false; }
+}
+
+export async function markBadgesSeen(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  try { await supabase.rpc('mark_badges_seen', { p_ids: ids }); } catch { /* reintenta en la próxima lectura */ }
+}
+
+export async function setActiveCosmetics(title: string | null, frame: string | null): Promise<boolean> {
+  const { error } = await supabase.rpc('set_active_cosmetics', { p_title: title, p_frame: frame });
+  if (!error) await fetchDailyStatus();
+  return !error;
+}
+
+// ── Hitos de la racha ───────────────────────────────────────────────────────
+export interface StreakMilestone {
+  days: number;
+  badge: string;           // id en user_badges
+  nameKey: string;         // insignia (lo ven otros)
+  rewardKey: string;       // utilidad
+  frame?: 'bronze' | 'silver' | 'gold';
+  title?: 'viajero' | 'leyenda';
+  emoji: string;
+}
+export const STREAK_MILESTONES: StreakMilestone[] = [
+  { days: 3, badge: 'streak_3', nameKey: 'streak_b3', rewardKey: 'streak_r3', emoji: '🔥' },
+  { days: 7, badge: 'streak_7', nameKey: 'streak_b7', rewardKey: 'streak_r7', frame: 'bronze', emoji: '🥉' },
+  { days: 30, badge: 'streak_30', nameKey: 'streak_b30', rewardKey: 'streak_r30', emoji: '🌋' },
+  { days: 100, badge: 'streak_100', nameKey: 'streak_b100', rewardKey: 'streak_r100', frame: 'silver', title: 'viajero', emoji: '💯' },
+  { days: 365, badge: 'streak_365', nameKey: 'streak_b365', rewardKey: 'streak_r365', frame: 'gold', title: 'leyenda', emoji: '🌍' },
+];
+export const milestoneOf = (badgeId: string) => STREAK_MILESTONES.find((m) => m.badge === badgeId);
+export const FRAME_STYLE: Record<string, { ring: string; glow: string }> = {
+  bronze: { ring: 'hsl(28 62% 52%)', glow: 'hsl(28 70% 50% / 0.55)' },
+  silver: { ring: 'hsl(210 14% 78%)', glow: 'hsl(210 30% 85% / 0.55)' },
+  gold: { ring: 'hsl(45 95% 58%)', glow: 'hsl(45 100% 55% / 0.7)' },
+};
+export const TITLE_KEY: Record<string, string> = { viajero: 'title_viajero', leyenda: 'title_leyenda' };
+
+// ── Compartir (sin revelar las ciudades) ────────────────────────────────────
+/** Cuadritos: 🟩 acierto rápido (< 3 s) · 🟨 acierto lento · 🟥 fallo · ⬛ sin jugar (se acabó el tiempo) */
+export function gridEmojis(grid: string): string {
+  return [...grid].map((c) => (c === 'G' ? '🟩' : c === 'Y' ? '🟨' : c === 'R' ? '🟥' : '⬛')).join('');
+}
+
+/** Cuadritos desde las rondas jugadas (para mostrar al instante, antes de la respuesta del servidor) */
+export function gridFromRounds(rounds: { basePoints: number; timeExact?: number; timeUsed: number }[], total: number): string {
+  const g = rounds.map((r) => (r.basePoints >= 400 ? ((r.timeExact ?? r.timeUsed) < 3 ? 'G' : 'Y') : 'R')).join('');
+  return g.padEnd(total, 'X');
+}
+
+export const SHARE_ORIGIN = 'https://geospeed-challenge.vercel.app';
+
+/** Nombre corto para el link (?r=): sin espacios ni símbolos */
+export const shareName = (name: string) =>
+  name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '').slice(0, 16) || 'amigo';
+
+export interface DailyShareData { dailyNo: number; hits: number; total: number; timeMs: number; grid: string; streak: number; name: string }
+
+/** Link del diario con el resultado de quien lo comparte (para la comparación al final, sin cuenta) */
+export function dailyLink(d: DailyShareData): string {
+  const p = new URLSearchParams({ r: shareName(d.name), h: String(d.hits), t: String(Math.round(d.timeMs / 1000)), g: d.grid });
+  return `${SHARE_ORIGIN}/d/${d.dailyNo}?${p.toString()}`;
+}
+
+export function dailyShareText(d: DailyShareData, t: (k: string, v?: Record<string, string | number>) => string): string {
+  const lines = [
+    t('share_dailyTitle', { n: d.dailyNo }),
+    `${d.hits}/${d.total} · ${Math.round(d.timeMs / 1000)} s`,
+    gridEmojis(d.grid),
+  ];
+  if (d.streak >= 1) lines.push(d.streak === 1 ? t('share_dailyStreakOne') : t('share_dailyStreak', { n: d.streak }));
+  lines.push(`${t('share_dailyChallenge')} ${dailyLink(d)}`);
+  return lines.join('\n');
+}
+
+/** Resultado de quien envió el link (/d/<n>?r=…&h=…&t=…&g=…), para "Juanjo hizo 8/13 en 42 s. ¿Le ganas?" */
+export interface DailyInvite { dailyNo: number; name: string; hits: number; timeS: number; grid: string }
+export function parseDailyInvite(no: number, search: string): DailyInvite | null {
+  const p = new URLSearchParams(search);
+  const name = (p.get('r') || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 16);
+  const hits = parseInt(p.get('h') || '', 10);
+  const timeS = parseInt(p.get('t') || '', 10);
+  const grid = (p.get('g') || '').replace(/[^GYRX]/g, '').slice(0, 30);
+  if (!name || !Number.isFinite(no)) return null;
+  return { dailyNo: no, name, hits: Number.isFinite(hits) ? hits : 0, timeS: Number.isFinite(timeS) ? timeS : 0, grid };
+}
+
+export const todayDailyNo = () => dailyNumber(gameDay());

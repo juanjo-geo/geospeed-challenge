@@ -56,13 +56,13 @@ fotos, datos) se suma aparte porque depende de revisión de JuanJo.
 
 ### Fase 2 — Desafío diario con racha y compartir (L) · Paridad P2 · §2
 - **Día de juego = medianoche de Colombia** para todos (diario, racha, cupos de Sprint). Diario numerado (#1, #2…).
-- Diario de 10 ciudades (como Sprint y el texto "8/10"), resultado guardado en el servidor (`daily_results`).
+- Diario de 13 ciudades (decisión de JuanJo: como hoy; el texto queda "11/13"), resultado guardado en el servidor (`daily_results`).
 - Racha de diarios completados con protectores (1 gratis por semana, Pro hasta 3), récord, pantalla de racha
   perdida, calendario. Premios por hito (3/7/30/100/365 días) con insignias, marcos y títulos **en el servidor**
   (`user_badges`), y utilidades (protector, +3 Sprints, 7 días de Pro de prueba, nunca Pro permanente).
 - Compartir por WhatsApp: texto con cuadritos 🟩🟨🟥 sin revelar ciudades, botón WhatsApp + menú nativo + copiar.
 - Link `/d/<número>?r=<nombre>` que abre el diario sin cuenta y al final compara con quien lo envió.
-- Vista previa en WhatsApp con imagen del día (función de Vercel para la imagen y las etiquetas `og:`).
+- Vista previa en WhatsApp con imagen del día (función de Vercel para la imagen y las etiquetas `og:`). **Queda como Fase 2b:** necesita probarse en un despliegue de vista previa de Vercel; mientras tanto los links muestran la imagen general.
 - Recordatorio a las 7 p. m. (notificación local en la app; requiere instalar el plugin y generar nueva AAB).
 
 ### Fase 3 — Carrera contra el fantasma en los retos (M) · Diferencial D2 · §8
@@ -131,6 +131,9 @@ Preguntas originales de la fase 1 (para referencia):
    racha (la del diario) y el cofre queda como premio diario sin número propio.
 6. Diario de 10 ciudades (hoy 13). Recomendación: 10, para que coincida con el texto para compartir y con Sprint.
 
+**Fase 2 — decidido por JuanJo el 20-10-2026:** día de juego a medianoche de Colombia; una sola racha (la del diario,
+el cofre queda sin número); el diario sigue con 13 ciudades.
+
 **Fase 5 (Sprint):**
 7. Ranking "Colombia" necesita el país del jugador (recomendación: se elige en el perfil, con el del teléfono por
    defecto); "Amigos" = personas con las que has jugado retos (no hay lista de amigos).
@@ -148,8 +151,8 @@ Preguntas originales de la fase 1 (para referencia):
 | Fase | Estado | Fecha |
 |---|---|---|
 | 0 | Hecha (metadatos 250+ ciudades, retos con amigos) | 2026-10-20 |
-| 1 | Código hecho (a fórmula y combo · b efectos por nivel · c servidor y Temporada 1). Falta `npx supabase db push` y publicar | 2026-10-20 |
-| 2 | Propuesta | |
+| 1 | Hecha y publicada (a fórmula y combo · b efectos por nivel · c servidor y Temporada 1) | 2026-10-20 |
+| 2 | Código hecho (racha con protectores e hitos, pantalla de racha, compartir con cuadritos, link `/d/N`, recordatorio). Falta `npx supabase db push`, publicar y nueva AAB. Imagen por día = 2b | 2026-10-20 |
 | 3 | Propuesta | |
 | 4 | Propuesta | |
 | 5 | Propuesta | |

@@ -37,9 +37,6 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
     if (navigator.vibrate) { try { navigator.vibrate([12, 40, 24]); } catch { /* no-op */ } }
   };
 
-  const dayLabel = reward.day === 1
-    ? t('home_streakDaysSingular', { count: String(reward.day) })
-    : t('home_streakDaysPlural', { count: String(reward.day) });
 
   return (
     <div
@@ -59,7 +56,7 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
 
       <div className="modal-panel flex flex-col items-center px-3">
       <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-primary/80 mb-1">{t('chest_daily')}</p>
-      <p className="text-base sm:text-lg font-black text-foreground mb-6 short:mb-2">🔥 {dayLabel}</p>
+      <p className="text-base sm:text-lg font-black text-foreground mb-6 short:mb-2">🎁 {t('chest_daily')}</p>
 
       {/* El cofre escala con el alto disponible (en horizontal hay ~360px) */}
       <div className="relative flex items-center justify-center mb-7 short:mb-3" style={{ width: 'min(220px, 46vh)', height: 'min(220px, 46vh)' }}>
