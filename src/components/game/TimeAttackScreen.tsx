@@ -25,8 +25,9 @@ import { preloadCountryPhoto } from '@/lib/countryPhotos';
 
 const GLOBAL_TIME = 60;
 const POOL_SIZE = 40;
-/** Cuánto se ve la tarjeta de respuesta (la misma del Clásico). El reloj global sigue: SIGUIENTE avanza antes. */
-const CAOS_FEEDBACK_MS = 2000;
+/** Cuánto se ve la tarjeta de respuesta (la misma del Clásico). El reloj global sigue: SIGUIENTE avanza antes.
+ *  JuanJo 2026-10-21: +1 s (era 2 s). */
+const CAOS_FEEDBACK_MS = 3000;
 
 function getContinentFromCoords(lat: number, lon: number): string | null {
   if (lat > 34 && lon >= -25 && lon <= 50) return 'Europe';

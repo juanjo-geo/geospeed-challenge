@@ -34,7 +34,8 @@ import { preloadCountryPhoto } from '@/lib/countryPhotos';
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const TRAINING_ROUNDS = 6;
-const AUTO_ADVANCE_SECONDS = 3;
+/** Segundos que la tarjeta de respuesta queda antes de avanzar sola (JuanJo 2026-10-21: +1 s, era 3) */
+const AUTO_ADVANCE_SECONDS = 4;
 /** Tiempo para ver la línea y los km entre la respuesta y la ciudad antes de que la tarjeta tape el mapa.
  *  JuanJo (2026-10-18): 2 s más que antes → 3,2 s; con el anuncio "¡al otro lado del mundo!" (≥ 5.000 km), 6,2 s. */
 const DISTANCE_VIEW_MS = 3200;
