@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { scrollAppToTop } from '@/lib/appScroll';
+import { useMemory, dueCount } from '@/lib/itemMemory';
 import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
 import { getPlayerStats, getDailyPlayerCount } from '@/lib/gameUtils';
 import { getPlayerLevel } from '@/lib/levelSystem';
@@ -31,6 +32,8 @@ interface HomeScreenProps {
   onDailyChallenge: () => void;
   onWorldChallenge: () => void;
   onStartTraining: () => void;
+  /** Fase 4: Repaso del día (franja visible solo cuando hay lugares que tocan hoy) */
+  onStartReview?: () => void;
   /** F4: bandeja Mis retos (4ª tarjeta de acceso) */
   onMyChallenges?: () => void;
   onSpeedDemon?: () => void;
@@ -82,8 +85,9 @@ function loadSelection(): { mode: GameMode; difficulty: Difficulty } | null {
 /** El día del cofre se registra una vez por apertura de la app (ver efecto del cofre). */
 let dayRegisteredThisSession = false;
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { t, locale } = useI18n();
+  const reviewDue = dueCount(useMemory());
   const stats = getPlayerStats();
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
   const playerLevel = getPlayerLevel();
@@ -330,6 +334,21 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           : <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">🎯</span>} title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />}
         <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">⚡</span>} title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
       </div>
+
+      {/* ── Repaso del día (Fase 4): solo cuando hay lugares que tocan hoy ── */}
+      {reviewDue > 0 && onStartReview && (
+        <button
+          onClick={() => { playButtonTap(); onStartReview(); }}
+          className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 flex items-center gap-3 rounded-2xl border-2 border-accent/60 bg-card/80 px-3 sm:px-4 py-2 sm:py-2.5 text-left shadow-[0_0_16px_hsl(var(--accent)/0.15)] active:scale-[0.99] animate-fade-in-up"
+        >
+          <span className="text-2xl sm:text-3xl" aria-hidden>🧠</span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-extrabold leading-tight">{t('train_reviewCard')}</span>
+            <span className="block text-xs sm:text-sm text-foreground/80 truncate">{reviewDue === 1 ? t('train_reviewCountOne') : t('train_reviewCount', { n: reviewDue })}</span>
+          </span>
+          <span className="shrink-0 rounded-full bg-accent px-3 sm:px-4 py-1 text-xs sm:text-sm font-black text-brand-navy-deep">{t('train_reviewGo')}</span>
+        </button>
+      )}
 
       {/* ── Cofre diario ── */}
       {streakReward && !streakDismissed && (

@@ -154,7 +154,7 @@ el cofre queda sin número); el diario sigue con 13 ciudades.
 | 1 | Hecha y publicada (a fórmula y combo · b efectos por nivel · c servidor y Temporada 1) | 2026-10-20 |
 | 2 | Publicada (racha con protectores e hitos, pantalla de racha, compartir con cuadritos, link `/d/N`, recordatorio). Falta nueva AAB para el recordatorio en Android. 2b (imagen del día en WhatsApp) hecha el 2026-10-21 | 2026-10-20 |
 | 3 | Publicada (RPC `challenge_ghost`, Tú vs rival en vivo, aviso al segundo exacto, pin y comparación tras responder, resumen al final; al terminar un reto se va directo a la comparación) | 2026-10-21 |
-| 4 | Propuesta | |
+| 4 | Código hecho (entrenamiento: región, nivel, 6/10/20, reloj opcional, repetir falladas, % dominado; repaso inteligente con cajas 1–5 en el servidor, Repaso del día, Tu memoria). Falta aplicar `20261024120000_item_memory.sql` y publicar | 2026-10-21 |
 | 5 | Propuesta | |
 | 6 | Propuesta | |
 | 7 | Propuesta | |
