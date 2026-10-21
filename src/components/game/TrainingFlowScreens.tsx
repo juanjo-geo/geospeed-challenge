@@ -63,8 +63,17 @@ export function TrainingResultScreen({ summary, onAgain, onSettings, onMemory, o
             <p className="mt-1 text-xs sm:text-sm text-foreground/80">{t('train_firstTryShort')}</p>
           </div>
           <div className="rounded-2xl border-2 border-accent/40 bg-card/70 px-3 py-3">
-            <p className="text-3xl font-black text-foreground leading-none">{s.fixed}/{s.firstTotal - s.firstHits}</p>
-            <p className="mt-1 text-xs sm:text-sm text-foreground/80">{t('train_fixedShort')}</p>
+            {s.firstTotal - s.firstHits > 0 ? (
+              <>
+                <p className="text-3xl font-black text-foreground leading-none">{s.fixed}/{s.firstTotal - s.firstHits}</p>
+                <p className="mt-1 text-xs sm:text-sm text-foreground/80">{t('train_fixedShort')}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-3xl font-black text-accent leading-none">✓</p>
+                <p className="mt-1 text-xs sm:text-sm text-foreground/80">{t('train_noMisses')}</p>
+              </>
+            )}
           </div>
         </div>
         {s.kind === 'training' && (
@@ -73,7 +82,9 @@ export function TrainingResultScreen({ summary, onAgain, onSettings, onMemory, o
               {gain != null && gain > 0 && <span className="ml-2 rounded-full border-2 border-accent/70 px-2 py-0.5 text-xs font-black text-accent">+{gain} %</span>}
             </p>
             <span className="mt-2 block h-2 rounded-full bg-foreground/10 overflow-hidden"><span className="block h-full rounded-full bg-accent transition-[width] duration-700" style={{ width: `${s.after ?? s.before ?? 0}%` }} /></span>
-            {s.after == null && <p className="mt-1 text-xs text-muted-foreground animate-pulse">{t('train_savingMemory')}</p>}
+            {s.after == null
+              ? <p className="mt-1 text-xs text-muted-foreground animate-pulse">{t('train_savingMemory')}</p>
+              : <p className="mt-1 text-xs text-muted-foreground">{t('train_masteryHint')}</p>}
           </div>
         )}
         <p className="mt-3 text-sm text-foreground/75">{t('train_memoryNote')}</p>
