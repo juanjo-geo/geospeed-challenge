@@ -89,6 +89,7 @@ export default function SplashGlobe({ className = '' }: { className?: string }) 
 
     const draw = (lambda0: number) => {
       const R = size / 2 - 1;
+      if (R <= 0) return; // lienzo aún sin tamaño (oculto o sin maquetar)
       const cx = size / 2, cy = size / 2;
       ctx.clearRect(0, 0, size, size);
 

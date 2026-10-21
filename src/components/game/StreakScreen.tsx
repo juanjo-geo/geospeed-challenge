@@ -86,8 +86,8 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
               <p className="font-bold text-lg">{streak === 1 ? t('streak_dayOne') : t('streak_days', { n: streak })}</p>
               <p className="text-sm text-muted-foreground">{t('streak_best', { n: best })}</p>
               <p className="mt-1.5 text-sm font-semibold">
-                🛡️ {t('streak_freezes', { n: st?.freezes ?? 0, cap: st?.freeze_cap ?? 1 })}
-                {refillDays != null && (st?.freezes ?? 0) < (st?.freeze_cap ?? 1) && <span className="text-muted-foreground font-normal"> · {t('streak_refillIn', { n: refillDays })}</span>}
+                🛡️ {t('streak_freezes', { n: st?.freezes ?? 1, cap: st?.freeze_cap ?? 1 })}
+                {refillDays != null && (st?.freezes ?? 1) < (st?.freeze_cap ?? 1) && <span className="text-muted-foreground font-normal"> · {t('streak_refillIn', { n: refillDays })}</span>}
               </p>
             </div>
           </section>
