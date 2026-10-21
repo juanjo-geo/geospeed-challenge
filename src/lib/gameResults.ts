@@ -51,6 +51,8 @@ export interface SaveGameInput {
   endReason: EndReason;
   seed?: number | null;
   challengeId?: string | null;
+  /** Desafío diario: número del diario que se jugó (el servidor registra el día y la racha) */
+  dailyNo?: number | null;
   rounds: SaveRoundInput[];
   /** Para reintentos: si no se pasa, se genera uno. */
   clientId?: string;
@@ -77,6 +79,7 @@ function toPayload(input: SaveGameInput, clientId: string): Json {
     end_reason: input.endReason,
     seed: input.seed ?? null,
     challenge_id: input.challengeId ?? null,
+    daily_no: input.dailyNo ?? null,
     // Puntaje v2 (Temporada 1): el servidor recalcula cada ronda desde el clic, la ciudad y el tiempo
     scoring_version: SCORING_VERSION,
     rounds: input.rounds.map(r => ({
@@ -254,6 +257,9 @@ export interface LeaderboardTopRow {
   avatar: string;
   bestScore: number;
   achievedAt: string;
+  /** Título y marco ganados con la racha del diario (Fase 2) */
+  activeTitle?: string | null;
+  activeFrame?: string | null;
 }
 
 export type RankPeriod = 'all' | 'week' | 'month';
@@ -266,6 +272,7 @@ export async function fetchLeaderboardTop(mode = 'world', difficulty: string | n
   return (data as Array<Record<string, unknown>>).map(r => ({
     rank: Number(r.rank), userId: String(r.user_id), displayName: String(r.display_name ?? ''),
     avatar: String(r.avatar ?? ''), bestScore: Number(r.best_score ?? 0), achievedAt: String(r.achieved_at ?? ''),
+    activeTitle: (r.active_title as string | null) ?? null, activeFrame: (r.active_frame as string | null) ?? null,
   }));
 }
 

@@ -14,6 +14,7 @@
 // El permiso se pide desde la UI (Index), a partir de la 3.ª partida: "Ahora no" lo pospone 7 días y
 // se pregunta como máximo 2 veces.
 
+import { playedToday } from './dailyChallenge';
 import { supabase } from '@/integrations/supabase/client';
 import { detectLocale, getTranslations, translate } from '@/i18n';
 import { getStreakState } from './dailyStreak';
@@ -159,7 +160,7 @@ function schedule(id: string, kind: NotifKind, fireAt: Date, params?: Record<str
 function texts(n: ScheduledNotif): { title: string; body: string } {
   const dict = getTranslations(detectLocale());
   switch (n.kind) {
-    case 'streak': return { title: translate(dict, 'notif_streakTitle', n.params), body: translate(dict, 'notif_streakBody') };
+    case 'streak': return { title: Number(n.params?.n) === 1 ? translate(dict, 'notif_streakTitleOne') : translate(dict, 'notif_streakTitle', n.params), body: translate(dict, 'notif_streakBody') };
     case 'lives': return { title: translate(dict, 'notif_livesTitle'), body: translate(dict, 'notif_livesBody') };
     default: return { title: translate(dict, 'notif_dailyTitle'), body: translate(dict, 'notif_dailyBody') };
   }
@@ -167,7 +168,7 @@ function texts(n: ScheduledNotif): { title: string; body: string } {
 
 /** ¿Sigue teniendo sentido el aviso al momento de mostrarlo? */
 function stillRelevant(n: ScheduledNotif): boolean {
-  if (n.kind === 'streak') return getStreakState().lastPlayDate !== localDate(); // ya jugó hoy
+  if (n.kind === 'streak') return !playedToday(); // ya terminó el diario de hoy
   if (n.kind === 'lives') { const e = getEnergy(); return e.regenLives >= e.maxLives; }
   return true;
 }
@@ -198,13 +199,15 @@ export function scheduleDailyReminder(): void {
   schedule('daily-reminder', 'daily', tomorrow);
 }
 
-/** Racha en peligro: mañana a las 20:00 (solo sale si ese día no se abrió el juego) */
-export function scheduleStreakWarning(currentStreak: number): void {
-  if (currentStreak < 2) return; // Only warn if streak worth protecting
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(20, 0, 0, 0);
-  schedule('streak-warning', 'streak', tomorrow, { n: currentStreak });
+/** Racha del diario en peligro (Fase 2): a la hora indicada (las 7 p. m., ver streakReminder.ts);
+ *  al momento de mostrarlo se comprueba que el diario de hoy siga sin jugarse */
+export function scheduleStreakWarning(currentStreak: number, at: Date): void {
+  if (currentStreak < 1) return;
+  schedule('streak-warning', 'streak', at, { n: currentStreak });
+}
+
+export function cancelStreakWarning(): void {
+  saveSchedules(getSchedules().filter(n => n.id !== 'streak-warning'));
 }
 
 /** Vidas completas (se vuelve a comprobar al momento de avisar) */

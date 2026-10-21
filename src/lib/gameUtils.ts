@@ -226,14 +226,11 @@ export function addGameHistory(entry: GameHistoryEntry) {
  * Uses Supabase leaderboard table filtered by today's date.
  */
 export async function getDailyPlayerCount(): Promise<number> {
+  // Jugadores que terminaron el diario de hoy (día de Colombia, tabla daily_results de la Fase 2)
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const { count, error } = await supabase
-      .from('leaderboard')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', `${today}T00:00:00.000Z`);
+    const { data, error } = await supabase.rpc('daily_players_today');
     if (error) return 0;
-    return count ?? 0;
+    return Number(data ?? 0);
   } catch {
     return 0;
   }

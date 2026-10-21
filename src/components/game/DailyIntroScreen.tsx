@@ -1,16 +1,21 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import { formatNumber } from '@/lib/format';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon } from '@/components/ui/icons';
 import Mascot from './Mascot';
+import { gameDay, dailyNumber, nextRollover, dailyBestKey } from '@/lib/gameDay';
+import { fetchDailyStatus, getCachedDailyStatus, playedToday, DAILY_STATUS_EVENT, type DailyInvite, type DailyStatus } from '@/lib/dailyChallenge';
+import { requestOpenStreak } from './StreakChip';
 const SplashGlobe = lazy(() => import('./SplashGlobe'));
 
 interface DailyIntroScreenProps {
   onBack: () => void;
   /** Empieza el desafío (consume una vida, cuenta regresiva) */
   onPlay: () => void;
+  /** Llegó por el link de un amigo (/d/<n>?r=…): su resultado para retarlo */
+  invite?: DailyInvite | null;
 }
 
 /**
@@ -18,16 +23,28 @@ interface DailyIntroScreenProps {
  * globo y el calendario del día, "El reto de hoy" con sus tres reglas, mejor resultado de hoy si ya jugó,
  * hora del cambio (D6) y JUGAR DESAFÍO.
  */
-export default function DailyIntroScreen({ onBack, onPlay }: DailyIntroScreenProps) {
+export default function DailyIntroScreen({ onBack, onPlay, invite = null }: DailyIntroScreenProps) {
   const { t, locale } = useI18n();
   const now = new Date();
   const dateLocale = locale === 'en' ? 'en-US' : 'es-CO';
-  const dayLabel = now.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long' }).replace(/\s+de\s+/i, ' ').toUpperCase();
-  // El diario cambia a medianoche UTC; mostramos la hora local equivalente (D6)
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-  const rollover = next.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
+  // Día de juego de Colombia (medianoche de Colombia para todos); la hora del cambio se muestra en local
+  const day = gameDay(now);
+  const dailyNo = dailyNumber(day);
+  const dayLabel = new Date(`${day}T12:00:00Z`).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', timeZone: 'UTC' }).replace(/\s+de\s+/i, ' ').toUpperCase();
+  const rollover = nextRollover(now).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
   let bestToday = 0;
-  try { bestToday = parseInt(localStorage.getItem(`geospeed_daily_${now.toISOString().split('T')[0]}`) || '0', 10); } catch { /* sin almacenamiento */ }
+  try { bestToday = parseInt(localStorage.getItem(dailyBestKey(day)) || '0', 10); } catch { /* sin almacenamiento */ }
+  // Racha y resultado de hoy (servidor; mientras llega, lo último guardado)
+  const [st, setSt] = useState<DailyStatus | null>(getCachedDailyStatus);
+  useEffect(() => {
+    const on = (e: Event) => setSt((e as CustomEvent<DailyStatus>).detail);
+    window.addEventListener(DAILY_STATUS_EVENT, on);
+    fetchDailyStatus();
+    return () => window.removeEventListener(DAILY_STATUS_EVENT, on);
+  }, []);
+  const streak = st?.current_streak ?? 0;
+  const done = playedToday(st);
+  const todayRes = st?.today === day ? st.today_result : null;
 
   const rules = [
     { icon: '🌍', title: t('daily_r1Title'), desc: t('daily_r1Desc') },
@@ -43,11 +60,19 @@ export default function DailyIntroScreen({ onBack, onPlay }: DailyIntroScreenPro
           title={t('home_dailyCard')}
           subtitle={t('daily_subtitle')}
           titleAside={
-            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border-2 border-foreground/25 bg-background/50 px-2.5 py-1 text-xs sm:text-sm font-bold whitespace-nowrap">
-              <CalendarIcon className="w-4 h-4" /> {dayLabel}
+            <span className="shrink-0 inline-flex flex-col items-center rounded-xl border-2 border-foreground/25 bg-background/50 px-2.5 py-1 text-xs sm:text-sm font-bold whitespace-nowrap">
+              <span className="inline-flex items-center gap-1.5"><CalendarIcon className="w-4 h-4" /> {dayLabel}</span>
+              <span className="text-primary text-[11px] sm:text-xs">{t('daily_number', { n: dailyNo })}</span>
             </span>
           }
         />
+
+        {invite && (
+          <div className="mb-4 rounded-2xl border-2 border-primary/60 bg-primary/10 px-4 py-3 text-center animate-fade-in">
+            <p className="font-extrabold text-lg">🏁 {t('daily_inviteBanner', { name: invite.name, hits: invite.hits, total: 13, s: invite.timeS })}</p>
+            {invite.dailyNo !== dailyNo && <p className="text-xs text-muted-foreground">{t('daily_invitePast', { n: invite.dailyNo })}</p>}
+          </div>
+        )}
 
         <div className="md:grid md:grid-cols-2 md:gap-6 md:items-center">
           {/* Ilustración: el Explorador junto al globo y el calendario del día */}
@@ -87,6 +112,16 @@ export default function DailyIntroScreen({ onBack, onPlay }: DailyIntroScreenPro
             </div>
           </section>
         </div>
+
+        {/* Racha del diario */}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm font-semibold">
+          <button onClick={() => { playButtonTap(); requestOpenStreak(); }} className="inline-flex items-center gap-1.5 rounded-full border-2 border-primary/60 px-3 py-1 text-primary font-extrabold hover:bg-primary/10">
+            🔥 {streak} · 🛡️ {st?.freezes ?? 1} <span className="font-semibold text-foreground/80">· {t('streak_seeMine')}</span>
+          </button>
+        </div>
+        {done && todayRes && (
+          <p className="mt-2 text-center text-sm text-accent font-semibold">✓ {t('daily_doneToday', { hits: todayRes.hits, total: todayRes.total, s: Math.round(todayRes.time_ms / 1000) })}</p>
+        )}
 
         <p className="mt-4 text-center text-sm font-semibold">
           {bestToday > 0

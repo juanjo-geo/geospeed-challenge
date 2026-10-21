@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { MODE_CONFIG, type Difficulty } from '@/data/cities';
+import { FRAME_STYLE, TITLE_KEY, getCachedDailyStatus } from '@/lib/dailyChallenge';
 import { fetchLeaderboardTop, fetchMyRank, type LeaderboardTopRow, type RankPeriod, type RankSeason } from '@/lib/gameResults';
 import { hasSession } from '@/lib/history';
 import { playButtonTap } from '@/lib/sounds';
@@ -157,8 +158,11 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
                 {rows.map(r => (
                   <li key={`${r.rank}-${r.userId}`} className={`grid ${ROW_COLS} items-center gap-3 rounded-2xl border-2 bg-brand-navy-deep/50 px-3 md:px-4 py-1 ${ROW_BORDER[r.rank] ?? 'border-accent/45'}`}>
                     <RankBadge rank={r.rank} />
-                    <Avatar avatar={r.avatar} />
-                    <span className="font-bold text-base md:text-lg truncate">{r.displayName}</span>
+                    <Avatar avatar={r.avatar} frame={r.activeFrame} />
+                    <span className="min-w-0 leading-tight">
+                      <span className="block font-bold text-base md:text-lg truncate">{r.displayName}</span>
+                      {r.activeTitle && TITLE_KEY[r.activeTitle] && <span className="block text-[11px] font-bold text-primary/90 truncate">✦ {t(TITLE_KEY[r.activeTitle] as never)}</span>}
+                    </span>
                     <span className={`text-right font-extrabold text-lg md:text-xl whitespace-nowrap ${r.rank === 1 ? 'text-primary' : ''}`}>{formatNumber(r.bestScore)} <span className="text-sm">pts</span></span>
                   </li>
                 ))}
@@ -183,7 +187,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
               <div className="w-full md:mt-3 rounded-2xl border-2 border-primary bg-primary/10 shadow-[0_0_18px_hsl(var(--primary)/0.25)] px-3 py-2.5 md:p-4">
                 <div className="flex items-center gap-3 md:justify-center">
                   <span className="font-black text-[1.9rem] md:text-5xl text-primary">#{hasRank.rank}</span>
-                  <Avatar avatar={avatar || 'mascot'} size="lg" />
+                  <Avatar avatar={avatar || 'mascot'} size="lg" frame={getCachedDailyStatus()?.active_frame} />
                   <span className="flex-1 md:flex-none min-w-0 font-extrabold text-lg md:text-xl text-left leading-tight truncate">{myName}{knownName && <span className="text-primary"> · {t('ch_you')}</span>}</span>
                   <span className="md:hidden font-extrabold text-xl text-primary whitespace-nowrap">{formatNumber(hasRank.bestScore ?? 0)} <span className="text-sm">pts</span></span>
                 </div>
@@ -233,10 +237,16 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="w-8 h-8 mx-auto rounded-full border-2 border-accent/70 flex items-center justify-center font-bold">{rank}</span>;
 }
 
-function Avatar({ avatar, size = 'sm' }: { avatar: string; size?: 'sm' | 'lg' }) {
+function Avatar({ avatar, size = 'sm', frame }: { avatar: string; size?: 'sm' | 'lg'; frame?: string | null }) {
   const cls = size === 'lg' ? 'w-14 h-14 md:w-16 md:h-16 border-primary' : 'w-10 h-10 border-accent/70';
+  // Marco de la racha del diario (bronce / plata / oro): anillo y brillo del color
+  const fs = frame ? FRAME_STYLE[frame] : null;
   return (
-    <span className={`${cls} shrink-0 rounded-full border-2 bg-[radial-gradient(circle_at_50%_40%,hsl(var(--brand-navy-card)),hsl(var(--brand-navy-deep)))] flex items-center justify-center overflow-hidden`} aria-hidden>
+    <span
+      className={`${cls} shrink-0 rounded-full border-2 bg-[radial-gradient(circle_at_50%_40%,hsl(var(--brand-navy-card)),hsl(var(--brand-navy-deep)))] flex items-center justify-center overflow-hidden ${frame === 'gold' ? 'animate-pulse-glow-subtle' : ''}`}
+      style={fs ? { borderColor: fs.ring, borderWidth: 3, boxShadow: `0 0 10px ${fs.glow}` } : undefined}
+      aria-hidden
+    >
       {!avatar || avatar === 'mascot' ? <Mascot state="wink" className="w-[80%]" /> : <span className={size === 'lg' ? 'text-3xl' : 'text-xl'}>{avatar}</span>}
     </span>
   );

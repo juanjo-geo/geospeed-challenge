@@ -6,6 +6,9 @@ import DailyChestModal from './DailyChestModal';
 import { checkStreak, claimDailyReward, getUnclaimedChestToday, skipTodayChest, type StreakReward } from '@/lib/dailyStreak';
 import { homeInterruptionShown, markHomeInterruption } from '@/lib/interruptions';
 import EnergyBar from './EnergyBar';
+import StreakChip from './StreakChip';
+import { nextRollover } from '@/lib/gameDay';
+import { getCachedDailyStatus, playedToday, todayDailyNo, DAILY_STATUS_EVENT, type DailyStatus } from '@/lib/dailyChallenge';
 import { lazy, Suspense } from 'react';
 // La demo dibuja el mapa (polígonos pesados): se carga aparte para que el inicio pinte antes
 const AutoDemo = lazy(() => import('./AutoDemo'));
@@ -110,8 +113,17 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const [streakReward, setStreakReward] = useState<StreakReward | null>(null);
   const [streakDismissed, setStreakDismissed] = useState(false);
   const [dailyPlayers, setDailyPlayers] = useState<number>(0);
-  // D6: el diario cambia a medianoche UTC; se muestra la hora local equivalente
-  const dailyRolloverTime = (() => { const n = new Date(); const next = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1)); return next.toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-CO', { hour: '2-digit', minute: '2-digit' }); })();
+  // El diario cambia a medianoche de Colombia para todos (Fase 2); se muestra la hora local equivalente
+  const dailyRolloverTime = nextRollover().toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-CO', { hour: '2-digit', minute: '2-digit' });
+  // Racha del diario (servidor, en caché): la tarjeta dice si ya se jugó hoy
+  const [dailySt, setDailySt] = useState<DailyStatus | null>(getCachedDailyStatus);
+  useEffect(() => {
+    const on = (e: Event) => setDailySt((e as CustomEvent<DailyStatus>).detail);
+    window.addEventListener(DAILY_STATUS_EVENT, on);
+    return () => window.removeEventListener(DAILY_STATUS_EVENT, on);
+  }, []);
+  const dailyStreakNow = dailySt?.current_streak ?? 0;
+  const dailyDone = playedToday(dailySt);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -173,8 +185,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const dateLabel = new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
 
   const shareDaily = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const url = `${window.location.origin}/daily/${today}`;
+    const url = `${window.location.origin}/d/${todayDailyNo()}`;
     const text = t('home_dailyShareText', { date: dateLabel });
     if (navigator.share) {
       try { await navigator.share({ title: 'GeoSpeed Daily', text, url }); } catch { /* cancelado */ }
@@ -217,7 +228,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* ── Encabezado del celular: vidas · marca · cuenta · ajustes (en md+ lo pone AppNav) ── */}
       <header className="md:hidden w-full max-w-md mb-2 sm:mb-3 animate-fade-in-up grid grid-cols-[auto_1fr_auto] items-center gap-2">
-        <EnergyBar stacked />
+        <div className="flex items-center gap-1.5">
+          <EnergyBar stacked />
+          <StreakChip />
+        </div>
         <div className="flex items-center justify-center gap-1.5 min-w-0">
           <img src="/mascot/explorer-logo.webp" alt="" className="w-9 h-9 min-[400px]:w-10 min-[400px]:h-10 object-contain shrink-0" />
           <span className="flex flex-col leading-none min-w-0">
@@ -308,7 +322,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* ── Tarjetas de acceso (orden de la maqueta: Diario · Amigos · Mis retos · Más modos) ── */}
       <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">
-        <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📅</span>} title={t('home_dailyCard')} desc={`${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-1.5 right-2 text-xs opacity-60 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
+        <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📅</span>} title={t('home_dailyCard')} desc={dailyDone ? t('home_dailyDoneDesc', { n: dailyStreakNow }) : dailyStreakNow > 0 ? `${t('home_dailyStreakDesc', { n: dailyStreakNow })} · ${t('home_dailyRollover', { time: dailyRolloverTime })}` : `${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-1.5 right-2 text-xs opacity-60 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
         <AccessCard icon={<FriendsIcon />} title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
         {onMyChallenges
           ? <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📋</span>} title={t('home_myChallenges')} desc={t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />

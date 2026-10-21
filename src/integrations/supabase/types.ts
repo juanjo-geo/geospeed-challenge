@@ -404,7 +404,25 @@ export type Database = {
           avatar: string
           best_score: number
           achieved_at: string
+          active_title: string | null
+          active_frame: string | null
         }[]
+      }
+      daily_status: {
+        Args: Record<string, never>
+        Returns: Json
+      }
+      daily_players_today: {
+        Args: Record<string, never>
+        Returns: number
+      }
+      mark_badges_seen: {
+        Args: { p_ids: string[] }
+        Returns: undefined
+      }
+      set_active_cosmetics: {
+        Args: { p_title: string | null; p_frame: string | null }
+        Returns: undefined
       }
       update_my_profile: {
         Args: { p_display_name?: string | null; p_avatar?: string | null }

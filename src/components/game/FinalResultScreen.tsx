@@ -39,6 +39,8 @@ interface FinalResultScreenProps {
   reason: 'timeout' | 'complete';
   /** Repetir estas ciudades (misma lista, gratis). Si no se pasa, el botón principal es onNewGame. */
   onPlayAgain?: () => void;
+  /** Panel encima de "¿Lo intentamos de nuevo?" (desafío diario: cuadritos, racha y compartir) */
+  topPanel?: React.ReactNode;
   /** classic (por defecto) · timeattack (60s de Caos) · mundial. Cambia títulos, tiles y ranking. */
   variant?: 'classic' | 'timeattack' | 'mundial';
   /** Sin ofertas de tienda en este cierre (entrenamiento) */
@@ -92,6 +94,7 @@ export default function FinalResultScreen({
   countDistancesInStats = true,
   musicMuted,
   onToggleMusic,
+  topPanel,
 }: FinalResultScreenProps) {
   const { user, displayName: authName, isAnonymous } = useAuth();
   const { t, locale } = useI18n();
@@ -447,6 +450,7 @@ export default function FinalResultScreen({
 
         {/* ── Columna 2: ¿Lo intentamos de nuevo? ── */}
         <section className="rounded-3xl border-2 border-accent/30 bg-card/85 backdrop-blur-sm p-4 sm:p-6 animate-fade-in-up animation-delay-100 flex flex-col">
+          {topPanel}
           <h2 className="text-xl sm:text-[1.75rem] font-extrabold text-center mb-4">{t('final_tryAgainTitle')}</h2>
 
           {onViewChallenge ? (

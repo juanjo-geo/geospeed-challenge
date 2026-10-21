@@ -6,6 +6,7 @@ import { useA11y } from '@/contexts/AccessibilityContext';
 import { getPrefs, setPref, subscribePrefs, type Prefs } from '@/lib/prefs';
 import { isMusicMuted, toggleMuted as toggleMusicMuted } from '@/hooks/useBackgroundMusic';
 import { playButtonTap } from '@/lib/sounds';
+import { syncStreakReminder } from '@/lib/streakReminder';
 import { hapticTap } from '@/lib/haptics';
 import Wordmark from '@/components/ui/Wordmark';
 import { HudIconButton } from './GameHud';
@@ -108,6 +109,7 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
               disabled={!canVibrate}
               onToggle={() => toggle('haptics')}
             />
+            <ToggleRow icon="music" label={t('settings_streakReminder')} desc={t('settings_streakReminderDesc')} on={prefs.streakReminder} onToggle={() => { toggle('streakReminder'); setTimeout(() => syncStreakReminder(), 0); }} />
             <ToggleRow icon="motion" label={t('settings_reduceMotion')} desc={t('settings_reduceMotionDesc')} on={prefs.reduceMotion} onToggle={() => toggle('reduceMotion')} />
             <ToggleRow icon="eye" label={t('settings_colorblind')} desc={t('settings_colorblindDesc')} on={colorblind} onToggle={() => { toggleColorblind(); playButtonTap(); }} />
           </Section>

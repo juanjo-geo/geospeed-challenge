@@ -2,6 +2,7 @@ import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import Wordmark from '@/components/ui/Wordmark';
 import EnergyBar from './EnergyBar';
+import StreakChip from './StreakChip';
 import { AccountButton, SettingsButton } from './HeaderActions';
 
 export type NavTab = 'home' | 'progress' | 'store' | 'pass' | 'profile';
@@ -103,6 +104,7 @@ export default function AppNav({ active, onNavigate, onOpenSettings }: AppNavPro
         {/* Escritorio: vidas · cuenta · ajustes */}
         <div className="hidden md:flex items-center gap-3 lg:gap-4 shrink-0">
           <EnergyBar stacked />
+          <StreakChip />
           <span className="w-px h-8 bg-border" aria-hidden />
           <AccountButton onOpenProfile={() => go('profile')} showName nameClassName="hidden xl:inline" />
           {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}

@@ -19,10 +19,12 @@ export interface Prefs {
   haptics: boolean;
   /** Reducir movimiento: desactiva confeti, zoom automático, demo animada y acorta transiciones. */
   reduceMotion: boolean;
+  /** Recordatorio de la racha del diario a las 7 p. m. si ese día no se jugó (Fase 2). */
+  streakReminder: boolean;
 }
 
 const STORAGE_KEY = 'geospeed_prefs';
-const DEFAULTS: Prefs = { sfx: true, haptics: true, reduceMotion: false };
+const DEFAULTS: Prefs = { sfx: true, haptics: true, reduceMotion: false, streakReminder: true };
 const REDUCE_MOTION_CLASS = 'reduce-motion';
 
 let cache: Prefs | null = null;
