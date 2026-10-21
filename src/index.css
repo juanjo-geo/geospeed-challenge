@@ -458,9 +458,18 @@
 }
 
 /* ── Barra de navegación persistente ──
-   Las pantallas que conviven con la barra (inicio, perfil, tienda, pass, ajustes)
-   se envuelven en .with-app-nav para no quedar tapadas. */
-.with-app-nav { padding-bottom: calc(var(--nav-h) + var(--sab)); }
+   Las pantallas que conviven con la barra (inicio, perfil, tienda, pass, ajustes…) van dentro de
+   .with-app-nav, que es la única zona con scroll y termina donde empieza la barra. La página no se
+   desplaza (Index pone html.app-shell): si se desplazara, Safari/Chrome del teléfono esconderían su
+   barra de direcciones al hacer scroll y arrastrarían la barra del juego (también con el rebote). */
+html.app-shell, html.app-shell body, html.app-shell #root { height: 100%; }
+html.app-shell, html.app-shell body { overflow: hidden; }
+.with-app-nav {
+  height: calc(100% - var(--nav-h) - var(--sab));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 /* Las pantallas con min-h-[100dvh] dentro de la barra no deben sumar su alto (antes dejaban desplazar
    64 px de espacio vacío): descuentan la barra y el área segura */
 .with-app-nav .min-h-\[100dvh\] { min-height: calc(100dvh - var(--nav-h) - var(--sab)); }
@@ -483,7 +492,7 @@
 .modal-layer > .modal-panel { margin: auto; }
 @media (min-width: 768px) {
   :root { --nav-h: 76px; }
-  .with-app-nav { padding-bottom: 0; padding-top: var(--nav-h); }
+  .with-app-nav { margin-top: var(--nav-h); height: calc(100% - var(--nav-h)); }
   .with-app-nav .min-h-\[100dvh\] { min-height: calc(100dvh - var(--nav-h)); }
 }
 

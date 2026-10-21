@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { scrollAppToTop } from '@/lib/appScroll';
 import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
 import { getPlayerStats, getDailyPlayerCount } from '@/lib/gameUtils';
 import { getPlayerLevel } from '@/lib/levelSystem';
@@ -126,7 +127,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const dailyDone = playedToday(dailySt);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollAppToTop();
     getDailyPlayerCount().then(setDailyPlayers);
   }, []);
 

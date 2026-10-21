@@ -7,6 +7,8 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { gameDay, dailyNumber } from '@/lib/gameDay';
+import { dailyLink, type DailyShareData } from '@/lib/dailyShare';
+export { SHARE_ORIGIN, shareName, dailyLink, parseDailyInvite, type DailyShareData, type DailyInvite } from '@/lib/dailyShare';
 
 export interface DailyBadge { id: string; earned_at: string; seen: boolean }
 export interface DailyTodayResult { score: number; hits: number; total: number; time_ms: number; grid: string; daily_no: number }
@@ -118,19 +120,6 @@ export function gridFromRounds(rounds: { basePoints: number; timeExact?: number;
   return g.padEnd(total, 'X');
 }
 
-export const SHARE_ORIGIN = 'https://geospeed-challenge.vercel.app';
-
-/** Nombre corto para el link (?r=): sin espacios ni símbolos */
-export const shareName = (name: string) =>
-  name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '').slice(0, 16) || 'amigo';
-
-export interface DailyShareData { dailyNo: number; hits: number; total: number; timeMs: number; grid: string; streak: number; name: string }
-
-/** Link del diario con el resultado de quien lo comparte (para la comparación al final, sin cuenta) */
-export function dailyLink(d: DailyShareData): string {
-  const p = new URLSearchParams({ r: shareName(d.name), h: String(d.hits), t: String(Math.round(d.timeMs / 1000)), g: d.grid });
-  return `${SHARE_ORIGIN}/d/${d.dailyNo}?${p.toString()}`;
-}
 
 export function dailyShareText(d: DailyShareData, t: (k: string, v?: Record<string, string | number>) => string): string {
   const lines = [
@@ -143,16 +132,5 @@ export function dailyShareText(d: DailyShareData, t: (k: string, v?: Record<stri
   return lines.join('\n');
 }
 
-/** Resultado de quien envió el link (/d/<n>?r=…&h=…&t=…&g=…), para "Juanjo hizo 8/13 en 42 s. ¿Le ganas?" */
-export interface DailyInvite { dailyNo: number; name: string; hits: number; timeS: number; grid: string }
-export function parseDailyInvite(no: number, search: string): DailyInvite | null {
-  const p = new URLSearchParams(search);
-  const name = (p.get('r') || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 16);
-  const hits = parseInt(p.get('h') || '', 10);
-  const timeS = parseInt(p.get('t') || '', 10);
-  const grid = (p.get('g') || '').replace(/[^GYRX]/g, '').slice(0, 30);
-  if (!name || !Number.isFinite(no)) return null;
-  return { dailyNo: no, name, hits: Number.isFinite(hits) ? hits : 0, timeS: Number.isFinite(timeS) ? timeS : 0, grid };
-}
 
 export const todayDailyNo = () => dailyNumber(gameDay());
