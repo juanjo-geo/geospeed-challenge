@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { OPEN_SETTINGS_EVENT } from '@/components/ui/ScreenHeader';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import AppNav, { type NavTab } from '@/components/game/AppNav';
+import { APP_SCROLL_ID, scrollAppToTop } from '@/lib/appScroll';
 import Wordmark from '@/components/ui/Wordmark';
 import { initPrefs } from '@/lib/prefs';
 import { getTranslations, detectLocale, translate } from '@/i18n';
@@ -466,7 +467,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     window.history.pushState({ geospeedGuard: true }, '');
     const onPop = () => {
       setPhase('home');
-      window.scrollTo(0, 0);
+      scrollAppToTop();
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -687,13 +688,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setChallengeSeed(null);
     setChallengerScore(null);
     setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null);
-    setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true });
+    setPhase('home'); scrollAppToTop(); navigate('/', { replace: true });
   }, [isTraining, navigate]);
 
   // ── F3: retos asincrónicos ──
-  const handleFriends = useCallback(() => { setPhase('friends'); window.scrollTo(0, 0); }, []);
-  const handleChallengeCreated = useCallback((ch: Challenge) => { setChallengeSource({ type: 'challenge', challenge: ch }); setPhase('challenge'); window.scrollTo(0, 0); }, []);
-  const handleOpenChallengeCode = useCallback((code: string) => { setChallengeSource({ type: 'code', code }); setPhase('challenge'); window.scrollTo(0, 0); }, []);
+  const handleFriends = useCallback(() => { setPhase('friends'); scrollAppToTop(); }, []);
+  const handleChallengeCreated = useCallback((ch: Challenge) => { setChallengeSource({ type: 'challenge', challenge: ch }); setPhase('challenge'); scrollAppToTop(); }, []);
+  const handleOpenChallengeCode = useCallback((code: string) => { setChallengeSource({ type: 'code', code }); setPhase('challenge'); scrollAppToTop(); }, []);
   const handlePlayChallenge = useCallback((ch: Challenge) => {
     unlockAudio();
     if (!consumeLife()) { setShowNoLives(true); return; }
@@ -708,9 +709,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     countdownNextRef.current = 'playing';
     setPhase('countdown');
   }, []);
-  const handleViewChallenge = useCallback(() => { setActiveChallenge(null); setPhase('challenge'); window.scrollTo(0, 0); }, []);
-  const handleMyChallenges = useCallback(() => { setActiveChallenge(null); setPhase('my-challenges'); window.scrollTo(0, 0); }, []);
-  const handleOpenMyChallenge = useCallback((item: MyChallenge) => { setChallengeSource({ type: 'code', code: item.code }); setPhase('challenge'); window.scrollTo(0, 0); }, []);
+  const handleViewChallenge = useCallback(() => { setActiveChallenge(null); setPhase('challenge'); scrollAppToTop(); }, []);
+  const handleMyChallenges = useCallback(() => { setActiveChallenge(null); setPhase('my-challenges'); scrollAppToTop(); }, []);
+  const handleOpenMyChallenge = useCallback((item: MyChallenge) => { setChallengeSource({ type: 'code', code: item.code }); setPhase('challenge'); scrollAppToTop(); }, []);
   const [rematchBusy, setRematchBusy] = useState(false);
   // Revancha (F4): mismo rival y condiciones, ciudades nuevas; el rival la recibe en Mis retos
   const handleRematch = useCallback(async (parent: ChallengeDetail) => {
@@ -719,7 +720,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     try {
       const ch = await createChallenge({ mode: parent.mode, difficulty: parent.difficulty, requestId: `rematch-${parent.id}`, parentId: parent.id, excludeCities: parent.cities.map(c => c.name) });
       setChallengeSource({ type: 'challenge', challenge: ch });
-      setPhase('challenge'); window.scrollTo(0, 0);
+      setPhase('challenge'); scrollAppToTop();
     } catch { /* la pantalla del reto muestra el error si se reintenta */ }
     finally { setRematchBusy(false); }
   }, [rematchBusy]);
@@ -732,7 +733,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setPhase('home'); window.scrollTo(0, 0); navigate('/', { replace: true }); }, [navigate]);
+  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => { setProfileTab('overview'); setPhase('profile'); }, []);
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
@@ -744,7 +745,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, []);
   // El chip 🔥 (Inicio, barra, cierre del diario) abre la pantalla de la racha
   useEffect(() => {
-    const open = () => { window.scrollTo(0, 0); setPhase('streak'); };
+    const open = () => { scrollAppToTop(); setPhase('streak'); };
     window.addEventListener(OPEN_STREAK_EVENT, open);
     return () => window.removeEventListener(OPEN_STREAK_EVENT, open);
   }, []);
@@ -765,17 +766,23 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const closeStreakLost = useCallback(() => {
     setStreakLost((s) => { if (s) { try { localStorage.setItem('geospeed_streak_lost_seen', s.on); } catch { /* sin almacenamiento */ } } return null; });
   }, []);
-  const handleMoreModes = useCallback(() => { window.scrollTo(0, 0); setPhase('more-modes'); }, []);
-  const handleHowTo = useCallback(() => { window.scrollTo(0, 0); setPhase('howto'); }, []);
+  const handleMoreModes = useCallback(() => { scrollAppToTop(); setPhase('more-modes'); }, []);
+  const handleHowTo = useCallback(() => { scrollAppToTop(); setPhase('howto'); }, []);
   // Tarjeta del Inicio → presentación del Desafío diario (maqueta); JUGAR DESAFÍO llama a handleDailyChallenge
-  const handleDailyIntro = useCallback(() => { window.scrollTo(0, 0); setPhase('daily-intro'); }, []);
-  const handleOpenHistory = useCallback(() => { setPhase('history'); window.scrollTo(0, 0); }, []);
-  const handleOpenRanking = useCallback(() => { setPhase('ranking'); window.scrollTo(0, 0); }, []);
+  const handleDailyIntro = useCallback(() => { scrollAppToTop(); setPhase('daily-intro'); }, []);
+  const handleOpenHistory = useCallback(() => { setPhase('history'); scrollAppToTop(); }, []);
+  const handleOpenRanking = useCallback(() => { setPhase('ranking'); scrollAppToTop(); }, []);
   const handleWorldChallenge = useCallback(() => { unlockAudio(); gameKeyRef.current += 1; setPhase('wc-playing'); }, []);
   const handleOpenBattlePass = useCallback(() => setPhase('battlepass'), []);
 
   // Barra de navegación persistente (Inicio · Progreso · Tienda · Pass · Perfil)
   const showNav = NAV_PHASES.includes(phase);
+  // Con la barra visible solo se desplaza el contenido (ver .with-app-nav en index.css)
+  useEffect(() => {
+    document.documentElement.classList.toggle('app-shell', showNav);
+    return () => document.documentElement.classList.remove('app-shell');
+  }, [showNav]);
+  useEffect(() => { document.getElementById(APP_SCROLL_ID)?.scrollTo(0, 0); }, [phase]);
   const activeNavTab: NavTab | null =
     phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' ? 'home'
     : phase === 'store' ? 'store'
@@ -784,10 +791,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     : phase === 'profile' ? (profileTab === 'history' ? 'progress' : 'profile')
     : null;
   const handleNav = useCallback((tab: NavTab) => {
-    window.scrollTo(0, 0);
+    scrollAppToTop();
     switch (tab) {
       case 'home': handleGoHome(); break;
-      case 'progress': setPhase('history'); window.scrollTo(0, 0); break;
+      case 'progress': setPhase('history'); scrollAppToTop(); break;
       case 'store': handleOpenStore(); break;
       case 'pass': handleOpenBattlePass(); break;
       case 'profile': setProfileTab('overview'); setPhase('profile'); break;
@@ -1449,7 +1456,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     <>
       <PhaseErrorBoundary onReset={handleGoHome}>
         <Suspense fallback={lazyFallback}>
-          <div className={showNav ? 'with-app-nav' : undefined}>
+          <div id={APP_SCROLL_ID} className={showNav ? 'with-app-nav' : undefined}>
             {skipTransition ? renderPhase() : (
               <PhaseTransition phaseKey={phase}>
                 {renderPhase()}

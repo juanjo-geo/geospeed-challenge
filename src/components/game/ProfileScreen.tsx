@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { scrollAppToTop } from '@/lib/appScroll';
 import { fetchMyProgress, type MyProgress } from '@/lib/gameResults';
 import { getStreakState } from '@/lib/dailyStreak';
 import { playButtonTap } from '@/lib/sounds';
@@ -99,7 +100,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
     updateMyProfile({ avatar: a }).catch(() => {});
     setShowAvatarPicker(false);
   };
-  const open = (next: ProfileTab) => { playButtonTap(); setTab(next); window.scrollTo(0, 0); };
+  const open = (next: ProfileTab) => { playButtonTap(); setTab(next); scrollAppToTop(); };
 
   const SECTION_TITLES: Record<Exclude<ProfileTab, 'overview'>, string> = {
     history: t('profile_historyTitle'),
