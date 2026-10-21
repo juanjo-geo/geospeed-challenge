@@ -32,7 +32,7 @@ interface Props {
  * WhatsApp (principal), más opciones (menú del sistema) y copiar.
  */
 export default function DailyResultPanel({ result, status, invite, playerName, isGuest, onCreateAccount }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [copied, setCopied] = useState(false);
   const streak = status?.current_streak ?? 0;
   const newBadges = (status?.badges ?? []).filter((b) => !b.seen).map((b) => milestoneOf(b.id)).filter(Boolean);
@@ -43,7 +43,7 @@ export default function DailyResultPanel({ result, status, invite, playerName, i
     if (ids.length) markBadgesSeen(ids);
   }, [status]);
 
-  const share = { dailyNo: result.dailyNo, hits: result.hits, total: result.total, timeMs: result.timeMs, grid: result.grid, streak, name: playerName };
+  const share = { dailyNo: result.dailyNo, hits: result.hits, total: result.total, timeMs: result.timeMs, grid: result.grid, streak, name: playerName, lang: locale };
   const text = dailyShareText(share, t as never);
 
   const shareWhatsApp = () => {

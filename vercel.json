@@ -47,6 +47,12 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!.*\\..+).*)", "destination": "/index.html" }
+    {
+      "source": "/d/:n",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Pinterestbot|redditbot|Viber|Iframely|Embedly|vkShare).*" }],
+      "missing": [{ "type": "query", "key": "app" }],
+      "destination": "/api/daily-page?n=:n"
+    },
+    { "source": "/((?!api/)(?!.*\\..+).*)", "destination": "/index.html" }
   ]
 }

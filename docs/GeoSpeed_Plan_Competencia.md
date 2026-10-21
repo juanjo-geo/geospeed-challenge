@@ -62,7 +62,7 @@ fotos, datos) se suma aparte porque depende de revisión de JuanJo.
   (`user_badges`), y utilidades (protector, +3 Sprints, 7 días de Pro de prueba, nunca Pro permanente).
 - Compartir por WhatsApp: texto con cuadritos 🟩🟨🟥 sin revelar ciudades, botón WhatsApp + menú nativo + copiar.
 - Link `/d/<número>?r=<nombre>` que abre el diario sin cuenta y al final compara con quien lo envió.
-- Vista previa en WhatsApp con imagen del día (función de Vercel para la imagen y las etiquetas `og:`). **Queda como Fase 2b:** necesita probarse en un despliegue de vista previa de Vercel; mientras tanto los links muestran la imagen general.
+- Vista previa en WhatsApp con imagen del día (función de Vercel para la imagen y las etiquetas `og:`). **Fase 2b (2026-10-21):** hecha con funciones de Vercel que solo atienden a los robots de vista previa (`api/daily-page.ts`, `api/og-daily.ts`).
 - Recordatorio a las 7 p. m. (notificación local en la app; requiere instalar el plugin y generar nueva AAB).
 
 ### Fase 3 — Carrera contra el fantasma en los retos (M) · Diferencial D2 · §8
@@ -152,7 +152,7 @@ el cofre queda sin número); el diario sigue con 13 ciudades.
 |---|---|---|
 | 0 | Hecha (metadatos 250+ ciudades, retos con amigos) | 2026-10-20 |
 | 1 | Hecha y publicada (a fórmula y combo · b efectos por nivel · c servidor y Temporada 1) | 2026-10-20 |
-| 2 | Código hecho (racha con protectores e hitos, pantalla de racha, compartir con cuadritos, link `/d/N`, recordatorio). Falta `npx supabase db push`, publicar y nueva AAB. Imagen por día = 2b | 2026-10-20 |
+| 2 | Publicada (racha con protectores e hitos, pantalla de racha, compartir con cuadritos, link `/d/N`, recordatorio). Falta nueva AAB para el recordatorio en Android. 2b (imagen del día en WhatsApp) hecha el 2026-10-21 | 2026-10-20 |
 | 3 | Propuesta | |
 | 4 | Propuesta | |
 | 5 | Propuesta | |
