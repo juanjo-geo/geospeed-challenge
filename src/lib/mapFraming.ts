@@ -27,6 +27,7 @@ export const PIN_LEGEND_CORNER = { w: 196, h: 80 };
  *                     p.ej. el HUD del celular) o abajo (`bottom`, tarjeta en vertical)
  * @returns límites geográficos con la misma proporción que el mapa, o null si la vista del mundo
  *          ya es la mejor opción (respuestas muy lejanas o que cruzan el antimeridiano).
+ * @param more         otros puntos que deben quedar a la vista (el pin del rival en la carrera)
  */
 export function frameAnswer(
   a: { lat: number; lon: number },
@@ -35,15 +36,17 @@ export function frameAnswer(
   mapH: number,
   cover: { right?: number; top?: number; bottom?: number },
   world: MapBounds,
+  more: { lat: number; lon: number }[] = [],
 ): MapBounds | null {
   if (mapW < 50 || mapH < 50) return null;
   const right = Math.min(0.6, cover.right ?? 0);
   const top = Math.min(0.4, cover.top ?? 0);
   const bottom = Math.min(0.6, cover.bottom ?? 0);
 
-  // Caja de los dos puntos con margen y un tamaño mínimo (no acercar más de la cuenta)
-  let lonMin = Math.min(a.lon, b.lon), lonMax = Math.max(a.lon, b.lon);
-  let latMin = Math.min(a.lat, b.lat), latMax = Math.max(a.lat, b.lat);
+  // Caja de los puntos (respuesta, ciudad y, en la carrera, el rival) con margen y un tamaño mínimo
+  const pts = [a, b, ...more];
+  let lonMin = Math.min(...pts.map(p => p.lon)), lonMax = Math.max(...pts.map(p => p.lon));
+  let latMin = Math.min(...pts.map(p => p.lat)), latMax = Math.max(...pts.map(p => p.lat));
   if (lonMax - lonMin > 180) return null; // cruza el antimeridiano: mejor el mundo completo
   const padLon = Math.max((lonMax - lonMin) * 0.35, 6);
   const padLat = Math.max((latMax - latMin) * 0.35, 4);
@@ -58,7 +61,7 @@ export function frameAnswer(
   const scale = Math.min(visW / (lonMax - lonMin), visH / (latMax - latMin));
 
   // Si no acerca respecto a la vista del mundo, solo cambiamos el encuadre cuando la tarjeta
-  // taparía alguno de los dos puntos (respuestas muy lejanas): entonces el mundo se aleja un poco
+  // taparía alguno de los puntos (respuestas muy lejanas): entonces el mundo se aleja un poco
   // para que ambos queden en la zona libre.
   const worldScale = Math.min(mapW / (world.lonMax - world.lonMin), mapH / (world.latMax - world.latMin));
   if (scale <= worldScale * 1.15) {
@@ -70,7 +73,7 @@ export function frameAnswer(
       const y = oy + (world.latMax - pt.lat) * worldScale;
       return x <= mapW * (1 - right) - margin && y >= mapH * top + margin && y <= mapH * (1 - bottom) - margin;
     };
-    if (visible(a) && visible(b)) return null;
+    if (pts.every(visible)) return null;
   }
 
   // Centro de la caja → centro de la zona visible

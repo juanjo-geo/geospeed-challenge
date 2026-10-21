@@ -153,7 +153,7 @@ el cofre queda sin número); el diario sigue con 13 ciudades.
 | 0 | Hecha (metadatos 250+ ciudades, retos con amigos) | 2026-10-20 |
 | 1 | Hecha y publicada (a fórmula y combo · b efectos por nivel · c servidor y Temporada 1) | 2026-10-20 |
 | 2 | Publicada (racha con protectores e hitos, pantalla de racha, compartir con cuadritos, link `/d/N`, recordatorio). Falta nueva AAB para el recordatorio en Android. 2b (imagen del día en WhatsApp) hecha el 2026-10-21 | 2026-10-20 |
-| 3 | Propuesta | |
+| 3 | Código hecho (RPC `challenge_ghost`, Tú vs rival en vivo, aviso al segundo exacto, pin y comparación tras responder, resumen al final). Falta `npx supabase db push` y publicar | 2026-10-21 |
 | 4 | Propuesta | |
 | 5 | Propuesta | |
 | 6 | Propuesta | |

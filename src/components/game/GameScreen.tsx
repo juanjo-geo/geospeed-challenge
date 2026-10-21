@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import type { ChallengeGhost } from '@/lib/challenges';
+import { GhostSideCard, GhostChip, GhostPulse, GhostCompare } from './GhostRace';
 import { City, getRandomCities, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance } from '@/lib/gameUtils';
 import { closeness, scaleForMode, scoreRound, difficultyHundredths, speedMultiplier, comboLevelOf, COMBO_LEVELS, GOOD_MIN, PERFECT_KM, type Quality } from '@/lib/scoring';
@@ -88,6 +90,8 @@ interface GameScreenProps {
   /** Música: estado y toggle (el botón vive en el HUD durante la partida) */
   musicMuted?: boolean;
   onToggleMusic?: () => void;
+  /** Reto contra un rival que ya jugó: su partida ronda por ronda (Fase 3, carrera contra el fantasma) */
+  ghost?: ChallengeGhost | null;
 }
 
 export function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
@@ -101,7 +105,7 @@ export function getRoundFeedback(distance: number, palette?: ReturnType<typeof u
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost }: GameScreenProps) {
   const { t, locale } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -199,6 +203,30 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     setTimeLeft(effectiveMaxTime);
     announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
+
+  // ── Carrera contra el fantasma (Fase 3): el rival ya jugó estas mismas ciudades ──
+  // Su aviso sale en el segundo exacto (décimas) en que respondió; las pausas no cuentan, igual que para el reloj.
+  const ghostRound = useMemo(() => ghost?.rounds.find(r => r.round_no === currentRound + 1) ?? null, [ghost, currentRound]);
+  const [ghostAnswered, setGhostAnswered] = useState(false);
+  const [ghostPulse, setGhostPulse] = useState(false);
+  useEffect(() => { setGhostAnswered(false); setGhostPulse(false); }, [currentRound]);
+  useEffect(() => {
+    if (!ghostRound || ghostRound.time_s == null || ghostAnswered || isWaiting) return;
+    if (isPortraitMobile || isPageHidden || settingsOpen) return;
+    const elapsed = Date.now() - roundStartRef.current - pausedMsRef.current;
+    const id = setTimeout(() => { setGhostAnswered(true); setGhostPulse(true); }, Math.max(0, ghostRound.time_s * 1000 - elapsed));
+    return () => clearTimeout(id);
+  }, [ghostRound, ghostAnswered, isWaiting, isPortraitMobile, isPageHidden, settingsOpen]);
+  useEffect(() => {
+    if (!ghostPulse) return;
+    const id = setTimeout(() => setGhostPulse(false), 2400);
+    return () => clearTimeout(id);
+  }, [ghostPulse]);
+  // Puntaje del rival en vivo: las ciudades anteriores y esta si ya respondió (o si ya respondí yo)
+  const ghostScore = useMemo(
+    () => (ghost ? ghost.rounds.reduce((s, r) => s + (r.round_no <= currentRound || (r.round_no === currentRound + 1 && (ghostAnswered || isWaiting)) ? r.points : 0), 0) : 0),
+    [ghost, currentRound, ghostAnswered, isWaiting],
+  );
 
   // Pause game when app loses focus / user switches apps (mobile)
   useEffect(() => {
@@ -426,6 +454,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   // la animación del trazo y nunca llega a mostrar la ciudad correcta ni las etiquetas.
   const userClickPt = useMemo(() => lastResult ? { lat: lastResult.clickLat, lon: lastResult.clickLon } : null, [lastResult]);
   const correctPt = useMemo(() => lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null, [lastResult]);
+  // El pin del rival solo aparece después de responder (nunca antes: se vería dónde clicó)
+  const ghostPt = useMemo(
+    () => (isWaiting && ghost && ghostRound?.click_lat != null && ghostRound.click_lon != null
+      ? { lat: ghostRound.click_lat, lon: ghostRound.click_lon, label: ghost.name, distanceKm: ghostRound.distance_km }
+      : null),
+    [isWaiting, ghost, ghostRound],
+  );
 
   const numberLocale = locale === 'en' ? 'en-US' : 'es-CO';
   const fmtSecs = (r: RoundResult) => (r.timeExact ?? r.timeUsed).toLocaleString(numberLocale, { maximumFractionDigits: 1 });
@@ -439,9 +474,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     return frameAnswer(
       { lat: lastResult.clickLat, lon: lastResult.clickLon },
       { lat: lastResult.city.lat, lon: lastResult.city.lon },
-      mapArea.w, mapArea.h, cover, getMapBounds(gameMode),
+      mapArea.w, mapArea.h, cover, getMapBounds(gameMode), ghostPt ? [ghostPt] : [],
     );
-  }, [cover, lastResult, mapArea.w, mapArea.h, gameMode]);
+  }, [cover, lastResult, mapArea.w, mapArea.h, gameMode, ghostPt]);
   // Las etiquetas del mapa evitan la tarjeta y la leyenda de pines (no hay leyenda en vertical)
   const labelAvoid = useMemo(() => (cover ? { ...cover, corner: isPortraitMobile ? undefined : PIN_LEGEND_CORNER } : null), [cover, isPortraitMobile]);
 
@@ -463,6 +498,15 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     }
     return null;
   })();
+  // Carrera contra el fantasma: la ronda del rival junto a la mía (o que no llegó a esta ciudad)
+  const ghostCompare = ghost && lastResult ? (
+    <GhostCompare
+      name={ghost.name}
+      avatar={ghost.avatar}
+      me={{ km: lastResult.distance, seconds: lastResult.timeExact ?? lastResult.timeUsed, points: lastResult.totalPoints }}
+      rival={ghostRound ? { km: ghostRound.distance_km, seconds: ghostRound.time_s, points: ghostRound.points } : null}
+    />
+  ) : undefined;
   const isTimerCritical = timeLeft <= 3 && !isWaiting;
   const isTimerUrgent = timeLeft <= 5 && !isWaiting;
 
@@ -597,6 +641,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             )}
           </div>
 
+          {ghost && <GhostSideCard name={ghost.name} avatar={ghost.avatar} rivalScore={ghostScore} myScore={score} pulse={ghostPulse} />}
+
           {/* RONDA */}
           <div className="w-full shrink-0 rounded-2xl border-2 border-accent/30 bg-background/40 px-[5cqi] py-[3.5cqi] flex items-center gap-[4.5cqi]">
             <BarsIcon className="w-[11cqi] h-[11cqi] text-accent shrink-0" />
@@ -666,6 +712,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-accent animate-float-up whitespace-nowrap">+{floatPoints.toLocaleString(appNumberLocale())}</span>
               )}
             </span>
+            {ghost && <GhostChip name={ghost.name} avatar={ghost.avatar} rivalScore={ghostScore} myScore={score} pulse={ghostPulse} />}
           </div>
         </div>
       )}
@@ -745,7 +792,12 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           viewBounds={feedbackBounds}
           labelAvoid={labelAvoid}
           pinFx={pinFx}
+          rivalClick={ghostPt}
         />
+
+        {ghost && ghostPulse && !isWaiting && ghostRound?.time_s != null && (
+          <GhostPulse name={ghost.name} avatar={ghost.avatar} seconds={ghostRound.time_s} />
+        )}
 
         {/* Tarjeta de feedback — panel lateral en pantallas anchas */}
         {showRightPanel && (
@@ -765,6 +817,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               timeLabel={`${fmtSecs(lastResult)} s`}
               size="lg"
               natural
+              versus={ghostCompare}
             />
             </FitToBox>
           </div>
@@ -793,6 +846,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 timeLabel={`${fmtSecs(lastResult)} s`}
                 size="md"
                 natural
+                versus={ghostCompare}
               />
             </FitToBox>
           </div>

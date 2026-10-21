@@ -135,7 +135,8 @@ import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
-import { challengeCitiesToGame, mockRecordMyResult, createChallenge, type Challenge, type ChallengeDetail, type MyChallenge } from '@/lib/challenges';
+import { challengeCitiesToGame, mockRecordMyResult, createChallenge, fetchChallengeGhost, type Challenge, type ChallengeDetail, type ChallengeGhost, type MyChallenge } from '@/lib/challenges';
+import { GhostResultPanel } from '@/components/game/GhostRace';
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
@@ -320,6 +321,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [replayCities, setReplayCities] = useState<City[] | null>(null);
   // F3: reto asincrónico que se está jugando y fuente de la pantalla del reto
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  // Carrera contra el fantasma (Fase 3): la partida del rival si ya jugó este reto (se pide al empezar)
+  const [challengeGhost, setChallengeGhost] = useState<{ id: string; ghost: ChallengeGhost } | null>(null);
   const [challengeSource, setChallengeSource] = useState<ChallengeSource | null>(null);
   const [revengeUsed, setRevengeUsed] = useState(false);
   const [originalScore, setOriginalScore] = useState(0);
@@ -704,6 +707,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setGameMode(ch.mode);
     setActiveChallenge(ch);
     setChallengeSource({ type: 'challenge', challenge: ch });
+    // Durante la cuenta regresiva llega la partida del rival (si ya jugó); sin ella es un reto normal
+    setChallengeGhost(null);
+    fetchChallengeGhost(ch.id).then((ghost) => {
+      if (ghost) { setChallengeGhost({ id: ch.id, ghost }); trackEvent('challenge_ghost_race', { rounds: ghost.rounds.length }); }
+    });
     trackGameStart(ch.mode, ch.difficulty);
     gameKeyRef.current += 1;
     countdownNextRef.current = 'playing';
@@ -1380,7 +1388,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(activeChallenge
-            ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round }
+            ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round, ghost: challengeGhost?.id === activeChallenge.id ? challengeGhost.ghost : null }
             : revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
           seed={gameSeedRef.current}
         />
@@ -1392,6 +1400,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       // (no tras "Otra vez" ni tras la revancha, que juegan listas fijas sin semilla).
       const canShareChallenge = !replayCities && !revengeUsed && !isTraining && !activeChallenge;
       const playedChallenge = activeChallenge;
+      const raceGhost = playedChallenge && challengeGhost?.id === playedChallenge.id ? challengeGhost.ghost : null;
       return (
         <FinalResultScreen
           noOffers={isTraining}
@@ -1419,6 +1428,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               playerName={authDisplayName || t('ch_you')}
               isGuest={!user || isAnonymousUser}
               onCreateAccount={() => navigate('/auth')}
+            />
+          ) : raceGhost ? (
+            <GhostResultPanel
+              name={raceGhost.name}
+              avatar={raceGhost.avatar}
+              myScore={finalScore}
+              rivalScore={raceGhost.score}
+              citiesWon={finalRounds.filter((r, i) => r.totalPoints > (raceGhost.rounds.find(g => g.round_no === i + 1)?.points ?? -1)).length}
+              total={activeChallenge?.rounds_total ?? finalRounds.length}
+              onCompare={handleViewChallenge}
             />
           ) : undefined}
         />
