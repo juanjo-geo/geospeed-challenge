@@ -468,6 +468,10 @@ export type Database = {
         Args: { p_id: string }
         Returns: Json
       }
+      challenge_ghost: {
+        Args: { p_id: string }
+        Returns: Json
+      }
       my_challenges: {
         Args: { p_limit?: number }
         Returns: {

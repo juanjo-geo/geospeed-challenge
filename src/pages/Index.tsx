@@ -135,7 +135,8 @@ import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
-import { challengeCitiesToGame, mockRecordMyResult, createChallenge, type Challenge, type ChallengeDetail, type MyChallenge } from '@/lib/challenges';
+import { challengeCitiesToGame, mockRecordMyResult, isMockChallenges, createChallenge, fetchChallengeGhost, type Challenge, type ChallengeDetail, type ChallengeGhost, type MyChallenge } from '@/lib/challenges';
+import { GhostResultPanel } from '@/components/game/GhostRace';
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
@@ -320,6 +321,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [replayCities, setReplayCities] = useState<City[] | null>(null);
   // F3: reto asincrónico que se está jugando y fuente de la pantalla del reto
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  // Carrera contra el fantasma (Fase 3): la partida del rival si ya jugó este reto (se pide al empezar)
+  const [challengeGhost, setChallengeGhost] = useState<{ id: string; ghost: ChallengeGhost } | null>(null);
+  // Al terminar un reto se espera a que la partida llegue al servidor y se va directo a la comparación
+  const [challengeSaving, setChallengeSaving] = useState(false);
   const [challengeSource, setChallengeSource] = useState<ChallengeSource | null>(null);
   const [revengeUsed, setRevengeUsed] = useState(false);
   const [originalScore, setOriginalScore] = useState(0);
@@ -527,7 +532,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       incrementGameCounter();
       addBattlePassXP(total);
       syncAfterGame();
-      saveGameResult({
+      const saved = saveGameResult({
         gameType: 'challenge',
         mode: gameMode,
         difficulty,
@@ -544,7 +549,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         score: total, end_reason: reason,
         rounds: roundsFromResults(rounds).map(r => ({ ...r, city_lat: r.city_lat ?? 0, city_lon: r.city_lon ?? 0, city_country: r.city_country ?? null, click_lat: r.click_lat ?? null, click_lon: r.click_lon ?? null, distance_km: r.distance_km ?? null, time_s: r.time_s ?? null, base_points: r.base_points ?? null, multiplier: r.multiplier ?? null })),
       });
-      setPhase('final');
+      // Directo a la comparación con el amigo (o a "comparación pendiente" si aún no juega): antes había que
+      // tocar "Ver mi reto" en la pantalla de resultados. Si la partida no llega al servidor (sin conexión,
+      // queda en la cola) se muestra la pantalla de resultados de siempre.
+      setChallengeSaving(true);
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000));
+      Promise.race([saved, timeout]).then((id) => {
+        setChallengeSaving(false);
+        if (id || isMockChallenges()) { setActiveChallenge(null); setPhase('challenge'); scrollAppToTop(); }
+        else setPhase('final');
+      });
       return;
     }
 
@@ -704,6 +718,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setGameMode(ch.mode);
     setActiveChallenge(ch);
     setChallengeSource({ type: 'challenge', challenge: ch });
+    // Durante la cuenta regresiva llega la partida del rival (si ya jugó); sin ella es un reto normal
+    setChallengeGhost(null);
+    fetchChallengeGhost(ch.id).then((ghost) => {
+      if (ghost) { setChallengeGhost({ id: ch.id, ghost }); trackEvent('challenge_ghost_race', { rounds: ghost.rounds.length }); }
+    });
     trackGameStart(ch.mode, ch.difficulty);
     gameKeyRef.current += 1;
     countdownNextRef.current = 'playing';
@@ -1380,7 +1399,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(activeChallenge
-            ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round }
+            ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round, ghost: challengeGhost?.id === activeChallenge.id ? challengeGhost.ghost : null }
             : revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
           seed={gameSeedRef.current}
         />
@@ -1392,6 +1411,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       // (no tras "Otra vez" ni tras la revancha, que juegan listas fijas sin semilla).
       const canShareChallenge = !replayCities && !revengeUsed && !isTraining && !activeChallenge;
       const playedChallenge = activeChallenge;
+      const raceGhost = playedChallenge && challengeGhost?.id === playedChallenge.id ? challengeGhost.ghost : null;
       return (
         <FinalResultScreen
           noOffers={isTraining}
@@ -1419,6 +1439,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               playerName={authDisplayName || t('ch_you')}
               isGuest={!user || isAnonymousUser}
               onCreateAccount={() => navigate('/auth')}
+            />
+          ) : raceGhost ? (
+            <GhostResultPanel
+              name={raceGhost.name}
+              avatar={raceGhost.avatar}
+              myScore={finalScore}
+              rivalScore={raceGhost.score}
+              citiesWon={finalRounds.filter((r, i) => r.totalPoints > (raceGhost.rounds.find(g => g.round_no === i + 1)?.points ?? -1)).length}
+              total={activeChallenge?.rounds_total ?? finalRounds.length}
+              onCompare={handleViewChallenge}
             />
           ) : undefined}
         />
@@ -1466,6 +1496,14 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         </Suspense>
       </PhaseErrorBoundary>
       {showNav && <AppNav active={activeNavTab} onNavigate={handleNav} onOpenSettings={handleOpenSettings} />}
+      {challengeSaving && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-navy-deep/80 backdrop-blur-sm animate-fade-in" role="status" aria-live="polite">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <img src="/mascot/explorer-logo.webp" alt="" className="w-14 animate-pulse" />
+            <p className="text-lg font-extrabold">{t('ch_savingResult')}</p>
+          </div>
+        </div>
+      )}
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
       {streakLost && phase === 'home' && (
         <StreakLostModal lost={streakLost.lost} best={streakLost.best} onClose={closeStreakLost} onPlay={() => { closeStreakLost(); handleDailyIntro(); }} />

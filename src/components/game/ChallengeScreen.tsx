@@ -262,6 +262,9 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
       <div className="mt-4"><InfoBox lead={t('ch_startNow')} tail={t('ch_compareWhenBoth')} /></div>
 
       <div className="mt-4 flex flex-col items-center gap-2.5">
+        {!meFinished && rival?.finished && (
+          <p className="w-full max-w-xl rounded-2xl border border-accent/50 bg-accent/10 px-4 py-2.5 text-center text-sm sm:text-base font-semibold text-accent">⚡ {t('ghost_raceHint', { name: rival.name })}</p>
+        )}
         {!meFinished ? (
           <PlayButton onClick={() => { playButtonTap(); onPlay(challenge); }} label={isRematch ? t('ch_playRematch') : t('ch_playMine')} />
         ) : (

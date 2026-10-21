@@ -73,6 +73,10 @@ export interface ChallengeDetail extends Challenge {
   rival_result: ChallengeResult | null;
 }
 
+/** Fase 3 — carrera contra el fantasma: la partida del rival, ronda por ronda (RPC challenge_ghost) */
+export interface GhostRound { round_no: number; time_s: number | null; click_lat: number | null; click_lon: number | null; distance_km: number | null; points: number }
+export interface ChallengeGhost { name: string; avatar: string | null; score: number; end_reason: string; rounds: GhostRound[] }
+
 export type ChallengeState = 'to_accept' | 'to_play' | 'waiting' | 'ready';
 /** Fila de la bandeja "Mis retos" (RPC my_challenges) */
 export interface MyChallenge {
@@ -194,6 +198,21 @@ export async function fetchChallengeDetail(id: string): Promise<ChallengeDetail>
   return data as unknown as ChallengeDetail;
 }
 
+/** Partida del rival para correr contra ella; null si el rival aún no juega o si yo ya jugué.
+ *  Nunca lanza: sin fantasma la partida es un reto normal. */
+export async function fetchChallengeGhost(id: string): Promise<ChallengeGhost | null> {
+  try {
+    if (mockEnabled()) return await mock.ghost(id);
+    await ensureSession();
+    const { data, error } = await supabase.rpc('challenge_ghost', { p_id: id });
+    if (error || !data) return null;
+    const g = data as unknown as ChallengeGhost;
+    return Array.isArray(g.rounds) && g.rounds.length ? g : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Simulador local (solo desarrollo) ───────────────────────────────────────
 function mockEnabled(): boolean {
   try { return import.meta.env.DEV && localStorage.getItem('geospeed_mock_challenges') === '1'; } catch { return false; }
@@ -261,6 +280,12 @@ const mock = {
       rival: row.rival.joined ? { name: row.rival.name, avatar: null, accepted: !!row.rival.result || row.myRole === 'opponent' || row.rival.joined && !row.ch.parentId, finished: !!row.rival.result } : null,
       my_result: row.mine, rival_result: done ? row.rival.result : null };
   },
+  async ghost(id: string): Promise<ChallengeGhost | null> {
+    await delay();
+    const row = mockDb()[id];
+    if (!row || row.mine || !row.rival.result) return null;
+    return { name: row.rival.name, avatar: null, score: row.rival.result.score, end_reason: row.rival.result.end_reason, rounds: row.rival.result.rounds };
+  },
   async list(): Promise<MyChallenge[]> {
     await delay();
     return Object.values(mockDb()).map(r => ({
@@ -286,13 +311,18 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     const db = mockDb();
     if (!db[id]) return 'no existe';
     const mine = db[id].mine;
+    // Sin mi partida (el rival juega primero, Fase 3): sus rondas salen de las ciudades del reto
+    const base: ChallengeRound[] = mine?.rounds ?? db[id].ch.cities.map((c, i) => ({
+      round_no: i + 1, city_name: c.name, city_country: c.country, city_lat: c.lat, city_lon: c.lon,
+      click_lat: c.lat, click_lon: c.lon, distance_km: 0, time_s: 2 + Math.random() * 4, base_points: null, multiplier: null, points: 0,
+    }));
     db[id].rival = { name: db[id].rival.name === 'Explorador' ? 'Valentina' : db[id].rival.name, joined: true, result: {
       score, end_reason: 'complete',
-      rounds: (mine?.rounds ?? []).map(r => {
+      rounds: base.map(r => {
         const dLat = (Math.random() - 0.5) * 12, dLon = (Math.random() - 0.5) * 12;
         const lat = (r.click_lat ?? r.city_lat) + dLat, lon = (r.click_lon ?? r.city_lon) + dLon;
         const km = Math.round(111 * Math.hypot(lat - r.city_lat, (lon - r.city_lon) * Math.cos((r.city_lat * Math.PI) / 180)));
-        return { ...r, click_lat: lat, click_lon: lon, distance_km: km, time_s: Math.round(((r.time_s ?? 5) + Math.random() * 3) * 10) / 10, points: Math.round(score / Math.max(1, mine?.rounds.length ?? 13)) };
+        return { ...r, click_lat: lat, click_lon: lon, distance_km: km, time_s: Math.round(((r.time_s ?? 5) + Math.random() * 3) * 10) / 10, points: Math.round(score / Math.max(1, base.length)) };
       }),
     } };
     mockSave(db);

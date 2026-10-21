@@ -31,6 +31,8 @@ interface RoundFeedbackCardProps {
   firstTile?: { label: string; value: string };
   /** Etiqueta de la base en "Ver cálculo" (Mundial: por zona, no por distancia) */
   baseLabel?: string;
+  /** Reto contra un rival que ya jugó (Fase 3): su distancia, tiempo y puntos en esta ciudad */
+  versus?: React.ReactNode;
 }
 
 /**
@@ -38,7 +40,7 @@ interface RoundFeedbackCardProps {
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
  * Puntaje v2: el combo y el desglose (cercanía × rapidez × combo × dificultad) salen del propio resultado.
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel, versus }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
@@ -119,6 +121,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
         <Tile lg={lg} label={firstTile?.label ?? t('game_distance')} value={firstTile?.value ?? formatDistance(result.distance)} icon={<path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22Zm0-9.6a2.9 2.9 0 1 0 0-5.8 2.9 2.9 0 0 0 0 5.8Z" fill="currentColor" stroke="none" />} />
         <Tile lg={lg} label={t('game_time')} value={time} icon={<><circle cx="12" cy="13.5" r="7.5" /><path d="M12 9.5v4l2.5 1.8" /><path d="M9.5 2.5h5" /><path d="M12 2.5v3.5" /></>} />
       </div>
+      {versus}
 
       {!quick && <>
       <button
