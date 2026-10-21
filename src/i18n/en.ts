@@ -691,6 +691,7 @@ const en: Translations = {
   ghost_citiesWon: 'You won {n} of {total} cities',
   ghost_seeCompare: 'SEE CITY-BY-CITY COMPARISON',
   ghost_raceHint: '{name} already played: you\'ll race their game live and see when they answered each city.',
+  energy_livesAria: '{n} lives',
   // ── Fase 4: entrenamiento ampliado y repaso inteligente ──
   train_title: 'Training',
   train_subtitle: 'Practice at your own pace, no lives, no score',
@@ -718,7 +719,9 @@ const en: Translations = {
   train_doneTitle: 'Round complete!',
   train_reviewDoneTitle: 'Daily review complete!',
   train_firstTryShort: 'on the first try',
-  train_fixedShort: 'fixed on repeat',
+  train_fixedShort: 'of the misses, right when repeated',
+  train_noMisses: 'no misses',
+  train_masteryHint: 'A city is mastered once you get it right 3 times in a row (across rounds).',
   train_masteryLine: '{region}: {pct}% mastered',
   train_savingMemory: 'Updating your memory…',
   train_memoryNote: 'The ones you missed will come back in your Daily review.',

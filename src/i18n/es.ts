@@ -689,6 +689,7 @@ const es = {
   ghost_citiesWon: 'Ganaste {n} de {total} ciudades',
   ghost_seeCompare: 'VER COMPARACIÓN POR CIUDAD',
   ghost_raceHint: '{name} ya jugó: correrás contra su partida en vivo y verás cuándo respondió cada ciudad.',
+  energy_livesAria: '{n} vidas',
   // ── Fase 4: entrenamiento ampliado y repaso inteligente ──
   train_title: 'Entrenamiento',
   train_subtitle: 'Practica a tu ritmo, sin vidas ni puntaje',
@@ -716,7 +717,9 @@ const es = {
   train_doneTitle: '¡Tanda completada!',
   train_reviewDoneTitle: '¡Repaso del día completado!',
   train_firstTryShort: 'a la primera',
-  train_fixedShort: 'corregidas al repetir',
+  train_fixedShort: 'de las falladas, acertadas al repetirlas',
+  train_noMisses: 'sin falladas',
+  train_masteryHint: 'Una ciudad queda dominada cuando la aciertas 3 veces seguidas (en distintas tandas).',
   train_masteryLine: '{region}: {pct}% dominado',
   train_savingMemory: 'Actualizando tu memoria…',
   train_memoryNote: 'Las que fallaste volverán en tu Repaso del día.',

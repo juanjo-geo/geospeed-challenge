@@ -219,9 +219,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
     { icon: '⭐', title: t('home_step3'), desc: t('home_step3Desc') },
   ];
 
+  // En el celular los bloques se reparten el alto disponible (justify-between): en pantallas altas respiran
+  // y en las chicas quedan igual de compactos (antes sobraba espacio abajo en celulares altos)
   return (
     <main
-      className="min-h-[calc(100dvh-var(--nav-h)-var(--sab))] md:min-h-[calc(100dvh-var(--nav-h))] flex flex-col items-center px-3 pb-2 sm:px-4 sm:pb-6 lg:px-6 lg:pb-4 overflow-y-auto game-bg pt-[max(0.75rem,var(--sat))] md:pt-4 lg:pt-3"
+      className="min-h-[calc(100dvh-var(--nav-h)-var(--sab))] md:min-h-[calc(100dvh-var(--nav-h))] flex flex-col items-center justify-between md:justify-start px-3 pb-2 sm:px-4 sm:pb-6 lg:px-6 lg:pb-4 overflow-y-auto game-bg pt-[max(0.75rem,var(--sat))] md:pt-4 lg:pt-3"
       aria-label={t('nav_home')}
     >
       <a
@@ -233,15 +235,17 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
 
       {/* ── Encabezado del celular: vidas · marca · cuenta · ajustes (en md+ lo pone AppNav) ── */}
       <header className="md:hidden w-full max-w-md mb-2 sm:mb-3 animate-fade-in-up grid grid-cols-[auto_1fr_auto] items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <EnergyBar stacked />
+        <div className="flex items-start gap-1.5">
+          {/* Ficha "❤️ 5" como la de la racha: los 5 corazones apretaban el nombre de la app y el lema */}
+          <EnergyBar chip />
           <StreakChip />
         </div>
-        <div className="flex items-center justify-center gap-1.5 min-w-0">
-          <img src="/mascot/explorer-logo.webp" alt="" className="w-9 h-9 min-[400px]:w-10 min-[400px]:h-10 object-contain shrink-0" />
+        <div className="flex items-center justify-center gap-1.5 min-w-0 overflow-hidden">
+          {/* Tres tamaños según el ancho para que nombre y lema nunca toquen los botones (< 390 px sin lema) */}
+          <img src="/mascot/explorer-logo.webp" alt="" className="w-7 h-7 min-[390px]:w-9 min-[390px]:h-9 min-[430px]:w-10 min-[430px]:h-10 object-contain shrink-0" />
           <span className="flex flex-col leading-none min-w-0">
-            <Wordmark size="custom" className="text-[1.25rem] min-[400px]:text-2xl" />
-            <span className="text-[8.5px] min-[400px]:text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">{t('home_tagline')}</span>
+            <Wordmark size="custom" className="text-[1.1rem] min-[390px]:text-[1.25rem] min-[430px]:text-2xl" />
+            <span className="hidden min-[390px]:block text-[8.5px] min-[430px]:text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">{t('home_tagline')}</span>
           </span>
         </div>
         <div className="flex items-center gap-0.5">

@@ -464,6 +464,14 @@
    barra de direcciones al hacer scroll y arrastrarían la barra del juego (también con el rebote). */
 html.app-shell, html.app-shell body, html.app-shell #root { height: 100%; }
 html.app-shell, html.app-shell body { overflow: hidden; }
+/* App instalada en el iPhone (pantalla de inicio, barra de estado translúcida): iOS sube la página bajo la
+   barra de estado y su 100 % mide lo que la pantalla menos esa barra; con la página de ese alto, la barra de
+   navegación quedaba separada del borde inferior por el alto de la barra de estado. Se alarga la página en esa
+   medida. Solo en apps instaladas desde el navegador (display-mode standalone): en Safari la medida vale 0 y
+   la app nativa de Android (WebView de Capacitor) no tiene este problema. Arreglo documentado para PWAs en iOS. */
+@media (display-mode: standalone) {
+  html.app-shell { height: calc(100% + env(safe-area-inset-top, 0px)); }
+}
 .with-app-nav {
   height: calc(100% - var(--nav-h) - var(--sab));
   overflow-x: hidden;
