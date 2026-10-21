@@ -691,6 +691,7 @@ const en: Translations = {
   ghost_citiesWon: 'You won {n} of {total} cities',
   ghost_seeCompare: 'SEE CITY-BY-CITY COMPARISON',
   ghost_raceHint: '{name} already played: you\'ll race their game live and see when they answered each city.',
+  energy_livesAria: '{n} lives',
   // ── Fase 4: entrenamiento ampliado y repaso inteligente ──
   train_title: 'Training',
   train_subtitle: 'Practice at your own pace, no lives, no score',

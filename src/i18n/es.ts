@@ -689,6 +689,7 @@ const es = {
   ghost_citiesWon: 'Ganaste {n} de {total} ciudades',
   ghost_seeCompare: 'VER COMPARACIÓN POR CIUDAD',
   ghost_raceHint: '{name} ya jugó: correrás contra su partida en vivo y verás cuándo respondió cada ciudad.',
+  energy_livesAria: '{n} vidas',
   // ── Fase 4: entrenamiento ampliado y repaso inteligente ──
   train_title: 'Entrenamiento',
   train_subtitle: 'Practica a tu ritmo, sin vidas ni puntaje',
