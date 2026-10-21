@@ -46,8 +46,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: data.icon || '/icons/icon-192x192.png',
-      badge: '/icons/icon-192x192.png',
+      icon: data.icon || '/icon-192.png',
+      badge: '/icon-192.png',
       tag: data.tag || 'geospeed',
       data: data,
     })
