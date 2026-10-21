@@ -673,6 +673,7 @@ const es = {
   combo_onFire: '¡EN LLAMAS!',
   combo_broken: 'Se rompió el combo',
   // ── Fase 3: carrera contra el fantasma en los retos ──
+  ch_savingResult: 'Guardando tu partida…',
   ghost_answered: '{name} ya respondió · {s} s',
   ghost_lead: 'Vas ganando por {n}',
   ghost_behind: 'Tu rival va ganando por {n}',

@@ -135,7 +135,7 @@ import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
-import { challengeCitiesToGame, mockRecordMyResult, createChallenge, fetchChallengeGhost, type Challenge, type ChallengeDetail, type ChallengeGhost, type MyChallenge } from '@/lib/challenges';
+import { challengeCitiesToGame, mockRecordMyResult, isMockChallenges, createChallenge, fetchChallengeGhost, type Challenge, type ChallengeDetail, type ChallengeGhost, type MyChallenge } from '@/lib/challenges';
 import { GhostResultPanel } from '@/components/game/GhostRace';
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame } from '@/lib/cloudSync';
@@ -323,6 +323,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   // Carrera contra el fantasma (Fase 3): la partida del rival si ya jugó este reto (se pide al empezar)
   const [challengeGhost, setChallengeGhost] = useState<{ id: string; ghost: ChallengeGhost } | null>(null);
+  // Al terminar un reto se espera a que la partida llegue al servidor y se va directo a la comparación
+  const [challengeSaving, setChallengeSaving] = useState(false);
   const [challengeSource, setChallengeSource] = useState<ChallengeSource | null>(null);
   const [revengeUsed, setRevengeUsed] = useState(false);
   const [originalScore, setOriginalScore] = useState(0);
@@ -530,7 +532,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       incrementGameCounter();
       addBattlePassXP(total);
       syncAfterGame();
-      saveGameResult({
+      const saved = saveGameResult({
         gameType: 'challenge',
         mode: gameMode,
         difficulty,
@@ -547,7 +549,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         score: total, end_reason: reason,
         rounds: roundsFromResults(rounds).map(r => ({ ...r, city_lat: r.city_lat ?? 0, city_lon: r.city_lon ?? 0, city_country: r.city_country ?? null, click_lat: r.click_lat ?? null, click_lon: r.click_lon ?? null, distance_km: r.distance_km ?? null, time_s: r.time_s ?? null, base_points: r.base_points ?? null, multiplier: r.multiplier ?? null })),
       });
-      setPhase('final');
+      // Directo a la comparación con el amigo (o a "comparación pendiente" si aún no juega): antes había que
+      // tocar "Ver mi reto" en la pantalla de resultados. Si la partida no llega al servidor (sin conexión,
+      // queda en la cola) se muestra la pantalla de resultados de siempre.
+      setChallengeSaving(true);
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000));
+      Promise.race([saved, timeout]).then((id) => {
+        setChallengeSaving(false);
+        if (id || isMockChallenges()) { setActiveChallenge(null); setPhase('challenge'); scrollAppToTop(); }
+        else setPhase('final');
+      });
       return;
     }
 
@@ -1485,6 +1496,14 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         </Suspense>
       </PhaseErrorBoundary>
       {showNav && <AppNav active={activeNavTab} onNavigate={handleNav} onOpenSettings={handleOpenSettings} />}
+      {challengeSaving && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-navy-deep/80 backdrop-blur-sm animate-fade-in" role="status" aria-live="polite">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <img src="/mascot/explorer-logo.webp" alt="" className="w-14 animate-pulse" />
+            <p className="text-lg font-extrabold">{t('ch_savingResult')}</p>
+          </div>
+        </div>
+      )}
       {showNoLives && <NoLivesModal onClose={() => setShowNoLives(false)} onOpenStore={() => { setShowNoLives(false); handleOpenStore(); }} />}
       {streakLost && phase === 'home' && (
         <StreakLostModal lost={streakLost.lost} best={streakLost.best} onClose={closeStreakLost} onPlay={() => { closeStreakLost(); handleDailyIntro(); }} />

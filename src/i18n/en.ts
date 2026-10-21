@@ -675,6 +675,7 @@ const en: Translations = {
   combo_onFire: 'ON FIRE!',
   combo_broken: 'Combo broken',
   // ── Fase 3: carrera contra el fantasma en los retos ──
+  ch_savingResult: 'Saving your game…',
   ghost_answered: '{name} answered · {s} s',
   ghost_lead: 'You lead by {n}',
   ghost_behind: 'Your rival leads by {n}',
