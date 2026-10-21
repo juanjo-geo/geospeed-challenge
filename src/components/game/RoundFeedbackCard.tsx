@@ -31,8 +31,10 @@ interface RoundFeedbackCardProps {
   firstTile?: { label: string; value: string };
   /** Etiqueta de la base en "Ver cálculo" (Mundial: por zona, no por distancia) */
   baseLabel?: string;
-  /** Reto contra un rival que ya jugó (Fase 3): su distancia, tiempo y puntos en esta ciudad */
-  versus?: React.ReactNode;
+  /** Contenido bajo Distancia / Tiempo: la comparación con el rival (Fase 3) o la pista del lugar (entrenamiento) */
+  extra?: React.ReactNode;
+  /** Entrenamiento y repaso (Fase 4): sin puntaje ni "Ver cálculo" */
+  hidePoints?: boolean;
 }
 
 /**
@@ -40,7 +42,7 @@ interface RoundFeedbackCardProps {
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
  * Puntaje v2: el combo y el desglose (cercanía × rapidez × combo × dificultad) salen del propio resultado.
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel, versus }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel, extra, hidePoints = false }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
@@ -85,11 +87,13 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
               {nearMissMsg && <p className="font-bold text-primary/90 animate-pulse text-sm">💨 {nearMissMsg}</p>}
             </div>
           )}
-          <div className="rounded-2xl border-2 border-accent/30 bg-background/40 py-3 text-center">
-            <p className="font-extrabold text-primary text-5xl leading-none" style={{ textShadow: '0 0 18px hsl(var(--primary)/0.35)' }}>
-              +{result.totalPoints.toLocaleString(numberLocale)} {t('game_pointsWord')}
-            </p>
-          </div>
+          {!hidePoints && (
+            <div className="rounded-2xl border-2 border-accent/30 bg-background/40 py-3 text-center">
+              <p className="font-extrabold text-primary text-5xl leading-none" style={{ textShadow: '0 0 18px hsl(var(--primary)/0.35)' }}>
+                +{result.totalPoints.toLocaleString(numberLocale)} {t('game_pointsWord')}
+              </p>
+            </div>
+          )}
         </>
       ) : (
         <div className="text-center">
@@ -111,9 +115,11 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
             <span className="hidden [@media(max-height:420px)]:inline text-xs font-semibold text-muted-foreground"> · {subheading}</span>
           </h3>
           <p className="text-muted-foreground font-semibold text-xs sm:text-sm [@media(max-height:420px)]:hidden"><Flag country={result.city.country} className="w-4 inline-block align-[-2px] mr-1" />{subheading}</p>
-          <p className="font-extrabold text-primary text-3xl sm:text-4xl [@media(max-height:420px)]:text-xl leading-tight mt-0.5" style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
-            +{result.totalPoints.toLocaleString(numberLocale)} {t('game_pointsWord')}
-          </p>
+          {!hidePoints && (
+            <p className="font-extrabold text-primary text-3xl sm:text-4xl [@media(max-height:420px)]:text-xl leading-tight mt-0.5" style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
+              +{result.totalPoints.toLocaleString(numberLocale)} {t('game_pointsWord')}
+            </p>
+          )}
         </div>
       )}
 
@@ -121,9 +127,9 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
         <Tile lg={lg} label={firstTile?.label ?? t('game_distance')} value={firstTile?.value ?? formatDistance(result.distance)} icon={<path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22Zm0-9.6a2.9 2.9 0 1 0 0-5.8 2.9 2.9 0 0 0 0 5.8Z" fill="currentColor" stroke="none" />} />
         <Tile lg={lg} label={t('game_time')} value={time} icon={<><circle cx="12" cy="13.5" r="7.5" /><path d="M12 9.5v4l2.5 1.8" /><path d="M9.5 2.5h5" /><path d="M12 2.5v3.5" /></>} />
       </div>
-      {versus}
+      {extra}
 
-      {!quick && <>
+      {!quick && !hidePoints && <>
       <button
         onClick={() => { playAccordion(!showCalc); setShowCalc(v => !v); }}
         className="text-xs sm:text-sm font-bold text-accent hover:underline flex items-center justify-center gap-1"

@@ -7,7 +7,7 @@
  * Handles SPA navigation (falls back to /index.html for HTML requests).
  */
 
-const CACHE_NAME = 'geospeed-v125';
+const CACHE_NAME = 'geospeed-v126';
 
 // Critical app shell files to pre-cache for offline support
 const APP_SHELL = [
@@ -46,8 +46,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: data.icon || '/icons/icon-192x192.png',
-      badge: '/icons/icon-192x192.png',
+      icon: data.icon || '/icon-192.png',
+      badge: '/icon-192.png',
       tag: data.tag || 'geospeed',
       data: data,
     })

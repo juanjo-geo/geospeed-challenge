@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ChallengeGhost } from '@/lib/challenges';
 import { GhostSideCard, GhostChip, GhostPulse, GhostCompare } from './GhostRace';
+import TrainingTip from './TrainingTip';
 import { City, getRandomCities, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { haversineDistance } from '@/lib/gameUtils';
 import { closeness, scaleForMode, scoreRound, difficultyHundredths, speedMultiplier, comboLevelOf, COMBO_LEVELS, GOOD_MIN, PERFECT_KM, type Quality } from '@/lib/scoring';
@@ -33,7 +34,8 @@ import { preloadCountryPhoto } from '@/lib/countryPhotos';
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
 const TRAINING_ROUNDS = 6;
-const AUTO_ADVANCE_SECONDS = 3;
+/** Segundos que la tarjeta de respuesta queda antes de avanzar sola (JuanJo 2026-10-21: +1 s, era 3) */
+const AUTO_ADVANCE_SECONDS = 4;
 /** Tiempo para ver la línea y los km entre la respuesta y la ciudad antes de que la tarjeta tape el mapa.
  *  JuanJo (2026-10-18): 2 s más que antes → 3,2 s; con el anuncio "¡al otro lado del mundo!" (≥ 5.000 km), 6,2 s. */
 const DISTANCE_VIEW_MS = 3200;
@@ -70,6 +72,8 @@ export interface RoundResult {
   diffMult?: number;
   /** Esta ronda rompió un combo de 2 o más */
   brokeCombo?: boolean;
+  /** Entrenamiento con reloj (Fase 4): se acabó el tiempo sin responder; cuenta como fallo y la tanda sigue */
+  timedOut?: boolean;
 }
 
 interface GameScreenProps {
@@ -92,6 +96,8 @@ interface GameScreenProps {
   onToggleMusic?: () => void;
   /** Reto contra un rival que ya jugó: su partida ronda por ronda (Fase 3, carrera contra el fantasma) */
   ghost?: ChallengeGhost | null;
+  /** Entrenamiento sin reloj (Fase 4): sin cuenta regresiva por ciudad */
+  noClock?: boolean;
 }
 
 export function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
@@ -105,7 +111,7 @@ export function getRoundFeedback(distance: number, palette?: ReturnType<typeof u
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false }: GameScreenProps) {
   const { t, locale } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -201,7 +207,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     pausedMsRef.current = 0;
     pauseStartRef.current = (isPortraitMobile || isPageHidden || settingsOpenRef.current) ? Date.now() : null;
     setTimeLeft(effectiveMaxTime);
-    announce(t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
+    announce(noClock ? t('sr_announceRoundNoClock', { round: currentRound + 1, city: currentCity.name }) : t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
 
   // ── Carrera contra el fantasma (Fase 3): el rival ya jugó estas mismas ciudades ──
@@ -241,9 +247,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     };
   }, []);
 
-  // Single timer effect — pauses when waiting, portrait, or no city
+  // Entrenamiento con reloj: al acabarse el tiempo se registra un fallo (se asigna tras handleMapClick)
+  const timeoutMissRef = useRef<() => void>(() => {});
+  // Single timer effect — pauses when waiting, portrait, or no city (sin reloj en el entrenamiento: no corre)
   useEffect(() => {
-    if (isWaiting || !currentCity || isPortraitMobile || isPageHidden || settingsOpen) {
+    if (isWaiting || !currentCity || isPortraitMobile || isPageHidden || settingsOpen || noClock) {
       clearInterval(timerRef.current);
       return;
     }
@@ -252,6 +260,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
+          // Entrenamiento: se acabó el tiempo = fallo de esta ciudad; la tanda sigue
+          if (isTraining) { setTimeout(() => timeoutMissRef.current(), 0); return 0; }
           playTimeExpired();
           setTimeout(() => playGameOver(), 300);
           hapticError();
@@ -425,17 +435,37 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     onRoundComplete(result);
     // Screen reader announcement
     const fb = getRoundFeedback(distance, palette, t);
-    announce(t('sr_announceResult', { feedback: fb.phrase, city: currentCity.name, country: currentCity.country, distance: Math.round(distance), points: totalPoints, round: currentRound + 1, total: totalRounds }));
+    announce(t(isTraining ? 'sr_announceResultTraining' : 'sr_announceResult', { feedback: fb.phrase, city: currentCity.name, country: currentCity.country, distance: Math.round(distance), points: totalPoints, round: currentRound + 1, total: totalRounds }));
   }, [isWaiting, currentCity, onRoundComplete, t, gameMode, difficulty]);
+
+  timeoutMissRef.current = () => {
+    if (isWaiting || !currentCity) return;
+    comboRef.current = 0;
+    setCombo(0);
+    setMascotState('down');
+    playTimeExpired();
+    hapticError();
+    const result: RoundResult = {
+      city: currentCity, clickLat: currentCity.lat, clickLon: currentCity.lon, distance: 0,
+      basePoints: 0, multiplier: 0, totalPoints: 0, timeUsed: effectiveMaxTime, timeExact: effectiveMaxTime,
+      combo: 0, comboMult: 1, comboLevel: 0, quality: 'miss', diffMult: 1, timedOut: true,
+    };
+    setLastResult(result);
+    setRounds(r => [...r, result]);
+    setIsWaiting(true);
+    onRoundComplete(result);
+  };
 
   useEffect(() => { setMascotState('idle'); }, [currentRound]);
 
   if (!currentCity) return null;
 
-  const feedback = lastResult ? getRoundFeedback(lastResult.distance, palette, t) : null;
+  const feedback = lastResult
+    ? (lastResult.timedOut ? { emoji: '⏰', phrase: t('train_timeUp'), color: palette?.bad.tw ?? 'text-red-400' } : getRoundFeedback(lastResult.distance, palette, t))
+    : null;
   // Combo visible desde "Buen ritmo" (2 aciertos buenos seguidos)
   const comboLevel = comboLevelOf(combo);
-  const showStreak = comboLevel >= 1;
+  const showStreak = comboLevel >= 1 && !isTraining; // el entrenamiento no tiene puntaje (ni combo visible)
   const comboKey = COMBO_LEVELS[comboLevel].key;
   const comboMultNow = COMBO_LEVELS[comboLevel].tenths / 10;
   // Contador visible: el combo actual o, durante 0,6 s, el que se acaba de romper (se apaga)
@@ -452,7 +482,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: t('game_correctCity') }), [t]);
   // Objetos estables: si se recrean en cada render (tic del auto-avance), WorldMapCanvas reinicia
   // la animación del trazo y nunca llega a mostrar la ciudad correcta ni las etiquetas.
-  const userClickPt = useMemo(() => lastResult ? { lat: lastResult.clickLat, lon: lastResult.clickLon } : null, [lastResult]);
+  const userClickPt = useMemo(() => lastResult && !lastResult.timedOut ? { lat: lastResult.clickLat, lon: lastResult.clickLon } : null, [lastResult]);
   const correctPt = useMemo(() => lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null, [lastResult]);
   // El pin del rival solo aparece después de responder (nunca antes: se vería dónde clicó)
   const ghostPt = useMemo(
@@ -472,7 +502,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const feedbackBounds = useMemo(() => {
     if (!cover || !lastResult) return null;
     return frameAnswer(
-      { lat: lastResult.clickLat, lon: lastResult.clickLon },
+      lastResult.timedOut ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : { lat: lastResult.clickLat, lon: lastResult.clickLon },
       { lat: lastResult.city.lat, lon: lastResult.city.lon },
       mapArea.w, mapArea.h, cover, getMapBounds(gameMode), ghostPt ? [ghostPt] : [],
     );
@@ -507,6 +537,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       rival={ghostRound ? { km: ghostRound.distance_km, seconds: ghostRound.time_s, points: ghostRound.points } : null}
     />
   ) : undefined;
+  const cardExtra = ghostCompare ?? (isTraining && lastResult ? <TrainingTip city={lastResult.city} /> : undefined);
   const isTimerCritical = timeLeft <= 3 && !isWaiting;
   const isTimerUrgent = timeLeft <= 5 && !isWaiting;
 
@@ -605,6 +636,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 <span className="block text-[9.5cqi] font-bold">{fmtSecs(lastResult)} s</span>
               </span>
             </div>
+          ) : noClock ? (
+            <div className="flex items-center gap-[4cqi] px-[2cqi] shrink-0">
+              <ClockIcon className="w-[11cqi] h-[11cqi] text-accent shrink-0" />
+              <span className="text-[8cqi] font-bold">{t('train_noLimit')}</span>
+            </div>
           ) : (
             <div className="shrink-0 px-[1.5cqi]" role="timer" aria-label={`${timeLeft} s`}>
               <div className="flex items-center gap-[3.5cqi] mb-[2.5cqi]">
@@ -625,7 +661,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             </div>
           )}
 
-          {/* PUNTOS */}
+          {/* PUNTOS (el entrenamiento y el repaso no tienen puntaje) */}
+          {!isTraining && (
           <div className="relative w-full shrink-0 rounded-2xl border-2 border-accent/30 bg-background/40 px-[5cqi] py-[3.5cqi] flex items-center gap-[4.5cqi]">
             <span className="text-[12cqi] leading-none" aria-hidden>⭐</span>
             <span className="min-w-0 leading-tight">
@@ -640,6 +677,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               </span>
             )}
           </div>
+          )}
 
           {ghost && <GhostSideCard name={ghost.name} avatar={ghost.avatar} rivalScore={ghostScore} myScore={score} pulse={ghostPulse} />}
 
@@ -701,17 +739,19 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               {t('game_round')} <span className="text-primary">{currentRound + 1}</span><span className="text-muted-foreground"> / {totalRounds}</span>
             </span>
             <div className="flex-1 min-w-[90px] flex items-center gap-1.5 rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
-              <span className={`font-mono whitespace-nowrap ${timeLeft <= 3 && !isWaiting ? 'text-destructive animate-pulse' : timeLeft <= 5 && !isWaiting ? 'text-destructive' : ''}`}>⏱ {timeLeft} s</span>
-              <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
+              <span className={`font-mono whitespace-nowrap ${!noClock && timeLeft <= 3 && !isWaiting ? 'text-destructive animate-pulse' : !noClock && timeLeft <= 5 && !isWaiting ? 'text-destructive' : ''}`}>⏱ {noClock ? t('train_noLimit') : `${timeLeft} s`}</span>
+              {!noClock && <div className="flex-1 h-1.5 rounded-full bg-muted/70 overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${(timeLeft / effectiveMaxTime) * 100}%`, background: timeLeft <= 5 ? 'hsl(var(--destructive))' : 'hsl(var(--accent))', transition: isWaiting ? 'none' : 'width 200ms linear' }} />
-              </div>
+              </div>}
             </div>
+            {!isTraining && (
             <span className="relative rounded-full px-2 py-0.5 border border-primary/50 backdrop-blur-md whitespace-nowrap font-mono" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
               ⭐ <span ref={scoreElRef} className={`font-black transition-colors ${scorePop && comboLevel >= 1 ? 'text-accent' : 'text-primary'} ${scorePop ? 'animate-score-pop' : ''}`} aria-live="polite"><CountUp value={score} /></span> pts
               {floatPoints !== null && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-accent animate-float-up whitespace-nowrap">+{floatPoints.toLocaleString(appNumberLocale())}</span>
               )}
             </span>
+            )}
             {ghost && <GhostChip name={ghost.name} avatar={ghost.avatar} rivalScore={ghostScore} myScore={score} pulse={ghostPulse} />}
           </div>
         </div>
@@ -781,7 +821,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           clickDisabled={isWaiting}
           userClick={userClickPt}
           correctLocation={correctPt}
-          distanceKm={lastResult?.distance ?? null}
+          distanceKm={lastResult && !lastResult.timedOut ? lastResult.distance : null}
           gameMode={gameMode}
           hintZone={isTraining && !isWaiting && showHint ? { lat: currentCity.lat, lon: currentCity.lon } : null}
           highlightContinent={gameMode === 'world' && !isWaiting ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
@@ -817,7 +857,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               timeLabel={`${fmtSecs(lastResult)} s`}
               size="lg"
               natural
-              versus={ghostCompare}
+              extra={cardExtra}
+              firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : undefined}
+              hidePoints={isTraining}
             />
             </FitToBox>
           </div>
@@ -846,7 +888,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 timeLabel={`${fmtSecs(lastResult)} s`}
                 size="md"
                 natural
-                versus={ghostCompare}
+                extra={cardExtra}
+              firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : undefined}
+              hidePoints={isTraining}
               />
             </FitToBox>
           </div>

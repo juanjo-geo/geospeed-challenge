@@ -12,6 +12,12 @@ export interface Pt { x: number; y: number }
 export const rectAround = (p: Pt, half: number): Rect => ({ x: p.x - half, y: p.y - half, w: half * 2, h: half * 2 });
 const centered = (c: Pt, w: number, h: number): Rect => ({ x: c.x - w / 2, y: c.y - h / 2, w, h });
 const pad = (r: Rect, p: number): Rect => ({ x: r.x - p, y: r.y - p, w: r.w + p * 2, h: r.h + p * 2 });
+/** Mueve el rectángulo lo justo para que quede dentro del área (si cabe) */
+export function clampInto(r: Rect, area: Rect): Rect {
+  const x = r.w >= area.w ? area.x + (area.w - r.w) / 2 : Math.min(Math.max(r.x, area.x), area.x + area.w - r.w);
+  const y = r.h >= area.h ? area.y + (area.h - r.h) / 2 : Math.min(Math.max(r.y, area.y), area.y + area.h - r.h);
+  return { x, y, w: r.w, h: r.h };
+}
 
 export function overlapArea(a: Rect, b: Rect): number {
   const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
@@ -75,7 +81,12 @@ function placeInOrder(reqs: PillRequest[], hard: Rect[], soft: Rect[], area: Rec
   for (const req of reqs) {
     let best: { rect: Rect; leader: boolean } | null = null;
     let bestScore = Infinity;
-    for (const c of candidates(req)) {
+    for (const c0 of candidates(req)) {
+      // Nunca fuera del mapa visible: si la posición se sale, la etiqueta se corre hacia adentro (con
+      // línea guía al pin si quedó separada de él). Antes solo se penalizaba y a veces quedaba cortada.
+      const rect = clampInto(c0.rect, area);
+      const moved = Math.abs(rect.x - c0.rect.x) + Math.abs(rect.y - c0.rect.y) > 2;
+      const c = { rect, pref: c0.pref + (moved ? 2 : 0), leader: c0.leader || (moved && req.r > 0) };
       const A = c.rect.w * c.rect.h;
       let hardHit = 0;
       for (const o of hard) hardHit += overlapArea(c.rect, o);

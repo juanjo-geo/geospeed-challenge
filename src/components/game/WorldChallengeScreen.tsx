@@ -47,7 +47,8 @@ const TOTAL_ROUNDS = 13;
 const LINE_VIEW_MS = 3200;
 /** Con el anuncio "¡al otro lado del mundo!" (respuestas muy lejanas) un poco más. */
 const LINE_VIEW_EPIC_MS = 6200;
-const AUTO_ADVANCE_SECONDS = 3;
+/** Tarjeta de respuesta antes de avanzar sola (JuanJo 2026-10-21: +1 s, era 3) */
+const AUTO_ADVANCE_SECONDS = 4;
 const WC_MODE = 'mundial';
 
 /** Ronda de Mundial con lo necesario para guardarla en servidor (F1): jugador, país y clic. */

@@ -123,6 +123,10 @@ const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePa
 const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
 const SettingsScreen = lazyWithReload(() => import('@/components/game/SettingsScreen'));
 const StreakScreen = lazyWithReload(() => import('@/components/game/StreakScreen'));
+const TrainingSetupScreen = lazyWithReload(() => import('@/components/game/TrainingSetupScreen'));
+const TrainingRepeatScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingRepeatScreen })));
+const TrainingResultScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingResultScreen })));
+const MemoryScreen = lazyWithReload(() => import('@/components/game/MemoryScreen'));
 const MoreModesScreen = lazyWithReload(() => import('@/components/game/MoreModesScreen'));
 const HowToPlayScreen = lazyWithReload(() => import('@/components/game/HowToPlayScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
@@ -137,6 +141,9 @@ import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
 import { challengeCitiesToGame, mockRecordMyResult, isMockChallenges, createChallenge, fetchChallengeGhost, type Challenge, type ChallengeDetail, type ChallengeGhost, type MyChallenge } from '@/lib/challenges';
 import { GhostResultPanel } from '@/components/game/GhostRace';
+import type { TrainingSummary } from '@/components/game/TrainingFlowScreens';
+import { readTrainingCfg, saveTrainingCfg, trainingCities, shuffled, type TrainingCfg } from '@/lib/training';
+import { getCachedMemory, refreshMemory, regionMastery, reviewCities } from '@/lib/itemMemory';
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
@@ -160,10 +167,26 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory';
+
+/** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
+interface TrainingRun {
+  kind: 'training' | 'review';
+  mode: GameMode;
+  clock: boolean;
+  pass: number;
+  cities: City[];
+  firstHits: number;
+  firstTotal: number;
+  /** Falladas a la primera que se acertaron al repetirlas */
+  fixed: number;
+  saves: Promise<unknown>[];
+  /** % dominado de la región al empezar */
+  before: number;
+}
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -317,6 +340,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (showNoLives && noLivesPhaseRef.current && noLivesPhaseRef.current !== phase) setShowNoLives(false);
   }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const [isTraining, setIsTraining] = useState(false);
+  // ── Entrenamiento y repaso (Fase 4) ──
+  const [trainingCfg, setTrainingCfg] = useState<TrainingCfg>(readTrainingCfg);
+  const trainingRunRef = useRef<TrainingRun | null>(null);
+  const [trainingRun, setTrainingRun] = useState<TrainingRun | null>(null);
+  const [trainingMisses, setTrainingMisses] = useState<City[]>([]);
+  const [trainingSummary, setTrainingSummary] = useState<TrainingSummary | null>(null);
   const [revengeCities, setRevengeCities] = useState<City[] | null>(null);
   const [replayCities, setReplayCities] = useState<City[] | null>(null);
   // F3: reto asincrónico que se está jugando y fuente de la pantalla del reto
@@ -505,9 +534,64 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     };
   }, [phase]);
 
+  // ── Entrenamiento y repaso (Fase 4): tanda → ronda extra con las falladas hasta acertarlas → resumen ──
+  const startTrainingRun = useCallback((kind: 'training' | 'review', cities: City[], cfg: TrainingCfg) => {
+    if (!cities.length) return;
+    unlockAudio();
+    const run: TrainingRun = { kind, mode: cfg.mode, clock: cfg.clock, pass: 1, cities, firstHits: 0, firstTotal: cities.length, fixed: 0, saves: [], before: regionMastery(getCachedMemory(), cfg.mode).pct };
+    trainingRunRef.current = run;
+    setTrainingRun({ ...run });
+    setTrainingSummary(null);
+    setIsTraining(true); setIsSpeedDemon(false); setReplayCities(null); setRevengeCities(null); setActiveChallenge(null); setChallengeSeed(null);
+    setDifficulty(cfg.difficulty);
+    setGameMode(cfg.mode);
+    gameKeyRef.current += 1;
+    trackEvent('training_start', { kind, mode: cfg.mode, size: cities.length, clock: cfg.clock });
+    // Sin reloj no hay cuenta regresiva: se entra directo
+    if (cfg.clock) { countdownNextRef.current = 'playing'; setPhase('countdown'); } else setPhase('playing');
+  }, []);
+  const finishTraining = useCallback(() => {
+    const run = trainingRunRef.current;
+    if (!run) { setPhase('home'); return; }
+    setTrainingSummary({ kind: run.kind, mode: run.mode, firstHits: run.firstHits, firstTotal: run.firstTotal, fixed: run.fixed, before: run.before, after: null });
+    setIsTraining(false);
+    setPhase('training-result');
+    scrollAppToTop();
+    trackEvent('training_complete', { kind: run.kind, mode: run.mode, first_hits: run.firstHits, total: run.firstTotal });
+    // Cuando el servidor guardó las tandas, la memoria trae el nuevo porcentaje dominado
+    Promise.allSettled(run.saves).then(() => refreshMemory(true)).then((items) => {
+      setTrainingSummary((s) => (s ? { ...s, after: regionMastery(items, run.mode).pct } : s));
+    });
+  }, []);
+  const handleTrainingRepeat = useCallback(() => {
+    const run = trainingRunRef.current;
+    if (!run || !trainingMisses.length) return;
+    run.pass += 1;
+    run.cities = shuffled(trainingMisses);
+    setTrainingRun({ ...run });
+    setIsTraining(true);
+    gameKeyRef.current += 1;
+    setPhase('playing');
+  }, [trainingMisses]);
+
   const handleGameOver = useCallback((rounds: RoundResult[], reason: 'timeout' | 'complete') => {
     const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
     const avgDist = rounds.length > 0 ? rounds.reduce((s, r) => s + r.distance, 0) / rounds.length : 0;
+
+    // Fase 4: entrenamiento y repaso — se guarda (alimenta la memoria de lugares) y las falladas se repiten
+    if (isTraining && trainingRunRef.current) {
+      const run = trainingRunRef.current;
+      run.saves.push(saveGameResult({
+        gameType: 'training', mode: gameMode, difficulty, score: total, roundsPlayed: rounds.length, roundsTotal: run.cities.length,
+        avgDistanceKm: avgDist, endReason: reason, seed: null, rounds: roundsFromResults(rounds),
+      }));
+      const missed = rounds.filter(r => r.quality === 'miss').map(r => r.city);
+      if (run.pass === 1) run.firstHits = rounds.length - missed.length;
+      else run.fixed += rounds.length - missed.length;
+      if (missed.length) { setTrainingMisses(missed); setPhase('training-repeat'); }
+      else finishTraining();
+      return;
+    }
 
     if (revengeCities) {
       // Revenge game finished — calculate improvement over original worst scores
@@ -606,7 +690,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     } else {
       setPhase('final');
     }
-  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge]);
+  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge, finishTraining]);
 
   // ── Notifications: start check loop + schedule after each game ──
   // Recordatorio de la racha: se reprograma cada vez que cambia el estado del diario (al abrir, al terminarlo)
@@ -752,7 +836,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate]);
+  const handleGoHome = useCallback(() => { setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => { setProfileTab('overview'); setPhase('profile'); }, []);
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
@@ -803,10 +887,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [showNav]);
   useEffect(() => { document.getElementById(APP_SCROLL_ID)?.scrollTo(0, 0); }, [phase]);
   const activeNavTab: NavTab | null =
-    phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' ? 'home'
+    phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' || phase === 'training-setup' || phase === 'training-result' ? 'home'
     : phase === 'store' ? 'store'
     : phase === 'battlepass' ? 'pass'
-    : phase === 'history' || phase === 'ranking' ? 'progress'
+    : phase === 'history' || phase === 'ranking' || phase === 'memory' ? 'progress'
     : phase === 'profile' ? (profileTab === 'history' ? 'progress' : 'profile')
     : null;
   const handleNav = useCallback((tab: NavTab) => {
@@ -856,17 +940,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, []);
 
 
-  const handleStartTraining = useCallback(() => {
-    unlockAudio();
-    setIsTraining(true);
-    setIsSpeedDemon(false);
-    setReplayCities(null);
-    newGameSeed();
-    setDifficulty('basic');
-    setGameMode('world');
-    gameKeyRef.current += 1;
-    setPhase('countdown');
-  }, [isMobile]);
+  // Fase 4: el entrenamiento abre su configuración (región, nivel, tamaño de la tanda y reloj)
+  const handleStartTraining = useCallback(() => { setPhase('training-setup'); scrollAppToTop(); }, []);
+  const handleTrainingCfg = useCallback((cfg: TrainingCfg) => { setTrainingCfg(cfg); saveTrainingCfg(cfg); }, []);
+  const handleTrainingGo = useCallback((cfg: TrainingCfg) => startTrainingRun('training', trainingCities(cfg), cfg), [startTrainingRun]);
+  // Repaso del día: lo que toca hoy (máximo 10), sin reloj ni vidas
+  const handleStartReview = useCallback(() => {
+    const cities = shuffled(reviewCities(getCachedMemory()));
+    startTrainingRun('review', cities, { mode: 'world', difficulty: 'basic', size: cities.length, clock: false });
+  }, [startTrainingRun]);
+  const handleOpenMemory = useCallback(() => { setPhase('memory'); scrollAppToTop(); }, []);
 
   const handleSpeedDemon = useCallback(() => {
     unlockAudio();
@@ -1076,7 +1159,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'more-modes') {
-      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} />;
+      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} />;
     }
 
     if (phase === 'daily-intro') {
@@ -1085,6 +1168,28 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
     if (phase === 'streak') {
       return <StreakScreen onBack={handleGoHome} onPlayDaily={handleDailyIntro} />;
+    }
+
+    if (phase === 'training-setup') {
+      return <TrainingSetupScreen cfg={trainingCfg} onChange={handleTrainingCfg} onStart={handleTrainingGo} onBack={handleGoHome} onReview={handleStartReview} onOpenMemory={handleOpenMemory} />;
+    }
+    if (phase === 'training-repeat') {
+      return <TrainingRepeatScreen misses={trainingMisses} onRepeat={handleTrainingRepeat} onFinish={finishTraining} />;
+    }
+    if (phase === 'training-result' && trainingSummary) {
+      const isRun = trainingSummary.kind === 'training';
+      return (
+        <TrainingResultScreen
+          summary={trainingSummary}
+          onAgain={isRun ? () => handleTrainingGo(trainingCfg) : undefined}
+          onSettings={isRun ? handleStartTraining : undefined}
+          onMemory={handleOpenMemory}
+          onHome={handleGoHome}
+        />
+      );
+    }
+    if (phase === 'memory') {
+      return <MemoryScreen onBack={handleGoHome} onReview={handleStartReview} onTrain={handleStartTraining} />;
     }
 
     if (phase === 'howto') {
@@ -1398,6 +1503,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onGameOver={handleGameOver}
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
+          {...(isTraining && trainingRun ? { citiesOverride: trainingRun.cities, totalRoundsOverride: trainingRun.cities.length, noClock: !trainingRun.clock } : {})}
           {...(activeChallenge
             ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round, ghost: challengeGhost?.id === activeChallenge.id ? challengeGhost.ghost : null }
             : revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
@@ -1456,7 +1562,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onStartReview={handleStartReview} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 

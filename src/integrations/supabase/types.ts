@@ -472,6 +472,20 @@ export type Database = {
         Args: { p_id: string }
         Returns: Json
       }
+      my_memory: {
+        Args: Record<string, never>
+        Returns: {
+          item_id: string
+          box: number
+          next_review_on: string | null
+          fails: number
+          successes: number
+          streak: number
+          mastered: boolean
+          dominated: boolean
+          due: boolean
+        }[]
+      }
       my_challenges: {
         Args: { p_limit?: number }
         Returns: {

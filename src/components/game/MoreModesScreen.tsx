@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useI18n } from '@/i18n';
+import { useMemory, dueCount } from '@/lib/itemMemory';
 import { playButtonTap } from '@/lib/sounds';
 import { getPlayerLevel } from '@/lib/levelSystem';
 import { getFlag } from '@/lib/featureFlags';
@@ -12,6 +13,9 @@ interface MoreModesScreenProps {
   onTimeAttack: () => void;
   onSpeedDemon: () => void;
   onWorldChallenge: () => void;
+  /** Fase 4: entrenamiento (configuración) y Tu memoria */
+  onTraining?: () => void;
+  onMemory?: () => void;
 }
 
 const IMPOSSIBLE_UNLOCK_LEVEL = 5;
@@ -21,11 +25,12 @@ const IMPOSSIBLE_UNLOCK_LEVEL = 5;
  * Tarjetas grandes con ilustración a la izquierda, etiqueta y flecha; cada una lleva a las reglas/selección
  * que ya tiene cada modo.
  */
-export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge }: MoreModesScreenProps) {
+export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory }: MoreModesScreenProps) {
   const { t } = useI18n();
   const level = getPlayerLevel().level;
   const impossibleLocked = level < IMPOSSIBLE_UNLOCK_LEVEL;
   const wcEvent = Boolean(getFlag('world_challenge_event'));
+  const due = dueCount(useMemory());
 
   const cards = [
     {
@@ -43,6 +48,16 @@ export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, on
       ring: 'border-primary/70 shadow-[0_0_18px_hsl(var(--primary)/0.15)]', tagClass: wcEvent ? 'border-destructive text-destructive animate-pulse' : 'border-primary text-primary',
       onClick: onWorldChallenge, locked: false,
     },
+    ...(onTraining ? [{
+      key: 'training', art: ['🎯', '🗺️'], title: t('train_title'), desc: t('more_trainingDesc'), tag: t('more_trainingTag'),
+      ring: 'border-accent/70 shadow-[0_0_18px_hsl(var(--accent)/0.18)]', tagClass: 'border-accent text-accent',
+      onClick: onTraining, locked: false,
+    }] : []),
+    ...(onMemory ? [{
+      key: 'memory', art: ['🧠', '🗓️'], title: t('mem_title'), desc: t('more_memoryDesc'), tag: due > 0 ? t('more_memoryDue', { n: due }) : t('more_memoryTag'),
+      ring: 'border-primary/70 shadow-[0_0_18px_hsl(var(--primary)/0.15)]', tagClass: due > 0 ? 'border-accent text-accent' : 'border-primary text-primary',
+      onClick: onMemory, locked: false,
+    }] : []),
   ];
 
   return (

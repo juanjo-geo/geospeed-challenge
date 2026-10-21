@@ -1266,8 +1266,29 @@ export default function WorldMapCanvas({
     const spreadPenalty = pointSpread > 0.3 ? Math.max(0.5, 1 - (pointSpread - 0.3) * 0.7) : 1;
     peakZoom = Math.max(1.4, peakZoom * spreadPenalty);
 
+    // Tope del acercamiento: los pines (y el espacio de sus etiquetas) no pueden salir del cuadro.
+    // Antes, con un pin cerca del borde, el zoom lo sacaba de la pantalla junto con "Tu respuesta" o el rival.
+    const pinPts = [
+      { x: lonToX(userClick.lon), y: latToY(userClick.lat) },
+      { x: lonToX(correctLocation.lon), y: latToY(correctLocation.lat) },
+      ...(rivalClick ? [{ x: lonToX(rivalClick.lon), y: latToY(rivalClick.lat) }] : []),
+    ];
+    const fitZoom = (ox: number, oy: number) => {
+      const mx = Math.min(150, dimensions.w * 0.18), my = 44;
+      let z = Infinity;
+      for (const p of pinPts) {
+        if (p.x > ox + 0.5) z = Math.min(z, (dimensions.w - mx - ox) / (p.x - ox));
+        else if (p.x < ox - 0.5) z = Math.min(z, (ox - mx) / (ox - p.x));
+        if (p.y > oy + 0.5) z = Math.min(z, (dimensions.h - my - oy) / (p.y - oy));
+        else if (p.y < oy - 0.5) z = Math.min(z, (oy - my) / (oy - p.y));
+      }
+      return z;
+    };
+    peakZoom = Math.min(peakZoom, fitZoom((mxPct / 100) * dimensions.w, (myPct / 100) * dimensions.h));
+    if (peakZoom < 1.08) return; // casi no acercaría: mejor dejar el mapa quieto
+
     // Punch zoom — slight overshoot for dramatic impact
-    const punchZoom = Math.min(peakZoom * 1.06, peakZoom + 0.15);
+    const punchZoom = Math.max(1, Math.min(peakZoom * 1.06, peakZoom + 0.15, fitZoom((uxPct / 100) * dimensions.w, (uyPct / 100) * dimensions.h)));
 
     // Timing (ms) — extended ~6.5s total (+1.5s vs before)
     const T_PUNCH = 1000;      // zoom-in to user click
@@ -1352,7 +1373,7 @@ export default function WorldMapCanvas({
       clearTimeout(kickoff);
       if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
     };
-  }, [userClick, correctLocation, bounds, lonRange, latRange, lonToX, latToY, dimensions, viewBounds]);
+  }, [userClick, correctLocation, rivalClick, bounds, lonRange, latRange, lonToX, latToY, dimensions, viewBounds]);
 
   // Reset zoom when markers clear
   useEffect(() => {
