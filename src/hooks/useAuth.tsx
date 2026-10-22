@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureCountry } from '@/lib/country';
 import { syncOnLogin } from '@/lib/cloudSync';
 import { importLegacyHistoryOnce, flushPendingResults } from '@/lib/gameResults';
 import { redeemTransfer } from '@/lib/identity';
@@ -48,10 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('display_name, avatar')
+      .select('display_name, avatar, country')
       .eq('id', userId)
       .single();
-    if (data) { setDisplayName(data.display_name); setAvatar(data.avatar ?? ''); }
+    if (data) { setDisplayName(data.display_name); setAvatar(data.avatar ?? ''); ensureCountry(data.country); }
   };
 
   const refreshProfile = async () => {

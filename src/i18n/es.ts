@@ -744,6 +744,9 @@ const es = {
   more_memoryTag: 'Repaso',
   more_memoryDue: '{n} para hoy',
   // ── Fase 5: Sprint ──
+  sprint_noCountry: 'País sin definir',
+  sprint_rivalRecorded: 'Partida grabada de un jugador del Clásico',
+  sprint_rivalPlayer: 'Jugador de Sprint',
   sprint_title: 'Modo Sprint',
   sprint_subtitle: 'Carreras de 10 ciudades contra rivales de tu nivel',
   sprint_div_ciudad: 'Ciudad',

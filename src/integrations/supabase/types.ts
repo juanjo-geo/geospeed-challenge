@@ -137,6 +137,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string
+          country: string | null
           created_at: string
           display_name: string
           id: string
