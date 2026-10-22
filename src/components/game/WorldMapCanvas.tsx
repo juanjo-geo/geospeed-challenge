@@ -9,12 +9,15 @@ import { useI18n } from '@/i18n';
 import { appNumberLocale } from '@/lib/format';
 import { getHiResMap, loadHiResMap, traceCountry, traceArcs, countryAt, labelSpots, boxesIntersect, type HiResMap } from '@/lib/hiResMap';
 import { layoutPills, layoutTexts, rectAround, nearestOnRect, type PillRequest, type PlacedPill, type Rect, type Pt } from '@/lib/mapLabels';
+import { planAnswerZoom, clampZoomFrame } from '@/lib/mapZoom';
 import { countryDisplayName } from '@/lib/flags';
 
 /** Índice de cada país en countries.ts: el mapa detallado usa el mismo color que la vista del mundo */
 const LOW_INDEX = new Map(countries.map((c, i) => [c.name, i]));
+const PILL_FONT_SM = '700 11px Poppins, system-ui, sans-serif';
 const PILL_FONT = '700 12px Poppins, system-ui, sans-serif';
 const PILL_FONT_LG = '700 13px Poppins, system-ui, sans-serif';
+const DIST_FONT_SM = '700 12px Poppins, system-ui, sans-serif';
 const DIST_FONT = '700 13px Poppins, system-ui, sans-serif';
 const DIST_FONT_LG = '700 14px Poppins, system-ui, sans-serif';
 /** Vista acercada (lo visible abarca ≤ 160° de longitud): contornos detallados y nombres de países */
@@ -433,8 +436,15 @@ export default function WorldMapCanvas({
       ctx.fillStyle = neon ? (italic ? 'rgba(170,205,240,0.75)' : rgba(BRAND_RGB.navyDeep, 0.78)) : light ? '#1a3a4a' : 'rgba(80,50,20,0.60)';
       if (neon && italic) ctx.letterSpacing = '0.12em';
       for (const l of labels) {
-        const { x, y } = geoToPixel(l.lon, l.lat);
+        const p = geoToPixel(l.lon, l.lat);
         const lines = l.name.split('\n');
+        // Dentro del lienzo: en los bordes ("OCÉANO AUSTRAL" sobre el límite sur, el Pacífico del lado
+        // derecho) el texto salía cortado. Lo que queda del todo fuera de la vista no se dibuja.
+        const blockW = Math.max(...lines.map((line) => ctx.measureText(line).width));
+        const blockH = lines.length * (fontSize + 2);
+        if (p.x + blockW / 2 < 0 || p.x - blockW / 2 > w || p.y + blockH / 2 < 0 || p.y - blockH / 2 > h) continue;
+        const x = Math.min(Math.max(p.x, blockW / 2 + 6), w - blockW / 2 - 6);
+        const y = Math.min(Math.max(p.y, blockH / 2 + 4), h - blockH / 2 - 4);
         lines.forEach((line, i) => {
           ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * (fontSize + 2));
         });
@@ -567,6 +577,8 @@ export default function WorldMapCanvas({
   // Animated line progress
   const lineProgressRef = useRef(0);
   const animFrameRef = useRef<number>(0);
+  // Pines y etiquetas de la respuesta ya ubicados (px del lienzo): el acercamiento CSS los lee para no sacarlos del cuadro
+  const answerRectsRef = useRef<Rect[]>([]);
   // Onda del combo: arranca con cada clic nuevo (no se repite al re-encuadrar la misma respuesta)
   const fxClickRef = useRef<{ lat: number; lon: number } | null>(null);
   const fxStartRef = useRef(0);
@@ -630,10 +642,13 @@ export default function WorldMapCanvas({
     for (let i = 1; i < 12; i++) soft.push(rectAround(curvePt(i / 12), 5));
     if (rivalClick) for (let i = 1; i < 8; i++) soft.push(rectAround({ x: rx + ((cx - rx) * i) / 8, y: ry + ((cy - ry) * i) / 8 }, 5));
     const textW = (text: string, font: string) => { ctx.font = font; return ctx.measureText(text).width; };
-    // Mapas pequeños (celular en horizontal): letra de 12 px; en los demás, 13 px
+    // Mapas pequeños (celular en horizontal): letra de 12 px; en los demás, 13 px. En la vista mundial
+    // (la línea antes de la tarjeta) un punto menos: el acercamiento CSS de la respuesta ya las agranda.
     const compactMap = Math.min(W, H) < 420;
-    const pillFont = compactMap ? PILL_FONT : PILL_FONT_LG, distFont = compactMap ? DIST_FONT : DIST_FONT_LG;
-    const pillH = compactMap ? 24 : 26;
+    const worldStage = !viewBounds;
+    const pillFont = worldStage ? (compactMap ? PILL_FONT_SM : PILL_FONT) : compactMap ? PILL_FONT : PILL_FONT_LG;
+    const distFont = worldStage ? (compactMap ? DIST_FONT_SM : DIST_FONT) : compactMap ? DIST_FONT : DIST_FONT_LG;
+    const pillH = worldStage ? (compactMap ? 20 : 22) : compactMap ? 24 : 26;
     const distText = distanceKm != null ? `${Math.round(distanceKm).toLocaleString(appNumberLocale())} km` : null;
     const rivalText = rivalClick
       ? (rivalClick.distanceKm != null ? `${rivalClick.label} · ${Math.round(rivalClick.distanceKm).toLocaleString(appNumberLocale())} km` : rivalClick.label)
@@ -660,6 +675,7 @@ export default function WorldMapCanvas({
     }
     const pills = layoutPills(reqs, hard, soft, area);
     const pill = (key: string) => pills.find((pl) => pl.key === key);
+    answerRectsRef.current = [...hard.slice(0, rivalClick ? 3 : 2), ...pills.map((pl) => pl.rect)];
 
     // ── Nombres de países en la vista acercada: el país de la ciudad (foco, en mayúsculas), el que
     // tocaste y los vecinos. Sin choques con pines, etiquetas ni la línea; si no caben, se omiten.
@@ -1263,9 +1279,9 @@ export default function WorldMapCanvas({
     // Cancel any previous zoom bomb
     if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
 
-    // Con un encuadre fijo (respuesta de la ronda, revisión) el mapa ya está acercado de verdad:
-    // quitar el zoom CSS para no sumar los dos acercamientos
-    if (viewBounds) {
+    // Vuelta suave a escala 1 (también si este efecto se repite y ya no toca acercar: el lienzo no debe
+    // quedar congelado en el acercamiento anterior)
+    const resetZoomCss = () => {
       zoomBombActiveRef.current = false;
       const el = canvasRef.current;
       if (el) {
@@ -1274,17 +1290,17 @@ export default function WorldMapCanvas({
         el.style.transformOrigin = '50% 50%';
       }
       setZoomStyle({});
+    };
+    // Con un encuadre fijo (respuesta de la ronda, revisión) el mapa ya está acercado de verdad:
+    // quitar el zoom CSS para no sumar los dos acercamientos
+    if (viewBounds) {
+      resetZoomCss();
       return;
     }
 
     const vw = window.innerWidth;
     const uxPct = (lonToX(userClick.lon) / dimensions.w) * 100;
     const uyPct = (latToY(userClick.lat) / dimensions.h) * 100;
-    const midLon = (userClick.lon + correctLocation.lon) / 2;
-    const midLat = (userClick.lat + correctLocation.lat) / 2;
-    const mxPct = (lonToX(midLon) / dimensions.w) * 100;
-    const myPct = (latToY(midLat) / dimensions.h) * 100;
-
     // Adaptive peak zoom — subtle and cinematic, not jarring
     const pointSpreadX = Math.abs(userClick.lon - correctLocation.lon) / lonRange;
     const pointSpreadY = Math.abs(userClick.lat - correctLocation.lat) / latRange;
@@ -1299,29 +1315,25 @@ export default function WorldMapCanvas({
     const spreadPenalty = pointSpread > 0.3 ? Math.max(0.5, 1 - (pointSpread - 0.3) * 0.7) : 1;
     peakZoom = Math.max(1.4, peakZoom * spreadPenalty);
 
-    // Tope del acercamiento: los pines (y el espacio de sus etiquetas) no pueden salir del cuadro.
-    // Antes, con un pin cerca del borde, el zoom lo sacaba de la pantalla junto con "Tu respuesta" o el rival.
-    const pinPts = [
-      { x: lonToX(userClick.lon), y: latToY(userClick.lat) },
-      { x: lonToX(correctLocation.lon), y: latToY(correctLocation.lat) },
-      ...(rivalClick ? [{ x: lonToX(rivalClick.lon), y: latToY(rivalClick.lat) }] : []),
+    // Tope del acercamiento (src/lib/mapZoom.ts): ni los pines ni sus etiquetas ("Tu respuesta", "Ciudad
+    // correcta", la distancia, el rival), ya ubicadas por el efecto de dibujo (corre antes que este), pueden
+    // salir del cuadro; el origen del pico es el que deja todo eso centrado, y cada cuadro de la animación
+    // vuelve a comprobarlo. Antes solo se cuidaban los pines con un margen fijo alrededor del punto medio y
+    // las etiquetas que cuelgan de ellos quedaban cortadas por el borde.
+    const W = dimensions.w, H = dimensions.h;
+    const click = { x: lonToX(userClick.lon), y: latToY(userClick.lat) };
+    const keep: Rect[] = [
+      rectAround(click, 14),
+      rectAround({ x: lonToX(correctLocation.lon), y: latToY(correctLocation.lat) }, 19),
+      ...(rivalClick ? [rectAround({ x: lonToX(rivalClick.lon), y: latToY(rivalClick.lat) }, 13)] : []),
+      ...answerRectsRef.current,
     ];
-    const fitZoom = (ox: number, oy: number) => {
-      const mx = Math.min(150, dimensions.w * 0.18), my = 44;
-      let z = Infinity;
-      for (const p of pinPts) {
-        if (p.x > ox + 0.5) z = Math.min(z, (dimensions.w - mx - ox) / (p.x - ox));
-        else if (p.x < ox - 0.5) z = Math.min(z, (ox - mx) / (ox - p.x));
-        if (p.y > oy + 0.5) z = Math.min(z, (dimensions.h - my - oy) / (p.y - oy));
-        else if (p.y < oy - 0.5) z = Math.min(z, (oy - my) / (oy - p.y));
-      }
-      return z;
-    };
-    peakZoom = Math.min(peakZoom, fitZoom((mxPct / 100) * dimensions.w, (myPct / 100) * dimensions.h));
-    if (peakZoom < 1.08) return; // casi no acercaría: mejor dejar el mapa quieto
-
-    // Punch zoom — slight overshoot for dramatic impact
-    const punchZoom = Math.max(1, Math.min(peakZoom * 1.06, peakZoom + 0.15, fitZoom((uxPct / 100) * dimensions.w, (uyPct / 100) * dimensions.h)));
+    const plan = planAnswerZoom(keep, click, peakZoom, W, H);
+    if (!plan) { resetZoomCss(); return; } // casi no acercaría: mejor dejar el mapa quieto
+    peakZoom = plan.peak;
+    const punchZoom = plan.punch;
+    const mxPct = (plan.origin.x / W) * 100;
+    const myPct = (plan.origin.y / H) * 100;
 
     // Timing (ms) — extended ~6.5s total (+1.5s vs before)
     const T_PUNCH = 1000;      // zoom-in to user click
@@ -1382,6 +1394,8 @@ export default function WorldMapCanvas({
         setZoomStyle({});
         return;
       }
+
+      currentZoom = clampZoomFrame(keep, { x: (originX / 100) * W, y: (originY / 100) * H }, currentZoom, W, H);
 
       // Direct DOM manipulation — bypasses React state to avoid batching drops
       const el = canvasRef.current;

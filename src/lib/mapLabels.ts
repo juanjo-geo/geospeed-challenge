@@ -148,3 +148,21 @@ export function layoutTexts(items: TextRequest[], hard: Rect[], area: Rect): { k
 export function nearestOnRect(r: Rect, p: Pt): Pt {
   return { x: Math.max(r.x, Math.min(p.x, r.x + r.w)), y: Math.max(r.y, Math.min(p.y, r.y + r.h)) };
 }
+
+/**
+ * Mayor factor con el que el lienzo puede escalarse (CSS `scale` con `transform-origin` en `origin`)
+ * sin que ninguno de los rectángulos salga del área W×H (con `margin` px de respiro). Sirve para el
+ * acercamiento de la respuesta: antes solo se cuidaban los pines y las etiquetas que cuelgan de ellos
+ * quedaban cortadas por el borde. Devuelve Infinity si nada limita; menos de 1 si algo ya está fuera.
+ */
+export function maxZoomKeeping(rects: Rect[], origin: Pt, W: number, H: number, margin = 4): number {
+  let z = Infinity;
+  for (const r of rects) {
+    const x0 = r.x, x1 = r.x + r.w, y0 = r.y, y1 = r.y + r.h;
+    if (x0 < origin.x) z = Math.min(z, (origin.x - margin) / (origin.x - x0));
+    if (x1 > origin.x) z = Math.min(z, (W - margin - origin.x) / (x1 - origin.x));
+    if (y0 < origin.y) z = Math.min(z, (origin.y - margin) / (origin.y - y0));
+    if (y1 > origin.y) z = Math.min(z, (H - margin - origin.y) / (y1 - origin.y));
+  }
+  return z;
+}
