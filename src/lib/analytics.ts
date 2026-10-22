@@ -131,8 +131,8 @@ export function trackEvent(
 
 // ─── Convenience Trackers ────────────────────────────────────────────
 
-export function trackGameStart(mode: string, difficulty: string): void {
-  trackEvent('game_start', { mode, difficulty });
+export function trackGameStart(mode: string, difficulty: string, category = 'cities'): void {
+  trackEvent('game_start', { mode, difficulty, category });
 }
 
 export function trackGameComplete(data: {

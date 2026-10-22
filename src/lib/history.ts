@@ -6,6 +6,7 @@
  * Las dos fuentes exponen la misma forma para que la pantalla no distinga.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { kindFromPlaceId } from '@/lib/catalog';
 import { fetchMyHistory, fetchMyResultRounds, readPendingResults, type SaveRoundInput, type GameType, type EndReason } from '@/lib/gameResults';
 import { getGameHistory } from '@/lib/gameUtils';
 import type { RoundResult } from '@/components/game/GameScreen';
@@ -16,6 +17,8 @@ export interface HistoryItem {
   gameType: GameType;
   mode: string;
   difficulty: string;
+  /** Fase 6: qué se ubicó (cities · flags) */
+  category: string;
   score: number;
   roundsPlayed: number;
   roundsTotal: number;
@@ -29,7 +32,7 @@ export interface HistoryItem {
   hasDetail: boolean;
 }
 
-export interface HistoryFilters { mode?: string; difficulty?: string }
+export interface HistoryFilters { mode?: string; difficulty?: string; category?: string }
 export const HISTORY_PAGE = 20;
 
 export async function hasSession(): Promise<boolean> {
@@ -40,7 +43,7 @@ function localItems(): HistoryItem[] {
   const pending: HistoryItem[] = readPendingResults().map((p, i) => {
     const rounds = (p.rounds as SaveRoundInput[] | undefined) ?? [];
     return {
-      id: String(p.client_id ?? `pending-${i}`), gameType: (p.game_type as GameType) ?? 'classic', mode: String(p.mode ?? 'world'),
+      id: String(p.client_id ?? `pending-${i}`), gameType: (p.game_type as GameType) ?? 'classic', mode: String(p.mode ?? 'world'), category: String(p.category ?? 'cities'),
       difficulty: String(p.difficulty ?? 'basic'), score: Number(p.score ?? 0), roundsPlayed: Number(p.rounds_played ?? rounds.length),
       roundsTotal: Number(p.rounds_total ?? rounds.length), avgDistanceKm: p.avg_distance_km == null ? null : Number(p.avg_distance_km),
       endReason: (p.end_reason as EndReason) ?? 'complete', createdAt: String(p.created_at ?? new Date(0).toISOString()),
@@ -49,7 +52,7 @@ function localItems(): HistoryItem[] {
   });
   const legacy: HistoryItem[] = getGameHistory().map((h, i) => ({
     id: `legacy-${i}-${h.date}`, gameType: h.mode === 'mundial' ? 'mundial' : h.type === 'timeattack' ? 'timeattack' : h.type === 'daily' ? 'daily' : 'classic',
-    mode: h.mode, difficulty: h.difficulty, score: h.score, roundsPlayed: h.rounds, roundsTotal: h.type === 'timeattack' ? h.rounds : 13,
+    mode: h.mode, category: 'cities', difficulty: h.difficulty, score: h.score, roundsPlayed: h.rounds, roundsTotal: h.type === 'timeattack' ? h.rounds : 13,
     avgDistanceKm: h.avgDistance || null, endReason: 'complete', createdAt: h.date, source: 'local', rounds: null, hasDetail: false,
   }));
   // Una partida puede estar en las dos listas (misma fecha ±2 s): nos quedamos con la que trae rondas
@@ -62,15 +65,15 @@ function localItems(): HistoryItem[] {
 }
 
 function applyFilters(items: HistoryItem[], f: HistoryFilters): HistoryItem[] {
-  return items.filter(i => (!f.mode || i.mode === f.mode) && (!f.difficulty || i.difficulty === f.difficulty));
+  return items.filter(i => (!f.mode || i.mode === f.mode) && (!f.difficulty || i.difficulty === f.difficulty) && (!f.category || i.category === f.category));
 }
 
 /** Página de historial. `before` = createdAt del último elemento cargado. */
 export async function fetchHistoryPage(f: HistoryFilters, before?: string): Promise<{ items: HistoryItem[]; hasMore: boolean; source: 'server' | 'local' }> {
   if (await hasSession()) {
-    const rows = await fetchMyHistory({ mode: f.mode, difficulty: f.difficulty, before, limit: HISTORY_PAGE + 1 });
+    const rows = await fetchMyHistory({ mode: f.mode, difficulty: f.difficulty, category: f.category, before, limit: HISTORY_PAGE + 1 });
     const items: HistoryItem[] = rows.slice(0, HISTORY_PAGE).map(r => ({
-      id: r.id, gameType: r.gameType, mode: r.mode, difficulty: r.difficulty, score: r.score, roundsPlayed: r.roundsPlayed,
+      id: r.id, gameType: r.gameType, mode: r.mode, category: r.category, difficulty: r.difficulty, score: r.score, roundsPlayed: r.roundsPlayed,
       roundsTotal: r.roundsTotal, avgDistanceKm: r.avgDistanceKm, endReason: r.endReason, createdAt: r.createdAt,
       source: 'server', rounds: null, hasDetail: true,
     }));
@@ -93,7 +96,7 @@ export async function hasAnyHistory(): Promise<boolean> {
 export async function loadRounds(item: HistoryItem): Promise<RoundResult[]> {
   const rows = item.rounds && item.rounds.length > 0 ? item.rounds : item.source === 'server' ? await fetchMyResultRounds(item.id) : [];
   return rows.map(r => ({
-    city: { name: r.city_name, country: r.city_country ?? '', lat: r.city_lat ?? 0, lon: r.city_lon ?? 0, difficulty: item.difficulty as Difficulty },
+    city: { ...kindFromPlaceId(r.place_id), name: r.city_name, country: r.city_country ?? '', lat: r.city_lat ?? 0, lon: r.city_lon ?? 0, difficulty: item.difficulty as Difficulty },
     clickLat: r.click_lat ?? r.city_lat ?? 0, clickLon: r.click_lon ?? r.city_lon ?? 0,
     distance: r.distance_km ?? 0, basePoints: r.base_points ?? 0, multiplier: r.multiplier ?? 1, totalPoints: r.points, timeUsed: r.time_s ?? 0,
   }));

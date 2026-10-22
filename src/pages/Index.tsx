@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
+import { categoryOf, type Category } from '@/lib/catalog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { addGameHistory, getGameHistory } from '@/lib/gameUtils';
@@ -347,6 +348,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (showNoLives && noLivesPhaseRef.current && noLivesPhaseRef.current !== phase) setShowNoLives(false);
   }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const [isTraining, setIsTraining] = useState(false);
+  // Fase 6: qué se ubica en la partida normal (ciudades o banderas); los retos y el entrenamiento traen la suya
+  const [gameCategory, setGameCategory] = useState<Category>('cities');
   // ── Entrenamiento y repaso (Fase 4) ──
   const [trainingCfg, setTrainingCfg] = useState<TrainingCfg>(readTrainingCfg);
   const trainingRunRef = useRef<TrainingRun | null>(null);
@@ -471,7 +474,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const pendingStartRef = useRef<{ diff: Difficulty; mode: GameMode } | null>(null);
   const countdownNextRef = useRef<Phase>('playing'); // a qué fase saltar tras la cuenta regresiva
 
-  const handleSelectDifficulty = useCallback((diff: Difficulty, mode: GameMode) => {
+  const handleSelectDifficulty = useCallback((diff: Difficulty, mode: GameMode, category: Category = 'cities') => {
     unlockAudio(); // Pre-unlock audio on user gesture so sounds work on mobile
     const onboardingDone = localStorage.getItem('geospeed_onboarding_done');
     // La práctica (jugador nuevo) no gasta vida: se cobra al pasar a la partida real (HELP-01)
@@ -486,11 +489,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     newGameSeed();
     setDifficulty(diff);
     setGameMode(mode);
+    setGameCategory(category);
     if (!onboardingDone) {
       setPhase('onboarding');
       return;
     }
-    trackGameStart(mode, diff);
+    trackGameStart(mode, diff, category);
     const tutorialSeen = localStorage.getItem('geospeed_tutorial_seen');
     if (!tutorialSeen) {
       setPhase('tutorial');
@@ -587,6 +591,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     trainingRunRef.current = null; setTrainingRun(null);
     setDifficulty('basic');
     setGameMode('world');
+    setGameCategory('cities');
     gameKeyRef.current += 1;
     trackEvent('sprint_start', { house: m.opponent.house, rematch: !!sprintRematchOf });
     countdownNextRef.current = 'playing';
@@ -613,6 +618,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setIsTraining(true); setIsSpeedDemon(false); setReplayCities(null); setRevengeCities(null); setActiveChallenge(null); setChallengeSeed(null);
     setDifficulty(cfg.difficulty);
     setGameMode(cfg.mode);
+    setGameCategory(cfg.category);
     gameKeyRef.current += 1;
     trackEvent('training_start', { kind, mode: cfg.mode, size: cities.length, clock: cfg.clock });
     // Sin reloj no hay cuenta regresiva: se entra directo
@@ -661,7 +667,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (isTraining && trainingRunRef.current) {
       const run = trainingRunRef.current;
       run.saves.push(saveGameResult({
-        gameType: 'training', mode: gameMode, difficulty, score: total, roundsPlayed: rounds.length, roundsTotal: run.cities.length,
+        gameType: 'training', mode: gameMode, difficulty, score: total, roundsPlayed: rounds.length, roundsTotal: run.cities.length, category: categoryOf(rounds.map(r => r.city)),
         avgDistanceKm: avgDist, endReason: reason, seed: null, rounds: roundsFromResults(rounds),
       }));
       const missed = rounds.filter(r => r.quality === 'miss').map(r => r.city);
@@ -706,6 +712,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         endReason: reason,
         seed: null,
         challengeId: activeChallenge.id,
+        category: activeChallenge.category ?? categoryOf(rounds.map(r => r.city)),
         rounds: roundsFromResults(rounds),
       });
       mockRecordMyResult(activeChallenge.id, {
@@ -760,6 +767,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       avgDistanceKm: avgDist,
       endReason: reason,
       seed: replayCities ? null : gameSeedRef.current,
+      category: categoryOf(rounds.map(r => r.city)),
       rounds: roundsFromResults(rounds),
     });
 
@@ -879,6 +887,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setChallengeSeed(null); setChallengerScore(null);
     setDifficulty(ch.difficulty);
     setGameMode(ch.mode);
+    setGameCategory(ch.category ?? 'cities');
     setActiveChallenge(ch);
     setChallengeSource({ type: 'challenge', challenge: ch });
     // Durante la cuenta regresiva llega la partida del rival (si ya jugó); sin ella es un reto normal
@@ -900,7 +909,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (rematchBusy) return;
     setRematchBusy(true);
     try {
-      const ch = await createChallenge({ mode: parent.mode, difficulty: parent.difficulty, requestId: `rematch-${parent.id}`, parentId: parent.id, excludeCities: parent.cities.map(c => c.name) });
+      const ch = await createChallenge({ mode: parent.mode, difficulty: parent.difficulty, category: parent.category ?? 'cities', requestId: `rematch-${parent.id}`, parentId: parent.id, excludeCities: parent.cities.map(c => c.name) });
       setChallengeSource({ type: 'challenge', challenge: ch });
       setPhase('challenge'); scrollAppToTop();
     } catch { /* la pantalla del reto muestra el error si se reintenta */ }
@@ -1026,7 +1035,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Repaso del día: lo que toca hoy (máximo 10), sin reloj ni vidas
   const handleStartReview = useCallback(() => {
     const cities = shuffled(reviewCities(getCachedMemory()));
-    startTrainingRun('review', cities, { mode: 'world', difficulty: 'basic', size: cities.length, clock: false });
+    startTrainingRun('review', cities, { mode: 'world', difficulty: 'basic', size: cities.length, clock: false, category: categoryOf(cities) });
   }, [startTrainingRun]);
   const handleOpenMemory = useCallback(() => { setPhase('memory'); scrollAppToTop(); }, []);
 
@@ -1450,6 +1459,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         <FriendsScreen
           initialMode={gameMode}
           initialDifficulty={difficulty}
+          initialCategory={gameCategory}
           onBack={handleGoHome}
           onCreated={handleChallengeCreated}
           onOpenCode={handleOpenChallengeCode}
@@ -1590,6 +1600,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onToggleMusic={toggleMusic}
           onGameOver={handleGameOver}
           isTraining={isTraining}
+          category={gameCategory}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(isTraining && trainingRun ? { citiesOverride: trainingRun.cities, totalRoundsOverride: trainingRun.cities.length, noClock: !trainingRun.clock } : {})}
           {...(sprintMatch ? { citiesOverride: sprintCitiesToGame(sprintMatch), totalRoundsOverride: sprintMatch.cities.length || SPRINT_ROUNDS, maxTimeOverride: SPRINT_SECONDS, ghost: sprintGhost(sprintMatch), onExit: handleSprintExit, exitConfirm: t('sprint_exitConfirm'), hudLabel: '⚡ Sprint' } : {})}

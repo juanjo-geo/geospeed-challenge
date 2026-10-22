@@ -58,6 +58,8 @@ interface WorldMapCanvasProps {
   labelAvoid?: { right?: number; top?: number; bottom?: number; corner?: { w: number; h: number } } | null;
   /** Juice del combo (puntaje v2): onda expansiva en tu pin al acertar y chispas desde ×1,2. Pasar memoizado. */
   pinFx?: { level: number } | null;
+  /** Banderas (Fase 6): país a resaltar tras responder (nombre de countries.ts), en turquesa */
+  highlightCountry?: string | null;
 }
 
 export default function WorldMapCanvas({
@@ -81,6 +83,7 @@ export default function WorldMapCanvas({
   viewBounds,
   labelAvoid,
   pinFx,
+  highlightCountry,
 }: WorldMapCanvasProps) {
   const { t, locale } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -264,6 +267,18 @@ export default function WorldMapCanvas({
       ctx.beginPath();
       traceArcs(ctx, detailMap, detailMap.borderArcs, X, Y, vis);
       ctx.stroke();
+      if (highlightCountry) {
+        // País correcto de una bandera: relleno y borde turquesa (también sus islas y territorios con el mismo ref)
+        for (const c of detailMap.countries) {
+          if (c.name !== highlightCountry && c.ref !== highlightCountry) continue;
+          if (!boxesIntersect(c.bbox, vis)) continue;
+          ctx.fillStyle = rgba(BRAND_RGB.turquoise, 0.42);
+          ctx.strokeStyle = rgba(BRAND_RGB.turquoise, 0.95);
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          if (traceCountry(ctx, c, X, Y, vis)) { ctx.fill('evenodd'); ctx.stroke(); }
+        }
+      }
       if (highlightContinent && CONTINENT_COUNTRIES[highlightContinent]) {
         const set = CONTINENT_COUNTRIES[highlightContinent];
         for (const c of detailMap.countries) {
@@ -322,6 +337,24 @@ export default function WorldMapCanvas({
         if (hasVisiblePoint) {
           ctx.closePath();
           ctx.stroke();
+        }
+      }
+    }
+
+    // ── País correcto de una bandera (Fase 6): relleno y borde turquesa ──
+    if (highlightCountry) {
+      const hc = countries.find((c) => c.name === highlightCountry);
+      if (hc) {
+        ctx.fillStyle = rgba(BRAND_RGB.turquoise, 0.42);
+        ctx.strokeStyle = rgba(BRAND_RGB.turquoise, 0.95);
+        ctx.lineWidth = 2.5;
+        for (const polygon of hc.polygons) {
+          ctx.beginPath();
+          for (let i = 0; i < polygon.length; i++) {
+            const { x, y } = geoToPixel(polygon[i][0], polygon[i][1]);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.closePath(); ctx.fill(); ctx.stroke();
         }
       }
     }
@@ -497,7 +530,7 @@ export default function WorldMapCanvas({
       }
       // sin fallback emoji: evita ver el "balón antiguo"; el PNG carga en milisegundos
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, geoToPixel, highlightContinent, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, highlightContinent, highlightCountry, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.

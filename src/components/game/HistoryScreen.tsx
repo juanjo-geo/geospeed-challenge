@@ -214,13 +214,14 @@ function gameInfo(item: HistoryItem, t: T): { icon: string; name: string; diff: 
   const region = t(`mode_${item.mode}` as never) || item.mode;
   const diff = t(DIFF_LABEL[item.difficulty as Difficulty] as never) || item.difficulty;
   const globe = REGION_GLOBE[item.mode] ?? '🌍';
+  const flags = item.category === 'flags' ? ` · 🚩 ${t('cat_flags' as never)}` : '';
   switch (item.gameType) {
     case 'mundial': return { icon: '⚽', name: t('wc_modeName' as never), diff: t(`wc_diff_${item.difficulty}` as never) };
     case 'timeattack': return { icon: '⚡', name: `${t('ta_hud' as never)} · ${region}`, diff };
     case 'daily': return { icon: '📅', name: `${t('home_dailyCard' as never)} · ${region}`, diff };
-    case 'challenge': return { icon: '⚔️', name: `${t('ch_countdownLabel' as never)} · ${region}`, diff };
-    case 'training': return { icon: '🎯', name: `${t('game_training' as never)} · ${region}`, diff };
-    default: return { icon: globe, name: region, diff };
+    case 'challenge': return { icon: '⚔️', name: `${t('ch_countdownLabel' as never)} · ${region}${flags}`, diff };
+    case 'training': return { icon: '🎯', name: `${t('game_training' as never)} · ${region}${flags}`, diff };
+    default: return item.category === 'flags' ? { icon: '🚩', name: `${t('cat_flags' as never)} · ${region}`, diff } : { icon: globe, name: region, diff };
   }
 }
 

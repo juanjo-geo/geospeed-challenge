@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState, lazy, Suspense } from 'react';
+import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY, type Category } from '@/lib/catalog';
 import { MODE_CONFIG, type Difficulty, type GameMode } from '@/data/cities';
 import { createChallenge, normalizeCode, isValidCode, ChallengeError, type Challenge } from '@/lib/challenges';
 import { getFlag } from '@/lib/featureFlags';
@@ -15,6 +16,8 @@ const SplashGlobe = lazy(() => import('./SplashGlobe'));
 interface FriendsScreenProps {
   initialMode: GameMode;
   initialDifficulty: Difficulty;
+  /** Fase 6: ciudades o banderas */
+  initialCategory?: Category;
   onBack: () => void;
   onCreated: (ch: Challenge) => void;
   /** Abre la invitación de un código (pantalla de reto) */
@@ -28,11 +31,12 @@ interface FriendsScreenProps {
  * "Jugar con amigos" (maqueta Amigos_Asincronico_APROBADA_v2): dos exploradores con el globo y la insignia
  * "Reto entre amigos", crear un reto (región y dificultad en las mismas hojas del Inicio) o unirse con código.
  */
-export default function FriendsScreen({ initialMode, initialDifficulty, onBack, onCreated, onOpenCode, onSignIn, onLiveDuel }: FriendsScreenProps) {
+export default function FriendsScreen({ initialMode, initialDifficulty, initialCategory = 'cities', onBack, onCreated, onOpenCode, onSignIn, onLiveDuel }: FriendsScreenProps) {
   const { t } = useI18n();
   const [mode, setMode] = useState<GameMode>(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty>(initialDifficulty);
-  const [sheet, setSheet] = useState<null | 'region' | 'difficulty'>(null);
+  const [category, setCategory] = useState<Category>(initialCategory);
+  const [sheet, setSheet] = useState<null | 'region' | 'difficulty' | 'category'>(null);
   const closeSheet = useCallback(() => setSheet(null), []);
   const [code, setCode] = useState('');
   const [creating, setCreating] = useState(false);
@@ -46,7 +50,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, onBack, 
     setCreating(true);
     setError(null);
     try {
-      const ch = await createChallenge({ mode, difficulty, requestId });
+      const ch = await createChallenge({ mode, difficulty, category, requestId });
       setRequestId(crypto.randomUUID());
       onCreated(ch);
     } catch (e) {
@@ -66,6 +70,10 @@ export default function FriendsScreen({ initialMode, initialDifficulty, onBack, 
   }), [t]);
   const regionLabel = regionOptions.find(o => o.key === mode)?.label ?? mode;
   const diffLabel = difficultyOptions.find(o => o.key === difficulty)?.label ?? difficulty;
+  const categoryOptions: SelectorOption<Category>[] = useMemo(() => CATEGORIES.map(c => ({
+    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t(`${CATEGORY_KEY[c]}Desc` as never),
+  })), [t]);
+  const categoryLabel = t(CATEGORY_KEY[category] as never);
 
   const normalized = normalizeCode(code);
   const canJoin = isValidCode(normalized);
@@ -110,7 +118,8 @@ export default function FriendsScreen({ initialMode, initialDifficulty, onBack, 
               </div>
             </div>
             {/* Partida del reto: las mismas hojas de Región y Dificultad del Inicio */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <PickButton label={t('ch_category')} emoji={CATEGORY_ART[category].emoji} value={categoryLabel} onClick={() => { playButtonTap(); setSheet('category'); }} />
               <PickButton label={t('ch_region')} emoji={REGION_ART[mode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
               <PickButton label={t('ch_difficulty')} emoji={DIFF_ART[difficulty].emoji} value={diffLabel} onClick={() => { playButtonTap(); setSheet('difficulty'); }} />
             </div>
@@ -176,6 +185,13 @@ export default function FriendsScreen({ initialMode, initialDifficulty, onBack, 
           title={t('region_title')} subtitle={t('region_subtitle')} options={regionOptions} selected={mode}
           confirmLabel={t('region_confirm')} footnote={t('region_keepDifficulty')}
           onConfirm={(k) => { setMode(k); setSheet(null); }} onClose={closeSheet} closeLabel={t('close')}
+        />
+      )}
+      {sheet === 'category' && (
+        <SelectorSheet<Category>
+          title={t('cat_title')} subtitle={t('cat_subtitle')} options={categoryOptions} selected={category}
+          confirmLabel={t('cat_confirm')}
+          onConfirm={(k) => { setCategory(k); setSheet(null); }} onClose={closeSheet} closeLabel={t('close')}
         />
       )}
       {sheet === 'difficulty' && (

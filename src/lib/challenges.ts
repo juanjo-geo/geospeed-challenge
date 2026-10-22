@@ -15,20 +15,27 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
-import { getRandomCities, worldCities, type City, type Difficulty, type GameMode } from '@/data/cities';
+import { worldCities, placeIdOf, type City, type Difficulty, type GameMode } from '@/data/cities';
+import { getRandomItems, kindFromPlaceId, type Category } from '@/lib/catalog';
 import { countryIso } from '@/lib/flags';
 import { ensureGuestSession } from '@/lib/identity';
 
 export const CHALLENGE_ROUNDS = 13;
 export const CHALLENGE_SECONDS = 15;
 
-export interface ChallengeCity { n: number; name: string; country: string; iso: string | null; lat: number; lon: number }
+export interface ChallengeCity {
+  n: number; name: string; country: string; iso: string | null; lat: number; lon: number;
+  /** Fase 6: id del lugar (`flag:XX` en banderas) y tipo; los retos viejos no lo traen (ciudades) */
+  id?: string; kind?: 'city' | 'flag';
+}
 
 export interface Challenge {
   id: string;
   code: string;
   mode: GameMode;
   difficulty: Difficulty;
+  /** Fase 6: qué se ubica (los retos anteriores son de ciudades) */
+  category?: Category;
   rounds_total: number;
   seconds_per_round: number;
   cities: ChallengeCity[];
@@ -46,6 +53,7 @@ export interface ChallengePreview {
   difficulty: Difficulty;
   rounds_total: number;
   seconds_per_round: number;
+  category?: Category;
   status: Challenge['status'];
   creator_name: string;
   creator_avatar: string | null;
@@ -57,7 +65,7 @@ export interface ChallengePreview {
 }
 
 export interface ChallengeRound {
-  round_no: number; city_name: string; city_country: string | null; city_lat: number; city_lon: number;
+  round_no: number; place_id?: string | null; city_name: string; city_country: string | null; city_lat: number; city_lon: number;
   click_lat: number | null; click_lon: number | null; distance_km: number | null; time_s: number | null;
   base_points: number | null; multiplier: number | null; points: number;
 }
@@ -120,11 +128,11 @@ function catalogVersion(): string {
 }
 
 /** Elige las ciudades del reto en el cliente del creador (D2: el servidor guarda la lista tal cual). */
-export function pickChallengeCities(difficulty: Difficulty, mode: GameMode, rounds = CHALLENGE_ROUNDS, exclude: string[] = []): ChallengeCity[] {
+export function pickChallengeCities(difficulty: Difficulty, mode: GameMode, rounds = CHALLENGE_ROUNDS, exclude: string[] = [], category: Category = 'cities'): ChallengeCity[] {
   // Revancha: ciudades nuevas excluyendo las del reto original; si el pool no alcanza, se completan
   // con las excluidas (la invitación muestra el número real de ciudades nuevas, D2).
   const banned = new Set(exclude);
-  const pool = getRandomCities(difficulty, rounds * 4, mode);
+  const pool = getRandomItems(category, difficulty, rounds * 4, mode);
   const fresh = pool.filter(c => !banned.has(c.name));
   const seen = new Set<string>();
   const picked: City[] = [];
@@ -132,7 +140,7 @@ export function pickChallengeCities(difficulty: Difficulty, mode: GameMode, roun
     if (picked.length >= rounds || seen.has(c.name)) continue;
     seen.add(c.name); picked.push(c);
   }
-  return picked.map((c, i) => ({ n: i + 1, name: c.name, country: c.country, iso: countryIso(c.country), lat: c.lat, lon: c.lon }));
+  return picked.map((c, i) => ({ n: i + 1, id: placeIdOf(c), kind: c.kind ?? 'city', name: c.name, country: c.country, iso: countryIso(c.country), lat: c.lat, lon: c.lon }));
 }
 
 /** Cuántas ciudades de `cities` no estaban en el reto original */
@@ -144,7 +152,7 @@ export function countNewCities(cities: ChallengeCity[], parent: ChallengeCity[] 
 
 /** Ciudades del reto en el formato que usa GameScreen. */
 export function challengeCitiesToGame(ch: Pick<Challenge, 'cities' | 'difficulty'>): City[] {
-  return ch.cities.map(c => ({ name: c.name, country: c.country, lat: c.lat, lon: c.lon, difficulty: ch.difficulty }));
+  return ch.cities.map(c => ({ ...kindFromPlaceId(c.id), name: c.name, country: c.country, lat: c.lat, lon: c.lon, difficulty: ch.difficulty }));
 }
 
 export function challengeLink(code: string): string {
@@ -152,13 +160,14 @@ export function challengeLink(code: string): string {
 }
 
 // ── RPC ─────────────────────────────────────────────────────────────────────
-export async function createChallenge(opts: { mode: GameMode; difficulty: Difficulty; requestId: string; parentId?: string | null; excludeCities?: string[] }): Promise<Challenge> {
+export async function createChallenge(opts: { mode: GameMode; difficulty: Difficulty; category?: Category; requestId: string; parentId?: string | null; excludeCities?: string[] }): Promise<Challenge> {
   if (mockEnabled()) return mock.create(opts);
   await ensureSession();
-  const cities = pickChallengeCities(opts.difficulty, opts.mode, CHALLENGE_ROUNDS, opts.excludeCities ?? []);
+  const category = opts.category ?? 'cities';
+  const cities = pickChallengeCities(opts.difficulty, opts.mode, CHALLENGE_ROUNDS, opts.excludeCities ?? [], category);
   const { data, error } = await supabase.rpc('challenge_create', {
     p: {
-      mode: opts.mode, difficulty: opts.difficulty, rounds_total: cities.length, seconds_per_round: CHALLENGE_SECONDS,
+      mode: opts.mode, difficulty: opts.difficulty, category, rounds_total: cities.length, seconds_per_round: CHALLENGE_SECONDS,
       cities, catalog_version: catalogVersion(), client_request_id: opts.requestId, parent_challenge_id: opts.parentId ?? null,
     } as unknown as Json,
   });
@@ -236,7 +245,7 @@ const mockState = (r: MockRow): ChallengeState => !mockAccepted(r) ? 'to_accept'
 const mockStatus = (r: MockRow): Challenge['status'] => (r.mine && r.rival.result) ? 'completed' : r.rival.joined ? 'active' : 'open';
 
 const mock = {
-  async create(opts: { mode: GameMode; difficulty: Difficulty; requestId: string; parentId?: string | null; excludeCities?: string[] }): Promise<Challenge> {
+  async create(opts: { mode: GameMode; difficulty: Difficulty; category?: Category; requestId: string; parentId?: string | null; excludeCities?: string[] }): Promise<Challenge> {
     await delay();
     const db = mockDb();
     const existing = Object.values(db).find(r => r.ch.req === opts.requestId);
@@ -245,8 +254,8 @@ const mock = {
     const code = Array.from({ length: 5 }, () => alpha[Math.floor(Math.random() * 32)]).join('');
     const parent = opts.parentId ? db[opts.parentId] : null;
     const ch: MockRow['ch'] = {
-      id: crypto.randomUUID(), code, mode: opts.mode, difficulty: opts.difficulty, rounds_total: CHALLENGE_ROUNDS,
-      seconds_per_round: CHALLENGE_SECONDS, cities: pickChallengeCities(opts.difficulty, opts.mode, CHALLENGE_ROUNDS, opts.excludeCities ?? []),
+      id: crypto.randomUUID(), code, mode: opts.mode, difficulty: opts.difficulty, category: opts.category ?? 'cities', rounds_total: CHALLENGE_ROUNDS,
+      seconds_per_round: CHALLENGE_SECONDS, cities: pickChallengeCities(opts.difficulty, opts.mode, CHALLENGE_ROUNDS, opts.excludeCities ?? [], opts.category ?? 'cities'),
       status: 'open', parent_challenge_id: opts.parentId ?? null, created_at: new Date().toISOString(), completed_at: null, is_creator: true, req: opts.requestId, parentId: opts.parentId ?? null,
     };
     // Revancha: el rival del reto original queda invitado (sin aceptar)

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY, isCategory, type Category } from '@/lib/catalog';
 import { scrollAppToTop } from '@/lib/appScroll';
 import { useMemory, dueCount } from '@/lib/itemMemory';
 import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
@@ -27,7 +28,7 @@ import SprintHomeCard from './SprintHomeCard';
 import { REGION_ART, DIFF_ART } from '@/lib/selectionArt';
 
 interface HomeScreenProps {
-  onStartGame: (difficulty: Difficulty, mode: GameMode) => void;
+  onStartGame: (difficulty: Difficulty, mode: GameMode, category: Category) => void;
   onMultiplayer: () => void;
   onTimeAttack: () => void;
   onDailyChallenge: () => void;
@@ -71,7 +72,7 @@ const CLASSIC_ROUNDS = 13;
 const CLASSIC_SECONDS = 15;
 const SELECTION_KEY = 'geospeed_last_selection';
 
-function loadSelection(): { mode: GameMode; difficulty: Difficulty } | null {
+function loadSelection(): { mode: GameMode; difficulty: Difficulty; category?: Category } | null {
   try {
     const raw = localStorage.getItem(SELECTION_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -109,10 +110,15 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
     const cfg = saved && DIFF_CONFIG.find(d => d.key === saved.difficulty);
     return cfg && playerLevel.level >= cfg.unlockLevel ? cfg.key : 'basic';
   });
+  // Fase 6: qué se ubica (ciudades o banderas); se recuerda como la región y la dificultad
+  const [selectedCategory, setSelectedCategory] = useState<Category>(() => {
+    const saved = loadSelection();
+    return saved && isCategory(saved.category) ? saved.category : 'cities';
+  });
   useEffect(() => {
-    try { localStorage.setItem(SELECTION_KEY, JSON.stringify({ mode: selectedMode, difficulty: selectedDifficulty })); } catch { /* sin espacio */ }
-  }, [selectedMode, selectedDifficulty]);
-  const [sheet, setSheet] = useState<null | 'region' | 'difficulty'>(null);
+    try { localStorage.setItem(SELECTION_KEY, JSON.stringify({ mode: selectedMode, difficulty: selectedDifficulty, category: selectedCategory })); } catch { /* sin espacio */ }
+  }, [selectedMode, selectedDifficulty, selectedCategory]);
+  const [sheet, setSheet] = useState<null | 'region' | 'difficulty' | 'category'>(null);
   const closeSheet = useCallback(() => setSheet(null), []);
 
   const [inviteSent, setInviteSent] = useState(false);
@@ -189,7 +195,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
   const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
-  const citiesInfo = t('home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
+  const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
+  const categoryOptions: SelectorOption<Category>[] = useMemo(() => CATEGORIES.map(c => ({
+    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t(`${CATEGORY_KEY[c]}Desc` as never),
+  })), [t]);
+  const categoryLabel = t(CATEGORY_KEY[selectedCategory] as never);
   const dateLabel = new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
 
   const shareDaily = async () => {
@@ -314,14 +324,15 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             <h2 className="text-[min(5.6vw,1.6rem)] sm:text-[1.9rem] lg:text-[min(1.85vw,1.9rem)] font-extrabold leading-tight whitespace-nowrap">
               {t('home_nextAdventureLead')} <span className="text-primary">{t('home_nextAdventureTail')}</span>
             </h2>
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-3 lg:col-span-2 lg:grid-cols-1 lg:mt-3">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:col-span-2 lg:grid-cols-1 lg:mt-3">
+              <Dropdown label={t('home_category')} emoji={CATEGORY_ART[selectedCategory].emoji} value={categoryLabel} onClick={() => { playButtonTap(); setSheet('category'); }} />
               <Dropdown label={t('home_region')} emoji={MODE_UNLOCK[selectedMode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
               <Dropdown label={t('home_difficultyLabel')} emoji={difficultyEmoji} value={difficultyName} onClick={() => { playButtonTap(); setSheet('difficulty'); }} />
             </div>
           </div>
           <p className="text-center text-[11px] sm:text-sm text-muted-foreground mt-2 mb-2 sm:mt-3 sm:mb-3">{citiesInfo}</p>
           <button
-            onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode); }}
+            onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode, selectedCategory); }}
             className="btn3d lg:mt-auto w-full flex items-center justify-center gap-3 py-3 sm:py-4 rounded-2xl font-black text-lg sm:text-2xl tracking-wide text-primary-foreground animate-pulse-glow-subtle"
             style={{ background: 'var(--grad-cta)' }}
             aria-label={`${t('home_playNow')} — ${difficultyName}, ${regionLabel}`}
@@ -433,6 +444,18 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           closeLabel={t('close')}
         />
       )}
+      {sheet === 'category' && (
+        <SelectorSheet<Category>
+          title={t('cat_title')}
+          subtitle={t('cat_subtitle')}
+          options={categoryOptions}
+          selected={selectedCategory}
+          confirmLabel={t('cat_confirm')}
+          onConfirm={(k) => { setSelectedCategory(k); setSheet(null); }}
+          onClose={closeSheet}
+          closeLabel={t('close')}
+        />
+      )}
       {sheet === 'difficulty' && (
         <SelectorSheet<Difficulty>
           title={t('diff_title')}
@@ -455,20 +478,26 @@ const Chevron = ({ className = '' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={`w-4 h-4 ${className}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m9 6 6 6-6 6" /></svg>
 );
 
-/** Selector de la tarjeta de aventura: etiqueta encima y caja con ícono · valor · flecha (maqueta). */
+/**
+ * Selector de la tarjeta de aventura: etiqueta encima y caja con ícono · valor · flecha (maqueta).
+ * En teléfonos (< sm) son tres fichas de ~75 px junto a la mascota (Fase 6 sumó Categoría), así que la
+ * caja se apila: ícono + flecha arriba y el valor debajo; "Banderas" / "Ciudades" no caben en una fila.
+ */
 function Dropdown({ label, emoji, value, onClick }: { label: string; emoji: string; value: string; onClick: () => void }) {
   return (
     <div className="min-w-0">
-      <span className="block text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground lg:text-foreground mb-0.5 sm:mb-1">{label}</span>
+      <span className="block text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground lg:text-foreground mb-0.5 sm:mb-1 truncate">{label}</span>
       <button
         onClick={onClick}
-        className="w-full flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:py-2 sm:px-2.5 lg:px-3 lg:py-2.5 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-left"
+        className="w-full flex flex-col items-center gap-0.5 px-1 py-1.5 sm:flex-row sm:gap-2 sm:py-2 sm:px-2.5 lg:px-3 lg:py-2.5 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-left"
         aria-haspopup="dialog"
         aria-label={`${label}: ${value}`}
       >
-        <span className="text-lg sm:text-xl lg:text-2xl shrink-0" aria-hidden>{emoji}</span>
-        <span className="flex-1 min-w-0 font-bold text-[13px] min-[400px]:text-sm sm:text-base truncate">{value}</span>
-        <Chevron className="rotate-90 text-foreground/80 shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <span className="flex items-center gap-1 sm:contents">
+          <span className="text-base sm:text-xl lg:text-2xl shrink-0 leading-none" aria-hidden>{emoji}</span>
+          <Chevron className="rotate-90 text-foreground/80 shrink-0 w-3 h-3 sm:w-4 sm:h-4 sm:order-last" />
+        </span>
+        <span className="w-full text-center sm:text-left sm:flex-1 min-w-0 font-bold text-[12px] min-[400px]:text-[13px] sm:text-base truncate">{value}</span>
       </button>
     </div>
   );
