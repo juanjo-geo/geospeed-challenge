@@ -365,7 +365,7 @@ begin
     return jsonb_build_object('unlocked', false, 'registered', v_reg, 'games_played', v_games, 'games_needed', 5,
       'season', jsonb_build_object('id', v_season.id, 'name', v_season.name, 'ends_on', v_season.ends_on, 'preseason', v_season.preseason,
                                    'next_name', v_next.name, 'next_starts_on', v_next.starts_on),
-      'points', 1000, 'division', 'ciudad');
+      'points', 1000, 'division', 'ciudad', 'country', (select country from public.profiles where id = v_user));
   end if;
 
   perform public._sprint_expire(v_user);
@@ -517,6 +517,21 @@ begin
     'result_id', m.result_id);
 end $$;
 
+-- ── RPC: salir de una carrera (botón ×): derrota en el acto ────────────────
+-- Sin esto se podía salir, ver las ciudades y retomar la misma carrera (buscar rival devuelve la pendiente,
+-- pensado para cuando la app se cierra o se recarga).
+create or replace function public.sprint_forfeit(p_match uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'not authenticated' using errcode = '42501'; end if;
+  if not exists (select 1 from public.sprint_matches where id = p_match and player_id = auth.uid()) then
+    raise exception 'sprint_unavailable' using errcode = 'P0002';
+  end if;
+  perform public._sprint_finish(p_match, 0, false, null, true);
+  return (select jsonb_build_object('outcome', outcome, 'delta', delta, 'points_after', points_after)
+            from public.sprint_matches where id = p_match);
+end $$;
+
 -- ── RPC: bandeja (carreras que otros jugaron contra mí) ─────────────────────
 create or replace function public.sprint_inbox_seen(p_ids uuid[])
 returns void language sql security definer set search_path = public as $$
@@ -578,12 +593,14 @@ revoke all on function public._sprint_match_json(public.sprint_matches) from pub
 revoke all on function public.sprint_status() from public, anon;
 revoke all on function public.sprint_find_match(uuid) from public, anon;
 revoke all on function public.sprint_submit(uuid, jsonb) from public, anon;
+revoke all on function public.sprint_forfeit(uuid) from public, anon;
 revoke all on function public.sprint_inbox_seen(uuid[]) from public, anon;
 revoke all on function public.sprint_leaderboard(text, integer) from public, anon;
 revoke all on function public.set_my_country(text) from public, anon;
 grant execute on function public.sprint_status() to authenticated;
 grant execute on function public.sprint_find_match(uuid) to authenticated;
 grant execute on function public.sprint_submit(uuid, jsonb) to authenticated;
+grant execute on function public.sprint_forfeit(uuid) to authenticated;
 grant execute on function public.sprint_inbox_seen(uuid[]) to authenticated;
 grant execute on function public.sprint_leaderboard(text, integer) to authenticated;
 grant execute on function public.set_my_country(text) to authenticated;

@@ -23,6 +23,7 @@ import { useI18n } from '@/i18n';
 import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
+import SprintHomeCard from './SprintHomeCard';
 import { REGION_ART, DIFF_ART } from '@/lib/selectionArt';
 
 interface HomeScreenProps {
@@ -34,6 +35,8 @@ interface HomeScreenProps {
   onStartTraining: () => void;
   /** Fase 4: Repaso del día (franja visible solo cuando hay lugares que tocan hoy) */
   onStartReview?: () => void;
+  /** Fase 5: Sprint (botón con división, PS y carreras del día) */
+  onOpenSprint?: () => void;
   /** F4: bandeja Mis retos (4ª tarjeta de acceso) */
   onMyChallenges?: () => void;
   onSpeedDemon?: () => void;
@@ -85,7 +88,7 @@ function loadSelection(): { mode: GameMode; difficulty: Difficulty } | null {
 /** El día del cofre se registra una vez por apertura de la app (ver efecto del cofre). */
 let dayRegisteredThisSession = false;
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onOpenSprint, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { t, locale } = useI18n();
   const reviewDue = dueCount(useMemory());
   const stats = getPlayerStats();
@@ -328,6 +331,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           </button>
         </section>
       </div>
+
+      {/* ── Sprint (Fase 5): el modo competitivo, con su división y las carreras del día ── */}
+      {onOpenSprint && (
+        <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">
+          <SprintHomeCard onOpen={onOpenSprint} />
+        </div>
+      )}
 
       {/* ── Tarjetas de acceso (orden de la maqueta: Diario · Amigos · Mis retos · Más modos) ── */}
       <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">

@@ -155,7 +155,7 @@ el cofre queda sin número); el diario sigue con 13 ciudades.
 | 2 | Publicada (racha con protectores e hitos, pantalla de racha, compartir con cuadritos, link `/d/N`, recordatorio). Falta nueva AAB para el recordatorio en Android. 2b (imagen del día en WhatsApp) hecha el 2026-10-21 | 2026-10-20 |
 | 3 | Publicada (RPC `challenge_ghost`, Tú vs rival en vivo, aviso al segundo exacto, pin y comparación tras responder, resumen al final; al terminar un reto se va directo a la comparación) | 2026-10-21 |
 | 4 | Código hecho (entrenamiento: región, nivel, 6/10/20, reloj opcional, repetir falladas, % dominado; repaso inteligente con cajas 1–5 en el servidor, Repaso del día, Tu memoria). Falta aplicar `20261024120000_item_memory.sql` y publicar | 2026-10-21 |
-| 5 | Propuesta | |
+| 5 | Código hecho (PS con Elo, 5 divisiones, temporadas con compresión e insignia, 5 carreras/día y Pro ilimitado, rival con PS parecidos o partida de la casa, carrera contra el fantasma, revancha desde la bandeja, ranking global/país/amigos, país en el perfil). Falta aplicar `20261025120000_sprint.sql` y publicar; push al rival cuando haya Firebase | 2026-10-22 |
 | 6 | Propuesta | |
 | 7 | Propuesta | |
 | 8 | Propuesta | |

@@ -127,6 +127,9 @@ const TrainingSetupScreen = lazyWithReload(() => import('@/components/game/Train
 const TrainingRepeatScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingRepeatScreen })));
 const TrainingResultScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingResultScreen })));
 const MemoryScreen = lazyWithReload(() => import('@/components/game/MemoryScreen'));
+const SprintScreen = lazyWithReload(() => import('@/components/game/SprintScreen'));
+const SprintSearchScreen = lazyWithReload(() => import('@/components/game/SprintFlowScreens').then(m => ({ default: m.SprintSearchScreen })));
+const SprintResultScreen = lazyWithReload(() => import('@/components/game/SprintFlowScreens').then(m => ({ default: m.SprintResultScreen })));
 const MoreModesScreen = lazyWithReload(() => import('@/components/game/MoreModesScreen'));
 const HowToPlayScreen = lazyWithReload(() => import('@/components/game/HowToPlayScreen'));
 import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
@@ -144,9 +147,13 @@ import { GhostResultPanel } from '@/components/game/GhostRace';
 import type { TrainingSummary } from '@/components/game/TrainingFlowScreens';
 import { readTrainingCfg, saveTrainingCfg, trainingCities, shuffled, type TrainingCfg } from '@/lib/training';
 import { getCachedMemory, refreshMemory, regionMastery, reviewCities } from '@/lib/itemMemory';
+import {
+  fetchSprintStatus, submitSprint, forfeitSprint, sprintCitiesToGame, sprintGhost, saveUnsentSprint, takeUnsentSprint,
+  clearUnsentSprint, SPRINT_ROUNDS, SPRINT_SECONDS, type SprintMatch, type SprintResult,
+} from '@/lib/sprint';
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame } from '@/lib/cloudSync';
-import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf } from '@/lib/gameResults';
+import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf, buildSavePayload } from '@/lib/gameResults';
 import { getStreakState } from '@/lib/dailyStreak';
 import { getPlayerStats } from '@/lib/gameUtils';
 import { isBusyPhase, resetHomeVisit, markHomeInterruption, homeInterruptionShown } from '@/lib/interruptions';
@@ -167,7 +174,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -186,7 +193,7 @@ interface TrainingRun {
 }
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -346,6 +353,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [trainingRun, setTrainingRun] = useState<TrainingRun | null>(null);
   const [trainingMisses, setTrainingMisses] = useState<City[]>([]);
   const [trainingSummary, setTrainingSummary] = useState<TrainingSummary | null>(null);
+  // ── Sprint (Fase 5): carrera en curso, revancha pedida y resultado ──
+  const [sprintMatch, setSprintMatch] = useState<SprintMatch | null>(null);
+  const sprintMatchRef = useRef<SprintMatch | null>(null);
+  const [sprintRematchOf, setSprintRematchOf] = useState<string | undefined>(undefined);
+  const [sprintResult, setSprintResult] = useState<SprintResult | null>(null);
+  const [sprintCanAgain, setSprintCanAgain] = useState(false);
   const [revengeCities, setRevengeCities] = useState<City[] | null>(null);
   const [replayCities, setReplayCities] = useState<City[] | null>(null);
   // F3: reto asincrónico que se está jugando y fuente de la pantalla del reto
@@ -534,6 +547,61 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     };
   }, [phase]);
 
+  // ── Sprint (Fase 5): entrega de la carrera; si no llega al servidor se guarda y se reintenta ──
+  const deliverSprint = useCallback(async (matchId: string, payload: Record<string, unknown>) => {
+    setChallengeSaving(true);
+    try {
+      let res: SprintResult | null = null;
+      for (let i = 0; i < 3 && !res; i++) {
+        try { res = await submitSprint(matchId, payload); } catch (e) { if (i === 2) throw e; await new Promise(r => setTimeout(r, 1500 * (i + 1))); }
+      }
+      clearUnsentSprint();
+      sprintMatchRef.current = null;
+      setSprintMatch(null);
+      setSprintResult(res);
+      const st = await fetchSprintStatus();
+      setSprintCanAgain(!!st && (st.day_limit == null || (st.day_used ?? 0) < st.day_limit));
+      trackEvent('sprint_finish', { outcome: res!.outcome, delta: res!.delta });
+      setPhase('sprint-result');
+    } catch {
+      saveUnsentSprint(matchId, payload);
+      showToastWhenFree(() => toast.error(t('sprint_submitRetry')));
+      setPhase('sprint');
+    } finally {
+      setChallengeSaving(false);
+    }
+  }, [t, showToastWhenFree]);
+  const handleOpenSprint = useCallback(() => { setPhase('sprint'); scrollAppToTop(); }, []);
+  const handleSprintFind = useCallback((rematchOf?: string) => {
+    // Una carrera ya jugada que no llegó al servidor se entrega en vez de buscar otra
+    const unsent = takeUnsentSprint();
+    if (unsent && !rematchOf) { void deliverSprint(unsent.matchId, unsent.payload); return; }
+    unlockAudio();
+    setSprintRematchOf(rematchOf);
+    setPhase('sprint-search');
+  }, [deliverSprint]);
+  const handleSprintFound = useCallback((m: SprintMatch) => {
+    sprintMatchRef.current = m;
+    setSprintMatch(m);
+    setIsTraining(false); setIsSpeedDemon(false); setReplayCities(null); setRevengeCities(null); setActiveChallenge(null); setChallengeSeed(null);
+    trainingRunRef.current = null; setTrainingRun(null);
+    setDifficulty('basic');
+    setGameMode('world');
+    gameKeyRef.current += 1;
+    trackEvent('sprint_start', { house: m.opponent.house, rematch: !!sprintRematchOf });
+    countdownNextRef.current = 'playing';
+    setPhase('countdown');
+  }, [sprintRematchOf]);
+  // Salir de la carrera con la ×: derrota en el acto (el servidor no deja retomarla)
+  const handleSprintExit = useCallback(() => {
+    const m = sprintMatchRef.current;
+    sprintMatchRef.current = null;
+    setSprintMatch(null);
+    if (m) void forfeitSprint(m.match_id).then(() => fetchSprintStatus());
+    setPhase('sprint');
+    scrollAppToTop();
+  }, []);
+
   // ── Entrenamiento y repaso (Fase 4): tanda → ronda extra con las falladas hasta acertarlas → resumen ──
   const startTrainingRun = useCallback((kind: 'training' | 'review', cities: City[], cfg: TrainingCfg) => {
     if (!cities.length) return;
@@ -577,6 +645,17 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleGameOver = useCallback((rounds: RoundResult[], reason: 'timeout' | 'complete') => {
     const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
     const avgDist = rounds.length > 0 ? rounds.reduce((s, r) => s + r.distance, 0) / rounds.length : 0;
+
+    // Fase 5: Sprint — el servidor calcula el puntaje, el resultado y los PS
+    if (sprintMatchRef.current) {
+      const m = sprintMatchRef.current;
+      const payload = buildSavePayload({
+        gameType: 'sprint', mode: 'world', difficulty: 'basic', score: total, roundsPlayed: rounds.length, roundsTotal: m.cities.length,
+        avgDistanceKm: avgDist, endReason: reason, seed: null, rounds: roundsFromResults(rounds),
+      }) as Record<string, unknown>;
+      void deliverSprint(m.match_id, payload);
+      return;
+    }
 
     // Fase 4: entrenamiento y repaso — se guarda (alimenta la memoria de lugares) y las falladas se repiten
     if (isTraining && trainingRunRef.current) {
@@ -690,7 +769,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     } else {
       setPhase('final');
     }
-  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge, finishTraining]);
+  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge, finishTraining, deliverSprint]);
 
   // ── Notifications: start check loop + schedule after each game ──
   // Recordatorio de la racha: se reprograma cada vez que cambia el estado del diario (al abrir, al terminarlo)
@@ -887,7 +966,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [showNav]);
   useEffect(() => { document.getElementById(APP_SCROLL_ID)?.scrollTo(0, 0); }, [phase]);
   const activeNavTab: NavTab | null =
-    phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' || phase === 'training-setup' || phase === 'training-result' ? 'home'
+    phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' || phase === 'training-setup' || phase === 'training-result' || phase === 'sprint' || phase === 'sprint-result' ? 'home'
     : phase === 'store' ? 'store'
     : phase === 'battlepass' ? 'pass'
     : phase === 'history' || phase === 'ranking' || phase === 'memory' ? 'progress'
@@ -1159,7 +1238,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'more-modes') {
-      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} />;
+      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} onSprint={handleOpenSprint} />;
     }
 
     if (phase === 'daily-intro') {
@@ -1190,6 +1269,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
     if (phase === 'memory') {
       return <MemoryScreen onBack={handleGoHome} onReview={handleStartReview} onTrain={handleStartTraining} />;
+    }
+    if (phase === 'sprint') {
+      return <SprintScreen onBack={handleGoHome} onFind={handleSprintFind} onOpenStore={handleOpenStore} onCreateAccount={() => navigate('/auth')} onPlay={handleGoHome} />;
+    }
+    if (phase === 'sprint-search') {
+      return <SprintSearchScreen rematchOf={sprintRematchOf} onFound={handleSprintFound} onCancel={handleOpenSprint} onOpenStore={handleOpenStore} />;
+    }
+    if (phase === 'sprint-result' && sprintResult) {
+      return <SprintResultScreen result={sprintResult} canRaceAgain={sprintCanAgain} onAgain={() => handleSprintFind()} onSprintHome={handleOpenSprint} onHome={handleGoHome} onOpenStore={handleOpenStore} />;
     }
 
     if (phase === 'howto') {
@@ -1223,7 +1311,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return (
         <CountdownIntro
           count={countdown}
-          label={activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
+          label={sprintMatch ? `⚡ Sprint · vs ${sprintMatch.opponent.name}` : activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
           onCancel={handleCancelCountdown}
           running={!showRotateOverlay}
         />
@@ -1504,6 +1592,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           isTraining={isTraining}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(isTraining && trainingRun ? { citiesOverride: trainingRun.cities, totalRoundsOverride: trainingRun.cities.length, noClock: !trainingRun.clock } : {})}
+          {...(sprintMatch ? { citiesOverride: sprintCitiesToGame(sprintMatch), totalRoundsOverride: sprintMatch.cities.length || SPRINT_ROUNDS, maxTimeOverride: SPRINT_SECONDS, ghost: sprintGhost(sprintMatch), onExit: handleSprintExit, exitConfirm: t('sprint_exitConfirm'), hudLabel: '⚡ Sprint' } : {})}
           {...(activeChallenge
             ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round, ghost: challengeGhost?.id === activeChallenge.id ? challengeGhost.ghost : null }
             : revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}
@@ -1562,7 +1651,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onStartReview={handleStartReview} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onStartReview={handleStartReview} onOpenSprint={handleOpenSprint} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 
