@@ -1,4 +1,5 @@
 import { useI18n } from '@/i18n';
+import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY } from '@/lib/catalog';
 import { playButtonTap } from '@/lib/sounds';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { REGION_ART, DIFF_ORDER } from '@/lib/selectionArt';
@@ -43,6 +44,17 @@ export default function TrainingSetupScreen({ cfg, onChange, onStart, onBack, on
             <span className="shrink-0 rounded-full bg-accent px-4 py-1.5 text-sm font-black text-brand-navy-deep">{t('train_reviewGo')}</span>
           </button>
         )}
+
+        <section className="rounded-3xl border-2 border-accent/30 bg-card/60 p-3 sm:p-4 mb-3">
+          <h2 className="font-extrabold text-lg mb-2">{t('train_category')}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {CATEGORIES.map((c) => (
+              <button key={c} onClick={() => set({ category: c })} className={`${chip(cfg.category === c)} flex items-center justify-center gap-2`} aria-pressed={cfg.category === c}>
+                <span className="text-2xl leading-none" aria-hidden>{CATEGORY_ART[c].emoji}</span>{t(CATEGORY_KEY[c] as never)}
+              </button>
+            ))}
+          </div>
+        </section>
 
         <section className="rounded-3xl border-2 border-accent/30 bg-card/60 p-3 sm:p-4">
           <h2 className="font-extrabold text-lg mb-2">{t('train_region')}</h2>

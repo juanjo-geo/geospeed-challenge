@@ -10,6 +10,8 @@
 import { useEffect, useState } from 'react';
 import { worldCities, europeCities, asiaCities, americasCities, africaCities, type City } from '@/data/cities';
 import { haversineDistance } from '@/lib/gameUtils';
+import { countryAdjacency } from '@/data/countryAdjacency';
+import { countryDisplayName } from '@/lib/flags';
 
 type Lang = 'es' | 'en';
 
@@ -74,6 +76,9 @@ const CONTINENT: Record<string, Record<Lang, string>> = {
   asia: { es: 'Asia', en: 'Asia' },
   oceania: { es: 'Oceanía', en: 'Oceania' },
 };
+
+/** Nombre del continente (aproximado por coordenadas) en el idioma pedido */
+export const continentName = (lat: number, lon: number, lang: Lang): string => CONTINENT[continentKey(lat, lon)][lang];
 
 /** Continente aproximado por coordenadas (suficiente para una pista). */
 export function continentKey(lat: number, lon: number): keyof typeof CONTINENT {
@@ -140,6 +145,20 @@ export function cityHint(city: Pick<City, 'name' | 'country' | 'lat' | 'lon'>, l
     : ` It lies about ${km} km ${dir} of ${refName}.`;
   return where + rel;
 }
+
+/** Pista de una bandera (Fase 6): el país, su continente y con quién limita (countryAdjacency, nombres del mapa). */
+export function flagHint(item: Pick<City, 'name' | 'lat' | 'lon'>, lang: Lang): string {
+  const country = countryDisplayName(item.name, lang);
+  const cont = CONTINENT[continentKey(item.lat, item.lon)][lang];
+  const nb = (countryAdjacency[item.name] ?? []).map((n) => countryDisplayName(n, lang));
+  const list = nb.length === 0 ? '' : nb.length === 1 ? nb[0] : `${nb.slice(0, -1).join(', ')} ${lang === 'es' ? 'y' : 'and'} ${nb[nb.length - 1]}`;
+  if (lang === 'es') return nb.length ? `${country} está en ${cont}. Limita con ${list}.` : `${country} está en ${cont}; no tiene fronteras terrestres.`;
+  return nb.length ? `${country} is in ${cont}. It borders ${list}.` : `${country} is in ${cont}; it has no land borders.`;
+}
+
+/** Pista de cualquier ítem del catálogo según su tipo */
+export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind'>, lang: Lang): string =>
+  item.kind === 'flag' ? flagHint(item, lang) : cityHint(item, lang);
 
 /** Pista del modo Mundial: el "lugar" es el país del futbolista. */
 export function playerHint(player: string, country: string, lat: number, lon: number, lang: Lang): string {

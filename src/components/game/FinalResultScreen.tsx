@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { itemTitleAuto } from '@/lib/catalog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { type RoundResult } from './GameScreen';
 import CountUp from '@/components/ui/CountUp';
@@ -254,7 +255,7 @@ export default function FinalResultScreen({
         bestRound: {
           clickLat: bestRound.clickLat, clickLon: bestRound.clickLon,
           cityLat: bestRound.city.lat, cityLon: bestRound.city.lon,
-          cityName: bestRound.city.name, distance: bestRound.distance, score: bestRound.totalPoints,
+          cityName: itemTitleAuto(bestRound.city), distance: bestRound.distance, score: bestRound.totalPoints,
         },
       });
       if (!success) await handleShare();
@@ -371,7 +372,7 @@ export default function FinalResultScreen({
               <span className="flex-1 min-w-0">
                 <span className="block text-xs sm:text-sm text-muted-foreground">{t('final_bestRound')}</span>
                 <span className="block font-bold text-sm sm:text-base truncate text-primary">
-                  {bestRound.city.name} <span className="font-semibold">· {fmt(bestRound.totalPoints)} pts · {formatDistance(bestRound.distance)}</span>
+                  {itemTitleAuto(bestRound.city)} <span className="font-semibold">· {fmt(bestRound.totalPoints)} pts · {formatDistance(bestRound.distance)}</span>
                 </span>
               </span>
               <svg viewBox="0 0 24 24" className="w-5 h-5 text-primary shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m9 6 6 6-6 6" /></svg>

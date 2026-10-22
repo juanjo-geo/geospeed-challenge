@@ -162,6 +162,7 @@ export type Database = {
       game_results: {
         Row: {
           avg_distance_km: number | null
+          category: string
           challenge_id: string | null
           client_id: string | null
           created_at: string
@@ -179,6 +180,7 @@ export type Database = {
         }
         Insert: {
           avg_distance_km?: number | null
+          category?: string
           challenge_id?: string | null
           client_id?: string | null
           created_at?: string
@@ -196,6 +198,7 @@ export type Database = {
         }
         Update: {
           avg_distance_km?: number | null
+          category?: string
           challenge_id?: string | null
           client_id?: string | null
           created_at?: string
@@ -215,6 +218,7 @@ export type Database = {
       }
       game_rounds: {
         Row: {
+          place_id: string | null
           base_points: number | null
           city_country: string | null
           city_lat: number | null
@@ -231,6 +235,7 @@ export type Database = {
           time_s: number | null
         }
         Insert: {
+          place_id?: string | null
           base_points?: number | null
           city_country?: string | null
           city_lat?: number | null
@@ -247,6 +252,7 @@ export type Database = {
           time_s?: number | null
         }
         Update: {
+          place_id?: string | null
           base_points?: number | null
           city_country?: string | null
           city_lat?: number | null
@@ -389,7 +395,7 @@ export type Database = {
         }[]
       }
       my_rank: {
-        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_game_type?: string | null; p_season?: string }
+        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_game_type?: string | null; p_season?: string; p_category?: string }
         Returns: {
           rank: number | null
           best_score: number | null
@@ -397,7 +403,7 @@ export type Database = {
         }[]
       }
       leaderboard_top: {
-        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_limit?: number; p_game_type?: string | null; p_season?: string }
+        Args: { p_mode?: string; p_difficulty?: string | null; p_period?: string; p_limit?: number; p_game_type?: string | null; p_season?: string; p_category?: string }
         Returns: {
           rank: number
           user_id: string

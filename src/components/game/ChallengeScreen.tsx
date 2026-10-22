@@ -109,6 +109,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
   const difficulty = challenge?.difficulty ?? preview?.difficulty;
   const rounds = challenge?.rounds_total ?? preview?.rounds_total ?? 13;
   const seconds = challenge?.seconds_per_round ?? preview?.seconds_per_round ?? 15;
+  const category = challenge?.category ?? preview?.category ?? 'cities';
   const conditions = (
     <Card>
       <h2 className="flex items-center gap-2.5 text-xl sm:text-2xl font-extrabold mb-3">
@@ -117,7 +118,8 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
       <div className="flex flex-col gap-2 text-sm sm:text-base">
         <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_region')} value={mode ? t(`mode_${mode}` as never) : '—'} />
         <Row icon={<BagIcon className="w-6 h-6 text-accent" />} label={t('ch_difficulty')} value={difficulty ? t(`home_diff${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}` as never) : '—'} />
-        <Row icon={<StopwatchIcon className="w-6 h-6 text-accent" />} label={t('ch_format')} value={t('ch_formatValue', { n: rounds, s: seconds })} />
+        {category === 'flags' && <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_category')} value={`🚩 ${t('cat_flags')}`} />}
+        <Row icon={<StopwatchIcon className="w-6 h-6 text-accent" />} label={t('ch_format')} value={t(category === 'flags' ? 'ch_formatValueFlags' : 'ch_formatValue', { n: rounds, s: seconds })} />
       </div>
       <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground/75"><LockIcon className="w-4 h-4" /> {t('ch_fixed')}</p>
     </Card>

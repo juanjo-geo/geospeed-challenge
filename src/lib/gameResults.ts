@@ -11,6 +11,7 @@
  * de aquí (`fetchMyProgress`, `fetchMyHistory`, `fetchLeaderboardTop`, `fetchMyRank`).
  */
 import { supabase } from '@/integrations/supabase/client';
+import type { Category } from '@/lib/catalog';
 import { SCORING_VERSION } from '@/lib/scoring';
 import { placeIdOf } from '@/data/cities';
 import type { Json } from '@/integrations/supabase/types';
@@ -53,6 +54,8 @@ export interface SaveGameInput {
   challengeId?: string | null;
   /** Desafío diario: número del diario que se jugó (el servidor registra el día y la racha) */
   dailyNo?: number | null;
+  /** Fase 6: qué se ubicó (ciudades por defecto; el servidor valida el valor) */
+  category?: Category;
   rounds: SaveRoundInput[];
   /** Para reintentos: si no se pasa, se genera uno. */
   clientId?: string;
@@ -85,6 +88,7 @@ function toPayload(input: SaveGameInput, clientId: string): Json {
     seed: input.seed ?? null,
     challenge_id: input.challengeId ?? null,
     daily_no: input.dailyNo ?? null,
+    category: input.category ?? 'cities',
     // Puntaje v2 (Temporada 1): el servidor recalcula cada ronda desde el clic, la ciudad y el tiempo
     scoring_version: SCORING_VERSION,
     rounds: input.rounds.map(r => ({
@@ -271,8 +275,8 @@ export type RankPeriod = 'all' | 'week' | 'month';
 /** Temporada 1 = puntaje v2 (cercanía × rapidez × combo); Histórico = escala anterior + tabla vieja */
 export type RankSeason = 't1' | 'historic';
 /** gameType: null = ranking de ciudades (o Mundial si mode='mundial'); 'timeattack' = 60s de Caos (tabla aparte, B2) */
-export async function fetchLeaderboardTop(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', limit = 10, gameType: string | null = null, season: RankSeason = 't1'): Promise<LeaderboardTopRow[]> {
-  const { data, error } = await supabase.rpc('leaderboard_top', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_limit: limit, p_game_type: gameType, p_season: season });
+export async function fetchLeaderboardTop(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', limit = 10, gameType: string | null = null, season: RankSeason = 't1', category: Category = 'cities'): Promise<LeaderboardTopRow[]> {
+  const { data, error } = await supabase.rpc('leaderboard_top', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_limit: limit, p_game_type: gameType, p_season: season, p_category: category });
   if (error || !data) return [];
   return (data as Array<Record<string, unknown>>).map(r => ({
     rank: Number(r.rank), userId: String(r.user_id), displayName: String(r.display_name ?? ''),
@@ -281,10 +285,10 @@ export async function fetchLeaderboardTop(mode = 'world', difficulty: string | n
   }));
 }
 
-export async function fetchMyRank(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', gameType: string | null = null, season: RankSeason = 't1'): Promise<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null> {
+export async function fetchMyRank(mode = 'world', difficulty: string | null = null, period: RankPeriod = 'all', gameType: string | null = null, season: RankSeason = 't1', category: Category = 'cities'): Promise<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
-  const { data, error } = await supabase.rpc('my_rank', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_game_type: gameType, p_season: season });
+  const { data, error } = await supabase.rpc('my_rank', { p_mode: mode, p_difficulty: difficulty, p_period: period, p_game_type: gameType, p_season: season, p_category: category });
   if (error || !data) return null;
   const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
   if (!row) return null;
@@ -307,18 +311,19 @@ export interface MyHistoryRow {
   endReason: EndReason;
   isRecord: boolean;
   createdAt: string;
+  category: string;
 }
 
 /** Detalle por ciudad de una partida del servidor (game_rounds es privada: solo las propias). */
 export async function fetchMyResultRounds(resultId: string): Promise<SaveRoundInput[]> {
   const { data, error } = await supabase
     .from('game_rounds')
-    .select('round_no, city_name, city_country, city_lat, city_lon, click_lat, click_lon, distance_km, time_s, base_points, multiplier, points')
+    .select('round_no, place_id, city_name, city_country, city_lat, city_lon, click_lat, click_lon, distance_km, time_s, base_points, multiplier, points')
     .eq('result_id', resultId)
     .order('round_no', { ascending: true });
   if (error || !data) return [];
   return data.map(r => ({
-    round_no: r.round_no, city_name: r.city_name, city_country: r.city_country, city_lat: r.city_lat, city_lon: r.city_lon,
+    round_no: r.round_no, place_id: r.place_id, city_name: r.city_name, city_country: r.city_country, city_lat: r.city_lat, city_lon: r.city_lon,
     click_lat: r.click_lat, click_lon: r.click_lon, distance_km: r.distance_km == null ? null : Number(r.distance_km),
     time_s: r.time_s == null ? null : Number(r.time_s), base_points: r.base_points,
     multiplier: r.multiplier == null ? null : Number(r.multiplier), points: r.points,
@@ -331,17 +336,18 @@ export function readPendingResults(): Array<Record<string, unknown>> {
 }
 
 /** Historial paginado por cursor (created_at del último elemento). */
-export async function fetchMyHistory(opts: { mode?: string; difficulty?: string; before?: string; limit?: number } = {}): Promise<MyHistoryRow[]> {
+export async function fetchMyHistory(opts: { mode?: string; difficulty?: string; category?: string; before?: string; limit?: number } = {}): Promise<MyHistoryRow[]> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return [];
   let q = supabase
     .from('game_results')
-    .select('id, game_type, mode, difficulty, score, rounds_played, rounds_total, avg_distance_km, end_reason, is_record, created_at')
+    .select('id, game_type, mode, difficulty, score, rounds_played, rounds_total, avg_distance_km, end_reason, is_record, created_at, category')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
     .limit(opts.limit ?? 20);
   if (opts.mode) q = q.eq('mode', opts.mode);
   if (opts.difficulty) q = q.eq('difficulty', opts.difficulty);
+  if (opts.category) q = q.eq('category', opts.category);
   if (opts.before) q = q.lt('created_at', opts.before);
   const { data, error } = await q;
   if (error || !data) return [];
@@ -349,6 +355,6 @@ export async function fetchMyHistory(opts: { mode?: string; difficulty?: string;
     id: r.id, gameType: r.game_type as GameType, mode: r.mode, difficulty: r.difficulty, score: r.score,
     roundsPlayed: r.rounds_played, roundsTotal: r.rounds_total,
     avgDistanceKm: r.avg_distance_km == null ? null : Number(r.avg_distance_km),
-    endReason: r.end_reason as EndReason, isRecord: r.is_record, createdAt: r.created_at,
+    endReason: r.end_reason as EndReason, isRecord: r.is_record, createdAt: r.created_at, category: r.category ?? 'cities',
   }));
 }

@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getCitiesByMode, placeIdOf, type City, type GameMode } from '@/data/cities';
+import { FLAG_ITEMS } from '@/data/flagCatalog';
 
 export interface MemoryItem {
   item_id: string;
@@ -54,6 +55,7 @@ export function cityById(id: string): City | undefined {
   if (!byId) {
     byId = new Map();
     for (const mode of TRAINING_REGIONS) for (const c of getCitiesByMode(mode)) if (!byId.has(placeIdOf(c))) byId.set(placeIdOf(c), c);
+    for (const f of FLAG_ITEMS) if (f.id) byId.set(f.id, f); // banderas (Fase 6): `flag:XX`
   }
   return byId.get(id);
 }

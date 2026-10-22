@@ -2,8 +2,15 @@ export type Difficulty = 'basic' | 'easy' | 'medium' | 'hard';
 export type GameMode = 'world' | 'europe' | 'asia' | 'americas' | 'africa';
 
 export interface City {
-  /** Identificador estable (slug del nombre), el mismo de la tabla `places` del servidor (scripts/build-places.mjs) */
+  /** Identificador estable (slug del nombre; `flag:<ISO>` en banderas), el mismo de la tabla `places` del servidor */
   id?: string;
+  /** Qué se ubica: ciudad (por defecto) o bandera de un país (Fase 6, src/data/flagCatalog.ts) */
+  kind?: 'city' | 'flag';
+  /** Banderas: código ISO-3166 (imagen en /flags/<ISO>.svg) */
+  iso?: string;
+  /** Banderas: región del juego a la que pertenece (null = solo en Mundo, p. ej. Oceanía) */
+  region?: GameMode | null;
+  /** Ciudad: nombre del catálogo. Bandera: nombre del país en inglés (countries.ts); se muestra traducido (itemTitle) */
   name: string;
   country: string;
   lat: number;

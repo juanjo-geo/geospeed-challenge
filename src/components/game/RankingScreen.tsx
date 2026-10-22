@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { MODE_CONFIG, type Difficulty } from '@/data/cities';
+import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY, type Category } from '@/lib/catalog';
 import { FRAME_STYLE, TITLE_KEY, getCachedDailyStatus } from '@/lib/dailyChallenge';
 import { fetchLeaderboardTop, fetchMyRank, type LeaderboardTopRow, type RankPeriod, type RankSeason } from '@/lib/gameResults';
 import { hasSession } from '@/lib/history';
@@ -46,6 +47,8 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
   const [period, setPeriod] = useState<RankPeriod>('all');
   // Temporada 1 (puntaje v2) o Histórico (escala anterior, ya cerrado: sin filtro de mes/semana)
   const [season, setSeason] = useState<RankSeason>('t1');
+  // Fase 6: las tablas de regiones existen por categoría (ciudades o banderas)
+  const [category, setCategory] = useState<Category>('cities');
   const effPeriod: RankPeriod = season === 'historic' ? 'all' : period;
   const [rows, setRows] = useState<LeaderboardTopRow[] | null>(null);
   const [mine, setMine] = useState<{ rank: number | null; bestScore: number | null; totalPlayers: number } | null | 'guest'>(null);
@@ -72,10 +75,10 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
           return;
         }
         const diff = difficulty || null;
-        const [top, logged] = await Promise.all([fetchLeaderboardTop(board.mode, diff, effPeriod, 10, board.gameType, season), hasSession()]);
+        const [top, logged] = await Promise.all([fetchLeaderboardTop(board.mode, diff, effPeriod, 10, board.gameType, season, category), hasSession()]);
         if (cancelled) return;
         setRows(top);
-        setMine(logged ? await fetchMyRank(board.mode, diff, effPeriod, board.gameType, season) : 'guest');
+        setMine(logged ? await fetchMyRank(board.mode, diff, effPeriod, board.gameType, season, category) : 'guest');
       } catch {
         if (cancelled) return;
         setError(true);
@@ -84,7 +87,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
       }
     })();
     return () => { cancelled = true; };
-  }, [board.key, board.mode, board.gameType, difficulty, effPeriod, season]);
+  }, [board.key, board.mode, board.gameType, difficulty, effPeriod, season, category]);
 
   const boardOptions: SelectorOption<string>[] = boards.map(b => ({ key: b.key, emoji: b.emoji, art: b.art, label: b.label, desc: b.gameType === 'timeattack' ? t('rank_caosDesc') : '' }));
   const diffName = (d: Difficulty) => board.mode === 'mundial' ? t(`wc_diff_${d}` as never) : t(DIFF_LABEL[d] as never);
@@ -140,6 +143,13 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
                 <button key={k} role="tab" aria-selected={season === k} onClick={() => { playButtonTap(); setSeason(k); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${season === k ? 'bg-primary/20 text-primary' : 'text-foreground/70 hover:text-foreground'}`}>{l}</button>
               ))}
             </div>
+            {board.mode !== 'mundial' && board.gameType !== 'timeattack' && (
+              <div className="grid grid-cols-2 gap-1 mb-3 rounded-xl border border-accent/40 bg-brand-navy-deep/60 p-1" role="tablist" aria-label={t('home_category')}>
+                {CATEGORIES.map((c) => (
+                  <button key={c} role="tab" aria-selected={category === c} onClick={() => { playButtonTap(); setCategory(c); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${category === c ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{CATEGORY_ART[c].emoji} {t(CATEGORY_KEY[c] as never)}</button>
+                ))}
+              </div>
+            )}
             <div className={`hidden md:grid ${ROW_COLS} gap-3 px-4 pb-2 text-sm font-semibold text-accent`}>
               <span className="text-center">{t('rank_position')}</span><span /><span>{t('rank_player')}</span><span className="text-right pr-1">{t('game_points')}</span>
             </div>

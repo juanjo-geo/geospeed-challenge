@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { itemTitleAuto, itemSubtitleAuto, kindFromPlaceId } from '@/lib/catalog';
 import { type ChallengeDetail, type ChallengeRound, challengeLink } from '@/lib/challenges';
 import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
-import { cityHint, useCityTips } from '@/lib/cityHints';
+import { itemHint, useCityTips } from '@/lib/cityHints';
 import { playButtonTap, playShareSuccess, playVictory, playGameOver } from '@/lib/sounds';
 import { fireCelebration } from '@/lib/confetti';
 import { useI18n } from '@/i18n';
@@ -36,7 +37,7 @@ const CHALLENGE_LEGEND_AVOID = { corner: { w: 210, h: 112 } };
 
 function toRoundResults(d: ChallengeDetail, rounds: ChallengeRound[]): RoundResult[] {
   return rounds.map(r => ({
-    city: { name: r.city_name, country: r.city_country ?? '', lat: r.city_lat, lon: r.city_lon, difficulty: d.difficulty },
+    city: { ...kindFromPlaceId(r.place_id), name: r.city_name, country: r.city_country ?? '', lat: r.city_lat, lon: r.city_lon, difficulty: d.difficulty },
     clickLat: r.click_lat ?? r.city_lat, clickLon: r.click_lon ?? r.city_lon,
     distance: r.distance_km ?? 0, basePoints: r.base_points ?? 0, multiplier: r.multiplier ?? 1,
     totalPoints: r.points, timeUsed: r.time_s ?? 0,
@@ -331,7 +332,7 @@ function ChallengeCompare({ detail, rows, rivalName, onOpenMap, onBack }: { deta
               <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
                   <Flag country={row.city.country} className="w-8 shrink-0" />
-                  <p className="min-w-0 truncate flex-1"><span className="font-extrabold text-base sm:text-lg">{row.city.name}</span><span className="text-foreground/75 text-sm"> · {row.city.country}</span></p>
+                  <p className="min-w-0 truncate flex-1"><span className="font-extrabold text-base sm:text-lg">{itemTitleAuto(row.city)}</span><span className="text-foreground/75 text-sm"> · {itemSubtitleAuto(row.city)}</span></p>
                   <button onClick={() => { playButtonTap(); onOpenMap(idx); }} className="shrink-0 rounded-xl border-2 border-accent/70 px-2 py-1 text-xs font-bold hover:bg-accent/10 flex items-center gap-1"><MapIcon className="w-4 h-4 text-accent" />{t('chc_viewMap')}</button>
                 </div>
                 <table className="w-full text-xs sm:text-sm">
@@ -373,9 +374,9 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
   const me = useMemo(() => (row.me?.click_lat != null && row.me.click_lon != null ? { lat: row.me.click_lat, lon: row.me.click_lon } : correct), [row.me, correct]);
   const rv = useMemo(() => (row.rv?.click_lat != null && row.rv.click_lon != null ? { lat: row.rv.click_lat, lon: row.rv.click_lon, label: rivalName, distanceKm: row.rv.distance_km } : null), [row.rv, rivalName]);
   const bounds = useMemo(() => boundsFor([me, correct, ...(rv ? [rv] : [])]), [me, correct, rv]);
-  const pinLabels = useMemo(() => ({ you: t('ch_you'), correct: `${row.city.name} · ${t('chm_correct')}` }), [t, row.city.name]);
+  const pinLabels = useMemo(() => ({ you: t('ch_you'), correct: `${itemTitleAuto(row.city)} · ${t('chm_correct')}` }), [t, row.city]);
   useCityTips();
-  const hint = cityHint({ name: row.city.name, country: row.city.country, lat: row.city.lat, lon: row.city.lon }, locale === 'en' ? 'en' : 'es');
+  const hint = itemHint(row.city, locale === 'en' ? 'en' : 'es');
   const mp = row.me?.points ?? 0, rp = row.rv?.points ?? 0;
   const who = mp > rp ? 'me' : rp > mp ? 'rival' : 'tie';
 
@@ -390,7 +391,7 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
       <div className="shrink-0 w-full max-w-6xl mx-auto rounded-2xl border border-border/80 bg-card/80 backdrop-blur-md px-3 py-2 short:py-1.5 flex items-center gap-2 sm:gap-3">
         <button onClick={() => { playButtonTap(); onBack(); }} className="shrink-0 rounded-full border border-border/60 px-3 py-1 text-xs sm:text-sm font-bold hover:bg-muted">← <span className="hidden sm:inline">{t('chm_backToCompare')}</span></button>
         <Flag country={row.city.country} className="w-7 sm:w-9" />
-        <p className="min-w-0 flex-1 truncate text-center"><span className="font-black text-sm sm:text-lg">{row.city.name}</span><span className="text-muted-foreground text-xs sm:text-base"> · {row.city.country}</span></p>
+        <p className="min-w-0 flex-1 truncate text-center"><span className="font-black text-sm sm:text-lg">{itemTitleAuto(row.city)}</span><span className="text-muted-foreground text-xs sm:text-base"> · {itemSubtitleAuto(row.city)}</span></p>
         <span className="shrink-0 text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{t('review_cityN')} <b className="text-foreground">{index + 1}</b> / {total}</span>
         <span className="hidden min-[640px]:inline rounded-xl border border-accent/70 text-accent px-2 py-0.5 text-[11px] font-bold whitespace-nowrap">🗺️ {t('chm_badge')}</span>
       </div>

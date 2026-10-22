@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ChallengeGhost } from '@/lib/challenges';
 import { GhostSideCard, GhostChip, GhostPulse, GhostCompare } from './GhostRace';
 import TrainingTip from './TrainingTip';
-import { City, getRandomCities, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { City, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { getRandomItems, isFlag, itemTitle, itemSubtitle, itemFlagUrl, type Category } from '@/lib/catalog';
+import { countryDistance } from '@/lib/flagScoring';
 import { haversineDistance } from '@/lib/gameUtils';
 import { closeness, scaleForMode, scoreRound, difficultyHundredths, speedMultiplier, comboLevelOf, COMBO_LEVELS, GOOD_MIN, PERFECT_KM, type Quality } from '@/lib/scoring';
 import { playClick, playBad, playMedium, playTick, playHeartbeat, playGameOver, playMultiplierX2, playRoundTransition, playTimeExpired } from '@/lib/sounds';
@@ -74,6 +76,11 @@ export interface RoundResult {
   brokeCombo?: boolean;
   /** Entrenamiento con reloj (Fase 4): se acabó el tiempo sin responder; cuenta como fallo y la tanda sigue */
   timedOut?: boolean;
+  /** Banderas (Fase 6): punto "correcto" dibujado en el mapa (la frontera más cercana; el propio clic si cayó dentro) */
+  targetLat?: number;
+  targetLon?: number;
+  /** Banderas: el clic cayó dentro del país */
+  inside?: boolean;
 }
 
 interface GameScreenProps {
@@ -102,6 +109,8 @@ interface GameScreenProps {
   exitConfirm?: string;
   /** Rótulo del modo en el HUD en vez de "región · dificultad" (Sprint) */
   hudLabel?: string;
+  /** Qué se ubica (Fase 6): ciudades o banderas. Los ítems inyectados (citiesOverride) mandan por su `kind`. */
+  category?: Category;
 }
 
 export function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
@@ -115,7 +124,7 @@ export function getRoundFeedback(distance: number, palette?: ReturnType<typeof u
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false, exitConfirm, hudLabel }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false, exitConfirm, hudLabel, category = 'cities' }: GameScreenProps) {
   const { t, locale } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -129,7 +138,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [cities] = useState(() =>
     citiesOverride
       ? citiesOverride
-      : getRandomCities(difficulty, totalRounds, gameMode, seed),
+      : getRandomItems(category, difficulty, totalRounds, gameMode, seed),
   );
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
@@ -211,7 +220,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     pausedMsRef.current = 0;
     pauseStartRef.current = (isPortraitMobile || isPageHidden || settingsOpenRef.current) ? Date.now() : null;
     setTimeLeft(effectiveMaxTime);
-    announce(noClock ? t('sr_announceRoundNoClock', { round: currentRound + 1, city: currentCity.name }) : t('sr_announceRound', { round: currentRound + 1, city: currentCity.name, time: effectiveMaxTime }), 'assertive');
+    announce(noClock ? t('sr_announceRoundNoClock', { round: currentRound + 1, city: itemTitle(currentCity, locale) }) : t('sr_announceRound', { round: currentRound + 1, city: itemTitle(currentCity, locale), time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
 
   // ── Carrera contra el fantasma (Fase 3): el rival ya jugó estas mismas ciudades ──
@@ -365,7 +374,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const elapsedS = Math.max(0, (Date.now() - roundStartRef.current - pausedMsRef.current - pausedNow) / 1000);
     const timeUsed = Math.round(elapsedS);
     const timeExact = Math.round(elapsedS * 10) / 10;
-    const distance = haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
+    // Bandera (Fase 6): distancia al país — 0 dentro, si no a la frontera más cercana (el servidor mide igual)
+    const flagHit = isFlag(currentCity) ? countryDistance(currentCity.name, lat, lon) : null;
+    const distance = flagHit ? flagHit.km : haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     // Puntaje v2: cercanía × rapidez × combo × dificultad (src/lib/scoring.ts; el servidor lo recalcula igual)
     const prevLevel = comboLevelOf(comboRef.current);
     const sc = scoreRound(closeness(distance, scaleForMode(gameMode)), timeExact, comboRef.current, difficultyHundredths(difficulty));
@@ -393,6 +404,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
       quality: sc.quality,
       diffMult: sc.diffMult,
       brokeCombo: sc.broke,
+      targetLat: flagHit?.nearest.lat,
+      targetLon: flagHit?.nearest.lon,
+      inside: flagHit?.inside,
     };
 
     // Juice del combo en el mismo instante del clic: sonido (tono por nivel), vibración, música y
@@ -439,7 +453,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     onRoundComplete(result);
     // Screen reader announcement
     const fb = getRoundFeedback(distance, palette, t);
-    announce(t(isTraining ? 'sr_announceResultTraining' : 'sr_announceResult', { feedback: fb.phrase, city: currentCity.name, country: currentCity.country, distance: Math.round(distance), points: totalPoints, round: currentRound + 1, total: totalRounds }));
+    announce(t(isTraining ? 'sr_announceResultTraining' : 'sr_announceResult', { feedback: fb.phrase, city: itemTitle(currentCity, locale), country: itemSubtitle(currentCity, locale), distance: Math.round(distance), points: totalPoints, round: currentRound + 1, total: totalRounds }));
   }, [isWaiting, currentCity, onRoundComplete, t, gameMode, difficulty]);
 
   timeoutMissRef.current = () => {
@@ -483,11 +497,14 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const isTouchDevice = typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
   const confirmExit = () => { if (onExit && window.confirm(exitConfirm ?? t('game_exitConfirm'))) onExit(); };
   // Estable entre renders: WorldMapCanvas lo usa como dependencia de la animación del trazo
-  const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: t('game_correctCity') }), [t]);
+  const pinLabels = useMemo(() => ({
+    you: t('game_yourAnswer'),
+    correct: lastResult && isFlag(lastResult.city) ? (lastResult.inside ? t('flag_inside') : t('flag_border')) : t('game_correctCity'),
+  }), [t, lastResult]);
   // Objetos estables: si se recrean en cada render (tic del auto-avance), WorldMapCanvas reinicia
   // la animación del trazo y nunca llega a mostrar la ciudad correcta ni las etiquetas.
   const userClickPt = useMemo(() => lastResult && !lastResult.timedOut ? { lat: lastResult.clickLat, lon: lastResult.clickLon } : null, [lastResult]);
-  const correctPt = useMemo(() => lastResult ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : null, [lastResult]);
+  const correctPt = useMemo(() => lastResult ? { lat: lastResult.targetLat ?? lastResult.city.lat, lon: lastResult.targetLon ?? lastResult.city.lon } : null, [lastResult]);
   // El pin del rival solo aparece después de responder (nunca antes: se vería dónde clicó)
   const ghostPt = useMemo(
     () => (isWaiting && ghost && ghostRound?.click_lat != null && ghostRound.click_lon != null
@@ -507,7 +524,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     if (!cover || !lastResult) return null;
     return frameAnswer(
       lastResult.timedOut ? { lat: lastResult.city.lat, lon: lastResult.city.lon } : { lat: lastResult.clickLat, lon: lastResult.clickLon },
-      { lat: lastResult.city.lat, lon: lastResult.city.lon },
+      { lat: lastResult.targetLat ?? lastResult.city.lat, lon: lastResult.targetLon ?? lastResult.city.lon },
       mapArea.w, mapArea.h, cover, getMapBounds(gameMode), ghostPt ? [ghostPt] : [],
     );
   }, [cover, lastResult, mapArea.w, mapArea.h, gameMode, ghostPt]);
@@ -573,7 +590,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <span className="text-xs font-bold" style={{ color: 'hsl(var(--primary))' }}>
                 {currentRound + 1}/{totalRounds}
               </span>
-              <p className="text-sm font-black truncate">📍 {currentCity.name}</p>
+              {isFlag(currentCity)
+                ? <span className="flex items-center gap-1.5 min-w-0"><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="w-9 aspect-[3/2] object-cover rounded-[3px] ring-1 ring-black/20 shrink-0" /><span className="text-sm font-black truncate">{t('flag_whichCountry')}</span></span>
+                : <p className="text-sm font-black truncate">📍 {currentCity.name}</p>}
             </div>
             <div className="text-right shrink-0">
               <span className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
@@ -583,7 +602,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
           {/* Row 2: Country + Timer */}
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-muted-foreground">🌍 {currentCity.country}</p>
+            <p className="text-[10px] text-muted-foreground">{isFlag(currentCity) ? `🚩 ${t('cat_flags')}` : `🌍 ${currentCity.country}`}</p>
             <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} compact />
           </div>
         </div>
@@ -616,7 +635,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ¿Dónde está? */}
           <div className="w-full shrink-0 rounded-2xl border-2 border-accent/50 bg-background/40 px-[5cqi] py-[5.5cqi] text-center">
-            <p className="text-[8.6cqi] font-bold leading-none mb-[2.5cqi]" id="city-label">{t('game_whereIs')}</p>
+            <p className="text-[8.6cqi] font-bold leading-none mb-[2.5cqi]" id="city-label">{isFlag(currentCity) ? t('flag_whichCountry') : t('game_whereIs')}</p>
+            {isFlag(currentCity) ? (
+              <img src={itemFlagUrl(currentCity) ?? ''} alt="" aria-labelledby="city-label" className="mx-auto w-[62%] max-w-[190px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
+            ) : (
             <p
               className="text-[14.5cqi] font-extrabold leading-tight"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none', textShadow: '0 2px 10px hsl(var(--primary) / 0.25)' }}
@@ -624,9 +646,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             >
               {currentCity.name}
             </p>
+            )}
             {isTraining && !isWaiting && (
               <p className="mt-1.5 text-xs text-foreground/50">
-                🌍 <span className="font-bold text-foreground/75">{currentCity.country}</span>
+                🌍 <span className="font-bold text-foreground/75">{isFlag(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>
               </p>
             )}
           </div>
@@ -727,8 +750,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             <div className="flex-1 min-w-0 flex justify-center">
               <div className="max-w-full truncate rounded-full border-2 border-accent/50 px-4 py-1 text-[15px] font-extrabold backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
                 {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
-                {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>
-                {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {currentCity.country}</span>}
+                {isFlag(currentCity)
+                  ? <><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="inline-block w-7 aspect-[3/2] object-cover rounded-[2px] align-[-3px] mr-1.5 ring-1 ring-black/20" />{t('flag_whichCountry')}</>
+                  : <>{t('game_whereIs')} <span className="text-primary">{currentCity.name}</span></>}
+                {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {isFlag(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>}
               </div>
             </div>
             {onToggleMusic && <HudIconButton size="sm" icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
@@ -799,7 +824,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Leyenda de pines durante la respuesta (maqueta Feedback) */}
         {showPopup && lastResult && !isPortraitMobile && (
           <div className="absolute z-[6] pointer-events-none rounded-xl border border-accent/40 px-3 py-2 short:py-1 backdrop-blur-md text-xs short:text-[11px] font-semibold flex flex-col gap-1 short:gap-0.5" style={{ bottom: 'max(0.75rem, var(--sab))', left: 'max(0.75rem, var(--sal))', background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
-            <span className="flex items-center gap-2"><PinIcon color="hsl(var(--accent))" />{t('game_correctCity')}</span>
+            <span className="flex items-center gap-2"><PinIcon color="hsl(var(--accent))" />{t(isFlag(lastResult.city) ? 'flag_correctCountry' : 'game_correctCity')}</span>
             <span className="flex items-center gap-2"><PinIcon color="hsl(var(--primary))" />{t('game_yourAnswer')}</span>
           </div>
         )}
@@ -825,7 +850,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           clickDisabled={isWaiting}
           userClick={userClickPt}
           correctLocation={correctPt}
-          distanceKm={lastResult && !lastResult.timedOut ? lastResult.distance : null}
+          distanceKm={lastResult && !lastResult.timedOut && !lastResult.inside ? lastResult.distance : null}
+          highlightCountry={lastResult && isFlag(lastResult.city) ? lastResult.city.name : null}
           gameMode={gameMode}
           hintZone={isTraining && !isWaiting && showHint ? { lat: currentCity.lat, lon: currentCity.lon } : null}
           highlightContinent={gameMode === 'world' && !isWaiting ? getContinentFromCoords(currentCity.lat, currentCity.lon) : null}
@@ -862,7 +888,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               size="lg"
               natural
               extra={cardExtra}
-              firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : undefined}
+              firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : lastResult.inside ? { label: t('game_distance'), value: t('flag_insideShort') } : undefined}
+              title={isFlag(lastResult.city) ? itemTitle(lastResult.city, locale) : undefined}
+              subtitle={isFlag(lastResult.city) ? itemSubtitle(lastResult.city, locale) : undefined}
               hidePoints={isTraining}
             />
             </FitToBox>
@@ -893,7 +921,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 size="md"
                 natural
                 extra={cardExtra}
-              firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : undefined}
+              firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : lastResult.inside ? { label: t('game_distance'), value: t('flag_insideShort') } : undefined}
+              title={isFlag(lastResult.city) ? itemTitle(lastResult.city, locale) : undefined}
+              subtitle={isFlag(lastResult.city) ? itemSubtitle(lastResult.city, locale) : undefined}
               hidePoints={isTraining}
               />
             </FitToBox>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { itemTitleAuto, itemSubtitleAuto } from '@/lib/catalog';
 import { type RoundResult } from './GameScreen';
 import { formatDistance } from '@/lib/gameUtils';
 import { playButtonTap } from '@/lib/sounds';
@@ -110,14 +111,14 @@ export default function CityAnswersScreen({ rounds, isMundial = false, focusInde
                   <Flag country={r.city.country} className="w-7 sm:w-9 short:w-7" />
                   <span className="min-w-0">
                     <span className="flex items-center gap-1.5 min-w-0">
-                      <span className="font-bold text-sm sm:text-lg truncate">{r.city.name}</span>
+                      <span className="font-bold text-sm sm:text-lg truncate">{itemTitleAuto(r.city)}</span>
                       {isBest && (
                         <span className="shrink-0 rounded-full border-2 border-primary/80 text-primary px-2 py-px text-[10px] sm:text-sm font-bold">
                           👑<span className="hidden sm:inline"> {t('answers_best')}</span>
                         </span>
                       )}
                     </span>
-                    <span className="block text-[11px] sm:text-xs text-muted-foreground truncate">{r.city.country}</span>
+                    <span className="block text-[11px] sm:text-xs text-muted-foreground truncate">{itemSubtitleAuto(r.city)}</span>
                   </span>
                 </span>
                 <span className="text-center font-bold text-xs sm:text-lg">{formatDistance(r.distance)}</span>
@@ -126,7 +127,7 @@ export default function CityAnswersScreen({ rounds, isMundial = false, focusInde
                 <button
                   onClick={() => { playButtonTap(); onOpenCity(idx); }}
                   className="justify-self-stretch rounded-xl border-2 border-accent/70 text-foreground font-bold text-xs sm:text-base py-1.5 short:py-1 hover:bg-accent/10 transition-colors active:scale-[0.97] flex items-center justify-center gap-1.5"
-                  aria-label={`${t('answers_view')} ${r.city.name}`}
+                  aria-label={`${t('answers_view')} ${itemTitleAuto(r.city)}`}
                 >
                   <PinIcon className="w-4 h-4 sm:w-5 sm:h-5 text-accent" /><span className="hidden min-[520px]:inline">{t('answers_view')}</span>
                 </button>

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { itemTitleAuto, itemSubtitleAuto } from '@/lib/catalog';
 import { type RoundResult } from './GameScreen';
 import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
-import { cityHint, playerHint, useCityTips } from '@/lib/cityHints';
+import { itemHint, playerHint, useCityTips } from '@/lib/cityHints';
 import { playAccordion, playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import WorldMapCanvas from './WorldMapCanvas';
@@ -70,14 +71,15 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
 
   // Props del mapa memoizadas: el mapa compara por identidad (ver gotcha del bloque 3)
   const userClick = useMemo(() => ({ lat: r.clickLat, lon: r.clickLon }), [r.clickLat, r.clickLon]);
-  const correct = useMemo(() => ({ lat: r.city.lat, lon: r.city.lon }), [r.city.lat, r.city.lon]);
+  // Banderas: el punto "correcto" es la frontera más cercana (o el propio clic si cayó dentro); el país se resalta
+  const correct = useMemo(() => ({ lat: r.targetLat ?? r.city.lat, lon: r.targetLon ?? r.city.lon }), [r.targetLat, r.targetLon, r.city.lat, r.city.lon]);
   const bounds = useMemo(() => reviewBounds(userClick, correct), [userClick, correct]);
-  const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: isMundial ? r.city.country : r.city.name }), [t, isMundial, r.city.country, r.city.name]);
+  const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: isMundial ? r.city.country : r.city.kind === 'flag' ? (r.inside ? t('flag_inside') : t('flag_border')) : r.city.name }), [t, isMundial, r.city, r.inside]);
 
   const lang = locale === 'en' ? 'en' : 'es';
   useCityTips();
   const playerName = r.city.name.replace(/^⚽\s*/, '');
-  const hint = isMundial ? playerHint(playerName, r.city.country, r.city.lat, r.city.lon, lang) : cityHint(r.city, lang);
+  const hint = isMundial ? playerHint(playerName, r.city.country, r.city.lat, r.city.lon, lang) : itemHint(r.city, lang);
   // Multiplicadores restantes (racha × dificultad) = total / (base × velocidad)
   const rest = r.basePoints > 0 && r.multiplier > 0 ? r.totalPoints / (r.basePoints * r.multiplier) : 1;
   const secs = `${formatNumber(r.timeExact ?? r.timeUsed, 1)} s`;
@@ -105,8 +107,8 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
         <p className="min-w-0 flex items-center gap-2 sm:gap-3">
           <Flag country={r.city.country} className="w-8 sm:w-11 short:w-7" />
           <span className="min-w-0 truncate">
-            <span className="font-bold text-sm sm:text-xl">{r.city.name}</span>
-            <span className="text-foreground/75 text-xs sm:text-lg"> · {r.city.country}</span>
+            <span className="font-bold text-sm sm:text-xl">{itemTitleAuto(r.city)}</span>
+            <span className="text-foreground/75 text-xs sm:text-lg"> · {itemSubtitleAuto(r.city)}</span>
           </span>
         </p>
         <span className="shrink-0 text-xs sm:text-lg whitespace-nowrap">
@@ -128,11 +130,12 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
             clickDisabled
             userClick={userClick}
             correctLocation={correct}
-            distanceKm={r.distance}
+            distanceKm={r.inside ? null : r.distance}
             gameMode="world"
             viewBounds={bounds}
             pinLabels={pinLabels}
             pinEmoji={isMundial ? '⚽' : null}
+            highlightCountry={r.city.kind === 'flag' ? r.city.name : null}
             labelAvoid={LEGEND_AVOID}
           />
           <div className="absolute left-3 bottom-3 rounded-xl border border-accent/40 px-3 py-2 text-xs sm:text-sm font-semibold flex flex-col gap-1.5 short:hidden" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
