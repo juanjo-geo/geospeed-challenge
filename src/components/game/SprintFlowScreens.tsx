@@ -37,7 +37,7 @@ export function SprintSearchScreen({ rematchOf, onFound, onCancel, onOpenStore }
   // Rival encontrado: se muestra un momento y arranca la carrera
   useEffect(() => {
     if (!match || done.current) return;
-    const id = setTimeout(() => { done.current = true; onFound(match); }, 1900);
+    const id = setTimeout(() => { done.current = true; onFound(match); }, 3200);
     return () => clearTimeout(id);
   }, [match, onFound]);
 
@@ -66,7 +66,12 @@ export function SprintSearchScreen({ rematchOf, onFound, onCancel, onOpenStore }
               <GhostFace avatar={match.opponent.avatar} className="w-20 h-20 text-4xl mx-auto" />
               <p className="mt-2 text-2xl font-black">{match.opponent.name}</p>
               <p className="mt-1 flex items-center justify-center gap-2 text-foreground/85">
-                <IsoFlag iso={match.opponent.country} className="w-6" />{match.opponent.country ? isoName(match.opponent.country, locale) : ''}
+                {match.opponent.country
+                  ? <><IsoFlag iso={match.opponent.country} className="w-6" />{isoName(match.opponent.country, locale)}</>
+                  : <>🌍 {t('sprint_noCountry')}</>}
+              </p>
+              <p className="mt-2 inline-block rounded-full border border-accent/50 px-3 py-0.5 text-xs font-bold text-accent">
+                {match.opponent.house ? t('sprint_rivalRecorded') : t('sprint_rivalPlayer')}
               </p>
               <p className="mt-2 font-bold">{divisionByKey(match.opponent.division).emoji} {t(`sprint_div_${match.opponent.division}` as never)} · {formatNumber(match.opponent.points)} PS</p>
             </div>

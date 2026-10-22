@@ -746,6 +746,9 @@ const en: Translations = {
   more_memoryTag: 'Review',
   more_memoryDue: '{n} for today',
   // ── Fase 5: Sprint ──
+  sprint_noCountry: 'Country not set',
+  sprint_rivalRecorded: 'Recorded game of a Classic player',
+  sprint_rivalPlayer: 'Sprint player',
   sprint_title: 'Sprint mode',
   sprint_subtitle: '10-city races against rivals at your level',
   sprint_div_ciudad: 'City',
