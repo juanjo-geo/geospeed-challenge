@@ -4,6 +4,7 @@ import { fetchMyProgress, type MyProgress } from '@/lib/gameResults';
 import { getStreakState } from '@/lib/dailyStreak';
 import { playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
+import CountryPicker from './CountryPicker';
 import { getPlayerStats, getGameHistory, formatDistance, type GameHistoryEntry } from '@/lib/gameUtils';
 import { getPlayerLevel, getPlayerBadges, type PlayerLevel, type Badge } from '@/lib/levelSystem';
 import { tLevelTitle, tBadgeName, tBadgeDesc, tDifficulty } from '@/lib/gameI18n';
@@ -191,6 +192,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                   </div>
                 </div>
 
+                {user && !isAnonymous && <CountryPicker />}
                 {(!user || isAnonymous) && (
                   <div className="w-full mt-3 rounded-2xl border border-primary/50 bg-primary/10 p-3 text-left">
                     <p className="font-black text-sm">🔒 {t('acc_guestTitle')}</p>

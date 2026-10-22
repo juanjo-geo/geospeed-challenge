@@ -98,6 +98,10 @@ interface GameScreenProps {
   ghost?: ChallengeGhost | null;
   /** Entrenamiento sin reloj (Fase 4): sin cuenta regresiva por ciudad */
   noClock?: boolean;
+  /** Texto de la confirmación al salir con la × (Sprint: salir cuenta como derrota) */
+  exitConfirm?: string;
+  /** Rótulo del modo en el HUD en vez de "región · dificultad" (Sprint) */
+  hudLabel?: string;
 }
 
 export function getRoundFeedback(distance: number, palette?: ReturnType<typeof useA11y>['palette'], t?: (key: string) => string): { emoji: string; phrase: string; color: string } {
@@ -111,7 +115,7 @@ export function getRoundFeedback(distance: number, palette?: ReturnType<typeof u
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false, exitConfirm, hudLabel }: GameScreenProps) {
   const { t, locale } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -477,7 +481,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const modeLabel = t(`mode_${gameMode}` as never) || MODE_CONFIG.find(m => m.key === gameMode)?.label || gameMode;
   const diffLabel = t(`diff_${difficulty}` as never) || difficulty;
   const isTouchDevice = typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
-  const confirmExit = () => { if (onExit && window.confirm(t('game_exitConfirm'))) onExit(); };
+  const confirmExit = () => { if (onExit && window.confirm(exitConfirm ?? t('game_exitConfirm'))) onExit(); };
   // Estable entre renders: WorldMapCanvas lo usa como dependencia de la animación del trazo
   const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: t('game_correctCity') }), [t]);
   // Objetos estables: si se recrean en cada render (tic del auto-avance), WorldMapCanvas reinicia
@@ -598,7 +602,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <Wordmark size="custom" className="text-[11.5cqi]" />
             </div>
             <span className="rounded-full border-2 border-accent/50 px-[6cqi] py-[1.6cqi] text-[6.6cqi] font-semibold whitespace-nowrap">
-              <span className="text-primary">{modeLabel}</span><span className="text-accent mx-[2cqi]">·</span>{diffLabel}
+              {hudLabel ? <span className="text-primary">{hudLabel}</span> : <><span className="text-primary">{modeLabel}</span><span className="text-accent mx-[2cqi]">·</span>{diffLabel}</>}
             </span>
           </div>
 
@@ -733,7 +737,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
           <div className="flex items-center gap-1.5 text-[11px] font-bold">
             <span className="hidden min-[560px]:inline rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
-              <span className="text-primary">{modeLabel}</span> · {diffLabel}
+              {hudLabel ? <span className="text-primary">{hudLabel}</span> : <><span className="text-primary">{modeLabel}</span> · {diffLabel}</>}
             </span>
             <span className="rounded-full px-2.5 py-0.5 border border-accent/40 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.75)' }}>
               {t('game_round')} <span className="text-primary">{currentRound + 1}</span><span className="text-muted-foreground"> / {totalRounds}</span>

@@ -472,6 +472,34 @@ export type Database = {
         Args: { p_id: string }
         Returns: Json
       }
+      sprint_status: {
+        Args: Record<string, never>
+        Returns: Json
+      }
+      sprint_find_match: {
+        Args: { p_rematch_of?: string }
+        Returns: Json
+      }
+      sprint_submit: {
+        Args: { p_match: string; p: Json }
+        Returns: Json
+      }
+      sprint_leaderboard: {
+        Args: { p_scope?: string; p_limit?: number }
+        Returns: Json
+      }
+      sprint_forfeit: {
+        Args: { p_match: string }
+        Returns: Json
+      }
+      sprint_inbox_seen: {
+        Args: { p_ids: string[] }
+        Returns: undefined
+      }
+      set_my_country: {
+        Args: { p_iso: string }
+        Returns: undefined
+      }
       my_memory: {
         Args: Record<string, never>
         Returns: {

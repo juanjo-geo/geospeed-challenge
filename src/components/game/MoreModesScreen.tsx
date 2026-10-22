@@ -16,6 +16,8 @@ interface MoreModesScreenProps {
   /** Fase 4: entrenamiento (configuración) y Tu memoria */
   onTraining?: () => void;
   onMemory?: () => void;
+  /** Fase 5: Sprint */
+  onSprint?: () => void;
 }
 
 const IMPOSSIBLE_UNLOCK_LEVEL = 5;
@@ -25,7 +27,7 @@ const IMPOSSIBLE_UNLOCK_LEVEL = 5;
  * Tarjetas grandes con ilustración a la izquierda, etiqueta y flecha; cada una lleva a las reglas/selección
  * que ya tiene cada modo.
  */
-export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory }: MoreModesScreenProps) {
+export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory, onSprint }: MoreModesScreenProps) {
   const { t } = useI18n();
   const level = getPlayerLevel().level;
   const impossibleLocked = level < IMPOSSIBLE_UNLOCK_LEVEL;
@@ -33,6 +35,11 @@ export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, on
   const due = dueCount(useMemory());
 
   const cards = [
+    ...(onSprint ? [{
+      key: 'sprint', art: ['⚡', '🏆'], title: 'Sprint', desc: t('more_sprintDesc'), tag: t('more_sprintTag'),
+      ring: 'border-primary/70 shadow-[0_0_18px_hsl(var(--primary)/0.2)]', tagClass: 'border-primary text-primary',
+      onClick: onSprint, locked: false,
+    }] : []),
     {
       key: 'caos', art: ['⚡', '⏱️'], title: t('ta_title'), desc: t('more_caosDesc'), tag: '60 s',
       ring: 'border-accent/70 shadow-[0_0_18px_hsl(var(--accent)/0.18)]', tagClass: 'border-primary text-primary',

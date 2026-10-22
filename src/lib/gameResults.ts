@@ -19,7 +19,7 @@ import type { TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import { getGameHistory, getPlayerStats, type GameHistoryEntry } from './gameUtils';
 import { ensureGuestSession } from './identity';
 
-export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel';
+export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel' | 'sprint';
 export type EndReason = 'complete' | 'timeout' | 'abandoned';
 
 export interface SaveRoundInput {
@@ -63,6 +63,11 @@ const PENDING_CAP = 20;
 
 function newClientId(): string {
   try { return crypto.randomUUID(); } catch { return `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
+}
+
+/** Payload de una partida tal como lo recibe save_game_result (el Sprint lo entrega con sprint_submit) */
+export function buildSavePayload(input: SaveGameInput): Json {
+  return toPayload(input, input.clientId ?? newClientId());
 }
 
 function toPayload(input: SaveGameInput, clientId: string): Json {
