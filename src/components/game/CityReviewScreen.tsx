@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { itemTitleAuto, itemSubtitleAuto } from '@/lib/catalog';
-import { type RoundResult } from './GameScreen';
+import { type RoundResult, correctPinLabel } from './GameScreen';
+import { useFeatureShapes } from '@/hooks/useFeatureShapes';
 import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
 import { itemHint, playerHint, useCityTips } from '@/lib/cityHints';
@@ -74,7 +75,10 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
   // Banderas: el punto "correcto" es la frontera más cercana (o el propio clic si cayó dentro); el país se resalta
   const correct = useMemo(() => ({ lat: r.targetLat ?? r.city.lat, lon: r.targetLon ?? r.city.lon }), [r.targetLat, r.targetLon, r.city.lat, r.city.lon]);
   const bounds = useMemo(() => reviewBounds(userClick, correct), [userClick, correct]);
-  const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: isMundial ? r.city.country : r.city.kind === 'flag' ? (r.inside ? t('flag_inside') : t('flag_border')) : r.city.name }), [t, isMundial, r.city, r.inside]);
+  const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: isMundial ? r.city.country : correctPinLabel(r, t, r.city.name) }), [t, isMundial, r]);
+  // Contorno del lugar (Fase 6b): se carga si la partida tiene lugares y se resalta en el mapa
+  const featureShapes = useFeatureShapes(r.city.kind === 'feature');
+  const highlightShape = useMemo(() => (r.city.kind === 'feature' && r.city.id && featureShapes ? featureShapes[r.city.id] ?? null : null), [r.city, featureShapes]);
 
   const lang = locale === 'en' ? 'en' : 'es';
   useCityTips();
@@ -136,6 +140,7 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
             pinLabels={pinLabels}
             pinEmoji={isMundial ? '⚽' : null}
             highlightCountry={r.city.kind === 'flag' ? r.city.name : null}
+            highlightShape={highlightShape}
             labelAvoid={LEGEND_AVOID}
           />
           <div className="absolute left-3 bottom-3 rounded-xl border border-accent/40 px-3 py-2 text-xs sm:text-sm font-semibold flex flex-col gap-1.5 short:hidden" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>

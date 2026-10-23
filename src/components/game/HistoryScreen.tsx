@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MODE_CONFIG, type Difficulty, type GameMode } from '@/data/cities';
 import { fetchHistoryPage, hasAnyHistory, loadRounds, type HistoryItem, type HistoryFilters } from '@/lib/history';
+import { CATEGORY_ART, CATEGORY_KEY } from '@/lib/catalog';
 import { formatDistance } from '@/lib/gameUtils';
 import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
@@ -214,14 +215,14 @@ function gameInfo(item: HistoryItem, t: T): { icon: string; name: string; diff: 
   const region = t(`mode_${item.mode}` as never) || item.mode;
   const diff = t(DIFF_LABEL[item.difficulty as Difficulty] as never) || item.difficulty;
   const globe = REGION_GLOBE[item.mode] ?? '🌍';
-  const flags = item.category === 'flags' ? ` · 🚩 ${t('cat_flags' as never)}` : '';
+  const flags = item.category && item.category !== 'cities' ? ` · ${CATEGORY_ART[item.category].emoji} ${t(CATEGORY_KEY[item.category] as never)}` : '';
   switch (item.gameType) {
     case 'mundial': return { icon: '⚽', name: t('wc_modeName' as never), diff: t(`wc_diff_${item.difficulty}` as never) };
     case 'timeattack': return { icon: '⚡', name: `${t('ta_hud' as never)} · ${region}`, diff };
     case 'daily': return { icon: '📅', name: `${t('home_dailyCard' as never)} · ${region}`, diff };
     case 'challenge': return { icon: '⚔️', name: `${t('ch_countdownLabel' as never)} · ${region}${flags}`, diff };
     case 'training': return { icon: '🎯', name: `${t('game_training' as never)} · ${region}${flags}`, diff };
-    default: return item.category === 'flags' ? { icon: '🚩', name: `${t('cat_flags' as never)} · ${region}`, diff } : { icon: globe, name: region, diff };
+    default: return item.category && item.category !== 'cities' ? { icon: CATEGORY_ART[item.category].emoji, name: `${t(CATEGORY_KEY[item.category] as never)} · ${region}`, diff } : { icon: globe, name: region, diff };
   }
 }
 

@@ -156,7 +156,7 @@ el cofre queda sin número); el diario sigue con 13 ciudades.
 | 3 | Publicada (RPC `challenge_ghost`, Tú vs rival en vivo, aviso al segundo exacto, pin y comparación tras responder, resumen al final; al terminar un reto se va directo a la comparación) | 2026-10-21 |
 | 4 | Código hecho (entrenamiento: región, nivel, 6/10/20, reloj opcional, repetir falladas, % dominado; repaso inteligente con cajas 1–5 en el servidor, Repaso del día, Tu memoria). Falta aplicar `20261024120000_item_memory.sql` y publicar | 2026-10-21 |
 | 5 | Código hecho (PS con Elo, 5 divisiones, temporadas con compresión e insignia, 5 carreras/día y Pro ilimitado, rival con PS parecidos o partida de la casa, carrera contra el fantasma, revancha desde la bandeja, ranking global/país/amigos, país en el perfil). Falta aplicar `20261025120000_sprint.sql` y publicar; push al rival cuando haya Firebase | 2026-10-22 |
-| 6 | **6a Banderas** hecha en código (166 países por nivel, distancia al país, Clásico/Entrenamiento/Retos, ranking y historial por categoría). Falta aplicar `20261027120000_flags.sql` y publicar; revisión de niveles en `docs/Fase6_Banderas_catalogo.md`. 6b Lugares y 6c Monumentos pendientes | 2026-10-22 |
+| 6 | **6a Banderas** publicada (v130, 2026-10-22). **6b Lugares geográficos** hecha en código: 367 lugares (ríos, lagos, mares, cordilleras, picos, desiertos, islas, penínsulas…) con contornos de Natural Earth, puntaje por distancia al área/trazo/punto, en Clásico/Entrenamiento/Retos, ranking e historial por categoría. Falta aplicar `20261028120000_features.sql` y publicar; revisión de niveles en `docs/Fase6_Lugares_catalogo.md`. 6c Monumentos pendiente | 2026-10-22 |
 | 7 | Propuesta | |
 | 8 | Propuesta | |
 | 9 | Propuesta | |

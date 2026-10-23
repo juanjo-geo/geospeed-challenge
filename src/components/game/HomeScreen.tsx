@@ -195,7 +195,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
   const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
-  const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
+  const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : selectedCategory === 'features' ? 'home_featuresInfo' : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
   const categoryOptions: SelectorOption<Category>[] = useMemo(() => CATEGORIES.map(c => ({
     key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t(`${CATEGORY_KEY[c]}Desc` as never),
   })), [t]);
