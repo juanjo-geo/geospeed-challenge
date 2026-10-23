@@ -1,16 +1,28 @@
 export type Difficulty = 'basic' | 'easy' | 'medium' | 'hard';
 export type GameMode = 'world' | 'europe' | 'asia' | 'americas' | 'africa';
 
+/** Tipo de accidente geográfico (Fase 6b, src/data/featureTiers.ts) */
+export type FeatureType =
+  | 'river' | 'lake' | 'sea' | 'gulf' | 'strait' | 'range' | 'peak' | 'volcano' | 'desert' | 'island' | 'islands'
+  | 'peninsula' | 'cape' | 'plateau' | 'basin' | 'delta' | 'waterfall' | 'valley' | 'plain' | 'wetland' | 'canyon'
+  | 'region' | 'reef' | 'isthmus' | 'glacier';
+
 export interface City {
-  /** Identificador estable (slug del nombre; `flag:<ISO>` en banderas), el mismo de la tabla `places` del servidor */
+  /** Identificador estable (slug del nombre; `flag:<ISO>` en banderas, `feat:<slug>` en lugares), el mismo de la tabla `places` del servidor */
   id?: string;
-  /** Qué se ubica: ciudad (por defecto) o bandera de un país (Fase 6, src/data/flagCatalog.ts) */
-  kind?: 'city' | 'flag';
+  /** Qué se ubica: ciudad (por defecto), bandera de un país (src/data/flagCatalog.ts) o lugar geográfico (src/data/featureCatalog.ts) */
+  kind?: 'city' | 'flag' | 'feature';
   /** Banderas: código ISO-3166 (imagen en /flags/<ISO>.svg) */
   iso?: string;
-  /** Banderas: región del juego a la que pertenece (null = solo en Mundo, p. ej. Oceanía) */
+  /** Banderas y lugares: región del juego a la que pertenece (null = solo en Mundo, p. ej. Oceanía) */
   region?: GameMode | null;
-  /** Ciudad: nombre del catálogo. Bandera: nombre del país en inglés (countries.ts); se muestra traducido (itemTitle) */
+  /** Lugares: tipo de accidente, geometría (área = "dentro" vale 0 km; línea = distancia al trazo; punto) y países que toca (ISO) */
+  ftype?: FeatureType;
+  geom?: 'area' | 'line' | 'point';
+  isos?: string[];
+  /** Lugares: nombre en inglés (name es el español) */
+  nameEn?: string;
+  /** Ciudad: nombre del catálogo. Bandera: nombre del país en inglés (countries.ts); se muestra traducido (itemTitle). Lugar: nombre en español */
   name: string;
   country: string;
   lat: number;

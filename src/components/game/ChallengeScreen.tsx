@@ -5,6 +5,7 @@ import {
 } from '@/lib/challenges';
 import { playButtonTap, playShareSuccess } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
+import { CATEGORY_ART, CATEGORY_KEY } from '@/lib/catalog';
 import { useAuth } from '@/hooks/useAuth';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { HomeIcon, StopwatchIcon } from '@/components/ui/icons';
@@ -118,8 +119,8 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
       <div className="flex flex-col gap-2 text-sm sm:text-base">
         <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_region')} value={mode ? t(`mode_${mode}` as never) : '—'} />
         <Row icon={<BagIcon className="w-6 h-6 text-accent" />} label={t('ch_difficulty')} value={difficulty ? t(`home_diff${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}` as never) : '—'} />
-        {category === 'flags' && <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_category')} value={`🚩 ${t('cat_flags')}`} />}
-        <Row icon={<StopwatchIcon className="w-6 h-6 text-accent" />} label={t('ch_format')} value={t(category === 'flags' ? 'ch_formatValueFlags' : 'ch_formatValue', { n: rounds, s: seconds })} />
+        {category !== 'cities' && <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_category')} value={`${CATEGORY_ART[category].emoji} ${t(CATEGORY_KEY[category] as never)}`} />}
+        <Row icon={<StopwatchIcon className="w-6 h-6 text-accent" />} label={t('ch_format')} value={t(category === 'flags' ? 'ch_formatValueFlags' : category === 'features' ? 'ch_formatValueFeatures' : 'ch_formatValue', { n: rounds, s: seconds })} />
       </div>
       <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground/75"><LockIcon className="w-4 h-4" /> {t('ch_fixed')}</p>
     </Card>

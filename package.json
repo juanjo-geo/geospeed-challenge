@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:scoring-sql": "node scripts/test-scoring-sql.mjs",
-    "test:flags-sql": "node scripts/test-flags-sql.mjs"
+    "test:flags-sql": "node scripts/test-flags-sql.mjs",
+    "test:features-sql": "node scripts/test-features-sql.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",

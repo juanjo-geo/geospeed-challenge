@@ -837,6 +837,15 @@ const es = {
   flag_correctCountry: 'País correcto',
   ch_category: 'Categoría',
   train_category: 'Qué ubicar',
+  // ── Fase 6b: lugares geográficos ──
+  cat_features: 'Lugares',
+  cat_featuresDesc: 'Ríos, cordilleras, desiertos, mares e islas: tócalos en el mapa.',
+  home_featuresInfo: '{cities} lugares · {seconds} s por lugar',
+  ch_formatValueFeatures: '{n} lugares · {s} s',
+  feat_inside: '✓ Dentro',
+  feat_edge: 'Borde más cercano',
+  feat_nearest: 'Punto más cercano',
+  feat_correct: 'Lugar correcto',
   combo_title: 'Combo',
   // ── Fase 2: desafío diario, racha, hitos y compartir ──
   share_dailyTitle: 'GeoSpeed Diario #{n} ⚡',

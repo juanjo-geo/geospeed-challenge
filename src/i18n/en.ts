@@ -839,6 +839,15 @@ const en: Translations = {
   flag_correctCountry: 'Correct country',
   ch_category: 'Category',
   train_category: 'What to place',
+  // ── Fase 6b: lugares geográficos ──
+  cat_features: 'Places',
+  cat_featuresDesc: 'Rivers, mountain ranges, deserts, seas and islands: tap them on the map.',
+  home_featuresInfo: '{cities} places · {seconds} s per place',
+  ch_formatValueFeatures: '{n} places · {s} s',
+  feat_inside: '✓ Inside',
+  feat_edge: 'Nearest edge',
+  feat_nearest: 'Nearest point',
+  feat_correct: 'Correct place',
   combo_title: 'Combo',
   // ── Fase 2: desafío diario, racha, hitos y compartir ──
   share_dailyTitle: 'GeoSpeed Daily #{n} ⚡',

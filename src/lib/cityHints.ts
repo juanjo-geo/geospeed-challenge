@@ -12,6 +12,7 @@ import { worldCities, europeCities, asiaCities, americasCities, africaCities, ty
 import { haversineDistance } from '@/lib/gameUtils';
 import { countryAdjacency } from '@/data/countryAdjacency';
 import { countryDisplayName } from '@/lib/flags';
+import { featureTypeLabel } from '@/lib/featureTypes';
 
 type Lang = 'es' | 'en';
 
@@ -156,9 +157,29 @@ export function flagHint(item: Pick<City, 'name' | 'lat' | 'lon'>, lang: Lang): 
   return nb.length ? `${country} is in ${cont}. It borders ${list}.` : `${country} is in ${cont}; it has no land borders.`;
 }
 
+/** Nombre de un país por código ISO en el idioma pedido (Intl; el código si el navegador no lo conoce) */
+function isoName(iso: string, lang: Lang): string {
+  try { return new Intl.DisplayNames([lang === 'es' ? 'es' : 'en'], { type: 'region' }).of(iso) ?? iso; } catch { return iso; }
+}
+const joinList = (xs: string[], lang: Lang) =>
+  xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${lang === 'es' ? 'y' : 'and'} ${xs[xs.length - 1]}`;
+
+/** Pista de un lugar geográfico (Fase 6b): tipo, continente y los países que toca (ISO del catálogo). */
+export function featureHint(item: Pick<City, 'name' | 'nameEn' | 'lat' | 'lon' | 'ftype' | 'isos' | 'geom'>, lang: Lang): string {
+  const name = lang === 'en' && item.nameEn ? item.nameEn : item.name;
+  const type = featureTypeLabel(item.ftype, lang).toLowerCase();
+  const cont = CONTINENT[continentKey(item.lat, item.lon)][lang];
+  const names = (item.isos ?? []).slice(0, 4).map((c) => isoName(c, lang));
+  const where = lang === 'es' ? `${name}: ${type} de ${cont}.` : `${name}: ${type} in ${cont}.`;
+  if (!names.length) return where;
+  const water = item.ftype === 'sea' || item.ftype === 'gulf' || item.ftype === 'strait' || item.ftype === 'reef';
+  if (lang === 'es') return `${where} ${water ? 'Baña' : names.length > 1 ? 'Abarca' : 'Está en'} ${joinList(names, lang)}.`;
+  return `${where} ${water ? 'It washes' : names.length > 1 ? 'It spans' : 'It is in'} ${joinList(names, lang)}.`;
+}
+
 /** Pista de cualquier ítem del catálogo según su tipo */
-export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind'>, lang: Lang): string =>
-  item.kind === 'flag' ? flagHint(item, lang) : cityHint(item, lang);
+export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind' | 'nameEn' | 'ftype' | 'isos' | 'geom'>, lang: Lang): string =>
+  item.kind === 'flag' ? flagHint(item, lang) : item.kind === 'feature' ? featureHint(item, lang) : cityHint(item, lang);
 
 /** Pista del modo Mundial: el "lugar" es el país del futbolista. */
 export function playerHint(player: string, country: string, lat: number, lon: number, lang: Lang): string {
