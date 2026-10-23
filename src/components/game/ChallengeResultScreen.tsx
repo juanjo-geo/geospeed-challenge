@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { itemTitleAuto, itemSubtitleAuto, kindFromPlaceId } from '@/lib/catalog';
+import { itemTitleAuto, itemSubtitleAuto, kindFromPlaceId, itemPhotoUrl } from '@/lib/catalog';
 import { type ChallengeDetail, type ChallengeRound, challengeLink } from '@/lib/challenges';
 import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
@@ -328,7 +328,7 @@ function ChallengeCompare({ detail, rows, rivalName, onOpenMap, onBack }: { deta
           const who = mp > rp ? 'me' : rp > mp ? 'rival' : 'tie';
           return (
             <section key={idx} className="rounded-3xl border-2 border-accent/40 bg-card/75 p-2.5 sm:p-3 flex gap-2.5 lg:flex-col">
-              <CountryPhoto country={row.city.country} size="sm" className="w-24 sm:w-28 lg:w-auto lg:h-24 shrink-0 rounded-2xl" />
+              <CountryPhoto country={row.city.country} src={itemPhotoUrl(row.city, 'sm')} size="sm" className="w-24 sm:w-28 lg:w-auto lg:h-24 shrink-0 rounded-2xl" />
               <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
                   <Flag country={row.city.country} className="w-8 shrink-0" />

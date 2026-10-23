@@ -846,6 +846,11 @@ const es = {
   feat_edge: 'Borde más cercano',
   feat_nearest: 'Punto más cercano',
   feat_correct: 'Lugar correcto',
+  // ── Fase 6c: monumentos ──
+  cat_monuments: 'Monumentos',
+  cat_monumentsDesc: 'Ve la foto de un monumento y toca dónde está.',
+  home_monumentsInfo: '{cities} monumentos · {seconds} s por monumento',
+  ch_formatValueMonuments: '{n} monumentos · {s} s',
   combo_title: 'Combo',
   // ── Fase 2: desafío diario, racha, hitos y compartir ──
   share_dailyTitle: 'GeoSpeed Diario #{n} ⚡',

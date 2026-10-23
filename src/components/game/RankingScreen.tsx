@@ -144,7 +144,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
               ))}
             </div>
             {board.mode !== 'mundial' && board.gameType !== 'timeattack' && (
-              <div className="grid grid-cols-3 gap-1 mb-3 rounded-xl border border-accent/40 bg-brand-navy-deep/60 p-1" role="tablist" aria-label={t('home_category')}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-3 rounded-xl border border-accent/40 bg-brand-navy-deep/60 p-1" role="tablist" aria-label={t('home_category')}>
                 {CATEGORIES.map((c) => (
                   <button key={c} role="tab" aria-selected={category === c} onClick={() => { playButtonTap(); setCategory(c); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${category === c ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{CATEGORY_ART[c].emoji} {t(CATEGORY_KEY[c] as never)}</button>
                 ))}

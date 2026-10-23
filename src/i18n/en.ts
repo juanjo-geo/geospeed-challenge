@@ -848,6 +848,11 @@ const en: Translations = {
   feat_edge: 'Nearest edge',
   feat_nearest: 'Nearest point',
   feat_correct: 'Correct place',
+  // ── Fase 6c: monumentos ──
+  cat_monuments: 'Landmarks',
+  cat_monumentsDesc: 'See a photo of a landmark and tap where it is.',
+  home_monumentsInfo: '{cities} landmarks · {seconds} s per landmark',
+  ch_formatValueMonuments: '{n} landmarks · {s} s',
   combo_title: 'Combo',
   // ── Fase 2: desafío diario, racha, hitos y compartir ──
   share_dailyTitle: 'GeoSpeed Daily #{n} ⚡',

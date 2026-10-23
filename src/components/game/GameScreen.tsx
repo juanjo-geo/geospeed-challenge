@@ -3,7 +3,8 @@ import type { ChallengeGhost } from '@/lib/challenges';
 import { GhostSideCard, GhostChip, GhostPulse, GhostCompare } from './GhostRace';
 import TrainingTip from './TrainingTip';
 import { City, getProgressiveCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
-import { getRandomItems, isFlag, isFeature, itemTitle, itemSubtitle, itemFlagUrl, featureTypeEmoji, featureTypeLabel, type Category } from '@/lib/catalog';
+import { getRandomItems, isFlag, isFeature, isMonument, isSpecial, itemTitle, itemSubtitle, itemFlagUrl, itemPhotoUrl, featureTypeEmoji, featureTypeLabel, type Category } from '@/lib/catalog';
+import { preloadLandmarkPhoto } from '@/lib/landmarkPhotos';
 import { countryDistance } from '@/lib/flagScoring';
 import { featureDistance } from '@/lib/featureScoring';
 import { useFeatureShapes } from '@/hooks/useFeatureShapes';
@@ -116,14 +117,16 @@ interface GameScreenProps {
 }
 
 /** Tamaño del nombre en la tarjeta "¿Dónde está?" según su palabra más larga: "Kilimanjaro" o "Johannesburgo" no deben partirse a mitad */
-function sidebarNameSize(name: string): string {
+function sidebarNameSize(name: string, compact = false): string {
   const longest = Math.max(...name.split(/\s+/).map((w) => w.length));
+  if (compact) return longest > 12 ? 'text-[8cqi]' : 'text-[9.5cqi]';
   return longest > 12 ? 'text-[9.5cqi]' : longest > 9 ? 'text-[11.5cqi]' : 'text-[14.5cqi]';
 }
 
-/** Etiqueta del pin correcto según el tipo de ítem (Fase 6): país/borde para banderas, dentro/borde/trazo/punto para lugares */
+/** Etiqueta del pin correcto según el tipo de ítem (Fase 6): país/borde para banderas, dentro/borde/trazo/punto para lugares y monumentos */
 export function correctPinLabel(r: { city: Pick<City, 'kind' | 'geom'>; inside?: boolean }, t: (key: string) => string, cityName?: string): string {
   if (r.city.kind === 'flag') return r.inside ? t('flag_inside') : t('flag_border');
+  if (r.city.kind === 'monument') return t('feat_correct');
   if (r.city.kind === 'feature') return r.inside ? t('feat_inside') : r.city.geom === 'line' ? t('feat_nearest') : r.city.geom === 'area' ? t('feat_edge') : t('feat_correct');
   return cityName ?? t('game_correctCity');
 }
@@ -198,7 +201,14 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   const currentCity = cities[currentRound];
   // La foto del país se descarga mientras el jugador busca la ciudad: la tarjeta la muestra sin esperar
-  useEffect(() => { if (currentCity) preloadCountryPhoto(currentCity.country, 'sm'); }, [currentCity]);
+  useEffect(() => {
+    if (!currentCity) return;
+    preloadCountryPhoto(currentCity.country, 'sm');
+    // Monumentos: la foto es la pregunta, así que la del siguiente se pide desde ya (y la de este, por si acaso)
+    for (const it of [currentCity, cities[currentRound + 1]]) {
+      if (it && isMonument(it)) { preloadLandmarkPhoto(it, 'lg'); preloadLandmarkPhoto(it, 'sm'); }
+    }
+  }, [currentCity, cities, currentRound]);
 
   // Cosméticos equipados (pin + trail) para que se VEAN en el mapa
   const equippedPin = getEquipped('pin');
@@ -613,7 +623,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               </span>
               {isFlag(currentCity)
                 ? <span className="flex items-center gap-2 min-w-0"><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="w-16 aspect-[3/2] object-cover rounded-[4px] ring-1 ring-black/20 shrink-0" /><span className="text-sm font-black truncate">{t('flag_whichCountry')}</span></span>
-                : <p className="text-sm font-black truncate">{isFeature(currentCity) ? featureTypeEmoji(currentCity.ftype) : '📍'} {itemTitle(currentCity, locale)}</p>}
+                : <span className="flex items-center gap-2 min-w-0">
+                    {isMonument(currentCity) && itemPhotoUrl(currentCity, 'sm') && <img src={itemPhotoUrl(currentCity, 'sm') ?? ''} alt="" className="w-16 aspect-[3/2] object-cover rounded-[4px] ring-1 ring-black/20 shrink-0" />}
+                    <p className="text-sm font-black truncate">{isFeature(currentCity) ? featureTypeEmoji(currentCity.ftype) : isMonument(currentCity) ? '🗼' : '📍'} {itemTitle(currentCity, locale)}</p>
+                  </span>}
             </div>
             <div className="text-right shrink-0">
               <span className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
@@ -623,7 +636,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
           {/* Row 2: Country + Timer */}
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-muted-foreground">{isFlag(currentCity) ? `🚩 ${t('cat_flags')}` : isFeature(currentCity) ? `${featureTypeEmoji(currentCity.ftype)} ${featureTypeLabel(currentCity.ftype, locale)}` : `🌍 ${currentCity.country}`}</p>
+            <p className="text-[10px] text-muted-foreground">{isFlag(currentCity) ? `🚩 ${t('cat_flags')}` : isFeature(currentCity) ? `${featureTypeEmoji(currentCity.ftype)} ${featureTypeLabel(currentCity.ftype, locale)}` : isMonument(currentCity) ? `📍 ${itemSubtitle(currentCity, locale)}` : `🌍 ${currentCity.country}`}</p>
             <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} compact />
           </div>
         </div>
@@ -660,20 +673,26 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             {isFlag(currentCity) ? (
               <img src={itemFlagUrl(currentCity) ?? ''} alt="" aria-labelledby="city-label" className="mx-auto w-full max-w-[320px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
             ) : (
+            <>
+            {/* Monumento (Fase 6c): la foto es la pregunta; el nombre va debajo, más chico */}
+            {isMonument(currentCity) && itemPhotoUrl(currentCity, 'lg') && (
+              <img src={itemPhotoUrl(currentCity, 'lg') ?? ''} alt="" className="mx-auto mb-[3cqi] w-full max-w-[320px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
+            )}
             <p
-              className={`${sidebarNameSize(itemTitle(currentCity, locale))} font-extrabold leading-tight`}
+              className={`${sidebarNameSize(itemTitle(currentCity, locale), isMonument(currentCity))} font-extrabold leading-tight`}
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none', textShadow: '0 2px 10px hsl(var(--primary) / 0.25)' }}
               aria-labelledby="city-label"
             >
               {itemTitle(currentCity, locale)}
             </p>
+            </>
             )}
             {isFeature(currentCity) && (
               <p className="mt-1 text-[3.6cqi] font-semibold text-foreground/70">{featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</p>
             )}
             {isTraining && !isWaiting && (
               <p className="mt-1.5 text-xs text-foreground/50">
-                🌍 <span className="font-bold text-foreground/75">{isFlag(currentCity) || isFeature(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>
+                🌍 <span className="font-bold text-foreground/75">{isSpecial(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>
               </p>
             )}
           </div>
@@ -776,8 +795,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
                 {isFlag(currentCity)
                   ? <><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" /><span className="align-middle">{t('flag_whichCountry')}</span></>
-                  : <>{t('game_whereIs')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>{isFeature(currentCity) && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
-                {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {isFlag(currentCity) || isFeature(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>}
+                  : <>{isMonument(currentCity) && itemPhotoUrl(currentCity, 'sm') && <img src={itemPhotoUrl(currentCity, 'sm') ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" />}<span className="align-middle">{t('game_whereIs')} <span className="text-primary">{itemTitle(currentCity, locale)}</span></span>{isFeature(currentCity) && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
+                {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {isSpecial(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>}
               </div>
             </div>
             {onToggleMusic && <HudIconButton size="sm" icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
@@ -848,7 +867,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Leyenda de pines durante la respuesta (maqueta Feedback) */}
         {showPopup && lastResult && !isPortraitMobile && (
           <div className="absolute z-[6] pointer-events-none rounded-xl border border-accent/40 px-3 py-2 short:py-1 backdrop-blur-md text-xs short:text-[11px] font-semibold flex flex-col gap-1 short:gap-0.5" style={{ bottom: 'max(0.75rem, var(--sab))', left: 'max(0.75rem, var(--sal))', background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
-            <span className="flex items-center gap-2"><PinIcon color="hsl(var(--accent))" />{t(isFlag(lastResult.city) ? 'flag_correctCountry' : isFeature(lastResult.city) ? 'feat_correct' : 'game_correctCity')}</span>
+            <span className="flex items-center gap-2"><PinIcon color="hsl(var(--accent))" />{t(isFlag(lastResult.city) ? 'flag_correctCountry' : isFeature(lastResult.city) || isMonument(lastResult.city) ? 'feat_correct' : 'game_correctCity')}</span>
             <span className="flex items-center gap-2"><PinIcon color="hsl(var(--primary))" />{t('game_yourAnswer')}</span>
           </div>
         )}
@@ -914,8 +933,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               natural
               extra={cardExtra}
               firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : lastResult.inside ? { label: t('game_distance'), value: t('flag_insideShort') } : undefined}
-              title={isFlag(lastResult.city) || isFeature(lastResult.city) ? itemTitle(lastResult.city, locale) : undefined}
-              subtitle={isFlag(lastResult.city) || isFeature(lastResult.city) ? itemSubtitle(lastResult.city, locale) : undefined}
+              title={isSpecial(lastResult.city) ? itemTitle(lastResult.city, locale) : undefined}
+              subtitle={isSpecial(lastResult.city) ? itemSubtitle(lastResult.city, locale) : undefined}
               hidePoints={isTraining}
             />
             </FitToBox>
@@ -947,8 +966,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 natural
                 extra={cardExtra}
               firstTile={lastResult.timedOut ? { label: t('game_distance'), value: '—' } : lastResult.inside ? { label: t('game_distance'), value: t('flag_insideShort') } : undefined}
-              title={isFlag(lastResult.city) || isFeature(lastResult.city) ? itemTitle(lastResult.city, locale) : undefined}
-              subtitle={isFlag(lastResult.city) || isFeature(lastResult.city) ? itemSubtitle(lastResult.city, locale) : undefined}
+              title={isSpecial(lastResult.city) ? itemTitle(lastResult.city, locale) : undefined}
+              subtitle={isSpecial(lastResult.city) ? itemSubtitle(lastResult.city, locale) : undefined}
               hidePoints={isTraining}
               />
             </FitToBox>

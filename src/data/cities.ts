@@ -10,8 +10,11 @@ export type FeatureType =
 export interface City {
   /** Identificador estable (slug del nombre; `flag:<ISO>` en banderas, `feat:<slug>` en lugares), el mismo de la tabla `places` del servidor */
   id?: string;
-  /** Qué se ubica: ciudad (por defecto), bandera de un país (src/data/flagCatalog.ts) o lugar geográfico (src/data/featureCatalog.ts) */
-  kind?: 'city' | 'flag' | 'feature';
+  /** Qué se ubica: ciudad (por defecto), bandera (flagCatalog.ts), lugar geográfico (featureCatalog.ts) o monumento (landmarkCatalog.ts) */
+  kind?: 'city' | 'flag' | 'feature' | 'monument';
+  /** Monumentos: ciudad o lugar más cercano (en español) y si tiene foto en /landmarks/<slug>.webp */
+  city?: string;
+  photo?: boolean;
   /** Banderas: código ISO-3166 (imagen en /flags/<ISO>.svg) */
   iso?: string;
   /** Banderas y lugares: región del juego a la que pertenece (null = solo en Mundo, p. ej. Oceanía) */
