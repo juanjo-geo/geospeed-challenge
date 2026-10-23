@@ -118,7 +118,6 @@ const MultiplayerResultScreen = lazyWithReload(() => import('@/components/game/M
 const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
 const WorldChallengeScreen = lazyWithReload(() => import('@/components/game/WorldChallengeScreen'));
 const TutorialOverlay = lazyWithReload(() => import('@/components/game/TutorialOverlay'));
-const OnboardingGame = lazyWithReload(() => import('@/components/game/OnboardingGame'));
 const StoreScreen = lazyWithReload(() => import('@/components/game/StoreScreen'));
 const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePassScreen'));
 const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
@@ -175,7 +174,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'onboarding' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -476,9 +475,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   const handleSelectDifficulty = useCallback((diff: Difficulty, mode: GameMode, category: Category = 'cities') => {
     unlockAudio(); // Pre-unlock audio on user gesture so sounds work on mobile
-    const onboardingDone = localStorage.getItem('geospeed_onboarding_done');
-    // La práctica (jugador nuevo) no gasta vida: se cobra al pasar a la partida real (HELP-01)
-    if (onboardingDone && !consumeLife()) {
+    if (!consumeLife()) {
       setShowNoLives(true);
       return;
     }
@@ -490,10 +487,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setDifficulty(diff);
     setGameMode(mode);
     setGameCategory(category);
-    if (!onboardingDone) {
-      setPhase('onboarding');
-      return;
-    }
+    // La práctica previa (3 ciudades) ya no existe: Inicio y "¿Cómo se juega?" enseñan la mecánica; la primera partida
+    // real solo lleva la mano fantasma del tutorial sobre el mapa (una vez)
     trackGameStart(mode, diff, category);
     const tutorialSeen = localStorage.getItem('geospeed_tutorial_seen');
     if (!tutorialSeen) {
@@ -508,7 +503,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Works for Android swipe-back and browser back. (Native Capacitor back button also emits popstate.)
   useEffect(() => {
     const inGamePhases: Phase[] = [
-      'countdown', 'playing', 'final', 'onboarding', 'tutorial',
+      'countdown', 'playing', 'final', 'tutorial',
       'ta-select', 'ta-playing', 'ta-final', 'daily',
       'mp-lobby', 'mp-waiting', 'mp-playing', 'mp-final', 'mp-spectate',
       'store', 'profile', 'battlepass', 'settings', 'more-modes', 'howto', 'daily-intro',
@@ -529,7 +524,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   useEffect(() => {
     // Maqueta Girar_APROBADA: el aviso de girar aparece ANTES de la cuenta regresiva y la cuenta
     // espera en vertical ("La cuenta regresiva empieza despues").
-    const playPhases: Phase[] = ['countdown', 'playing', 'ta-playing', 'mp-playing', 'daily', 'onboarding'];
+    const playPhases: Phase[] = ['countdown', 'playing', 'ta-playing', 'mp-playing', 'daily'];
     const isTouch = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
     if (!playPhases.includes(phase) || !isTouch) {
       // Outside gameplay or desktop: always hide overlay
@@ -1293,20 +1288,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return <HowToPlayScreen onBack={handleGoHome} onStartTraining={handleStartTraining} />;
     }
 
-    if (phase === 'onboarding') {
-      return <OnboardingGame
-        onComplete={() => {
-          // "¡Jugar de verdad!" / "Saltar práctica": aquí se cobra la vida de la partida real
-          if (!consumeLife()) { setShowNoLives(true); setPhase('home'); return; }
-          try { localStorage.setItem('geospeed_tutorial_seen', 'true'); } catch { /* sin almacenamiento */ }
-          trackGameStart(gameMode, difficulty);
-          gameKeyRef.current += 1;
-          setPhase('countdown');
-        }}
-        onGoHome={handleGoHome}
-      />;
-    }
-
     if (phase === 'tutorial') {
       return <TutorialOverlay onComplete={() => {
         gameKeyRef.current += 1;
@@ -1676,7 +1657,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [phase]);
 
   // Phases with their own full-screen animations skip PhaseTransition
-  const skipTransition = ['splash', 'countdown', 'tutorial', 'onboarding'].includes(phase);
+  const skipTransition = ['splash', 'countdown', 'tutorial'].includes(phase);
 
   // Minimal loading fallback for lazy components
   const lazyFallback = (
