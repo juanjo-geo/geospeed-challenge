@@ -3,6 +3,8 @@ import { countryPhotoUrl, photoKnownMissing, markPhotoMissing, type PhotoSize } 
 
 interface CountryPhotoProps {
   country: string | null | undefined;
+  /** URL explícita (foto de un monumento, itemPhotoUrl): reemplaza la búsqueda por país; null = sin foto */
+  src?: string | null;
   size?: PhotoSize;
   /** Clases del contenedor (define alto/ancho y bordes). */
   className?: string;
@@ -18,8 +20,8 @@ interface CountryPhotoProps {
  * "saltaba" de pequeña a grande en el iPhone. Si el archivo falla, el recuadro se cierra.
  * Sin loading="lazy" (en un contenedor oculto Chrome no la cargaba nunca).
  */
-export default function CountryPhoto({ country, size = 'lg', className = '', overlay = true, children }: CountryPhotoProps) {
-  const url = countryPhotoUrl(country, size);
+export default function CountryPhoto({ country, src, size = 'lg', className = '', overlay = true, children }: CountryPhotoProps) {
+  const url = src !== undefined ? src : countryPhotoUrl(country, size);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   if (!url || failedUrl === url || photoKnownMissing(url)) return null;

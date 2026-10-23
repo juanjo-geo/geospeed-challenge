@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
-import { itemTitleAuto, itemSubtitleAuto } from '@/lib/catalog';
+import { itemTitleAuto, itemSubtitleAuto, itemPhotoUrl } from '@/lib/catalog';
 import { type RoundResult, correctPinLabel } from './GameScreen';
 import { useFeatureShapes } from '@/hooks/useFeatureShapes';
 import { type MapBounds } from '@/data/cities';
@@ -150,7 +150,7 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
         </div>
 
         <aside className="shrink-0 landscape:w-[min(38%,26rem)] max-h-[45%] landscape:max-h-none rounded-2xl border-2 border-accent/30 bg-card/85 backdrop-blur-md p-3 sm:p-5 short:p-2 overflow-y-auto flex flex-col gap-2 sm:gap-3 short:gap-1.5">
-          <CountryPhoto country={r.city.country} className="-mx-3 -mt-3 short:-mx-2 short:-mt-2 h-24 short:h-16 rounded-t-2xl">
+          <CountryPhoto country={r.city.country} src={itemPhotoUrl(r.city, 'lg')} className="-mx-3 -mt-3 short:-mx-2 short:-mt-2 h-24 short:h-16 rounded-t-2xl">
             <span className="text-xs font-bold text-white drop-shadow">{r.city.country}</span>
           </CountryPhoto>
           <h3 className="flex items-center gap-3 font-extrabold text-base sm:text-2xl short:text-sm border-b border-border/60 pb-2 short:pb-1">

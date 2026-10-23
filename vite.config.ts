@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("/src/data/countries.ts")) return "data-countries";
           if (id.includes("/src/data/cities.ts")) return "data-cities";
           // Catálogos de banderas y lugares (Fase 6): aparte para que la caché no los mezcle con el código
-          if (id.includes("/src/data/flagCatalog.ts") || id.includes("/src/data/featureCatalog.ts")) return "data-catalogs";
+          if (id.includes("/src/data/flagCatalog.ts") || id.includes("/src/data/featureCatalog.ts") || id.includes("/src/data/landmarkCatalog.ts")) return "data-catalogs";
           return undefined;
         },
       },

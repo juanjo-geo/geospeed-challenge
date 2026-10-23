@@ -177,9 +177,18 @@ export function featureHint(item: Pick<City, 'name' | 'nameEn' | 'lat' | 'lon' |
   return `${where} ${water ? 'It washes' : names.length > 1 ? 'It spans' : 'It is in'} ${joinList(names, lang)}.`;
 }
 
+/** Pista de un monumento (Fase 6c): ciudad, país y continente. */
+export function landmarkHint(item: Pick<City, 'name' | 'nameEn' | 'country' | 'city' | 'lat' | 'lon'>, lang: Lang): string {
+  const name = lang === 'en' && item.nameEn ? item.nameEn : item.name;
+  const cont = CONTINENT[continentKey(item.lat, item.lon)][lang];
+  const country = lang === 'en' ? countryDisplayName(item.country, 'en') : item.country;
+  const place = item.city && item.city !== country ? `${item.city}, ${country}` : country;
+  return lang === 'es' ? `${name} está en ${place} (${cont}).` : `${name} is in ${place} (${cont}).`;
+}
+
 /** Pista de cualquier ítem del catálogo según su tipo */
-export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind' | 'nameEn' | 'ftype' | 'isos' | 'geom'>, lang: Lang): string =>
-  item.kind === 'flag' ? flagHint(item, lang) : item.kind === 'feature' ? featureHint(item, lang) : cityHint(item, lang);
+export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind' | 'nameEn' | 'ftype' | 'isos' | 'geom' | 'city'>, lang: Lang): string =>
+  item.kind === 'flag' ? flagHint(item, lang) : item.kind === 'feature' ? featureHint(item, lang) : item.kind === 'monument' ? landmarkHint(item, lang) : cityHint(item, lang);
 
 /** Pista del modo Mundial: el "lugar" es el país del futbolista. */
 export function playerHint(player: string, country: string, lat: number, lon: number, lang: Lang): string {

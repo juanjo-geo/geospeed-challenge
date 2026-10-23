@@ -44,6 +44,9 @@ const ISO_BY_COUNTRY: Record<string, string> = {
   // ── Nombres en inglés: TODOS los países de countries.ts (mapa, Mundial, fotos D7). XK (Kosovo) es código de uso común, no ISO oficial.
   // (Los nombres que coinciden con el español — Argentina, Chile, India… — ya están arriba.)
   'Fiji': 'FJ', 'W. Sahara': 'EH', 'Canada': 'CA', 'United States of America': 'US', 'Kazakhstan': 'KZ', 'Uzbekistan': 'UZ',
+  // Nombres en español que usan los monumentos (Fase 6c) y no están en el catálogo de ciudades
+  'Estados Unidos': 'US', 'Emiratos Árabes Unidos': 'AE', 'Birmania': 'MM', 'Líbano': 'LB', 'Malí': 'ML', 'República Checa': 'CZ',
+  'República Dominicana': 'DO', 'Rumania': 'RO', 'Vaticano': 'VA',
   'Papua New Guinea': 'PG', 'Dem. Rep. Congo': 'CD', 'Kenya': 'KE', 'Sudan': 'SD', 'Haiti': 'HT', 'Dominican Rep.': 'DO',
   'Russia': 'RU', 'Falkland Is.': 'FK', 'Norway': 'NO', 'Greenland': 'GL', 'Fr. S. Antarctic Lands': 'TF', 'Timor-Leste': 'TL',
   'South Africa': 'ZA', 'Lesotho': 'LS', 'Mexico': 'MX', 'Brazil': 'BR', 'Peru': 'PE', 'Panama': 'PA',

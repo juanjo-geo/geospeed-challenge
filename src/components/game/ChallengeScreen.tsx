@@ -120,7 +120,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
         <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_region')} value={mode ? t(`mode_${mode}` as never) : '—'} />
         <Row icon={<BagIcon className="w-6 h-6 text-accent" />} label={t('ch_difficulty')} value={difficulty ? t(`home_diff${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}` as never) : '—'} />
         {category !== 'cities' && <Row icon={<GlobeIcon className="w-6 h-6 text-accent" />} label={t('ch_category')} value={`${CATEGORY_ART[category].emoji} ${t(CATEGORY_KEY[category] as never)}`} />}
-        <Row icon={<StopwatchIcon className="w-6 h-6 text-accent" />} label={t('ch_format')} value={t(category === 'flags' ? 'ch_formatValueFlags' : category === 'features' ? 'ch_formatValueFeatures' : 'ch_formatValue', { n: rounds, s: seconds })} />
+        <Row icon={<StopwatchIcon className="w-6 h-6 text-accent" />} label={t('ch_format')} value={t(category === 'flags' ? 'ch_formatValueFlags' : category === 'features' ? 'ch_formatValueFeatures' : category === 'monuments' ? 'ch_formatValueMonuments' : 'ch_formatValue', { n: rounds, s: seconds })} />
       </div>
       <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground/75"><LockIcon className="w-4 h-4" /> {t('ch_fixed')}</p>
     </Card>
