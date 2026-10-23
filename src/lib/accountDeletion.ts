@@ -12,7 +12,6 @@ const KEEP_KEYS = new Set([
   'geospeed_locale',
   'geospeed_prefs',
   'geospeed_music_muted',
-  'geospeed_onboarding_done',
   'geospeed_tutorial_seen',
   'geospeed_last_selection',
 ]);

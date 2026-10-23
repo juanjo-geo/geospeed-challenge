@@ -11,7 +11,7 @@
 
 /** Fases en las que no se interrumpe al jugador (ver Index.tsx `Phase`). */
 export const BUSY_PHASES = new Set<string>([
-  'splash', 'countdown', 'playing', 'daily', 'tutorial', 'onboarding',
+  'splash', 'countdown', 'playing', 'daily', 'tutorial',
   'ta-playing', 'wc-playing', 'mp-playing', 'mp-waiting', 'mp-spectate',
 ]);
 
