@@ -612,7 +612,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 {currentRound + 1}/{totalRounds}
               </span>
               {isFlag(currentCity)
-                ? <span className="flex items-center gap-1.5 min-w-0"><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="w-9 aspect-[3/2] object-cover rounded-[3px] ring-1 ring-black/20 shrink-0" /><span className="text-sm font-black truncate">{t('flag_whichCountry')}</span></span>
+                ? <span className="flex items-center gap-2 min-w-0"><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="w-16 aspect-[3/2] object-cover rounded-[4px] ring-1 ring-black/20 shrink-0" /><span className="text-sm font-black truncate">{t('flag_whichCountry')}</span></span>
                 : <p className="text-sm font-black truncate">{isFeature(currentCity) ? featureTypeEmoji(currentCity.ftype) : '📍'} {itemTitle(currentCity, locale)}</p>}
             </div>
             <div className="text-right shrink-0">
@@ -658,7 +658,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           <div className="w-full shrink-0 rounded-2xl border-2 border-accent/50 bg-background/40 px-[5cqi] py-[5.5cqi] text-center">
             <p className="text-[8.6cqi] font-bold leading-none mb-[2.5cqi]" id="city-label">{isFlag(currentCity) ? t('flag_whichCountry') : t('game_whereIs')}</p>
             {isFlag(currentCity) ? (
-              <img src={itemFlagUrl(currentCity) ?? ''} alt="" aria-labelledby="city-label" className="mx-auto w-[62%] max-w-[190px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
+              <img src={itemFlagUrl(currentCity) ?? ''} alt="" aria-labelledby="city-label" className="mx-auto w-full max-w-[320px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
             ) : (
             <p
               className={`${sidebarNameSize(itemTitle(currentCity, locale))} font-extrabold leading-tight`}
@@ -775,7 +775,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               <div className="max-w-full truncate rounded-full border-2 border-accent/50 px-4 py-1 text-[15px] font-extrabold backdrop-blur-md" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
                 {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
                 {isFlag(currentCity)
-                  ? <><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="inline-block w-7 aspect-[3/2] object-cover rounded-[2px] align-[-3px] mr-1.5 ring-1 ring-black/20" />{t('flag_whichCountry')}</>
+                  ? <><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" /><span className="align-middle">{t('flag_whichCountry')}</span></>
                   : <>{t('game_whereIs')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>{isFeature(currentCity) && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
                 {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {isFlag(currentCity) || isFeature(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>}
               </div>
