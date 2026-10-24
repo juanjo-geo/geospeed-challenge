@@ -27,6 +27,7 @@ import FrustrationOfferModal from './FrustrationOfferModal';
 import { HudIconButton } from './GameHud';
 import { appNumberLocale } from '@/lib/format';
 import { loadCityTips } from '@/lib/cityHints';
+import { loadPlaceFacts, loadPlaceTrivia } from '@/lib/placeFacts';
 // Mapa de continentes tenue de fondo (polígonos en carga diferida)
 const WorldBackdrop = lazy(() => import('./WorldBackdrop'));
 
@@ -118,7 +119,8 @@ export default function FinalResultScreen({
   const navigate = useNavigate();
 
   // Pistas escritas a mano para la revisión por ciudad: se descargan mientras el jugador ve el resultado
-  useEffect(() => { loadCityTips(); }, []);
+  // Pistas y ficha del lugar (Fase 8) para la revisión por ciudad: se descargan mientras se ve el resultado
+  useEffect(() => { loadCityTips(); loadPlaceFacts(); loadPlaceTrivia(); }, []);
   useEffect(() => {
     if (authName && authName.length >= 3) setInitials(authName.substring(0, 3).toUpperCase());
   }, [authName]);

@@ -25,7 +25,7 @@ import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
 import SprintHomeCard from './SprintHomeCard';
-import { REGION_ART, DIFF_ART, REGION_FLAG } from '@/lib/selectionArt';
+import { REGION_ART, DIFF_ART, REGION_FLAG, regionGroup, packGroups } from '@/lib/selectionArt';
 import { canPlayPack, isPackTrial, isProPack } from '@/lib/packAccess';
 
 interface HomeScreenProps {
@@ -184,6 +184,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       desc: isPackTrial(m.key) ? `${t(`region_desc_${m.key}` as never)} · ${t(canPlayPack(m.key) ? 'pack_proTrial' : 'pack_proTrialUsed')}` : t(`region_desc_${m.key}` as never),
       locked,
       lockLabel: locked ? t('lock_level', { level: lock.level }) : undefined,
+      group: regionGroup(m.key),
     };
   }), [playerLevel.level, t]);
 
@@ -448,6 +449,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           selected={selectedMode}
           confirmLabel={t('region_confirm')}
           footnote={t('region_keepDifficulty')}
+          groups={packGroups(t)}
           onConfirm={(k) => { setSelectedMode(k); setSelectedCategory((c) => categoryForMode(c, k)); setSheet(null); }}
           onClose={closeSheet}
           closeLabel={t('close')}

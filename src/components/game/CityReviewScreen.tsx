@@ -8,6 +8,7 @@ import { itemHint, playerHint, useCityTips } from '@/lib/cityHints';
 import { playAccordion, playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import WorldMapCanvas from './WorldMapCanvas';
+import PlaceSheet from './PlaceSheet';
 import Wordmark from '@/components/ui/Wordmark';
 import Flag from '@/components/ui/Flag';
 import CountryPhoto from '@/components/ui/CountryPhoto';
@@ -161,6 +162,7 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
             <BookIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" /> {t('review_toRemember')}
           </h3>
           <p className="text-sm sm:text-lg short:text-xs leading-snug">{hint}</p>
+          <PlaceSheet item={r.city} isMundial={isMundial} className="shrink-0" />
           <div className="flex flex-col divide-y divide-border/50 text-sm short:text-xs">
             <ReviewStat icon={<PinIcon className="w-5 h-5 sm:w-6 sm:h-6 text-foreground/80" />} label={t('game_distance')} value={formatDistance(r.distance)} />
             <ReviewStat icon={<StopwatchIcon className="w-5 h-5 sm:w-6 sm:h-6 text-foreground/80" />} label={t('game_time')} value={secs} />

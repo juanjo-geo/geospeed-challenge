@@ -507,6 +507,10 @@ export type Database = {
         Args: { p_iso: string }
         Returns: undefined
       }
+      memory_practice: {
+        Args: { p_item: string }
+        Returns: boolean
+      }
       my_memory: {
         Args: Record<string, never>
         Returns: {

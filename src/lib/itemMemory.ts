@@ -66,9 +66,30 @@ export function reviewCities(items: MemoryItem[], max = REVIEW_MAX): City[] {
     .filter((m) => m.due)
     .sort((a, b) => a.box - b.box || (a.next_review_on ?? '').localeCompare(b.next_review_on ?? ''))
     .map((m) => cityById(m.item_id))
-    // El repaso se juega en el mapa del mundo: los ítems de un pack se repasan entrenando en ese pack
-    .filter((c): c is City => !!c && !c.packOnly && !c.id?.startsWith('co:') && c.kind !== 'division')
+    .filter((c): c is City => !!c && isReviewable(c))
     .slice(0, max);
+}
+
+/** El repaso se juega en el mapa del mundo: los ítems de un pack (municipios, departamentos, lugares solo del pack)
+ *  se repasan entrenando en ese pack, así que no van al repaso del día ni se pueden "practicar" desde la ficha */
+export const isReviewable = (c: Pick<City, 'id' | 'packOnly' | 'kind'>): boolean =>
+  !!c.id && !c.packOnly && !c.id.startsWith('co:') && c.kind !== 'division';
+
+/**
+ * "Practicar este lugar" (ficha, Fase 8): lo manda al repaso de hoy. Crea la sesión de invitado si hace falta.
+ * 'ok' | 'offline' (sin sesión posible o sin red).
+ */
+export async function practicePlace(id: string): Promise<'ok' | 'offline'> {
+  try {
+    const { ensureGuestSession } = await import('@/lib/identity');
+    if ((await ensureGuestSession({ force: true })) === 'unavailable') return 'offline';
+    const { data, error } = await supabase.rpc('memory_practice', { p_item: id });
+    if (error || data !== true) return 'offline';
+    await refreshMemory(true);
+    return 'ok';
+  } catch {
+    return 'offline';
+  }
 }
 
 export const dueCount = (items: MemoryItem[]) => Math.min(REVIEW_MAX, reviewCities(items).length);

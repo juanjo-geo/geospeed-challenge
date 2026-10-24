@@ -39,6 +39,7 @@ import FitToBox from '@/components/ui/FitToBox';
 import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming';
 import { countryDisplayName, countryIso } from '@/lib/flags';
 import { preloadCountryPhoto } from '@/lib/countryPhotos';
+import { factIdOf, getPlaceFact, keyFact, usePlaceFacts } from '@/lib/placeFacts';
 import { appNumberLocale } from '@/lib/format';
 
 const MAX_TIME = 15;
@@ -148,6 +149,11 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   const [endReason, setEndReason] = useState<'complete' | 'timeout'>('complete');
   const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [failShake, setFailShake] = useState(false);
+  // Ficha del país (Fase 8): franja de 1,5 s al acertar el país exacto y el dato clave en la tarjeta
+  const placeFacts = usePlaceFacts();
+  const [factStrip, setFactStrip] = useState<string | null>(null);
+  const factStripTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => { if (factStripTimer.current) clearTimeout(factStripTimer.current); }, []);
   const [isPageHidden, setIsPageHidden] = useState(false);
   // Engranaje: mientras los ajustes están abiertos la ronda queda en pausa (como el Clásico)
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -374,6 +380,10 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     setIsAnimating(true);
 
     if (res.band === 'exact') {
+      const f = keyFact({ ...city, id: undefined, kind: 'flag' }, getPlaceFact(factIdOf({ ...city, id: undefined })), t as never, locale);
+      if (factStripTimer.current) clearTimeout(factStripTimer.current);
+      setFactStrip(f ? `${cname(city.country)} · ${f}` : null);
+      if (f) factStripTimer.current = setTimeout(() => setFactStrip(null), 1500);
       playVictory(); playVuvuzela();
       fireCelebration(from);
     } else if (res.band === 'neighbor') {
@@ -619,6 +629,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     onNext: advance,
     timeLabel: `${fmtSecs(lastRound.timeExact ?? lastRound.timeUsed)} s`,
     natural: true,
+    fact: placeFacts ? keyFact({ ...lastRound.city, id: undefined, kind: 'flag' }, placeFacts[factIdOf({ ...lastRound.city, id: undefined }) ?? ''] ?? null, t as never, locale) : null,
   } : null;
 
   return (
@@ -784,6 +795,15 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
           <div className="absolute z-[6] pointer-events-none" style={{ bottom: 'max(0.5rem, var(--sab))', left: 'max(0.5rem, var(--sal))' }}>
             <span className="rounded-full px-3 py-1.5 text-xs font-bold border-2 border-accent/40 backdrop-blur-md animate-score-pop" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
               🔥 <span className="text-primary">{streak}</span>{topStreakName && <> {t(topStreakName as never)}</>}{comboMultNow > 1 && <span className="text-accent"> ×{comboMultNow.toLocaleString(locale === 'en' ? 'en-US' : 'es-CO')}</span>}
+            </span>
+          </div>
+        )}
+
+        {/* Franja del gol (Fase 8): un dato del país 1,5 s */}
+        {isAnimating && factStrip && !showPopup && (
+          <div className="absolute left-1/2 -translate-x-1/2 z-[7] pointer-events-none max-w-[92%]" style={{ bottom: 'max(0.5rem, var(--sab))' }} role="status">
+            <span className="block animate-fade-in rounded-full px-4 py-1.5 short:py-1 text-xs sm:text-sm font-bold border-2 border-accent/70 text-foreground backdrop-blur-md truncate shadow-[0_0_18px_hsl(var(--accent)/0.35)]" style={{ background: 'hsl(var(--brand-navy-deep) / 0.9)' }}>
+              <span className="text-accent" aria-hidden>✓ </span>{factStrip}
             </span>
           </div>
         )}

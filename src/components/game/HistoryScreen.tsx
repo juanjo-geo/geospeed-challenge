@@ -7,7 +7,7 @@ import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ArrowRightIcon, ChevronIcon, HomeIcon, LegendPin } from '@/components/ui/icons';
-import { REGION_ART, DIFF_ART, DIFF_ORDER } from '@/lib/selectionArt';
+import { REGION_ART, DIFF_ART, DIFF_ORDER, regionGroup, packGroups } from '@/lib/selectionArt';
 import { formatNumber } from '@/lib/format';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot, { type MascotState } from './Mascot';
@@ -91,7 +91,7 @@ export default function HistoryScreen({ onBack, onPlay, onMyChallenges }: Histor
 
   const modeOptions: SelectorOption<string>[] = [
     { key: '', emoji: '🌐', label: t('hist_all'), desc: t('hist_allRegionsDesc') },
-    ...MODE_CONFIG.map(m => ({ key: m.key, emoji: REGION_ART[m.key as GameMode]?.emoji ?? m.emoji, art: REGION_ART[m.key as GameMode]?.art, label: t(`mode_${m.key}` as never) || m.label, desc: '' })),
+    ...MODE_CONFIG.map(m => ({ key: m.key, emoji: REGION_ART[m.key as GameMode]?.emoji ?? m.emoji, art: REGION_ART[m.key as GameMode]?.art, label: t(`mode_${m.key}` as never) || m.label, desc: '', group: regionGroup(m.key) })),
     { key: 'mundial', emoji: '⚽', label: t('wc_modeName'), desc: '' },
   ];
   const diffOptions: SelectorOption<string>[] = [
@@ -198,7 +198,7 @@ export default function HistoryScreen({ onBack, onPlay, onMyChallenges }: Histor
       </div>
 
       {sheet === 'mode' && (
-        <SelectorSheet<string> title={t('hist_pickRegion')} subtitle={t('hist_pickRegionSub')} options={modeOptions} selected={filters.mode ?? ''} confirmLabel={t('hist_apply')}
+        <SelectorSheet<string> title={t('hist_pickRegion')} subtitle={t('hist_pickRegionSub')} options={modeOptions} groups={packGroups(t)} selected={filters.mode ?? ''} confirmLabel={t('hist_apply')}
           onConfirm={(k) => { setFilters(f => ({ ...f, mode: k || undefined })); setSheet(null); }} onClose={closeSheet} closeLabel={t('close')} />
       )}
       {sheet === 'difficulty' && (
