@@ -13,10 +13,13 @@ import { FLAG_ITEMS } from '@/data/flagCatalog';
 import { FEATURE_ITEMS } from '@/data/featureCatalog';
 import { LANDMARK_ITEMS } from '@/data/landmarkCatalog';
 import { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
-import { countryDisplayName, flagUrl } from '@/lib/flags';
+import { PRO_PACK_CITIES, PRO_PACK_DIVISIONS } from '@/data/proPackCatalog';
+import { PRO_PACK_META } from '@/data/proPackMeta';
+import { countryDisplayName, countryIso, flagUrl } from '@/lib/flags';
 import { continentName } from '@/lib/cityHints';
 import { featureTypeLabel } from '@/lib/featureTypes';
 import { loadFeatureShapes, loadPackShapes } from '@/lib/featureScoring';
+import { isProPack } from '@/lib/packAccess';
 import { countryPhotoUrl, hasCountryPhoto, type PhotoSize } from '@/lib/countryPhotos';
 import { landmarkPhotoUrl } from '@/lib/landmarkPhotos';
 
@@ -24,9 +27,18 @@ export type Category = 'cities' | 'flags' | 'features' | 'monuments' | 'division
 /** Todas las categorías (para validar lo guardado); las que se ofrecen dependen de la región: categoriesForMode */
 export const CATEGORIES: Category[] = ['cities', 'flags', 'features', 'monuments', 'divisions'];
 export const isCategory = (v: unknown): v is Category => CATEGORIES.includes(v as Category);
-/** Categorías de una región: en los packs, departamentos en vez de banderas */
-export const categoriesForMode = (mode: GameMode | string): Category[] =>
-  isPackMode(mode) ? ['cities', 'divisions', 'features', 'monuments'] : ['cities', 'flags', 'features', 'monuments'];
+/** Mínimo de ítems para ofrecer una categoría en una región (una partida del Clásico tiene 13 rondas) */
+const MIN_POOL = 13;
+/**
+ * Categorías de una región: en los packs, divisiones (departamentos, estados, provincias…) en vez de banderas; en los
+ * packs Pro solo las que tienen al menos 13 ítems (p. ej. el Caribe no tiene 13 monumentos en el catálogo).
+ */
+export function categoriesForMode(mode: GameMode | string): Category[] {
+  if (!isPackMode(mode)) return ['cities', 'flags', 'features', 'monuments'];
+  const all: Category[] = ['cities', 'divisions', 'features', 'monuments'];
+  if (!isProPack(mode)) return all;
+  return all.filter((c) => poolForCategory(c, mode as GameMode).length >= MIN_POOL);
+}
 /** La categoría elegida, válida para la región (banderas ↔ departamentos son la misma idea a otra escala) */
 export function categoryForMode(category: Category, mode: GameMode | string): Category {
   const allowed = categoriesForMode(mode);
@@ -57,6 +69,10 @@ export const CATEGORY_ART: Record<Category, { emoji: string; art: [string, strin
 
 /** Clave i18n del nombre de la categoría */
 export const CATEGORY_KEY: Record<Category, string> = { cities: 'cat_cities', flags: 'cat_flags', features: 'cat_features', monuments: 'cat_monuments', divisions: 'cat_divisions' };
+
+/** Clave i18n del nombre de una categoría en una región: en los packs Pro las divisiones son "Estados y provincias" */
+export const categoryLabelKey = (cat: Category, mode: GameMode | string): string =>
+  cat === 'divisions' && isProPack(mode) ? 'cat_divisionsPro' : CATEGORY_KEY[cat];
 
 export { FEATURE_TYPE, featureTypeLabel, featureTypeEmoji } from '@/lib/featureTypes';
 
@@ -94,8 +110,25 @@ function pickFromPool(pool: City[], difficulty: Difficulty, count: number, seed?
  * mundo y los continentes, los que no son exclusivos de un pack.
  */
 function byMode(items: City[], mode: GameMode): City[] {
+  if (isProPack(mode)) {
+    // Packs Pro: los lugares y monumentos del catálogo (no exclusivos de otro pack) que están en sus países, con su nivel del mundo
+    const isos = new Set(PRO_PACK_META[mode as keyof typeof PRO_PACK_META].isos);
+    return items.filter((f) => !f.packOnly && ((f.isos ?? []).some((i) => isos.has(i)) || isos.has(countryIso(f.country) ?? '')));
+  }
   if (isPackMode(mode)) return items.filter((f) => f.packs?.[mode]).map((f) => ({ ...f, difficulty: f.packs![mode]! }));
   return items.filter((f) => !f.packOnly && (mode === 'world' || f.region === mode));
+}
+
+/** Ciudades de una región (en los packs Pro vienen de proPackCatalog.ts) */
+const packCities = (mode: GameMode): City[] => (isProPack(mode) ? PRO_PACK_CITIES.filter((c) => c.region === mode) : getCitiesByMode(mode));
+
+/** Todos los ítems de una categoría en una región (para elegir y para saber si alcanza para una partida) */
+function poolForCategory(cat: Category, mode: GameMode): City[] {
+  if (cat === 'flags') return flagsByMode(mode);
+  if (cat === 'features') return featuresByMode(mode);
+  if (cat === 'monuments') return landmarksByMode(mode);
+  if (cat === 'divisions') return divisionsByMode(mode);
+  return packCities(mode);
 }
 
 /** Banderas de una región (world = todas, incluida Oceanía) */
@@ -105,7 +138,8 @@ export const featuresByMode = (mode: GameMode): City[] => byMode(FEATURE_ITEMS, 
 /** Monumentos de una región */
 export const landmarksByMode = (mode: GameMode): City[] => byMode(LANDMARK_ITEMS, mode);
 /** Divisiones (departamentos) de un pack */
-export const divisionsByMode = (mode: GameMode): City[] => (mode === 'colombia' ? COLOMBIA_DIVISIONS : []);
+export const divisionsByMode = (mode: GameMode): City[] =>
+  mode === 'colombia' ? COLOMBIA_DIVISIONS : isProPack(mode) ? PRO_PACK_DIVISIONS.filter((d) => d.region === mode) : [];
 
 export function getRandomFlags(difficulty: Difficulty, count: number, mode: GameMode = 'world', seed?: number): City[] {
   return pickFromPool(flagsByMode(mode), difficulty, count, seed);
@@ -122,13 +156,13 @@ export function getRandomItems(category: Category, difficulty: Difficulty, count
   const cat = categoryForMode(category, mode);
   // Los contornos se descargan aparte: que estén listos antes del primer toque (la cuenta regresiva da tiempo)
   if (cat === 'features') loadFeatureShapes().catch(() => {});
-  if (isPackMode(mode)) loadPackShapes().catch(() => {});
+  if (isPackMode(mode)) loadPackShapes(mode).catch(() => {});
   if (cat === 'flags') return getRandomFlags(difficulty, count, mode, seed);
   if (cat === 'features') return getRandomFeatures(difficulty, count, mode, seed);
   if (cat === 'monuments') return getRandomLandmarks(difficulty, count, mode, seed);
   if (cat === 'divisions') return pickFromPool(divisionsByMode(mode), difficulty, count, seed);
   // Ciudades de un pack: con relleno por niveles vecinos (el catálogo del mundo tiene sus propias listas por región)
-  if (isPackMode(mode)) return pickFromPool(getCitiesByMode(mode), difficulty, count, seed);
+  if (isPackMode(mode)) return pickFromPool(packCities(mode), difficulty, count, seed);
   return getRandomCities(difficulty, count, mode, seed);
 }
 
@@ -142,7 +176,7 @@ export function catalogItem(id: string | null | undefined): City | undefined {
   if (!id) return undefined;
   if (!catalogIndex) {
     catalogIndex = new Map();
-    for (const list of [FLAG_ITEMS, FEATURE_ITEMS, LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
+    for (const list of [FLAG_ITEMS, FEATURE_ITEMS, LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS, PRO_PACK_CITIES, PRO_PACK_DIVISIONS]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
   }
   return catalogIndex.get(id);
 }
@@ -158,7 +192,7 @@ export function kindFromPlaceId(placeId: string | null | undefined): Partial<Cit
   if (placeId.startsWith('feat:')) return it ? { id: placeId, kind: 'feature', ftype: it.ftype, geom: it.geom, nameEn: it.nameEn, isos: it.isos, region: it.region } : { id: placeId, kind: 'feature' };
   if (placeId.startsWith('mon:')) return it ? { id: placeId, kind: 'monument', nameEn: it.nameEn, city: it.city, photo: it.photo, region: it.region } : { id: placeId, kind: 'monument' };
   if (placeId.startsWith('div:')) return it ? { id: placeId, kind: 'division', geom: 'area', ftype: it.ftype, nameEn: it.nameEn, capital: it.capital, nb: it.nb, region: it.region } : { id: placeId, kind: 'division', geom: 'area' };
-  if (placeId.startsWith('co:')) return it ? { id: placeId, admin: it.admin, isCapital: it.isCapital, region: it.region } : { id: placeId };
+  if (placeId.startsWith('co:') || placeId.startsWith('ci:')) return it ? { id: placeId, admin: it.admin, isCapital: it.isCapital, region: it.region } : { id: placeId };
   return { id: placeId };
 }
 

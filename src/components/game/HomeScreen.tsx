@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
-import { CATEGORY_ART, CATEGORY_KEY, isCategory, categoriesForMode, categoryForMode, type Category } from '@/lib/catalog';
+import { CATEGORY_ART, CATEGORY_KEY, isCategory, categoriesForMode, categoryForMode, categoryLabelKey, type Category } from '@/lib/catalog';
 import { scrollAppToTop } from '@/lib/appScroll';
 import { useMemory, dueCount } from '@/lib/itemMemory';
 import { Difficulty, GameMode, MODE_CONFIG, isPackMode } from '@/data/cities';
@@ -26,6 +26,7 @@ import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
 import SprintHomeCard from './SprintHomeCard';
 import { REGION_ART, DIFF_ART, REGION_FLAG } from '@/lib/selectionArt';
+import { canPlayPack, isPackTrial, isProPack } from '@/lib/packAccess';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode, category: Category) => void;
@@ -67,6 +68,11 @@ const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string; art: [string
   americas: { level: 4, ...REGION_ART.americas },
   africa:   { level: 5, ...REGION_ART.africa },
   colombia: { level: 1, ...REGION_ART.colombia }, // pack gratis (Fase 7a)
+  // Packs Pro (Fase 7b): sin nivel; sin Pro, una partida de prueba al día (src/lib/packAccess.ts)
+  andes:    { level: 1, ...REGION_ART.andes },
+  conosur:  { level: 1, ...REGION_ART.conosur },
+  mexcam:   { level: 1, ...REGION_ART.mexcam },
+  caribe:   { level: 1, ...REGION_ART.caribe },
 };
 
 const CLASSIC_ROUNDS = 13;
@@ -175,7 +181,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       art: lock.art,
       icon: REGION_FLAG[m.key] ? <img src={REGION_FLAG[m.key]} alt="" className="w-12 short:w-9 aspect-[3/2] object-cover rounded-md ring-1 ring-black/20" /> : undefined,
       label: t(`mode_${m.key}` as never) || m.label,
-      desc: t(`region_desc_${m.key}` as never),
+      desc: isPackTrial(m.key) ? `${t(`region_desc_${m.key}` as never)} · ${t(canPlayPack(m.key) ? 'pack_proTrial' : 'pack_proTrialUsed')}` : t(`region_desc_${m.key}` as never),
       locked,
       lockLabel: locked ? t('lock_level', { level: lock.level }) : undefined,
     };
@@ -198,11 +204,11 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
   const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
-  const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : selectedCategory === 'features' ? 'home_featuresInfo' : selectedCategory === 'monuments' ? 'home_monumentsInfo' : selectedCategory === 'divisions' ? 'home_divisionsInfo' : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
+  const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : selectedCategory === 'features' ? 'home_featuresInfo' : selectedCategory === 'monuments' ? 'home_monumentsInfo' : selectedCategory === 'divisions' ? (isProPack(selectedMode) ? 'home_divisionsProInfo' : 'home_divisionsInfo') : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
   const categoryOptions: SelectorOption<Category>[] = useMemo(() => categoriesForMode(selectedMode).map(c => ({
-    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t((c === 'cities' && isPackMode(selectedMode) ? 'cat_citiesPackDesc' : `${CATEGORY_KEY[c]}Desc`) as never),
+    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(categoryLabelKey(c, selectedMode) as never), desc: t((c === 'cities' && isPackMode(selectedMode) ? 'cat_citiesPackDesc' : c === 'divisions' && isProPack(selectedMode) ? 'cat_divisionsProDesc' : `${CATEGORY_KEY[c]}Desc`) as never),
   })), [t, selectedMode]);
-  const categoryLabel = t(CATEGORY_KEY[selectedCategory] as never);
+  const categoryLabel = t(categoryLabelKey(selectedCategory, selectedMode) as never);
   const dateLabel = new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
 
   const shareDaily = async () => {

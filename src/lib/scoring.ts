@@ -25,12 +25,13 @@ export const SEASON_1_START = '2026-10-21T00:00:00Z';
 /** A menos de esto la cercanía es perfecta (1.000) */
 export const PERFECT_KM = 25;
 /** Escala de la cercanía (km) */
-export const SCALE_KM = { world: 1500, region: 600, country: 150 } as const;
+export const SCALE_KM = { world: 1500, region: 600, country: 150, pack: 400 } as const;
 
 /** Escala de la cercanía por modo; el servidor usa la misma tabla (mode_scale_km en la migración del pack Colombia) */
 export function scaleForMode(mode: GameMode | 'mundial' | string): number {
   if (mode === 'world' || mode === 'mundial') return SCALE_KM.world;
   if (mode === 'colombia') return SCALE_KM.country;
+  if (mode === 'andes' || mode === 'conosur' || mode === 'mexcam' || mode === 'caribe') return SCALE_KM.pack;
   return SCALE_KM.region;
 }
 

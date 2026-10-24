@@ -78,7 +78,7 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
   const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: isMundial ? r.city.country : correctPinLabel(r, t, r.city.name) }), [t, isMundial, r]);
   // Contorno del lugar (Fase 6b): se carga si la partida tiene lugares y se resalta en el mapa
   const featureShapes = useFeatureShapes(r.city.kind === 'feature');
-  const packShapes = usePackShapes(r.city.kind === 'division');
+  const packShapes = usePackShapes(r.city.kind === 'division' ? r.city.id : null);
   const highlightShape = useMemo(() => {
     if (!r.city.id || (r.city.kind !== 'feature' && r.city.kind !== 'division')) return null;
     return (r.city.kind === 'division' ? packShapes : featureShapes)?.[r.city.id] ?? null;

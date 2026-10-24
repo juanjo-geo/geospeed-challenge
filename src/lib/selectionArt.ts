@@ -12,6 +12,11 @@ export const REGION_ART: Record<GameMode, { emoji: string; art: [string, string?
   africa:   { emoji: '🏜️', art: ['🐪', '🌳'] },
   // Pack Colombia (Fase 7a): la bandera se dibuja como imagen donde hay espacio (los emojis de bandera no se ven en Windows)
   colombia: { emoji: '☕', art: ['🦜', '☕'] },
+  // Packs Pro (Fase 7b)
+  andes:    { emoji: '🦙', art: ['🏔️', '🦙'] },
+  conosur:  { emoji: '🧉', art: ['🐧', '🧉'] },
+  mexcam:   { emoji: '🌮', art: ['🌋', '🌮'] },
+  caribe:   { emoji: '🏝️', art: ['🏝️', '🌴'] },
 };
 
 /** Regiones que se muestran con la bandera (imagen SVG) en vez del emoji: los packs de país */
