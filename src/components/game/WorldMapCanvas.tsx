@@ -12,6 +12,7 @@ import { appNumberLocale } from '@/lib/format';
 import { getHiResMap, loadHiResMap, traceCountry, traceArcs, countryAt, labelSpots, boxesIntersect, type HiResMap } from '@/lib/hiResMap';
 import { layoutPills, layoutTexts, rectAround, nearestOnRect, type PillRequest, type PlacedPill, type Rect, type Pt } from '@/lib/mapLabels';
 import { planAnswerZoom, clampZoomFrame } from '@/lib/mapZoom';
+import { IDENTITY_VIEW, DRAG_SLOP_TOUCH, DRAG_SLOP_MOUSE, zoomAround, pinchView, panView, toLogical, isIdentityView, viewTransform, type MapView } from '@/lib/mapView';
 import { countryDisplayName, countryIso } from '@/lib/flags';
 import { PRO_PACK_META } from '@/data/proPackMeta';
 
@@ -174,7 +175,6 @@ export default function WorldMapCanvas({
   // Raw container size tracked by ResizeObserver
   const [containerSize, setContainerSize] = useState({ w: 800, h: 450 });
   const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 3));
-  const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
 
   // Decoración PNG del Mundial (Pacífico sur): balón o copa según pacificDecor
   const decorImgRef = useRef<HTMLImageElement | null>(null);
@@ -188,14 +188,23 @@ export default function WorldMapCanvas({
     img.src = src;
   }, [fieldGreen, pacificDecor]);
 
-  // ── Pinch-to-zoom state ──
-  const [pinchZoom, setPinchZoom] = useState(1);
-  const [pinchOrigin, setPinchOrigin] = useState({ x: 50, y: 50 });
-  const [pan, setPan] = useState({ x: 0, y: 0 }); // desplazamiento del mapa (px), con dos dedos
-  const lastMidRef = useRef<{ x: number; y: number } | null>(null);
-  const pinchStartDist = useRef(0);
-  const pinchStartZoom = useRef(1);
-  const pinchResetTimer = useRef<ReturnType<typeof setTimeout>>();
+  // ── Zoom y paneo manuales (src/lib/mapView.ts) ──
+  // La vista vive en un ref y se escribe directo en el estilo del lienzo (como el zoom de la respuesta), para
+  // seguir los dedos sin re-renderizar en cada movimiento. React solo guarda el nivel para el indicador.
+  const viewRef = useRef<MapView>(IDENTITY_VIEW);
+  const [zoomLabel, setZoomLabel] = useState(1);
+  const [grabbing, setGrabbing] = useState(false);
+  const [dragLearned, setDragLearned] = useState(() => { try { return localStorage.getItem('geospeed_map_drag_learned') === '1'; } catch { return false; } });
+  type Gesture =
+    | { kind: 'one'; sx: number; sy: number; start: MapView; dragging: boolean }
+    | { kind: 'pinch'; dist: number; mid: { x: number; y: number }; start: MapView };
+  const gestureRef = useRef<Gesture | null>(null);
+  /** Hasta cuándo ignorar el clic que el navegador envía al soltar un arrastre o un pellizco */
+  const suppressClickUntil = useRef(0);
+  const mouseDragCleanupRef = useRef<(() => void) | null>(null);
+  // Zoom de la respuesta (más abajo): mientras vuela, los gestos manuales no tocan el lienzo
+  const zoomBombRafRef = useRef<number>(0);
+  const zoomBombActiveRef = useRef<boolean>(false);
 
   const bounds = viewBounds ?? getMapBounds(gameMode);
   const lonRange = bounds.lonMax - bounds.lonMin;
@@ -1228,48 +1237,71 @@ export default function WorldMapCanvas({
     return () => { if (hintAnimFrameRef.current) cancelAnimationFrame(hintAnimFrameRef.current); };
   }, [hintZone, userClick, dimensions, lonToX, latToY, gameMode, lonRange, theme, scale]);
 
-  // ── Pinch-to-zoom touch handlers ──
+  // ── Zoom y paneo manuales: pellizco (acerca y mueve sin soltar), un dedo o el ratón arrastran el mapa acercado,
+  // rueda y botones −/+/⌖. El toque corto con un dedo sigue siendo la respuesta. ──
+  const applyView = useCallback((v: MapView, animate = false) => {
+    viewRef.current = v;
+    setZoomLabel(Math.round(v.z * 10) / 10);
+    const el = canvasRef.current;
+    if (!el || zoomBombActiveRef.current) return; // el vuelo de la respuesta es dueño del lienzo
+    el.style.transformOrigin = '0 0';
+    el.style.transition = animate ? 'transform 280ms cubic-bezier(0.16, 1, 0.3, 1)' : 'none';
+    el.style.transform = viewTransform(v);
+    el.style.willChange = isIdentityView(v) ? '' : 'transform';
+  }, []);
+
+  const containerBox = () => {
+    const r = containerRef.current?.getBoundingClientRect();
+    return r && r.width > 0 && r.height > 0 ? r : null;
+  };
+  const learnDrag = useCallback(() => {
+    setDragLearned(true);
+    try { localStorage.setItem('geospeed_map_drag_learned', '1'); } catch { /* sin almacenamiento */ }
+  }, []);
+
+  const startPinch = (touches: React.TouchList | TouchList, rect: DOMRect) => {
+    const a = touches[0], b = touches[1];
+    gestureRef.current = {
+      kind: 'pinch',
+      dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+      mid: { x: (a.clientX + b.clientX) / 2 - rect.left, y: (a.clientY + b.clientY) / 2 - rect.top },
+      start: viewRef.current,
+    };
+  };
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      pinchStartDist.current = Math.sqrt(dx * dx + dy * dy);
-      pinchStartZoom.current = pinchZoom;
-      lastMidRef.current = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
-      // Set origin as midpoint of the two fingers
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const mx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) / rect.width * 100;
-        const my = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top) / rect.height * 100;
-        setPinchOrigin({ x: mx, y: my });
-      }
-      if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
+    if (zoomBombActiveRef.current || (e.target as Element).closest?.('button')) { gestureRef.current = null; return; }
+    const rect = containerBox();
+    if (!rect) return;
+    if (e.touches.length >= 2) startPinch(e.touches, rect);
+    else if (e.touches.length === 1) {
+      const t0 = e.touches[0];
+      gestureRef.current = { kind: 'one', sx: t0.clientX, sy: t0.clientY, start: viewRef.current, dragging: false };
     }
-  }, [pinchZoom]);
+  }, []);
 
   const handleTouchMoveRef = useRef((_e: TouchEvent) => {});
   handleTouchMoveRef.current = (e: TouchEvent) => {
-    if (e.touches.length === 2 && pinchStartDist.current > 0) {
+    const g = gestureRef.current;
+    if (!g) return;
+    const rect = containerBox();
+    if (!rect) return;
+    if (g.kind === 'pinch' && e.touches.length >= 2) {
       e.preventDefault();
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const newZoom = Math.min(4, Math.max(1, pinchStartZoom.current * (dist / pinchStartDist.current)));
-      setPinchZoom(newZoom);
-      // Paneo: mover el mapa según cuánto se desplazó el punto medio de los dedos
-      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      if (lastMidRef.current) {
-        const ddx = midX - lastMidRef.current.x;
-        const ddy = midY - lastMidRef.current.y;
-        const maxX = (newZoom - 1) * dimensions.w * 0.55;
-        const maxY = (newZoom - 1) * dimensions.h * 0.55;
-        setPan(p => ({
-          x: Math.max(-maxX, Math.min(maxX, p.x + ddx)),
-          y: Math.max(-maxY, Math.min(maxY, p.y + ddy)),
-        }));
+      const a = e.touches[0], b = e.touches[1];
+      const mid = { x: (a.clientX + b.clientX) / 2 - rect.left, y: (a.clientY + b.clientY) / 2 - rect.top };
+      applyView(pinchView(g.start, g.dist, g.mid, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), mid, rect.width, rect.height));
+    } else if (g.kind === 'one' && e.touches.length === 1) {
+      const t0 = e.touches[0];
+      const dx = t0.clientX - g.sx, dy = t0.clientY - g.sy;
+      if (!g.dragging) {
+        // Sin zoom no hay nada que mover; un temblor corto del dedo sigue siendo un toque
+        if (g.start.z <= 1.001 || Math.hypot(dx, dy) < DRAG_SLOP_TOUCH) return;
+        g.dragging = true;
+        learnDrag();
       }
-      lastMidRef.current = { x: midX, y: midY };
+      e.preventDefault();
+      applyView(panView(g.start, dx, dy, rect.width, rect.height));
     }
   };
 
@@ -1282,38 +1314,30 @@ export default function WorldMapCanvas({
     return () => el.removeEventListener('touchmove', handler);
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
-    pinchStartDist.current = 0;
-    lastMidRef.current = null;
-    // Auto-reset zoom after 5s of no interaction
-    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
-    pinchResetTimer.current = setTimeout(() => {
-      setPinchZoom(1);
-      setPinchOrigin({ x: 50, y: 50 });
-      setPan({ x: 0, y: 0 });
-    }, 5000);
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const g = gestureRef.current;
+    if (!g) return;
+    if (g.kind === 'pinch' || g.dragging) suppressClickUntil.current = performance.now() + 350;
+    const rect = containerBox();
+    if (e.touches.length >= 2 && rect) startPinch(e.touches, rect);
+    else if (e.touches.length === 1 && g.kind === 'pinch') {
+      // Levantó un dedo del pellizco: el que queda sigue moviendo el mapa (sin responder)
+      const t0 = e.touches[0];
+      gestureRef.current = { kind: 'one', sx: t0.clientX, sy: t0.clientY, start: viewRef.current, dragging: true };
+    } else if (e.touches.length === 0) gestureRef.current = null;
   }, []);
 
-  // ── Mouse wheel zoom (desktop) — non-passive native listener ──
+  // ── Rueda del ratón / pellizco del trackpad (escritorio): acerca hacia el cursor ──
   const wheelHandlerRef = useRef((_e: WheelEvent) => {});
   wheelHandlerRef.current = (e: WheelEvent) => {
     e.preventDefault();
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (rect) {
-      const mx = (e.clientX - rect.left) / rect.width * 100;
-      const my = (e.clientY - rect.top) / rect.height * 100;
-      setPinchOrigin({ x: mx, y: my });
-    }
-    setPinchZoom(prev => {
-      const newZoom = Math.min(4, Math.max(1, prev - e.deltaY * 0.002));
-      return newZoom;
-    });
-    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
-    pinchResetTimer.current = setTimeout(() => {
-      setPinchZoom(1);
-      setPinchOrigin({ x: 50, y: 50 });
-      setPan({ x: 0, y: 0 });
-    }, 5000);
+    if (zoomBombActiveRef.current) return;
+    const rect = containerBox();
+    if (!rect) return;
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? rect.height : 1;
+    const dy = Math.max(-120, Math.min(120, e.deltaY * unit));
+    const factor = Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.002)); // ctrlKey = pellizco del trackpad (deltas pequeños)
+    applyView(zoomAround(viewRef.current, factor, e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height));
   };
 
   useEffect(() => {
@@ -1324,65 +1348,95 @@ export default function WorldMapCanvas({
     return () => el.removeEventListener('wheel', handler);
   }, []);
 
-  // ── Botones −/+/centrar (sin auto-reset: el jugador decidió el zoom) ──
+  // ── Arrastre con el ratón (escritorio) cuando el mapa está acercado; un clic sin arrastre responde ──
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || zoomBombActiveRef.current) return;
+    if ((e.target as Element).closest?.('button')) return;
+    const sx = e.clientX, sy = e.clientY, start = viewRef.current;
+    if (start.z <= 1.001) return;
+    let dragging = false;
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (!dragging) {
+        if (Math.hypot(dx, dy) < DRAG_SLOP_MOUSE) return;
+        dragging = true;
+        setGrabbing(true);
+        learnDrag();
+      }
+      const rect = containerBox();
+      if (rect) applyView(panView(start, dx, dy, rect.width, rect.height));
+    };
+    const up = () => {
+      cleanup();
+      if (dragging) { suppressClickUntil.current = performance.now() + 350; setGrabbing(false); }
+    };
+    const cleanup = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      mouseDragCleanupRef.current = null;
+    };
+    mouseDragCleanupRef.current?.();
+    mouseDragCleanupRef.current = cleanup;
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  }, [applyView, learnDrag]);
+  useEffect(() => () => mouseDragCleanupRef.current?.(), []);
+
+  // ── Botones −/+/⌖ (acercan hacia el centro de lo que se ve; el zoom se queda hasta responder) ──
   const zoomBy = useCallback((factor: number) => {
-    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
-    setPinchZoom(prev => {
-      const next = Math.min(4, Math.max(1, Math.round(prev * factor * 100) / 100));
-      if (next <= 1) setPan({ x: 0, y: 0 });
-      return next;
-    });
-  }, []);
+    const rect = containerBox();
+    if (!rect || zoomBombActiveRef.current) return;
+    applyView(zoomAround(viewRef.current, factor, rect.width / 2, rect.height / 2, rect.width, rect.height), true);
+  }, [applyView]);
   const resetZoom = useCallback(() => {
-    if (pinchResetTimer.current) clearTimeout(pinchResetTimer.current);
-    setPinchZoom(1);
-    setPinchOrigin({ x: 50, y: 50 });
-    setPan({ x: 0, y: 0 });
-  }, []);
-  // Nuevo encuadre (otra ciudad en la revisión) → quitar el zoom/paneo manual
-  useEffect(() => { resetZoom(); }, [viewBounds, resetZoom]);
+    gestureRef.current = null;
+    applyView(IDENTITY_VIEW, true);
+  }, [applyView]);
+  // Nuevo encuadre (respuesta de la ronda, otra ciudad en la revisión) → quitar el zoom/paneo manual
+  useEffect(() => {
+    gestureRef.current = null;
+    applyView(IDENTITY_VIEW);
+  }, [viewBounds, applyView]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     // Unlock audio on first tap/click — required for iOS Safari Web Audio
     unlockAudio();
     if (clickDisabled) return;
+    if (performance.now() < suppressClickUntil.current) return; // fin de un arrastre o pellizco, no una respuesta
     // Use CONTAINER rect (not canvas) — canvas has CSS transform that skews getBoundingClientRect
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    // Inverse of CSS scale transform: logicalPos = (visualPos - origin) / zoom + origin
-    const originX = rect.width * pinchOrigin.x / 100;
-    const originY = rect.height * pinchOrigin.y / 100;
-    const adjustedX = (x - originX - pan.x) / pinchZoom + originX;
-    const adjustedY = (y - originY - pan.y) / pinchZoom + originY;
-    onMapClick(yToLat(adjustedY), xToLon(adjustedX), e.clientX, e.clientY);
-  }, [clickDisabled, onMapClick, xToLon, yToLat, pinchZoom, pinchOrigin, pan]);
+    const p = toLogical(viewRef.current, e.clientX - rect.left, e.clientY - rect.top);
+    onMapClick(yToLat(p.y), xToLon(p.x), e.clientX, e.clientY);
+  }, [clickDisabled, onMapClick, xToLon, yToLat]);
 
   // ── Cursor coordinate tracking ──
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!onCursorMove) return;
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const originX = rect.width * pinchOrigin.x / 100;
-    const originY = rect.height * pinchOrigin.y / 100;
-    const adjustedX = (x - originX - pan.x) / pinchZoom + originX;
-    const adjustedY = (y - originY - pan.y) / pinchZoom + originY;
-    onCursorMove(yToLat(adjustedY), xToLon(adjustedX));
-  }, [onCursorMove, xToLon, yToLat, pinchZoom, pinchOrigin, pan]);
+    const p = toLogical(viewRef.current, e.clientX - rect.left, e.clientY - rect.top);
+    onCursorMove(yToLat(p.y), xToLon(p.x));
+  }, [onCursorMove, xToLon, yToLat]);
 
   // ── ZOOM BOMB — Smooth cinematic camera flight to result ──
   // Phase 1: Gentle zoom to user click (0-600ms)
   // Phase 2: Smooth pan to midpoint (600-1600ms)
   // Phase 3: Hold with breathing (1600-3000ms)
   // Phase 4: Graceful pull-back to overview (3000-4800ms)
-  const zoomBombRafRef = useRef<number>(0);
-  const zoomBombActiveRef = useRef<boolean>(false);
   useEffect(() => {
     if (!userClick || !correctLocation || !containerRef.current) {
       return;
+    }
+
+    // Respondió con el mapa acercado a mano: volver suave a la vista completa antes del vuelo de la respuesta
+    // (si no, la ciudad correcta y la línea podían quedar fuera del cuadro)
+    const hadManual = !viewBounds && !zoomBombActiveRef.current && !isIdentityView(viewRef.current);
+    if (hadManual) {
+      gestureRef.current = null;
+      applyView(IDENTITY_VIEW, true);
     }
 
     // Respect reduced motion preference
@@ -1394,14 +1448,15 @@ export default function WorldMapCanvas({
     // Vuelta suave a escala 1 (también si este efecto se repite y ya no toca acercar: el lienzo no debe
     // quedar congelado en el acercamiento anterior)
     const resetZoomCss = () => {
+      const wasFlying = zoomBombActiveRef.current;
       zoomBombActiveRef.current = false;
+      if (!wasFlying && !isIdentityView(viewRef.current)) return; // zoom manual del jugador (revisión): se queda
       const el = canvasRef.current;
       if (el) {
         el.style.transition = 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1)';
         el.style.transform = 'scale(1)';
         el.style.transformOrigin = '50% 50%';
       }
-      setZoomStyle({});
     };
     // Con un encuadre fijo (respuesta de la ronda, revisión) el mapa ya está acercado de verdad:
     // quitar el zoom CSS para no sumar los dos acercamientos
@@ -1503,7 +1558,6 @@ export default function WorldMapCanvas({
           el.style.transformOrigin = '50% 50%';
           el.style.transition = 'none';
         }
-        setZoomStyle({});
         return;
       }
 
@@ -1523,22 +1577,26 @@ export default function WorldMapCanvas({
     // Mark zoom bomb as active so React inline styles don't overwrite DOM
     zoomBombActiveRef.current = true;
 
-    // Small delay so the click registers visually first
+    // Small delay so the click registers visually first (o lo que tarda en volver el zoom manual)
     const kickoff = setTimeout(() => {
       zoomBombRafRef.current = requestAnimationFrame(animateZoom);
-    }, 100);
+    }, hadManual ? 320 : 100);
 
     return () => {
       clearTimeout(kickoff);
       if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
     };
-  }, [userClick, correctLocation, rivalClick, bounds, lonRange, latRange, lonToX, latToY, dimensions, viewBounds]);
+  }, [userClick, correctLocation, rivalClick, bounds, lonRange, latRange, lonToX, latToY, dimensions, viewBounds, applyView]);
 
   // Reset zoom when markers clear
   useEffect(() => {
     if (!userClick && !correctLocation) {
       if (zoomBombRafRef.current) cancelAnimationFrame(zoomBombRafRef.current);
       zoomBombActiveRef.current = false;
+      // Ronda nueva: también se quita el zoom manual de la anterior
+      viewRef.current = IDENTITY_VIEW;
+      gestureRef.current = null;
+      setZoomLabel(1);
       // Smooth pullback via DOM
       const el = canvasRef.current;
       if (el) {
@@ -1546,7 +1604,6 @@ export default function WorldMapCanvas({
         el.style.transform = 'scale(1)';
         el.style.transformOrigin = '50% 50%';
       }
-      setZoomStyle({});
     }
   }, [userClick, correctLocation]);
   // Ocean background colors — must match exactly what drawBaseMap paints as ocean.
@@ -1570,6 +1627,8 @@ export default function WorldMapCanvas({
       style={{ minHeight: '50dvh',  background: oceanBg }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      onPointerDown={handlePointerDown}
     >
       {/* Canvas fills entire container — ocean + grid extend to all edges */}
       <canvas
@@ -1584,35 +1643,27 @@ export default function WorldMapCanvas({
           width: '100%',
           height: '100%',
           touchAction: 'none',
-          cursor: clickDisabled ? 'default' : crosshairCursor,
-          // Combine auto-zoom (result) and pinch zoom (user)
-          // When zoomBombActiveRef is true, rAF drives the canvas directly via DOM —
-          // do NOT set transform/origin here or React will overwrite rAF values.
-          ...((pinchZoom > 1 || pan.x !== 0 || pan.y !== 0)
-            ? {
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${pinchZoom})`,
-                transformOrigin: `${pinchOrigin.x}% ${pinchOrigin.y}%`,
-                transition: 'none', // seguir los dedos al instante (sin titileo); la transición suave queda para el reset
-                willChange: 'transform',
-              }
-            : zoomBombActiveRef.current
-              ? {} // rAF owns transform — React must not touch it
-              : {
-                  transform: zoomStyle.transform || 'scale(1)',
-                  transformOrigin: (zoomStyle.transformOrigin as string) || '50% 50%',
-                  transition: (zoomStyle.transition as string) || 'transform 2s cubic-bezier(0.16, 1, 0.3, 1)',
-                }),
+          cursor: clickDisabled ? 'default' : grabbing ? 'grabbing' : crosshairCursor,
+          // transform / transform-origin / transition NO van aquí: los escriben directo en el DOM el zoom manual
+          // (applyView) y el vuelo de la respuesta (rAF); si React los tuviera, pisaría esos valores al re-renderizar.
         }}
       />
       {/* Zoom indicator */}
-      {pinchZoom > 1.05 && (
-        <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-1 rounded-full pointer-events-none">
-          {pinchZoom.toFixed(1)}x
+      {zoomLabel > 1.05 && (
+        <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-semibold tabular-nums px-2 py-1 rounded-full pointer-events-none">
+          {zoomLabel.toLocaleString(appNumberLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x
         </div>
       )}
       {/* Controles de zoom (maqueta): −  +  ⌖ */}
       {showZoomControls && (
-        <div className="absolute z-[8] flex items-center gap-2 sm:gap-2.5" style={{ right: 'max(0.75rem, var(--sar))', bottom: 'max(0.75rem, var(--sab))' }}>
+        <div className="absolute z-[8] flex flex-col items-end gap-1.5" style={{ right: 'max(0.75rem, var(--sar))', bottom: 'max(0.75rem, var(--sab))' }}>
+          {/* Pista hasta que el jugador arrastre el mapa por primera vez */}
+          {zoomLabel > 1.05 && !dragLearned && !clickDisabled && (
+            <span className="pointer-events-none rounded-full px-3 py-1 text-[11px] short:text-[10px] font-semibold border border-accent/50 backdrop-blur-md whitespace-nowrap" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
+              ✋ {t('map_dragHint')}
+            </span>
+          )}
+          <div className="flex items-center gap-2 sm:gap-2.5">
           {([
             { icon: <path d="M6 12h12" />, onClick: () => zoomBy(1 / 1.4), aria: t('map_zoomOut') },
             { icon: <><path d="M6 12h12" /><path d="M12 6v12" /></>, onClick: () => zoomBy(1.4), aria: t('map_zoomIn') },
@@ -1630,6 +1681,7 @@ export default function WorldMapCanvas({
               <svg viewBox="0 0 24 24" className="w-5 h-5 short:w-4 short:h-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>{b.icon}</svg>
             </button>
           ))}
+          </div>
         </div>
       )}
       {/* Mini-map for regional modes */}
