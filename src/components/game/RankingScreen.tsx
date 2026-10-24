@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { MODE_CONFIG, type Difficulty } from '@/data/cities';
-import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY, type Category } from '@/lib/catalog';
+import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode, type Category } from '@/lib/catalog';
 import { FRAME_STYLE, TITLE_KEY, getCachedDailyStatus } from '@/lib/dailyChallenge';
 import { fetchLeaderboardTop, fetchMyRank, type LeaderboardTopRow, type RankPeriod, type RankSeason } from '@/lib/gameResults';
 import { hasSession } from '@/lib/history';
@@ -62,6 +62,8 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
     { key: 'timeattack', mode: 'world', gameType: 'timeattack', emoji: '⚡', label: t('ta_hud') },
   ];
   const board = boards.find(b => b.key === boardKey) ?? boards[0];
+  // En un pack las banderas son departamentos (categoryForMode)
+  const effCategory = categoryForMode(category, board.mode);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,10 +77,10 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
           return;
         }
         const diff = difficulty || null;
-        const [top, logged] = await Promise.all([fetchLeaderboardTop(board.mode, diff, effPeriod, 10, board.gameType, season, category), hasSession()]);
+        const [top, logged] = await Promise.all([fetchLeaderboardTop(board.mode, diff, effPeriod, 10, board.gameType, season, effCategory), hasSession()]);
         if (cancelled) return;
         setRows(top);
-        setMine(logged ? await fetchMyRank(board.mode, diff, effPeriod, board.gameType, season, category) : 'guest');
+        setMine(logged ? await fetchMyRank(board.mode, diff, effPeriod, board.gameType, season, effCategory) : 'guest');
       } catch {
         if (cancelled) return;
         setError(true);
@@ -87,7 +89,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
       }
     })();
     return () => { cancelled = true; };
-  }, [board.key, board.mode, board.gameType, difficulty, effPeriod, season, category]);
+  }, [board.key, board.mode, board.gameType, difficulty, effPeriod, season, effCategory]);
 
   const boardOptions: SelectorOption<string>[] = boards.map(b => ({ key: b.key, emoji: b.emoji, art: b.art, label: b.label, desc: b.gameType === 'timeattack' ? t('rank_caosDesc') : '' }));
   const diffName = (d: Difficulty) => board.mode === 'mundial' ? t(`wc_diff_${d}` as never) : t(DIFF_LABEL[d] as never);
@@ -145,8 +147,8 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
             </div>
             {board.mode !== 'mundial' && board.gameType !== 'timeattack' && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-3 rounded-xl border border-accent/40 bg-brand-navy-deep/60 p-1" role="tablist" aria-label={t('home_category')}>
-                {CATEGORIES.map((c) => (
-                  <button key={c} role="tab" aria-selected={category === c} onClick={() => { playButtonTap(); setCategory(c); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${category === c ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{CATEGORY_ART[c].emoji} {t(CATEGORY_KEY[c] as never)}</button>
+                {categoriesForMode(board.mode).map((c) => (
+                  <button key={c} role="tab" aria-selected={effCategory === c} onClick={() => { playButtonTap(); setCategory(c); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${effCategory === c ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{CATEGORY_ART[c].emoji} {t(CATEGORY_KEY[c] as never)}</button>
                 ))}
               </div>
             )}

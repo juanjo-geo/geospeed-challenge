@@ -10,7 +10,12 @@ export const REGION_ART: Record<GameMode, { emoji: string; art: [string, string?
   asia:     { emoji: '⛩️', art: ['🗻', '⛩️'] },
   americas: { emoji: '🗽', art: ['🗽', '🌴'] },
   africa:   { emoji: '🏜️', art: ['🐪', '🌳'] },
+  // Pack Colombia (Fase 7a): la bandera se dibuja como imagen donde hay espacio (los emojis de bandera no se ven en Windows)
+  colombia: { emoji: '☕', art: ['🦜', '☕'] },
 };
+
+/** Regiones que se muestran con la bandera (imagen SVG) en vez del emoji: los packs de país */
+export const REGION_FLAG: Partial<Record<GameMode, string>> = { colombia: '/flags/CO.svg' };
 
 export const DIFF_ART: Record<Difficulty, { emoji: string; art: [string, string?] }> = {
   basic:  { emoji: '🎒', art: ['🌍', '🎒'] },

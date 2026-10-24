@@ -1,8 +1,8 @@
 import { useI18n } from '@/i18n';
-import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY } from '@/lib/catalog';
+import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode } from '@/lib/catalog';
 import { playButtonTap } from '@/lib/sounds';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { REGION_ART, DIFF_ORDER } from '@/lib/selectionArt';
+import { REGION_ART, DIFF_ORDER, REGION_FLAG } from '@/lib/selectionArt';
 import { TRAINING_SIZES, type TrainingCfg } from '@/lib/training';
 import { useMemory, regionMastery, dueCount, TRAINING_REGIONS } from '@/lib/itemMemory';
 import type { Difficulty } from '@/data/cities';
@@ -48,7 +48,7 @@ export default function TrainingSetupScreen({ cfg, onChange, onStart, onBack, on
         <section className="rounded-3xl border-2 border-accent/30 bg-card/60 p-3 sm:p-4 mb-3">
           <h2 className="font-extrabold text-lg mb-2">{t('train_category')}</h2>
           <div className="grid grid-cols-2 gap-2">
-            {CATEGORIES.map((c) => (
+            {categoriesForMode(cfg.mode).map((c) => (
               <button key={c} onClick={() => set({ category: c })} className={`${chip(cfg.category === c)} flex items-center justify-center gap-2`} aria-pressed={cfg.category === c}>
                 <span className="text-2xl leading-none" aria-hidden>{CATEGORY_ART[c].emoji}</span>{t(CATEGORY_KEY[c] as never)}
               </button>
@@ -58,12 +58,12 @@ export default function TrainingSetupScreen({ cfg, onChange, onStart, onBack, on
 
         <section className="rounded-3xl border-2 border-accent/30 bg-card/60 p-3 sm:p-4">
           <h2 className="font-extrabold text-lg mb-2">{t('train_region')}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             {TRAINING_REGIONS.map((mode) => {
               const m = regionMastery(memory, mode);
               return (
-                <button key={mode} onClick={() => set({ mode })} className={`${chip(cfg.mode === mode)} text-left`} aria-pressed={cfg.mode === mode}>
-                  <span className="flex items-center gap-2"><span className="text-2xl leading-none" aria-hidden>{REGION_ART[mode].emoji}</span><span className="truncate">{t(`mode_${mode}` as never)}</span></span>
+                <button key={mode} onClick={() => set({ mode, category: categoryForMode(cfg.category, mode) })} className={`${chip(cfg.mode === mode)} text-left`} aria-pressed={cfg.mode === mode}>
+                  <span className="flex items-center gap-2">{REGION_FLAG[mode] ? <img src={REGION_FLAG[mode]} alt="" className="w-7 aspect-[3/2] object-cover rounded-[3px] ring-1 ring-black/20" /> : <span className="text-2xl leading-none" aria-hidden>{REGION_ART[mode].emoji}</span>}<span className="truncate">{t(`mode_${mode}` as never)}</span></span>
                   <span className="mt-1.5 block h-1.5 rounded-full bg-foreground/10 overflow-hidden"><span className="block h-full rounded-full bg-accent" style={{ width: `${m.pct}%` }} /></span>
                   <span className="mt-1 block text-xs font-semibold text-muted-foreground">{t('train_dominated', { pct: m.pct })}</span>
                 </button>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { type Difficulty, type GameMode, REGION_MODES, MODE_CONFIG } from '@/data/cities';
 import { createRoom, joinRoom, quickMatch, type GameRoom } from '@/lib/multiplayerUtils';
 import { useI18n } from '@/i18n';
 
@@ -159,7 +159,7 @@ export default function MultiplayerLobby({ onRoomReady, onBack, onSpectate }: Mu
           <div>
             <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">{t('home_mode')}</label>
             <div className="grid grid-cols-5 gap-1.5">
-              {MODE_CONFIG.map(m => (
+              {MODE_CONFIG.filter(m => REGION_MODES.includes(m.key)).map(m => (
                 <button
                   key={m.key}
                   onClick={() => setMode(m.key)}

@@ -13,6 +13,7 @@ import { haversineDistance } from '@/lib/gameUtils';
 import { countryAdjacency } from '@/data/countryAdjacency';
 import { countryDisplayName } from '@/lib/flags';
 import { featureTypeLabel } from '@/lib/featureTypes';
+import { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
 
 type Lang = 'es' | 'en';
 
@@ -186,9 +187,59 @@ export function landmarkHint(item: Pick<City, 'name' | 'nameEn' | 'country' | 'c
   return lang === 'es' ? `${name} está en ${place} (${cont}).` : `${name} is in ${place} (${cont}).`;
 }
 
+// ── Pack Colombia (Fase 7a) ──────────────────────────────────────────────────
+const coCity = (name: string | undefined) => (name ? COLOMBIA_CITIES.find((c) => c.name === name) : undefined);
+const BOGOTA = { lat: 4.711, lon: -74.072 };
+const kmFrom = (from: { lat: number; lon: number }, to: { lat: number; lon: number }, lang: Lang) =>
+  roundKm(haversineDistance(from.lat, from.lon, to.lat, to.lon)).toLocaleString(lang === 'es' ? 'es-CO' : 'en-US');
+
+/** Pista de un municipio del pack: su departamento y dónde queda respecto a la capital del departamento (o a Bogotá). */
+export function packCityHint(item: Pick<City, 'name' | 'lat' | 'lon' | 'admin' | 'isCapital'>, lang: Lang): string {
+  if (item.name === 'Bogotá') {
+    return lang === 'es'
+      ? 'Bogotá es la capital de Colombia: está en el centro del país, en el altiplano de la cordillera Oriental.'
+      : 'Bogotá is the capital of Colombia: it sits in the middle of the country, on a high plateau of the Eastern Cordillera.';
+  }
+  if (item.isCapital) {
+    return lang === 'es'
+      ? `${item.name} es la capital de ${item.admin}; queda a unos ${kmFrom(BOGOTA, item, lang)} km al ${direction(BOGOTA, item, lang)} de Bogotá.`
+      : `${item.name} is the capital of ${item.admin}; it lies about ${kmFrom(BOGOTA, item, lang)} km ${direction(BOGOTA, item, lang)} of Bogotá.`;
+  }
+  const division = COLOMBIA_DIVISIONS.find((d) => d.name === item.admin);
+  const ref = coCity(division?.capital) ?? { name: 'Bogotá', ...BOGOTA };
+  return lang === 'es'
+    ? `${item.name} está en ${item.admin}; queda a unos ${kmFrom(ref, item, lang)} km al ${direction(ref, item, lang)} de ${ref.name}.`
+    : `${item.name} is in ${item.admin}; it lies about ${kmFrom(ref, item, lang)} km ${direction(ref, item, lang)} of ${ref.name}.`;
+}
+
+/** Pista de un departamento: su capital (y dónde queda respecto a Bogotá) y con qué departamentos limita. */
+export function divisionHint(item: Pick<City, 'name' | 'nameEn' | 'capital' | 'nb' | 'ftype'>, lang: Lang): string {
+  const name = lang === 'en' && item.nameEn ? item.nameEn : item.name;
+  const nb = item.nb ?? [];
+  const list = nb.length > 5 ? [...nb.slice(0, 4), lang === 'es' ? 'otros' : 'others'] : nb;
+  if (item.ftype === 'district') {
+    return lang === 'es' ? `${name} es el distrito capital de Colombia; lo rodea Cundinamarca.` : `${name} is Colombia's capital district, surrounded by Cundinamarca.`;
+  }
+  const cap = coCity(item.capital);
+  const where = cap
+    ? (lang === 'es' ? `su capital, ${cap.name}, queda a unos ${kmFrom(BOGOTA, cap, lang)} km al ${direction(BOGOTA, cap, lang)} de Bogotá` : `its capital, ${cap.name}, lies about ${kmFrom(BOGOTA, cap, lang)} km ${direction(BOGOTA, cap, lang)} of Bogotá`)
+    : (lang === 'es' ? `su capital es ${item.capital}` : `its capital is ${item.capital}`);
+  if (!nb.length) {
+    return lang === 'es' ? `${name} es un departamento de islas en el mar Caribe; ${where}.` : `${name} is a department of islands in the Caribbean Sea; ${where}.`;
+  }
+  return lang === 'es'
+    ? `${name}: ${where}. Limita con ${joinList(list, lang)}.`
+    : `${name}: ${where}. It borders ${joinList(list, lang)}.`;
+}
+
 /** Pista de cualquier ítem del catálogo según su tipo */
-export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind' | 'nameEn' | 'ftype' | 'isos' | 'geom' | 'city'>, lang: Lang): string =>
-  item.kind === 'flag' ? flagHint(item, lang) : item.kind === 'feature' ? featureHint(item, lang) : item.kind === 'monument' ? landmarkHint(item, lang) : cityHint(item, lang);
+export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind' | 'nameEn' | 'ftype' | 'isos' | 'geom' | 'city' | 'admin' | 'isCapital' | 'capital' | 'nb'>, lang: Lang): string =>
+  item.kind === 'flag' ? flagHint(item, lang)
+    : item.kind === 'feature' ? featureHint(item, lang)
+      : item.kind === 'monument' ? landmarkHint(item, lang)
+        : item.kind === 'division' ? divisionHint(item, lang)
+          : item.admin ? packCityHint(item, lang)
+            : cityHint(item, lang);
 
 /** Pista del modo Mundial: el "lugar" es el país del futbolista. */
 export function playerHint(player: string, country: string, lat: number, lon: number, lang: Lang): string {

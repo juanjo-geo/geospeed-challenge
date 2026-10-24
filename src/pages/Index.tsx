@@ -6,7 +6,7 @@ import { addGameHistory, getGameHistory } from '@/lib/gameUtils';
 import { SCORING_VERSION } from '@/lib/scoring';
 import { checkIncomingReferral } from '@/lib/referralSystem';
 import { recordInstallDate, checkRetention } from '@/lib/retentionTracker';
-import { type City, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
+import { type City, type Difficulty, type GameMode, MODE_CONFIG, isPackMode } from '@/data/cities';
 import { type RoundResult } from '@/components/game/GameScreen';
 import CountdownIntro from '@/components/game/CountdownIntro';
 import RotateOverlay from '@/components/game/RotateOverlay';
@@ -1321,7 +1321,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
             <p className="text-muted-foreground text-[10px] sm:text-xs mb-4 sm:mb-6 short:mb-2 italic">{t('ta_subtitle')}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 short:mb-1.5 uppercase tracking-widest">{t('ta_selectDifficulty')}</p>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mb-3 sm:mb-4 short:mb-2">
-              {MODE_CONFIG.map(m => (
+              {MODE_CONFIG.filter(m => !isPackMode(m.key)).map(m => (
                 <button
                   key={m.key}
                   onClick={() => setGameMode(m.key)}

@@ -1,6 +1,6 @@
 # Fase 6c · Monumentos — catálogo para revisión
 
-Borrador (2026-10-23), 209 monumentos y sitios. Para cambiar algo: editar `src/data/landmarkTiers.ts` y correr
+Borrador (2026-10-23), 241 monumentos y sitios. Para cambiar algo: editar `src/data/landmarkTiers.ts` y correr
 `node scripts/build-landmarks.mjs --out <carpeta>` + `python scripts/convert-landmarks.py <carpeta>` (regeneran el catálogo,
 las fotos en `public/landmarks`, `credits.json` y `supabase/seed/landmark_places.sql`).
 
@@ -260,18 +260,68 @@ nuestro; en la spec se puede fijar `q` a otra entidad o dejar el sitio sin foto 
   - Nan Madol — Pohnpei, Micronesia · foto Public domain (NOAA) · [Commons](https://commons.wikimedia.org/wiki/File:Nan_madol.jpg)
   - Parlamento de Australia — Canberra, Australia · foto CC BY-SA 4.0 (Thennicke) · [Commons](https://commons.wikimedia.org/wiki/File:Parliament_House_at_dusk,_Canberra_ACT.jpg)
 
+## Pack Colombia (Fase 7a)
+
+Monumentos del mundo que también entran en el pack (con su nivel ahí) y monumentos solo del pack (★).
+
+- **Turista** (12):
+  - Castillo de San Felipe de Barajas — Cartagena · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Panorama_Castillo_San_Felipe_de_Barajas_CTG_11_2019_2864.jpg)
+  - Catedral de Sal de Zipaquirá — Zipaquirá · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Catedral_de_Sal_02.jpg)
+  - Cerro de Monserrate — Bogotá · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:2017_Bogot%C3%A1_Bas%C3%ADlica_del_Se%C3%B1or_Ca%C3%ADdo_de_Monserrate.jpg)
+  - Ciudad Perdida — Santa Marta · foto CC BY 2.0 · [Commons](https://commons.wikimedia.org/wiki/File:Lost_City_Ruins.jpg)
+  - ★ Cristo Rey de Cali — Cali · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Cristo_Rey_de_Cali_21.jpg)
+  - ★ Museo del Oro — Bogotá · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:BOG_Museo_del_Oro.JPG)
+  - Parque Arqueológico de San Agustín — San Agustín · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Parque_Arqueol%C3%B3gico_de_San_Agust%C3%ADn-Mesita_A_12.jpg)
+  - Piedra del Peñol — Guatapé · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Elpenolantioquia.JPG)
+  - ★ Plaza Botero — Medellín · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Plaza_Botero4.JPG)
+  - ★ Plaza de Bolívar de Bogotá — Bogotá · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Plaza_de_Bol%C3%ADvar_en_Bogot%C3%A1_(Colombia).jpg)
+  - Santuario de Las Lajas — Ipiales · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Santuario_de_Las_Lajas,_Ipiales,_Colombia,_2015-07-21,_DD_21-23_HDR.jpg)
+  - ★ Torre del Reloj de Cartagena — Cartagena · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:024_Torre_del_Reloj_Cartagena_Colombia.JPG)
+- **Rookie** (14):
+  - ★ Basílica del Señor de los Milagros de Buga — Buga · foto CC BY 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Bas%C3%ADlica_de_Buga.jpg)
+  - ★ Catedral Basílica de Manizales — Manizales · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:2007-06-12_catedral_de_manizales-pablo_andres_toro_arias.jpg)
+  - ★ Catedral Primada de Colombia — Bogotá · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:2021_Bogot%C3%A1_-_Catedral_Primada_de_Colombia.jpg)
+  - ★ Estadio Atanasio Girardot — Medellín · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Atanasio_Girardot-Atl%C3%A9tico_Nacional-Fortaleza.jpg)
+  - ★ Estadio El Campín — Bogotá · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Estadio_El_Campin_vac%C3%ADo.jpg)
+  - ★ Iglesia de San Pedro Claver — Cartagena · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Main_facade_Iglesia_San_Pedro_Claver_CTG_11_2019_2719.jpg)
+  - ★ Parque del Café — Montenegro · foto CC BY-SA 2.5 · [Commons](https://commons.wikimedia.org/wiki/File:Colombian_National_Coffee_Park_195.JPG)
+  - ★ Pueblito Paisa (Cerro Nutibara) — Medellín · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Nutibara.jpg)
+  - Puente de Boyacá — Tunja · foto Public domain · [Commons](https://commons.wikimedia.org/wiki/File:Puente_Boyaca_Nov_09_2005.jpg)
+  - ★ Puente de Occidente — Santa Fe de Antioquia · foto CC BY 2.0 · [Commons](https://commons.wikimedia.org/wiki/File:Puente_de_Occidente-top.jpg)
+  - ★ Quinta de San Pedro Alejandrino — Santa Marta · foto Public domain · [Commons](https://commons.wikimedia.org/wiki/File:PanteodelaPatria.JPG)
+  - Tierradentro — Inzá · foto CC BY 2.0 · [Commons](https://commons.wikimedia.org/wiki/File:Tombs_in_Tierra_Dentro.jpg)
+  - ★ Torre Colpatria — Bogotá · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Vista_a%C3%A9rea_Bogot%C3%A1_-_15_-_Torre_Colpatria.jpg)
+  - ★ Ventana al Mundo — Barranquilla · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Ventanalmundo.jpg)
+- **Crack** (11):
+  - ★ Basílica de Chiquinquirá — Chiquinquirá · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Basilica_Chiquinquira_01.jpg)
+  - ★ Edificio Coltejer — Medellín · foto CC BY-SA 2.0 · [Commons](https://commons.wikimedia.org/wiki/File:Coltejer-Medellin.jpg)
+  - ★ El Gato del Río — Cali · foto Public domain · [Commons](https://commons.wikimedia.org/wiki/File:Gato_de_Tejada_Cali.JPG)
+  - ★ Estadio Metropolitano Roberto Meléndez — Barranquilla · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:Estadio_Metropolitano_de_Baranquilla_2011.jpg)
+  - ★ Fuerte de San Fernando de Bocachica — Cartagena · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:San_Fernando.jpg)
+  - ★ Hacienda Nápoles — Puerto Triunfo · foto CC BY 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:P%C3%B3rtico_Hacienda_N%C3%A1poles.JPG)
+  - ★ Morro de Tulcán — Popayán · foto CC BY-SA 4.0 · [Commons](https://commons.wikimedia.org/wiki/File:El_Morro_de_Tulc%C3%A1n,_Popay%C3%A1n.jpg)
+  - ★ Parque Explora — Medellín · foto Public domain · [Commons](https://commons.wikimedia.org/wiki/File:Parque_Explora._from_Metrostation_Universidad,_Medell%C3%ADn.jpg)
+  - ★ Parque Jaime Duque — Tocancipá · foto CC BY-SA 2.0 · [Commons](https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Parque_Jaime_Duque.jpg)
+  - ★ Puente Pumarejo — Barranquilla · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Puente_Pumarejo_001.JPG)
+  - ★ Viaducto César Gaviria Trujillo — Pereira · foto CC BY-SA 2.0 · [Commons](https://commons.wikimedia.org/wiki/File:El_Viaducto,_Pereira,_Colombia.jpg)
+- **Leyenda** (4):
+  - ★ Castillo de Salgar — Puerto Colombia · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Castillo_de_San_Antonio_de_Salgar_04-017.jpg)
+  - ★ Monumento a los Héroes — Bogotá · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Los_H%C3%A9roes_Bogot%C3%A1.JPG)
+  - ★ Monumento del Pantano de Vargas — Paipa · foto Public domain · [Commons](https://commons.wikimedia.org/wiki/File:Monumento_pantano_de_vargas,_completo._2006.JPG)
+  - ★ Templo Histórico de Cúcuta — Villa del Rosario · foto CC BY-SA 3.0 · [Commons](https://commons.wikimedia.org/wiki/File:Templo_Hist%C3%B3rico_en_C%C3%BAcuta.JPG)
+
 ## Licencias de las fotos
 
-- CC BY-SA 4.0: 74
-- CC BY-SA 3.0: 56
-- Public domain: 16
-- CC BY 2.0: 16
+- CC BY-SA 4.0: 85
+- CC BY-SA 3.0: 66
+- Public domain: 20
+- CC BY 2.0: 17
 - CC BY 2.5: 10
 - CC0: 8
+- CC BY-SA 2.0: 8
 - sin foto: 7
 - CC BY 4.0: 6
-- CC BY-SA 2.0: 5
+- CC BY-SA 2.5: 5
 - CC BY-SA 3.0 de: 4
-- CC BY-SA 2.5: 4
-- CC BY 3.0: 2
+- CC BY 3.0: 4
 - CC BY 2.5 nl: 1

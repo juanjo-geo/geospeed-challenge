@@ -1,13 +1,13 @@
-import { useCallback, useMemo, useState, lazy, Suspense } from 'react';
-import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY, type Category } from '@/lib/catalog';
-import { MODE_CONFIG, type Difficulty, type GameMode } from '@/data/cities';
+import { useCallback, useMemo, useState, lazy, Suspense, type ReactNode } from 'react';
+import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode, type Category } from '@/lib/catalog';
+import { MODE_CONFIG, isPackMode, type Difficulty, type GameMode } from '@/data/cities';
 import { createChallenge, normalizeCode, isValidCode, ChallengeError, type Challenge } from '@/lib/challenges';
 import { getFlag } from '@/lib/featureFlags';
 import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon } from '@/components/ui/icons';
-import { REGION_ART, DIFF_ART, DIFF_ORDER } from '@/lib/selectionArt';
+import { REGION_ART, DIFF_ART, DIFF_ORDER, REGION_FLAG } from '@/lib/selectionArt';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot from './Mascot';
 // Globo que gira entre los dos exploradores (polígonos en carga diferida)
@@ -35,7 +35,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
   const { t } = useI18n();
   const [mode, setMode] = useState<GameMode>(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty>(initialDifficulty);
-  const [category, setCategory] = useState<Category>(initialCategory);
+  const [category, setCategory] = useState<Category>(() => categoryForMode(initialCategory, initialMode));
   const [sheet, setSheet] = useState<null | 'region' | 'difficulty' | 'category'>(null);
   const closeSheet = useCallback(() => setSheet(null), []);
   const [code, setCode] = useState('');
@@ -62,6 +62,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
 
   const regionOptions: SelectorOption<GameMode>[] = useMemo(() => MODE_CONFIG.map(m => ({
     key: m.key, emoji: REGION_ART[m.key].emoji, art: REGION_ART[m.key].art,
+    icon: REGION_FLAG[m.key] ? <img src={REGION_FLAG[m.key]} alt="" className="w-12 short:w-9 aspect-[3/2] object-cover rounded-md ring-1 ring-black/20" /> : undefined,
     label: t(`mode_${m.key}` as never) || m.label, desc: t(`region_desc_${m.key}` as never),
   })), [t]);
   const difficultyOptions: SelectorOption<Difficulty>[] = useMemo(() => DIFF_ORDER.map(d => {
@@ -70,9 +71,9 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
   }), [t]);
   const regionLabel = regionOptions.find(o => o.key === mode)?.label ?? mode;
   const diffLabel = difficultyOptions.find(o => o.key === difficulty)?.label ?? difficulty;
-  const categoryOptions: SelectorOption<Category>[] = useMemo(() => CATEGORIES.map(c => ({
-    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t(`${CATEGORY_KEY[c]}Desc` as never),
-  })), [t]);
+  const categoryOptions: SelectorOption<Category>[] = useMemo(() => categoriesForMode(mode).map(c => ({
+    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t((c === 'cities' && isPackMode(mode) ? 'cat_citiesPackDesc' : `${CATEGORY_KEY[c]}Desc`) as never),
+  })), [t, mode]);
   const categoryLabel = t(CATEGORY_KEY[category] as never);
 
   const normalized = normalizeCode(code);
@@ -120,7 +121,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
             {/* Partida del reto: las mismas hojas de Región y Dificultad del Inicio */}
             <div className="grid grid-cols-3 gap-2 mb-3">
               <PickButton label={t('ch_category')} emoji={CATEGORY_ART[category].emoji} value={categoryLabel} onClick={() => { playButtonTap(); setSheet('category'); }} />
-              <PickButton label={t('ch_region')} emoji={REGION_ART[mode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
+              <PickButton label={t('ch_region')} emoji={REGION_FLAG[mode] ? <img src={REGION_FLAG[mode]} alt="" className="w-6 aspect-[3/2] object-cover rounded-[3px] ring-1 ring-black/20" /> : REGION_ART[mode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
               <PickButton label={t('ch_difficulty')} emoji={DIFF_ART[difficulty].emoji} value={diffLabel} onClick={() => { playButtonTap(); setSheet('difficulty'); }} />
             </div>
             <div className="flex-1" />
@@ -184,7 +185,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
         <SelectorSheet<GameMode>
           title={t('region_title')} subtitle={t('region_subtitle')} options={regionOptions} selected={mode}
           confirmLabel={t('region_confirm')} footnote={t('region_keepDifficulty')}
-          onConfirm={(k) => { setMode(k); setSheet(null); }} onClose={closeSheet} closeLabel={t('close')}
+          onConfirm={(k) => { setMode(k); setCategory((c) => categoryForMode(c, k)); setSheet(null); }} onClose={closeSheet} closeLabel={t('close')}
         />
       )}
       {sheet === 'category' && (
@@ -205,7 +206,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
   );
 }
 
-function PickButton({ label, emoji, value, onClick }: { label: string; emoji: string; value: string; onClick: () => void }) {
+function PickButton({ label, emoji, value, onClick }: { label: string; emoji: ReactNode; value: string; onClick: () => void }) {
   return (
     <div className="min-w-0">
       <span className="block text-xs font-semibold text-foreground/70 mb-1">{label}</span>

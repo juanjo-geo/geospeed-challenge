@@ -1,6 +1,6 @@
 # Fase 6b · Lugares geográficos — catálogo para revisión
 
-Borrador (2026-10-22), 367 lugares con su nivel. Para cambiar algo: editar `src/data/featureTiers.ts` y correr
+Borrador (2026-10-22), 408 lugares con su nivel. Para cambiar algo: editar `src/data/featureTiers.ts` y correr
 `node scripts/build-features.mjs --ne <carpeta Natural Earth>` (regenera `src/data/featureCatalog.ts`, `src/data/featureShapes.json`
 y `supabase/seed/feature_places.sql`; si cambian lugares, volver a aplicar la parte de seed en el SQL Editor).
 
@@ -51,6 +51,15 @@ ríos, estrechos) o **punto** (distancia al punto: picos, volcanes, cabos, catar
 - **Rookie** (1): Uluru (Ayers Rock) (pico, punto)
 - **Crack** (5): Gran Barrera de Coral (arrecife, área) · Gran Cordillera Divisoria (cordillera, área) · Nueva Guinea (isla, área) · Río Murray (río, línea) · Tasmania (isla, área)
 - **Leyenda** (15): Alpes Australianos (cordillera, área) · Alpes del Sur (Nueva Zelanda) (cordillera, área) · Aoraki / Monte Cook (pico, punto) · Cabo Reinga (cabo, punto) · Desierto de Simpson (desierto, área) · Estrecho de Bass (estrecho, área) · Estrecho de Torres (estrecho, área) · Gran Desierto de Arena (desierto, área) · Gran Desierto de Victoria (desierto, área) · Lago Eyre (lago, área) · Mar de Bering (mar, área) · Mar de Tasmania (mar, área) · Mar del Coral (mar, área) · Monte Kosciuszko (pico, punto) · Península del Cabo York (península, área)
+
+## Pack Colombia (Fase 7a)
+
+Lugares del mundo que también entran en el pack (con su nivel ahí) y lugares solo del pack (★).
+
+- **Turista** (12): ★ Caño Cristales (río, punto) · ★ Cordillera Central (cordillera, área) · ★ Cordillera Occidental (cordillera, área) · ★ Cordillera Oriental (cordillera, área) · ★ Desierto de la Tatacoa (desierto, punto) · ★ Parque Tayrona (parque natural, punto) · ★ Valle de Cocora (valle, punto) · Nevado del Ruiz (volcán, punto) · Río Amazonas (río, línea) · Río Cauca (río, línea) · Río Magdalena (río, línea) · Sierra Nevada de Santa Marta (cordillera, punto)
+- **Rookie** (20): ★ Cabo de la Vela (cabo, punto) · ★ Cañón del Chicamocha (cañón, punto) · ★ Ciénaga Grande de Santa Marta (humedal, punto) · ★ Golfo de Urabá (golfo, área) · ★ Isla Gorgona (isla, punto) · ★ Islas del Rosario (archipiélago, punto) · ★ Lago de Tota (lago, punto) · ★ Laguna de Guatavita (lago, punto) · ★ Nevado del Tolima (volcán, punto) · ★ Río Atrato (río, línea) · ★ Río Caquetá (río, línea) · ★ Río Meta (río, línea) · ★ Río Putumayo (río, línea) · ★ Salto del Tequendama (cataratas, punto) · ★ Sierra Nevada del Cocuy (cordillera, punto) · Los Llanos (llanura, área) · Península de La Guajira (península, área) · Punta Gallinas (cabo, punto) · Río Orinoco (río, línea) · Volcán Galeras (volcán, punto)
+- **Crack** (13): ★ Golfo de Morrosquillo (golfo, punto) · ★ Isla de Malpelo (isla, punto) · ★ Laguna de La Cocha (lago, punto) · ★ Nevado del Huila (volcán, punto) · ★ Páramo de Sumapaz (páramo, punto) · ★ Parque Amacayacu (parque natural, punto) · ★ Parque Chiribiquete (parque natural, punto) · ★ Río Guainía (río, línea) · ★ Río Mira (río, línea) · ★ Río Vaupés (río, línea) · ★ Serranía de La Macarena (cordillera, punto) · ★ Volcán Puracé (volcán, punto) · Tapón del Darién (región, área)
+- **Leyenda** (7): ★ Ciénaga de Zapatosa (humedal, punto) · ★ Isla de Salamanca (parque natural, punto) · ★ Lago Calima (lago, punto) · ★ Páramo de Santurbán (páramo, punto) · ★ Serranía del Baudó (cordillera, punto) · ★ Serranía del Perijá (cordillera, punto) · ★ Volcán Cumbal (volcán, punto)
 
 ## Fuera del catálogo
 
