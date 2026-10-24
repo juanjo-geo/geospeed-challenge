@@ -1337,6 +1337,7 @@ const es = {
   map_zoomOut: 'Alejar el mapa',
   map_zoomIn: 'Acercar el mapa',
   map_recenter: 'Centrar el mapa',
+  map_dragHint: 'Arrastra para mover el mapa',
   ta_hud: '60s de Caos',
   rb_city: 'Ciudad',
   rb_player: 'Jugador',

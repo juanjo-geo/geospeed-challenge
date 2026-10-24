@@ -1339,6 +1339,7 @@ const en: Translations = {
   map_zoomOut: 'Zoom out',
   map_zoomIn: 'Zoom in',
   map_recenter: 'Recenter map',
+  map_dragHint: 'Drag to move the map',
   ta_hud: '60s of Chaos',
   rb_city: 'City',
   rb_player: 'Player',
