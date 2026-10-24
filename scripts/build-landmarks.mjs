@@ -204,7 +204,7 @@ import type { City } from './cities';
 
 /** Monumentos (Fase 6c): un ítem por sitio, con la forma de City (kind 'monument'). Se mide al punto. */
 export const LANDMARK_ITEMS: City[] = [
-${items.map((it) => `  { id: '${it.id}', kind: 'monument', name: ${q(it.spec.es)}, nameEn: ${q(it.spec.en)}, country: ${q(it.spec.country)}, city: ${q(it.spec.city)}, lat: ${it.lat}, lon: ${it.lon}, difficulty: '${it.spec.tier}', region: ${it.region ? `'${it.region}'` : 'null'}, photo: ${it.photo ? 'true' : 'false'} },`).join('\n')}
+${items.map((it) => `  { id: '${it.id}', kind: 'monument', name: ${q(it.spec.es)}, nameEn: ${q(it.spec.en)}, country: ${q(it.spec.country)}, city: ${q(it.spec.city)}, lat: ${it.lat}, lon: ${it.lon}, difficulty: '${it.spec.tier}', region: ${it.region ? `'${it.region}'` : 'null'}, photo: ${it.photo ? 'true' : 'false'}${it.spec.packs ? `, packs: ${JSON.stringify(it.spec.packs)}` : ''}${it.spec.packOnly ? ', packOnly: true' : ''} },`).join('\n')}
 ];
 `;
 writeFileSync('src/data/landmarkCatalog.ts', ts);
@@ -223,6 +223,7 @@ const TIER = { basic: 'Turista', easy: 'Rookie', medium: 'Crack', hard: 'Leyenda
 const TIERS = ['basic', 'easy', 'medium', 'hard'];
 const REG = { americas: 'América', europe: 'Europa', asia: 'Asia', africa: 'África', oceania: 'Oceanía (solo en Mundo)' };
 const regKey = (it) => it.region ?? 'oceania';
+const worldItems = items.filter((it) => !it.spec.packOnly);
 let doc = `# Fase 6c · Monumentos — catálogo para revisión
 
 Borrador (2026-10-23), ${items.length} monumentos y sitios. Para cambiar algo: editar \`src/data/landmarkTiers.ts\` y correr
@@ -238,20 +239,28 @@ nuestro; en la spec se puede fijar \`q\` a otra entidad o dejar el sitio sin fot
 |---|---|---|---|---|---|
 `;
 for (const r of Object.keys(REG)) {
-  const c = items.filter((it) => regKey(it) === r);
+  const c = worldItems.filter((it) => regKey(it) === r);
   doc += `| ${REG[r]} | ${TIERS.map((t) => c.filter((it) => it.spec.tier === t).length).join(' | ')} | ${c.length} |\n`;
 }
-doc += `| **Total** | ${TIERS.map((t) => items.filter((it) => it.spec.tier === t).length).join(' | ')} | ${items.length} |\n\n`;
+doc += `| **Total** | ${TIERS.map((t) => worldItems.filter((it) => it.spec.tier === t).length).join(' | ')} | ${worldItems.length} |\n\n`;
 for (const r of Object.keys(REG)) {
   doc += `## ${REG[r]}\n\n`;
   for (const t of TIERS) {
-    const c = items.filter((it) => regKey(it) === r && it.spec.tier === t).sort((a, b) => a.spec.es.localeCompare(b.spec.es, 'es'));
+    const c = worldItems.filter((it) => regKey(it) === r && it.spec.tier === t).sort((a, b) => a.spec.es.localeCompare(b.spec.es, 'es'));
     if (!c.length) continue;
     doc += `- **${TIER[t]}** (${c.length}):\n`;
     for (const it of c) doc += `  - ${it.spec.es} — ${it.spec.city}, ${it.spec.country}${it.photo ? ` · foto ${it.photo.license} (${it.photo.author.slice(0, 40)}) · [Commons](${it.photo.url})` : ' · **sin foto**'}\n`;
   }
   doc += '\n';
 }
+doc += `## Pack Colombia (Fase 7a)\n\nMonumentos del mundo que también entran en el pack (con su nivel ahí) y monumentos solo del pack (★).\n\n`;
+for (const t of TIERS) {
+  const c = items.filter((it) => it.spec.packs?.colombia === t).sort((a, b) => a.spec.es.localeCompare(b.spec.es, 'es'));
+  if (!c.length) continue;
+  doc += `- **${TIER[t]}** (${c.length}):\n`;
+  for (const it of c) doc += `  - ${it.spec.packOnly ? '★ ' : ''}${it.spec.es} — ${it.spec.city}${it.photo ? ` · foto ${it.photo.license} · [Commons](${it.photo.url})` : ' · **sin foto**'}\n`;
+}
+doc += '\n';
 const lic = {};
 for (const it of items) { const k = it.photo ? it.photo.license : 'sin foto'; lic[k] = (lic[k] ?? 0) + 1; }
 doc += `## Licencias de las fotos\n\n${Object.entries(lic).sort((a, b) => b[1] - a[1]).map(([k, v]) => `- ${k}: ${v}`).join('\n')}\n`;

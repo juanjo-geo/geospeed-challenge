@@ -27,8 +27,11 @@ export const PERFECT_KM = 25;
 /** Escala de la cercanía (km) */
 export const SCALE_KM = { world: 1500, region: 600, country: 150 } as const;
 
+/** Escala de la cercanía por modo; el servidor usa la misma tabla (mode_scale_km en la migración del pack Colombia) */
 export function scaleForMode(mode: GameMode | 'mundial' | string): number {
-  return mode === 'world' || mode === 'mundial' ? SCALE_KM.world : SCALE_KM.region;
+  if (mode === 'world' || mode === 'mundial') return SCALE_KM.world;
+  if (mode === 'colombia') return SCALE_KM.country;
+  return SCALE_KM.region;
 }
 
 /** Cercanía entera 0–1.000 */

@@ -26,7 +26,7 @@ export const CHALLENGE_SECONDS = 15;
 export interface ChallengeCity {
   n: number; name: string; country: string; iso: string | null; lat: number; lon: number;
   /** Fase 6: id del lugar (`flag:XX` en banderas) y tipo; los retos viejos no lo traen (ciudades) */
-  id?: string; kind?: 'city' | 'flag' | 'feature' | 'monument';
+  id?: string; kind?: 'city' | 'flag' | 'feature' | 'monument' | 'division';
 }
 
 export interface Challenge {

@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getCitiesByMode, placeIdOf, type City, type GameMode } from '@/data/cities';
-import { FLAG_ITEMS } from '@/data/flagCatalog';
+import { catalogItem } from '@/lib/catalog';
 
 export interface MemoryItem {
   item_id: string;
@@ -25,7 +25,7 @@ export interface MemoryItem {
 }
 
 export const REVIEW_MAX = 10;
-export const TRAINING_REGIONS: GameMode[] = ['world', 'europe', 'asia', 'americas', 'africa'];
+export const TRAINING_REGIONS: GameMode[] = ['world', 'europe', 'asia', 'americas', 'africa', 'colombia'];
 export const MEMORY_EVENT = 'geospeed:memory';
 const CACHE_KEY = 'geospeed_memory_cache';
 
@@ -55,9 +55,9 @@ export function cityById(id: string): City | undefined {
   if (!byId) {
     byId = new Map();
     for (const mode of TRAINING_REGIONS) for (const c of getCitiesByMode(mode)) if (!byId.has(placeIdOf(c))) byId.set(placeIdOf(c), c);
-    for (const f of FLAG_ITEMS) if (f.id) byId.set(f.id, f); // banderas (Fase 6): `flag:XX`
   }
-  return byId.get(id);
+  // Banderas, lugares, monumentos y el pack Colombia (Fase 6–7): `flag:XX`, `feat:…`, `mon:…`, `co:…`, `div:co-…`
+  return byId.get(id) ?? catalogItem(id);
 }
 
 /** Lo que toca repasar hoy (las cajas más bajas y lo más atrasado primero), como ciudades del catálogo */
@@ -66,7 +66,8 @@ export function reviewCities(items: MemoryItem[], max = REVIEW_MAX): City[] {
     .filter((m) => m.due)
     .sort((a, b) => a.box - b.box || (a.next_review_on ?? '').localeCompare(b.next_review_on ?? ''))
     .map((m) => cityById(m.item_id))
-    .filter((c): c is City => !!c)
+    // El repaso se juega en el mapa del mundo: los ítems de un pack se repasan entrenando en ese pack
+    .filter((c): c is City => !!c && !c.packOnly && !c.id?.startsWith('co:') && c.kind !== 'division')
     .slice(0, max);
 }
 

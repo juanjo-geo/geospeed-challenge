@@ -1,33 +1,50 @@
 /**
- * Categorías del juego (Fase 6): qué se ubica en el mapa. Ciudades, banderas y lugares geográficos; los
- * monumentos vendrán después. Un ítem de cualquier categoría tiene la forma de `City` (kind lo distingue), así
- * que la partida, la revisión y la memoria de lugares no cambian de tipo.
+ * Categorías del juego (Fase 6): qué se ubica en el mapa. Ciudades, banderas, lugares geográficos y monumentos; en
+ * los packs de país (Fase 7) las banderas dan paso a sus divisiones (departamentos de Colombia). Un ítem de cualquier
+ * categoría tiene la forma de `City` (kind lo distingue), así que la partida, la revisión y la memoria de lugares no
+ * cambian de tipo.
  *
- * Decisiones de JuanJo (2026-10-22): las categorías nuevas van en Clásico, Entrenamiento y Retos (el Diario y
- * el Sprint siguen con ciudades); banderas y lugares se puntúan por distancia al contorno (src/lib/flagScoring.ts,
- * src/lib/featureScoring.ts).
+ * Decisiones de JuanJo (2026-10-22/23): las categorías nuevas van en Clásico, Entrenamiento y Retos (el Diario y
+ * el Sprint siguen con ciudades del mundo); banderas, lugares y departamentos se puntúan por distancia al contorno
+ * (src/lib/flagScoring.ts, src/lib/featureScoring.ts); el pack Colombia se elige en Región.
  */
-import { getRandomCities, type City, type Difficulty, type GameMode } from '@/data/cities';
+import { getRandomCities, getCitiesByMode, isPackMode, type City, type Difficulty, type GameMode } from '@/data/cities';
 import { FLAG_ITEMS } from '@/data/flagCatalog';
 import { FEATURE_ITEMS } from '@/data/featureCatalog';
 import { LANDMARK_ITEMS } from '@/data/landmarkCatalog';
+import { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
 import { countryDisplayName, flagUrl } from '@/lib/flags';
 import { continentName } from '@/lib/cityHints';
 import { featureTypeLabel } from '@/lib/featureTypes';
-import { loadFeatureShapes } from '@/lib/featureScoring';
+import { loadFeatureShapes, loadPackShapes } from '@/lib/featureScoring';
 import { countryPhotoUrl, hasCountryPhoto, type PhotoSize } from '@/lib/countryPhotos';
 import { landmarkPhotoUrl } from '@/lib/landmarkPhotos';
 
-export type Category = 'cities' | 'flags' | 'features' | 'monuments';
-export const CATEGORIES: Category[] = ['cities', 'flags', 'features', 'monuments'];
-export const isCategory = (v: unknown): v is Category => v === 'cities' || v === 'flags' || v === 'features' || v === 'monuments';
+export type Category = 'cities' | 'flags' | 'features' | 'monuments' | 'divisions';
+/** Todas las categorías (para validar lo guardado); las que se ofrecen dependen de la región: categoriesForMode */
+export const CATEGORIES: Category[] = ['cities', 'flags', 'features', 'monuments', 'divisions'];
+export const isCategory = (v: unknown): v is Category => CATEGORIES.includes(v as Category);
+/** Categorías de una región: en los packs, departamentos en vez de banderas */
+export const categoriesForMode = (mode: GameMode | string): Category[] =>
+  isPackMode(mode) ? ['cities', 'divisions', 'features', 'monuments'] : ['cities', 'flags', 'features', 'monuments'];
+/** La categoría elegida, válida para la región (banderas ↔ departamentos son la misma idea a otra escala) */
+export function categoryForMode(category: Category, mode: GameMode | string): Category {
+  const allowed = categoriesForMode(mode);
+  if (allowed.includes(category)) return category;
+  if (category === 'flags' || category === 'divisions') return isPackMode(mode) ? 'divisions' : 'flags';
+  return 'cities';
+}
+
 export const isFlag = (item: Pick<City, 'kind'> | null | undefined) => item?.kind === 'flag';
 export const isFeature = (item: Pick<City, 'kind'> | null | undefined) => item?.kind === 'feature';
 export const isMonument = (item: Pick<City, 'kind'> | null | undefined) => item?.kind === 'monument';
+export const isDivision = (item: Pick<City, 'kind'> | null | undefined) => item?.kind === 'division';
 /** Ítems que se muestran con un nombre propio (no "¿Dónde está? ciudad"): título y subtítulo vienen de itemTitle/itemSubtitle */
-export const isSpecial = (item: Pick<City, 'kind'> | null | undefined) => isFlag(item) || isFeature(item) || isMonument(item);
-/** Banderas y lugares: la respuesta se mide a un contorno (dentro = 0 km) o a un trazo, no a un punto */
-export const hasShape = (item: Pick<City, 'kind' | 'geom'> | null | undefined) => isFlag(item) || (isFeature(item) && item?.geom !== 'point');
+export const isSpecial = (item: Pick<City, 'kind'> | null | undefined) => isFlag(item) || isFeature(item) || isMonument(item) || isDivision(item);
+/** Lugares y departamentos: su contorno sale de featureShapes/packShapes (las banderas usan countries.ts) */
+export const usesShapeFile = (item: Pick<City, 'kind'> | null | undefined) => isFeature(item) || isDivision(item);
+/** La respuesta se mide a un contorno (dentro = 0 km) o a un trazo, no a un punto */
+export const hasShape = (item: Pick<City, 'kind' | 'geom'> | null | undefined) => isFlag(item) || (usesShapeFile(item) && item?.geom !== 'point');
 
 /** Emoji e ilustración compuesta de cada categoría (hojas de selección, como REGION_ART / DIFF_ART) */
 export const CATEGORY_ART: Record<Category, { emoji: string; art: [string, string?] }> = {
@@ -35,10 +52,11 @@ export const CATEGORY_ART: Record<Category, { emoji: string; art: [string, strin
   flags: { emoji: '🚩', art: ['🚩', '🗺️'] },
   features: { emoji: '🏔️', art: ['🏔️', '🌊'] },
   monuments: { emoji: '🗼', art: ['🗼', '📸'] },
+  divisions: { emoji: '🗺️', art: ['🗺️', '📍'] },
 };
 
 /** Clave i18n del nombre de la categoría */
-export const CATEGORY_KEY: Record<Category, string> = { cities: 'cat_cities', flags: 'cat_flags', features: 'cat_features', monuments: 'cat_monuments' };
+export const CATEGORY_KEY: Record<Category, string> = { cities: 'cat_cities', flags: 'cat_flags', features: 'cat_features', monuments: 'cat_monuments', divisions: 'cat_divisions' };
 
 export { FEATURE_TYPE, featureTypeLabel, featureTypeEmoji } from '@/lib/featureTypes';
 
@@ -71,10 +89,23 @@ function pickFromPool(pool: City[], difficulty: Difficulty, count: number, seed?
   return picked.slice(0, count);
 }
 
+/**
+ * Ítems de un catálogo para una región: en un pack, los que declaran ese pack (con el nivel que tienen ahí); en el
+ * mundo y los continentes, los que no son exclusivos de un pack.
+ */
+function byMode(items: City[], mode: GameMode): City[] {
+  if (isPackMode(mode)) return items.filter((f) => f.packs?.[mode]).map((f) => ({ ...f, difficulty: f.packs![mode]! }));
+  return items.filter((f) => !f.packOnly && (mode === 'world' || f.region === mode));
+}
+
 /** Banderas de una región (world = todas, incluida Oceanía) */
 export const flagsByMode = (mode: GameMode): City[] => FLAG_ITEMS.filter((f) => mode === 'world' || f.region === mode);
-/** Lugares geográficos de una región (world = todos) */
-export const featuresByMode = (mode: GameMode): City[] => FEATURE_ITEMS.filter((f) => mode === 'world' || f.region === mode);
+/** Lugares geográficos de una región (world = todos los que no son exclusivos de un pack) */
+export const featuresByMode = (mode: GameMode): City[] => byMode(FEATURE_ITEMS, mode);
+/** Monumentos de una región */
+export const landmarksByMode = (mode: GameMode): City[] => byMode(LANDMARK_ITEMS, mode);
+/** Divisiones (departamentos) de un pack */
+export const divisionsByMode = (mode: GameMode): City[] => (mode === 'colombia' ? COLOMBIA_DIVISIONS : []);
 
 export function getRandomFlags(difficulty: Difficulty, count: number, mode: GameMode = 'world', seed?: number): City[] {
   return pickFromPool(flagsByMode(mode), difficulty, count, seed);
@@ -82,64 +113,80 @@ export function getRandomFlags(difficulty: Difficulty, count: number, mode: Game
 export function getRandomFeatures(difficulty: Difficulty, count: number, mode: GameMode = 'world', seed?: number): City[] {
   return pickFromPool(featuresByMode(mode), difficulty, count, seed);
 }
-/** Monumentos de una región (world = todos) */
-export const landmarksByMode = (mode: GameMode): City[] => LANDMARK_ITEMS.filter((f) => mode === 'world' || f.region === mode);
 export function getRandomLandmarks(difficulty: Difficulty, count: number, mode: GameMode = 'world', seed?: number): City[] {
   return pickFromPool(landmarksByMode(mode), difficulty, count, seed);
 }
 
 /** Ítems al azar de la categoría (misma semilla → misma lista, como getRandomCities) */
 export function getRandomItems(category: Category, difficulty: Difficulty, count: number, mode: GameMode = 'world', seed?: number): City[] {
-  if (category === 'flags') return getRandomFlags(difficulty, count, mode, seed);
-  if (category === 'features') {
-    // Los contornos se descargan aparte: que estén listos antes del primer toque (la cuenta regresiva da tiempo)
-    loadFeatureShapes().catch(() => {});
-    return getRandomFeatures(difficulty, count, mode, seed);
-  }
-  if (category === 'monuments') return getRandomLandmarks(difficulty, count, mode, seed);
+  const cat = categoryForMode(category, mode);
+  // Los contornos se descargan aparte: que estén listos antes del primer toque (la cuenta regresiva da tiempo)
+  if (cat === 'features') loadFeatureShapes().catch(() => {});
+  if (isPackMode(mode)) loadPackShapes().catch(() => {});
+  if (cat === 'flags') return getRandomFlags(difficulty, count, mode, seed);
+  if (cat === 'features') return getRandomFeatures(difficulty, count, mode, seed);
+  if (cat === 'monuments') return getRandomLandmarks(difficulty, count, mode, seed);
+  if (cat === 'divisions') return pickFromPool(divisionsByMode(mode), difficulty, count, seed);
+  // Ciudades de un pack: con relleno por niveles vecinos (el catálogo del mundo tiene sus propias listas por región)
+  if (isPackMode(mode)) return pickFromPool(getCitiesByMode(mode), difficulty, count, seed);
   return getRandomCities(difficulty, count, mode, seed);
 }
 
 /** Categoría de una lista de ítems ya elegida ("Otra vez", revancha) */
 export const categoryOf = (items: Pick<City, 'kind'>[]): Category =>
-  items.some(isMonument) ? 'monuments' : items.some(isFeature) ? 'features' : items.some(isFlag) ? 'flags' : 'cities';
+  items.some(isDivision) ? 'divisions' : items.some(isMonument) ? 'monuments' : items.some(isFeature) ? 'features' : items.some(isFlag) ? 'flags' : 'cities';
 
-/** Ítem de una fila del servidor: `flag:XX` marca una bandera, `feat:<slug>` un lugar geográfico y `mon:<slug>` un monumento */
-export function kindFromPlaceId(placeId: string | null | undefined): Partial<City> {
-  if (placeId && placeId.startsWith('flag:')) return { id: placeId, kind: 'flag', iso: placeId.slice(5) };
-  if (placeId && placeId.startsWith('feat:')) {
-    const it = FEATURE_ITEMS.find((f) => f.id === placeId);
-    return it ? { id: placeId, kind: 'feature', ftype: it.ftype, geom: it.geom, nameEn: it.nameEn, isos: it.isos, region: it.region } : { id: placeId, kind: 'feature' };
+/** Todos los ítems de los catálogos, por id (memoria de lugares, filas del servidor) */
+let catalogIndex: Map<string, City> | null = null;
+export function catalogItem(id: string | null | undefined): City | undefined {
+  if (!id) return undefined;
+  if (!catalogIndex) {
+    catalogIndex = new Map();
+    for (const list of [FLAG_ITEMS, FEATURE_ITEMS, LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
   }
-  if (placeId && placeId.startsWith('mon:')) {
-    const it = LANDMARK_ITEMS.find((f) => f.id === placeId);
-    return it ? { id: placeId, kind: 'monument', nameEn: it.nameEn, city: it.city, photo: it.photo, region: it.region } : { id: placeId, kind: 'monument' };
-  }
-  return placeId ? { id: placeId } : {};
+  return catalogIndex.get(id);
 }
 
-/** Nombre a mostrar: el de la ciudad, el país en el idioma del juego para una bandera, o el lugar/monumento (ES/EN) */
-export const itemTitle = (item: Pick<City, 'name' | 'kind' | 'nameEn'>, locale: string): string =>
-  isFlag(item) ? countryDisplayName(item.name, locale) : (isFeature(item) || isMonument(item)) && locale === 'en' && item.nameEn ? item.nameEn : item.name;
+/**
+ * Ítem de una fila del servidor: `flag:XX` marca una bandera, `feat:<slug>` un lugar, `mon:<slug>` un monumento,
+ * `co:<slug>` un municipio y `div:co-<slug>` un departamento de Colombia. Devuelve los campos que no viajan en la fila.
+ */
+export function kindFromPlaceId(placeId: string | null | undefined): Partial<City> {
+  if (!placeId) return {};
+  if (placeId.startsWith('flag:')) return { id: placeId, kind: 'flag', iso: placeId.slice(5) };
+  const it = catalogItem(placeId);
+  if (placeId.startsWith('feat:')) return it ? { id: placeId, kind: 'feature', ftype: it.ftype, geom: it.geom, nameEn: it.nameEn, isos: it.isos, region: it.region } : { id: placeId, kind: 'feature' };
+  if (placeId.startsWith('mon:')) return it ? { id: placeId, kind: 'monument', nameEn: it.nameEn, city: it.city, photo: it.photo, region: it.region } : { id: placeId, kind: 'monument' };
+  if (placeId.startsWith('div:')) return it ? { id: placeId, kind: 'division', geom: 'area', ftype: it.ftype, nameEn: it.nameEn, capital: it.capital, nb: it.nb, region: it.region } : { id: placeId, kind: 'division', geom: 'area' };
+  if (placeId.startsWith('co:')) return it ? { id: placeId, admin: it.admin, isCapital: it.isCapital, region: it.region } : { id: placeId };
+  return { id: placeId };
+}
 
-/** Segunda línea: el país de la ciudad, el continente de la bandera, "tipo · continente" del lugar, o "ciudad · país" del monumento */
-export const itemSubtitle = (item: Pick<City, 'country' | 'kind' | 'lat' | 'lon' | 'ftype' | 'city'>, locale: string): string => {
+/** Nombre a mostrar: el de la ciudad, el país en el idioma del juego para una bandera, o el lugar/monumento/departamento (ES/EN) */
+export const itemTitle = (item: Pick<City, 'name' | 'kind' | 'nameEn'>, locale: string): string =>
+  isFlag(item) ? countryDisplayName(item.name, locale) : (isFeature(item) || isMonument(item) || isDivision(item)) && locale === 'en' && item.nameEn ? item.nameEn : item.name;
+
+/**
+ * Segunda línea: el país de la ciudad (o "departamento · país" en un pack), el continente de la bandera,
+ * "tipo · continente" del lugar, "ciudad · país" del monumento o "Departamento · Colombia".
+ */
+export const itemSubtitle = (item: Pick<City, 'country' | 'kind' | 'lat' | 'lon' | 'ftype' | 'city' | 'admin'>, locale: string): string => {
   const lang = locale === 'en' ? 'en' : 'es';
+  const country = lang === 'en' ? countryDisplayName(item.country, 'en') : item.country;
   if (isFlag(item)) return continentName(item.lat, item.lon, lang);
+  if (isDivision(item)) return `${featureTypeLabel(item.ftype, lang)} · ${country}`;
   if (isFeature(item)) return `${featureTypeLabel(item.ftype, lang)} · ${continentName(item.lat, item.lon, lang)}`;
-  if (isMonument(item)) {
-    const country = lang === 'en' ? countryDisplayName(item.country, 'en') : item.country;
-    return item.city && item.city !== country ? `${item.city} · ${country}` : country;
-  }
+  if (isMonument(item)) return item.city && item.city !== country ? `${item.city} · ${country}` : country;
+  if (item.admin && item.admin !== item.country) return `${item.admin} · ${country}`;
   return item.country;
 };
 
 const appLang = () => (typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'es');
 /** Igual que itemTitle / itemSubtitle con el idioma del juego (<html lang>, que I18nProvider mantiene al día) */
 export const itemTitleAuto = (item: Pick<City, 'name' | 'kind' | 'nameEn'>) => itemTitle(item, appLang());
-export const itemSubtitleAuto = (item: Pick<City, 'country' | 'kind' | 'lat' | 'lon' | 'ftype' | 'city'>) => itemSubtitle(item, appLang());
+export const itemSubtitleAuto = (item: Pick<City, 'country' | 'kind' | 'lat' | 'lon' | 'ftype' | 'city' | 'admin'>) => itemSubtitle(item, appLang());
 
-/** Imagen de la bandera de un ítem (banderas: por ISO; ciudades y monumentos: la de su país; lugares: ninguna) */
+/** Imagen de la bandera de un ítem (banderas: por ISO; ciudades, monumentos y departamentos: la de su país; lugares: ninguna) */
 export const itemFlagUrl = (item: Pick<City, 'iso' | 'country' | 'kind'>): string | null =>
   item.iso ? `/flags/${item.iso}.svg` : isFeature(item) ? null : flagUrl(item.country);
 

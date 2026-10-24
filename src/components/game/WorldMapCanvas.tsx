@@ -3,7 +3,9 @@ import { CONTINENT_COUNTRIES, getColorGroup } from '@/lib/mapContinents';
 import { BRAND_RGB, BRAND, rgba, MAP_CONTINENT_COLORS } from '@/lib/theme';
 import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import { countries } from '@/data/countries';
-import { type GameMode, type MapBounds, getMapBounds } from '@/data/cities';
+import { type GameMode, type MapBounds, getMapBounds, isPackMode } from '@/data/cities';
+import { usePackShapes } from '@/hooks/useFeatureShapes';
+import type { FeatureShapes } from '@/lib/featureScoring';
 import { unlockAudio } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import { appNumberLocale } from '@/lib/format';
@@ -14,6 +16,44 @@ import { countryDisplayName } from '@/lib/flags';
 
 /** Índice de cada país en countries.ts: el mapa detallado usa el mismo color que la vista del mundo */
 const LOW_INDEX = new Map(countries.map((c, i) => [c.name, i]));
+/** Prefijo de los departamentos de cada pack en packShapes.json y el país del pack (nombre de countries.ts / 1:50m) */
+const PACK_INFO: Partial<Record<GameMode, { prefix: string; country: string }>> = { colombia: { prefix: 'div:co-', country: 'Colombia' } };
+
+/**
+ * Pack de país (Fase 7) sobre el mapa: cada departamento con uno de cuatro tonos (los vecinos nunca comparten tono) y las
+ * fronteras internas finas, cada una dibujada una sola vez (vienen de los lados compartidos, scripts/build-colombia.mjs).
+ * Sin nombres de departamentos: delatarían la respuesta.
+ */
+function drawPackOverlay(ctx: CanvasRenderingContext2D, shapes: FeatureShapes, mode: GameMode, toXY: (lon: number, lat: number) => { x: number; y: number }) {
+  const info = PACK_INFO[mode];
+  if (!info) return;
+  const TONES = ['rgba(255,255,255,0)', 'rgba(255,255,255,0.13)', 'rgba(255,255,255,0.26)', rgba(BRAND_RGB.navyDeep, 0.14)];
+  ctx.save();
+  for (const [id, sh] of Object.entries(shapes)) {
+    if (!id.startsWith(info.prefix)) continue;
+    ctx.fillStyle = TONES[(sh.tone ?? 0) % TONES.length];
+    for (const ring of sh.rings) {
+      ctx.beginPath();
+      for (let i = 0; i < ring.length; i++) { const { x, y } = toXY(ring[i][0], ring[i][1]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  const borders = shapes[`borders:${mode}`];
+  if (borders) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1.1;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (const line of borders.rings) {
+      ctx.beginPath();
+      for (let i = 0; i < line.length; i++) { const { x, y } = toXY(line[i][0], line[i][1]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 /** Contorno de un lugar geográfico (Fase 6b) sobre el mapa: área rellena con borde, o trazo grueso con halo (ríos) */
 function drawShape(ctx: CanvasRenderingContext2D, shape: { line: boolean; rings: number[][][] }, toXY: (lon: number, lat: number) => { x: number; y: number }) {
   ctx.save();
@@ -177,6 +217,10 @@ export default function WorldMapCanvas({
     return () => { alive = false; clearTimeout(id); };
   }, [hiRes, zoomedView]);
   const detailMap = zoomedView ? hiRes : null;
+  // Pack de país (Fase 7): departamentos y fronteras internas, que se descargan aparte
+  const packOn = isPackMode(gameMode);
+  const packShapes = usePackShapes(packOn);
+  const packInfo = packOn ? PACK_INFO[gameMode] : undefined;
   // Lo visible del lienzo en grados (con margen), para no recorrer lo que queda fuera
   const visibleBox = useCallback((w: number, h: number): [number, number, number, number] => [
     bounds.lonMin - offsetX / scale - 1,
@@ -287,7 +331,14 @@ export default function WorldMapCanvas({
         }
         ctx.beginPath();
         if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
+        // En un pack, los países vecinos quedan atenuados para que resalte el país del pack
+        if (packInfo && c.name !== packInfo.country && c.ref !== packInfo.country) {
+          ctx.fillStyle = rgba(BRAND_RGB.navyDeep, 0.42);
+          ctx.beginPath();
+          if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
+        }
       }
+      if (packOn && packShapes) drawPackOverlay(ctx, packShapes, gameMode, (lon, lat) => ({ x: X(lon), y: Y(lat) }));
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       ctx.strokeStyle = neon ? 'rgba(255,255,255,0.5)' : light ? '#8899AA' : '#2A1408';
@@ -352,6 +403,7 @@ export default function WorldMapCanvas({
         }
       }
     }
+    if (packOn && packShapes) drawPackOverlay(ctx, packShapes, gameMode, (lon, lat) => geoToPixel(lon, lat));
     // Pass 2: Stroke all borders on top of the fills.
     ctx.strokeStyle = neon ? 'rgba(255,255,255,0.6)' : light ? '#8899AA' : '#2A1408';
     ctx.lineWidth = neon ? 0.9 : 1.2;
@@ -536,6 +588,24 @@ export default function WorldMapCanvas({
         { name: 'MAR\nMEDITERRÁNEO', lat: 37, lon: 18 },
         { name: 'MAR\nROJO', lat: 20, lon: 40 },
       ], Math.max(10, Math.round(w / 70)), true);
+    } else if (gameMode === 'colombia') {
+      // Mares y países vecinos (sin nombres de departamentos: serían la respuesta)
+      drawLabels([
+        { name: 'MAR CARIBE', lat: 12.4, lon: -77.5 },
+        { name: 'OCÉANO\nPACÍFICO', lat: 3.2, lon: -80.6 },
+      ], Math.max(10, Math.round(w / 60)), true);
+      const nfs = Math.max(9, Math.round(w / 75));
+      ctx.font = `600 ${nfs}px Poppins, system-ui, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      for (const l of [
+        { name: 'VENEZUELA', lat: 8.4, lon: -68.4 }, { name: 'ECUADOR', lat: -1.3, lon: -78.2 }, { name: 'PERÚ', lat: -3.9, lon: -73.6 },
+        { name: 'BRASIL', lat: -2.2, lon: -68.1 }, { name: 'PANAMÁ', lat: 8.55, lon: -80.6 },
+      ]) {
+        const p = geoToPixel(l.lon, l.lat);
+        const tw = ctx.measureText(l.name).width;
+        if (p.x + tw / 2 < 0 || p.x - tw / 2 > w || p.y < 0 || p.y > h) continue;
+        ctx.fillText(l.name, Math.min(Math.max(p.x, tw / 2 + 6), w - tw / 2 - 6), p.y);
+      }
     } else if (gameMode === 'americas') {
       drawLabels([
         { name: 'AMÉRICA\nDEL NORTE', lat: 50, lon: -105 },
@@ -573,7 +643,7 @@ export default function WorldMapCanvas({
       }
       // sin fallback emoji: evita ver el "balón antiguo"; el PNG carga en milisegundos
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, highlightContinent, highlightCountry, highlightShape, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, highlightContinent, highlightCountry, highlightShape, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView, packOn, packShapes, packInfo]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
@@ -714,7 +784,7 @@ export default function WorldMapCanvas({
     // tocaste y los vecinos. Sin choques con pines, etiquetas ni la línea; si no caben, se omiten.
     type CountryLabel = { text: string; x: number; y: number; font: string; spacing: string };
     let countryLabels: CountryLabel[] = [];
-    if (detailMap) {
+    if (detailMap && !isPackMode(gameMode)) {
       const map = detailMap;
       const vis = visibleBox(W, H);
       const focus = countryAt(map, correctLocation.lon, correctLocation.lat);

@@ -24,6 +24,9 @@ export interface LandmarkSpec {
   lon: number;
   /** Id de Wikidata (Q…) si se conoce */
   q?: string;
+  /** Packs de país (Fase 7) en los que aparece, con su nivel ahí; packOnly = solo en sus packs */
+  packs?: Partial<Record<'colombia', Difficulty>>;
+  packOnly?: true;
 }
 
 const m = (id: string, tier: Difficulty, es: string, en: string, country: string, city: string, lat: number, lon: number, q?: string): LandmarkSpec =>
@@ -246,4 +249,51 @@ export const LANDMARKS: LandmarkSpec[] = [
   m('nan-madol', 'hard', 'Nan Madol', 'Nan Madol', 'Micronesia', 'Pohnpei', 6.844, 158.335),
   m('parlamento-canberra', 'hard', 'Parlamento de Australia', 'Parliament House, Canberra', 'Australia', 'Canberra', -35.308, 149.125),
   m('casa-opera-wellington', 'hard', 'Beehive (Parlamento de Nueva Zelanda)', 'Beehive (New Zealand)', 'Nueva Zelanda', 'Wellington', -41.278, 174.777),
+
+  // ── Pack Colombia (Fase 7a): solo en el pack; el nivel es para un jugador colombiano ─────────────────────────
+  ...[
+    co('plaza-bolivar-bogota', 'basic', 'Plaza de Bolívar de Bogotá', 'Plaza de Bolívar (Bogotá)', 'Bogotá', 4.598, -74.076),
+    co('museo-oro', 'basic', 'Museo del Oro', 'Gold Museum', 'Bogotá', 4.602, -74.072),
+    co('torre-reloj-cartagena', 'basic', 'Torre del Reloj de Cartagena', 'Clock Tower (Cartagena)', 'Cartagena', 10.4229, -75.5488, 'Q30594363'),
+    co('cristo-rey-cali', 'basic', 'Cristo Rey de Cali', 'Cristo Rey (Cali)', 'Cali', 3.436, -76.565, 'Q805445'),
+    co('plaza-botero', 'basic', 'Plaza Botero', 'Botero Plaza', 'Medellín', 6.252, -75.569),
+    co('torre-colpatria', 'easy', 'Torre Colpatria', 'Colpatria Tower', 'Bogotá', 4.6106, -74.0703),
+    co('pueblito-paisa', 'easy', 'Pueblito Paisa (Cerro Nutibara)', 'Pueblito Paisa (Cerro Nutibara)', 'Medellín', 6.236, -75.578, 'Q18693006'),
+    co('puente-occidente', 'easy', 'Puente de Occidente', 'Puente de Occidente', 'Santa Fe de Antioquia', 6.536, -75.802),
+    co('basilica-buga', 'easy', 'Basílica del Señor de los Milagros de Buga', 'Basilica of the Lord of Miracles (Buga)', 'Buga', 3.900, -76.300),
+    co('catedral-manizales', 'easy', 'Catedral Basílica de Manizales', 'Manizales Cathedral', 'Manizales', 5.068, -75.517, 'Q2942271'),
+    co('parque-cafe', 'easy', 'Parque del Café', 'National Coffee Park', 'Montenegro', 4.540, -75.770),
+    co('estadio-campin', 'easy', 'Estadio El Campín', 'El Campín Stadium', 'Bogotá', 4.6459, -74.0773),
+    co('estadio-atanasio', 'easy', 'Estadio Atanasio Girardot', 'Atanasio Girardot Stadium', 'Medellín', 6.2569, -75.5903),
+    co('ventana-al-mundo', 'easy', 'Ventana al Mundo', 'Ventana al Mundo', 'Barranquilla', 11.012, -74.811),
+    co('catedral-primada', 'easy', 'Catedral Primada de Colombia', 'Cathedral of Bogotá', 'Bogotá', 4.5978, -74.0753),
+    co('san-pedro-claver', 'easy', 'Iglesia de San Pedro Claver', 'Church of Saint Peter Claver', 'Cartagena', 10.4214, -75.5517),
+    co('quinta-san-pedro', 'easy', 'Quinta de San Pedro Alejandrino', 'Quinta de San Pedro Alejandrino', 'Santa Marta', 11.226, -74.183),
+    co('basilica-chiquinquira', 'medium', 'Basílica de Chiquinquirá', 'Basilica of Our Lady of the Rosary of Chiquinquirá', 'Chiquinquirá', 5.6175, -73.8189, 'Q5721982'),
+    co('morro-tulcan', 'medium', 'Morro de Tulcán', 'Morro de Tulcán', 'Popayán', 2.446, -76.602, 'Q3050102'),
+    co('hacienda-napoles', 'medium', 'Hacienda Nápoles', 'Hacienda Nápoles', 'Puerto Triunfo', 5.915, -74.700),
+    co('viaducto-pereira', 'medium', 'Viaducto César Gaviria Trujillo', 'César Gaviria Trujillo Viaduct', 'Pereira', 4.822, -75.685),
+    co('estadio-metropolitano', 'medium', 'Estadio Metropolitano Roberto Meléndez', 'Estadio Metropolitano Roberto Meléndez', 'Barranquilla', 10.927, -74.800),
+    co('gato-del-rio', 'medium', 'El Gato del Río', 'El Gato del Río', 'Cali', 3.452, -76.541),
+    co('parque-explora', 'medium', 'Parque Explora', 'Parque Explora', 'Medellín', 6.271, -75.565),
+    co('edificio-coltejer', 'medium', 'Edificio Coltejer', 'Coltejer Building', 'Medellín', 6.249, -75.567),
+    co('parque-jaime-duque', 'medium', 'Parque Jaime Duque', 'Jaime Duque Park', 'Tocancipá', 4.950, -73.962),
+    co('puente-pumarejo', 'medium', 'Puente Pumarejo', 'Pumarejo Bridge', 'Barranquilla', 10.989, -74.762),
+    co('bocachica', 'medium', 'Fuerte de San Fernando de Bocachica', 'Fort of San Fernando de Bocachica', 'Cartagena', 10.320, -75.587, 'Q2970619'),
+    co('pantano-vargas', 'hard', 'Monumento del Pantano de Vargas', 'Pantano de Vargas Monument', 'Paipa', 5.762, -73.096),
+    co('castillo-salgar', 'hard', 'Castillo de Salgar', 'Castillo de Salgar', 'Puerto Colombia', 11.025, -74.938),
+    co('monumento-heroes', 'hard', 'Monumento a los Héroes', 'Monumento a los Héroes (Bogotá)', 'Bogotá', 4.666, -74.056),
+    co('templo-historico-cucuta', 'hard', 'Templo Histórico de Cúcuta', 'Historic Temple of Cúcuta', 'Villa del Rosario', 7.831, -72.474),
+  ].map((s) => ({ ...s, packs: { colombia: s.tier }, packOnly: true as const })),
 ];
+
+// Monumentos del mundo que también están en el pack Colombia, con su nivel ahí
+const CO_PACK: Record<string, Difficulty> = {
+  'catedral-sal': 'basic', monserrate: 'basic', 'castillo-san-felipe': 'basic', 'las-lajas': 'basic', penol: 'basic',
+  'ciudad-perdida': 'basic', 'san-agustin': 'basic', 'puente-boyaca': 'easy', tierradentro: 'easy',
+};
+for (const s of LANDMARKS) if (CO_PACK[s.id]) s.packs = { ...s.packs, colombia: CO_PACK[s.id] };
+
+function co(id: string, tier: Difficulty, es: string, en: string, city: string, lat: number, lon: number, q?: string): LandmarkSpec {
+  return m(id, tier, es, en, 'Colombia', city, lat, lon, q);
+}

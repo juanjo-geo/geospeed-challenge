@@ -108,6 +108,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Temple_of_Bacchus.jpg"
  },
  {
+  "id": "basilica-chiquinquira",
+  "name": "Basílica de Chiquinquirá",
+  "author": "Docfon",
+  "source": "Basilica Chiquinquira 01.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Basilica_Chiquinquira_01.jpg"
+ },
+ {
   "id": "san-marcos",
   "name": "Basílica de San Marcos",
   "author": "Nino Barbieri",
@@ -124,6 +133,15 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
   "url": "https://commons.wikimedia.org/wiki/File:Basilica_di_San_Pietro_in_Vaticano_September_2015-1a.jpg"
+ },
+ {
+  "id": "basilica-buga",
+  "name": "Basílica del Señor de los Milagros de Buga",
+  "author": "Jordi Gomara (itaca2000)",
+  "source": "Basílica de Buga.jpg",
+  "license": "CC BY 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Bas%C3%ADlica_de_Buga.jpg"
  },
  {
   "id": "casa-opera-wellington",
@@ -342,6 +360,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Castillo_de_Praga,_Praga,_Rep%C3%BAblica_Checa,_2022-07-02,_DD_209.jpg"
  },
  {
+  "id": "castillo-salgar",
+  "name": "Castillo de Salgar",
+  "author": "Olay.alvarez",
+  "source": "Castillo de San Antonio de Salgar 04-017.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Castillo_de_San_Antonio_de_Salgar_04-017.jpg"
+ },
+ {
   "id": "castillo-san-felipe",
   "name": "Castillo de San Felipe de Barajas",
   "author": "Mariordo (Mario Roberto Durán Ortiz)",
@@ -367,6 +394,15 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
   "url": "https://commons.wikimedia.org/wiki/File:Castillo_San_Felipe_del_Morro3.jpg"
+ },
+ {
+  "id": "catedral-manizales",
+  "name": "Catedral Basílica de Manizales",
+  "author": "Pablo toro",
+  "source": "2007-06-12 catedral de manizales-pablo andres toro arias.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:2007-06-12_catedral_de_manizales-pablo_andres_toro_arias.jpg"
  },
  {
   "id": "catedral-brasilia",
@@ -430,6 +466,15 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
   "url": "https://commons.wikimedia.org/wiki/File:Catedral_Metropolitana_de_la_Ciudad_de_M%C3%A9xico_1.jpg"
+ },
+ {
+  "id": "catedral-primada",
+  "name": "Catedral Primada de Colombia",
+  "author": "Felipe Restrpo Acosta",
+  "source": "2021 Bogotá - Catedral Primada de Colombia.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:2021_Bogot%C3%A1_-_Catedral_Primada_de_Colombia.jpg"
  },
  {
   "id": "monserrate",
@@ -567,6 +612,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Christ_the_Redeemer_-_Cristo_Redentor.jpg"
  },
  {
+  "id": "cristo-rey-cali",
+  "name": "Cristo Rey de Cali",
+  "author": "ProtoplasmaKid",
+  "source": "Cristo Rey de Cali 21.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Cristo_Rey_de_Cali_21.jpg"
+ },
+ {
   "id": "cuevas-ajanta",
   "name": "Cuevas de Ajanta",
   "author": "Marcin Białek",
@@ -583,6 +637,24 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
   "url": "https://commons.wikimedia.org/wiki/File:%D9%82%D8%A8%D8%A9_%D8%A7%D9%84%D8%B5%D8%AE%D8%B1%D8%A9_%D9%85%D9%86_%D8%A7%D9%84%D9%86%D8%A7%D8%AD%D9%8A%D8%A9_%D8%A7%D9%84%D8%B4%D8%B1%D9%82%D9%8A%D8%A9.jpg"
+ },
+ {
+  "id": "edificio-coltejer",
+  "name": "Edificio Coltejer",
+  "author": "laloking97 [2]",
+  "source": "Coltejer-Medellin.jpg",
+  "license": "CC BY-SA 2.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Coltejer-Medellin.jpg"
+ },
+ {
+  "id": "gato-del-rio",
+  "name": "El Gato del Río",
+  "author": "C arango",
+  "source": "Gato de Tejada Cali.JPG",
+  "license": "Public domain",
+  "licenseUrl": "",
+  "url": "https://commons.wikimedia.org/wiki/File:Gato_de_Tejada_Cali.JPG"
  },
  {
   "id": "alamo",
@@ -603,6 +675,24 @@
   "url": "https://commons.wikimedia.org/wiki/File:Empire_State_Building_(aerial_view).jpg"
  },
  {
+  "id": "estadio-atanasio",
+  "name": "Estadio Atanasio Girardot",
+  "author": "User34790",
+  "source": "Atanasio Girardot-Atlético Nacional-Fortaleza.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Atanasio_Girardot-Atl%C3%A9tico_Nacional-Fortaleza.jpg"
+ },
+ {
+  "id": "estadio-campin",
+  "name": "Estadio El Campín",
+  "author": "Futbolero",
+  "source": "Estadio El Campin vacío.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Estadio_El_Campin_vac%C3%ADo.jpg"
+ },
+ {
   "id": "maracana",
   "name": "Estadio Maracaná",
   "author": "Arne Müseler",
@@ -610,6 +700,15 @@
   "license": "CC BY-SA 3.0 de",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
   "url": "https://commons.wikimedia.org/wiki/File:Maracana_2022.jpg"
+ },
+ {
+  "id": "estadio-metropolitano",
+  "name": "Estadio Metropolitano Roberto Meléndez",
+  "author": "Mkstillo",
+  "source": "Estadio Metropolitano de Baranquilla 2011.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Estadio_Metropolitano_de_Baranquilla_2011.jpg"
  },
  {
   "id": "estatua-libertad",
@@ -646,6 +745,15 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
   "url": "https://commons.wikimedia.org/wiki/File:Fuerte03.jpg"
+ },
+ {
+  "id": "bocachica",
+  "name": "Fuerte de San Fernando de Bocachica",
+  "author": "LorentzRTC",
+  "source": "San Fernando.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:San_Fernando.jpg"
  },
  {
   "id": "gateway-arch",
@@ -738,6 +846,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Habitat_67,_2600,_avenue_Pierre-Dupuy_(Ville-Marie)_(35399872943).jpg"
  },
  {
+  "id": "hacienda-napoles",
+  "name": "Hacienda Nápoles",
+  "author": "XalD",
+  "source": "Pórtico Hacienda Nápoles.JPG",
+  "license": "CC BY 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:P%C3%B3rtico_Hacienda_N%C3%A1poles.JPG"
+ },
+ {
   "id": "iglesia-hallgrimskirkja",
   "name": "Hallgrímskirkja",
   "author": "Steinninn",
@@ -754,6 +871,15 @@
   "license": "CC BY 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
   "url": "https://commons.wikimedia.org/wiki/File:Hampi,_India,_Granite_boulders_of_Matanga_Hill.jpg"
+ },
+ {
+  "id": "san-pedro-claver",
+  "name": "Iglesia de San Pedro Claver",
+  "author": "Mariordo (Mario Roberto Durán Ortiz)",
+  "source": "Main facade Iglesia San Pedro Claver CTG 11 2019 2719.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Main_facade_Iglesia_San_Pedro_Claver_CTG_11_2019_2719.jpg"
  },
  {
   "id": "lalibela",
@@ -1062,6 +1188,33 @@
   "url": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_Lincoln_Memorial_-_east_side_EDIT.jpeg"
  },
  {
+  "id": "monumento-heroes",
+  "name": "Monumento a los Héroes",
+  "author": "Felipe Restrepo Acosta",
+  "source": "Los Héroes Bogotá.JPG",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Los_H%C3%A9roes_Bogot%C3%A1.JPG"
+ },
+ {
+  "id": "pantano-vargas",
+  "name": "Monumento del Pantano de Vargas",
+  "author": "Kamilokardona",
+  "source": "Monumento pantano de vargas, completo. 2006.JPG",
+  "license": "Public domain",
+  "licenseUrl": "",
+  "url": "https://commons.wikimedia.org/wiki/File:Monumento_pantano_de_vargas,_completo._2006.JPG"
+ },
+ {
+  "id": "morro-tulcan",
+  "name": "Morro de Tulcán",
+  "author": "Bernard Gagnon",
+  "source": "El Morro de Tulcán, Popayán.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:El_Morro_de_Tulc%C3%A1n,_Popay%C3%A1n.jpg"
+ },
+ {
   "id": "moai",
   "name": "Moáis de Isla de Pascua",
   "author": "kallerna",
@@ -1096,6 +1249,15 @@
   "license": "CC BY 2.5",
   "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
   "url": "https://commons.wikimedia.org/wiki/File:Cour_Napol%C3%A9on_at_night_-_Louvre.jpg"
+ },
+ {
+  "id": "museo-oro",
+  "name": "Museo del Oro",
+  "author": "Felipe Restrepo Acosta",
+  "source": "BOG Museo del Oro.JPG",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:BOG_Museo_del_Oro.JPG"
  },
  {
   "id": "guggenheim-bilbao",
@@ -1296,6 +1458,33 @@
   "url": "https://commons.wikimedia.org/wiki/File:Parque_Arqueol%C3%B3gico_de_San_Agust%C3%ADn-Mesita_A_12.jpg"
  },
  {
+  "id": "parque-cafe",
+  "name": "Parque del Café",
+  "author": "Uria Ashkenazy",
+  "source": "Colombian National Coffee Park 195.JPG",
+  "license": "CC BY-SA 2.5",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+  "url": "https://commons.wikimedia.org/wiki/File:Colombian_National_Coffee_Park_195.JPG"
+ },
+ {
+  "id": "parque-explora",
+  "name": "Parque Explora",
+  "author": "User: (WT-shared) CONOCER at wts wikivoyage",
+  "source": "Parque Explora. from Metrostation Universidad, Medellín.jpg",
+  "license": "Public domain",
+  "licenseUrl": "",
+  "url": "https://commons.wikimedia.org/wiki/File:Parque_Explora._from_Metrostation_Universidad,_Medell%C3%ADn.jpg"
+ },
+ {
+  "id": "parque-jaime-duque",
+  "name": "Parque Jaime Duque",
+  "author": "by FRANZ 64",
+  "source": "Taj Mahal, Parque Jaime Duque.jpg",
+  "license": "CC BY-SA 2.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Parque_Jaime_Duque.jpg"
+ },
+ {
   "id": "pelourinho",
   "name": "Pelourinho",
   "author": "Miquel Girones",
@@ -1341,6 +1530,24 @@
   "url": "https://commons.wikimedia.org/wiki/File:Kheops-Pyramid.jpg"
  },
  {
+  "id": "plaza-botero",
+  "name": "Plaza Botero",
+  "author": "Staticshakedown",
+  "source": "Plaza Botero4.JPG",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Plaza_Botero4.JPG"
+ },
+ {
+  "id": "plaza-bolivar-bogota",
+  "name": "Plaza de Bolívar de Bogotá",
+  "author": "Javierleiva",
+  "source": "Plaza de Bolívar en Bogotá (Colombia).jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Plaza_de_Bol%C3%ADvar_en_Bogot%C3%A1_(Colombia).jpg"
+ },
+ {
   "id": "pompeya",
   "name": "Pompeya",
   "author": "Glen Scarborough from The Central Coast, Australia",
@@ -1375,6 +1582,15 @@
   "license": "Public domain",
   "licenseUrl": "",
   "url": "https://commons.wikimedia.org/wiki/File:Ansel_Adams_-_National_Archives_79-AAB-01.jpg"
+ },
+ {
+  "id": "pueblito-paisa",
+  "name": "Pueblito Paisa (Cerro Nutibara)",
+  "author": "Jorge Gomez (Kroyf)",
+  "source": "Nutibara.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "url": "https://commons.wikimedia.org/wiki/File:Nutibara.jpg"
  },
  {
   "id": "puente-boyaca",
@@ -1413,6 +1629,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:London_-_London_Tower_Bridge_-_140806_171049.jpg"
  },
  {
+  "id": "puente-occidente",
+  "name": "Puente de Occidente",
+  "author": "Swedish Colombian",
+  "source": "Puente de Occidente-top.jpg",
+  "license": "CC BY 2.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Puente_de_Occidente-top.jpg"
+ },
+ {
   "id": "puente-oresund",
   "name": "Puente de Öresund",
   "author": "Nick-D",
@@ -1431,6 +1656,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:GoldenGateBridge-001.jpg"
  },
  {
+  "id": "puente-pumarejo",
+  "name": "Puente Pumarejo",
+  "author": "Jdvillalobos",
+  "source": "Puente Pumarejo 001.JPG",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Puente_Pumarejo_001.JPG"
+ },
+ {
   "id": "puerta-brandeburgo",
   "name": "Puerta de Brandeburgo",
   "author": "Thomas Wolf, www.foto-tw.de",
@@ -1438,6 +1672,15 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
   "url": "https://commons.wikimedia.org/wiki/File:Brandenburger_Tor_morgens.jpg"
+ },
+ {
+  "id": "quinta-san-pedro",
+  "name": "Quinta de San Pedro Alejandrino",
+  "author": "No machine-readable author provided. Mijotoba assumed (based on copyright claims).",
+  "source": "PanteodelaPatria.JPG",
+  "license": "Public domain",
+  "licenseUrl": "",
+  "url": "https://commons.wikimedia.org/wiki/File:PanteodelaPatria.JPG"
  },
  {
   "id": "qutub-minar",
@@ -1647,6 +1890,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Haeinsa_Temple_01.jpg"
  },
  {
+  "id": "templo-historico-cucuta",
+  "name": "Templo Histórico de Cúcuta",
+  "author": "Ruben Valero",
+  "source": "Templo Histórico en Cúcuta.JPG",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Templo_Hist%C3%B3rico_en_C%C3%BAcuta.JPG"
+ },
+ {
   "id": "bagan",
   "name": "Templos de Bagan",
   "author": "Vyacheslav Argenberg",
@@ -1710,6 +1962,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:CN_Tower_from_Puente_de_Luz,_Toronto,_Ontario,_2025-08-25_01.jpg"
  },
  {
+  "id": "torre-colpatria",
+  "name": "Torre Colpatria",
+  "author": "ProtoplasmaKid",
+  "source": "Vista aérea Bogotá - 15 - Torre Colpatria.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Vista_a%C3%A9rea_Bogot%C3%A1_-_15_-_Torre_Colpatria.jpg"
+ },
+ {
   "id": "torre-belem",
   "name": "Torre de Belém",
   "author": "Rehman Abubakr",
@@ -1746,6 +2007,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Tokyo_Tower_2023.jpg"
  },
  {
+  "id": "torre-reloj-cartagena",
+  "name": "Torre del Reloj de Cartagena",
+  "author": "David Shankbone",
+  "source": "024 Torre del Reloj Cartagena Colombia.JPG",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:024_Torre_del_Reloj_Cartagena_Colombia.JPG"
+ },
+ {
   "id": "torre-eiffel",
   "name": "Torre Eiffel",
   "author": "Benh LIEU SONG",
@@ -1780,6 +2050,24 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
   "url": "https://commons.wikimedia.org/wiki/File:Uniegebou.jpg"
+ },
+ {
+  "id": "ventana-al-mundo",
+  "name": "Ventana al Mundo",
+  "author": "Jdvillalobos",
+  "source": "Ventanalmundo.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Ventanalmundo.jpg"
+ },
+ {
+  "id": "viaducto-pereira",
+  "name": "Viaducto César Gaviria Trujillo",
+  "author": "ledpup",
+  "source": "El Viaducto, Pereira, Colombia.jpg",
+  "license": "CC BY-SA 2.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:El_Viaducto,_Pereira,_Colombia.jpg"
  },
  {
   "id": "wat-arun",

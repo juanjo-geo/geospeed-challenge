@@ -29,7 +29,14 @@ export interface FeatureSpec {
   point?: [number, number];
   /** Región del juego; si falta se calcula por el punto representativo (mares: siempre explícita) */
   region?: GameMode | null;
+  /** Packs de país (Fase 7) en los que aparece, con su nivel ahí (p. ej. el Magdalena es Turista en Colombia) */
+  packs?: Partial<Record<PackId, Difficulty>>;
+  /** Solo en sus packs, nunca en Mundo ni en los continentes (lugares conocidos solo localmente) */
+  packOnly?: true;
 }
+
+/** Packs de país (Fase 7); hoy solo Colombia */
+export type PackId = 'colombia';
 
 type Ne = NonNullable<FeatureSpec['ne']>;
 const R = (name: string | string[], bbox?: BBox): Ne => ({ ds: 'rivers', name, bbox });
@@ -430,4 +437,56 @@ export const FEATURES: FeatureSpec[] = [
   f('llanura-ganges', 'plain', 'hard', 'Llanura del Ganges', 'Gangetic Plain', G('GANGES PLAIN')),
   f('everglades', 'wetland', 'hard', 'Everglades', 'Everglades', undefined, pt(25.7, -80.9)),
   f('valle-de-la-muerte', 'valley', 'hard', 'Valle de la Muerte', 'Death Valley', undefined, pt(36.5, -116.9)),
+
+  // ── Pack Colombia (Fase 7a): solo en el pack; el nivel es para un jugador colombiano ─────────────────────────
+  ...([
+    f('cordillera-occidental', 'range', 'basic', 'Cordillera Occidental', 'Western Cordillera (Colombia)', G('CORD. OCCIDENTAL', [-79, -1, -71, 12])),
+    f('cordillera-central', 'range', 'basic', 'Cordillera Central', 'Central Cordillera (Colombia)', G('CORD. CENTRAL', [-79, -1, -71, 12])),
+    f('cordillera-oriental', 'range', 'basic', 'Cordillera Oriental', 'Eastern Cordillera (Colombia)', G('CORDILLERA ORIENTAL', [-79, -1, -71, 12])),
+    f('tayrona', 'park', 'basic', 'Parque Tayrona', 'Tayrona National Park', undefined, pt(11.31, -74.03)),
+    f('cano-cristales', 'river', 'basic', 'Caño Cristales', 'Caño Cristales', undefined, pt(2.27, -73.79)),
+    f('tatacoa', 'desert', 'basic', 'Desierto de la Tatacoa', 'Tatacoa Desert', undefined, pt(3.23, -75.17)),
+    f('cocora', 'valley', 'basic', 'Valle de Cocora', 'Cocora Valley', undefined, pt(4.64, -75.49)),
+    f('atrato', 'river', 'easy', 'Río Atrato', 'Atrato River', R10('Atrato', [-80, -5, -66, 14])),
+    f('meta-rio', 'river', 'easy', 'Río Meta', 'Meta River', R10('Meta', [-80, -5, -66, 14])),
+    f('putumayo-rio', 'river', 'easy', 'Río Putumayo', 'Putumayo River', R10('Putumayo', [-80, -5, -66, 14])),
+    f('caqueta-rio', 'river', 'easy', 'Río Caquetá', 'Caquetá River', R10('Caquetá', [-80, -5, -66, 14])),
+    f('chicamocha', 'canyon', 'easy', 'Cañón del Chicamocha', 'Chicamocha Canyon', undefined, pt(6.80, -73.03)),
+    f('el-cocuy', 'range', 'easy', 'Sierra Nevada del Cocuy', 'Sierra Nevada del Cocuy', undefined, pt(6.45, -72.30)),
+    f('guatavita-laguna', 'lake', 'easy', 'Laguna de Guatavita', 'Lake Guatavita', undefined, pt(4.978, -73.776)),
+    f('islas-rosario', 'islands', 'easy', 'Islas del Rosario', 'Rosario Islands', undefined, pt(10.17, -75.77)),
+    f('cabo-vela', 'cape', 'easy', 'Cabo de la Vela', 'Cabo de la Vela', undefined, pt(12.20, -72.17)),
+    f('tota', 'lake', 'easy', 'Lago de Tota', 'Lake Tota', undefined, pt(5.55, -72.92)),
+    f('golfo-uraba', 'gulf', 'easy', 'Golfo de Urabá', 'Gulf of Urabá', M('Golfo de Urabá'), { region: 'americas' }),
+    f('cienaga-grande', 'wetland', 'easy', 'Ciénaga Grande de Santa Marta', 'Ciénaga Grande de Santa Marta', undefined, pt(10.85, -74.45)),
+    f('nevado-tolima', 'volcano', 'easy', 'Nevado del Tolima', 'Nevado del Tolima', undefined, pt(4.66, -75.33)),
+    f('tequendama', 'waterfall', 'easy', 'Salto del Tequendama', 'Tequendama Falls', undefined, pt(4.577, -74.292)),
+    f('gorgona', 'island', 'easy', 'Isla Gorgona', 'Gorgona Island', undefined, pt(2.97, -78.18)),
+    f('chiribiquete', 'park', 'medium', 'Parque Chiribiquete', 'Chiribiquete National Park', undefined, pt(0.60, -72.60)),
+    f('amacayacu', 'park', 'medium', 'Parque Amacayacu', 'Amacayacu National Park', undefined, pt(-3.60, -70.20)),
+    f('macarena', 'range', 'medium', 'Serranía de La Macarena', 'Serranía de la Macarena', undefined, pt(2.70, -73.90)),
+    f('la-cocha', 'lake', 'medium', 'Laguna de La Cocha', 'La Cocha Lake', undefined, pt(1.07, -77.15)),
+    f('purace', 'volcano', 'medium', 'Volcán Puracé', 'Puracé Volcano', undefined, pt(2.32, -76.40)),
+    f('nevado-huila', 'volcano', 'medium', 'Nevado del Huila', 'Nevado del Huila', undefined, pt(2.93, -76.03)),
+    f('malpelo', 'island', 'medium', 'Isla de Malpelo', 'Malpelo Island', undefined, pt(4.00, -81.61)),
+    f('sumapaz', 'paramo', 'medium', 'Páramo de Sumapaz', 'Sumapaz Páramo', undefined, pt(3.95, -74.25)),
+    f('morrosquillo', 'gulf', 'medium', 'Golfo de Morrosquillo', 'Gulf of Morrosquillo', undefined, pt(9.55, -75.65)),
+    f('vaupes-rio', 'river', 'medium', 'Río Vaupés', 'Vaupés River', R10('Uaupés', [-80, -5, -66, 14])),
+    f('mira-rio', 'river', 'medium', 'Río Mira', 'Mira River', R10('Mira', [-80, -5, -66, 14])),
+    f('guainia-rio', 'river', 'medium', 'Río Guainía', 'Guainía River', R10('Guainía', [-80, -5, -66, 14])),
+    f('cumbal', 'volcano', 'hard', 'Volcán Cumbal', 'Cumbal Volcano', undefined, pt(0.95, -77.88)),
+    f('perija', 'range', 'hard', 'Serranía del Perijá', 'Serranía del Perijá', undefined, pt(9.90, -72.95)),
+    f('baudo', 'range', 'hard', 'Serranía del Baudó', 'Serranía del Baudó', undefined, pt(6.00, -77.20)),
+    f('zapatosa', 'wetland', 'hard', 'Ciénaga de Zapatosa', 'Zapatosa Swamp', undefined, pt(9.10, -73.80)),
+    f('santurban', 'paramo', 'hard', 'Páramo de Santurbán', 'Santurbán Páramo', undefined, pt(7.25, -72.88)),
+    f('isla-salamanca', 'park', 'hard', 'Isla de Salamanca', 'Isla de Salamanca National Park', undefined, pt(10.98, -74.55)),
+    f('calima', 'lake', 'hard', 'Lago Calima', 'Lake Calima', undefined, pt(3.88, -76.53)),
+  ] as FeatureSpec[]).map((s) => ({ ...s, packs: { colombia: s.tier }, packOnly: true as const })),
 ];
+
+// Lugares del mundo que también están en el pack Colombia, con su nivel ahí
+const CO_PACK: Record<string, Difficulty> = {
+  amazonas: 'basic', magdalena: 'basic', cauca: 'basic', 'sierra-nevada-santa-marta': 'basic', 'nevado-del-ruiz': 'basic',
+  orinoco: 'easy', guajira: 'easy', llanos: 'easy', 'punta-gallinas': 'easy', galeras: 'easy', darien: 'medium',
+};
+for (const s of FEATURES) if (CO_PACK[s.id]) s.packs = { ...s.packs, colombia: CO_PACK[s.id] };

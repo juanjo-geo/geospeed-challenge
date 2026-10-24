@@ -27,6 +27,10 @@ export const FEATURE_TYPE: Record<FeatureType, { emoji: string; es: string; en: 
   reef: { emoji: '🐠', es: 'Arrecife', en: 'Reef' },
   isthmus: { emoji: '🗺️', es: 'Istmo', en: 'Isthmus' },
   glacier: { emoji: '🧊', es: 'Glaciar', en: 'Glacier' },
+  park: { emoji: '🌳', es: 'Parque natural', en: 'Natural park' },
+  paramo: { emoji: '🌾', es: 'Páramo', en: 'Páramo' },
+  department: { emoji: '🗺️', es: 'Departamento', en: 'Department' },
+  district: { emoji: '🏛️', es: 'Distrito capital', en: 'Capital district' },
 };
 
 export const featureTypeLabel = (type: FeatureType | undefined, locale: string): string =>

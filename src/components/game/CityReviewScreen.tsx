@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { itemTitleAuto, itemSubtitleAuto, itemPhotoUrl } from '@/lib/catalog';
 import { type RoundResult, correctPinLabel } from './GameScreen';
-import { useFeatureShapes } from '@/hooks/useFeatureShapes';
+import { useFeatureShapes, usePackShapes } from '@/hooks/useFeatureShapes';
 import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
 import { itemHint, playerHint, useCityTips } from '@/lib/cityHints';
@@ -78,7 +78,11 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
   const pinLabels = useMemo(() => ({ you: t('game_yourAnswer'), correct: isMundial ? r.city.country : correctPinLabel(r, t, r.city.name) }), [t, isMundial, r]);
   // Contorno del lugar (Fase 6b): se carga si la partida tiene lugares y se resalta en el mapa
   const featureShapes = useFeatureShapes(r.city.kind === 'feature');
-  const highlightShape = useMemo(() => (r.city.kind === 'feature' && r.city.id && featureShapes ? featureShapes[r.city.id] ?? null : null), [r.city, featureShapes]);
+  const packShapes = usePackShapes(r.city.kind === 'division');
+  const highlightShape = useMemo(() => {
+    if (!r.city.id || (r.city.kind !== 'feature' && r.city.kind !== 'division')) return null;
+    return (r.city.kind === 'division' ? packShapes : featureShapes)?.[r.city.id] ?? null;
+  }, [r.city, featureShapes, packShapes]);
 
   const lang = locale === 'en' ? 'en' : 'es';
   useCityTips();

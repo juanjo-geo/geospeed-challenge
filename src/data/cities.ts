@@ -1,20 +1,36 @@
 export type Difficulty = 'basic' | 'easy' | 'medium' | 'hard';
-export type GameMode = 'world' | 'europe' | 'asia' | 'americas' | 'africa';
+import { COLOMBIA_CITIES } from './colombiaCatalog';
 
-/** Tipo de accidente geográfico (Fase 6b, src/data/featureTiers.ts) */
+/** Regiones del juego: el mundo, cuatro continentes y los packs de país (Fase 7: 'colombia') */
+export type GameMode = 'world' | 'europe' | 'asia' | 'americas' | 'africa' | 'colombia';
+/** Packs de país: mapa del país con sus divisiones, escala de cercanía propia y ranking propio */
+export const PACK_MODES: GameMode[] = ['colombia'];
+export const isPackMode = (mode: string | null | undefined): boolean => PACK_MODES.includes(mode as GameMode);
+/** El mundo y los continentes (Caos, duelo en vivo y repaso siguen solo con estos) */
+export const REGION_MODES: GameMode[] = ['world', 'europe', 'asia', 'americas', 'africa'];
+
+/** Tipo de accidente geográfico (Fase 6b, src/data/featureTiers.ts); department/district = divisiones de un pack */
 export type FeatureType =
   | 'river' | 'lake' | 'sea' | 'gulf' | 'strait' | 'range' | 'peak' | 'volcano' | 'desert' | 'island' | 'islands'
   | 'peninsula' | 'cape' | 'plateau' | 'basin' | 'delta' | 'waterfall' | 'valley' | 'plain' | 'wetland' | 'canyon'
-  | 'region' | 'reef' | 'isthmus' | 'glacier';
+  | 'region' | 'reef' | 'isthmus' | 'glacier' | 'park' | 'paramo' | 'department' | 'district';
 
 export interface City {
   /** Identificador estable (slug del nombre; `flag:<ISO>` en banderas, `feat:<slug>` en lugares), el mismo de la tabla `places` del servidor */
   id?: string;
   /** Qué se ubica: ciudad (por defecto), bandera (flagCatalog.ts), lugar geográfico (featureCatalog.ts) o monumento (landmarkCatalog.ts) */
-  kind?: 'city' | 'flag' | 'feature' | 'monument';
+  kind?: 'city' | 'flag' | 'feature' | 'monument' | 'division';
   /** Monumentos: ciudad o lugar más cercano (en español) y si tiene foto en /landmarks/<slug>.webp */
   city?: string;
   photo?: boolean;
+  /** Packs (Fase 7): departamento de un municipio y si es capital; capital y vecinos de un departamento */
+  admin?: string;
+  isCapital?: boolean;
+  capital?: string;
+  nb?: string[];
+  /** Packs en los que aparece el ítem con su nivel ahí; packOnly = nunca en Mundo ni en los continentes */
+  packs?: Partial<Record<GameMode, Difficulty>>;
+  packOnly?: boolean;
   /** Banderas: código ISO-3166 (imagen en /flags/<ISO>.svg) */
   iso?: string;
   /** Banderas y lugares: región del juego a la que pertenece (null = solo en Mundo, p. ej. Oceanía) */
@@ -512,6 +528,7 @@ export function getCitiesByMode(mode: GameMode): City[] {
     case 'asia': return asiaCities;
     case 'americas': return americasCities;
     case 'africa': return africaCities;
+    case 'colombia': return COLOMBIA_CITIES;
     default: return worldCities;
   }
 }
@@ -521,8 +538,8 @@ export function getCitiesByDifficulty(difficulty: Difficulty, mode: GameMode = '
 }
 
 export function getRandomCities(difficulty: Difficulty, count: number = 13, mode: GameMode = 'world', seed?: number): City[] {
-  // Basic difficulty only exists for world mode — fall back to easy for regional
-  const effectiveDifficulty = (difficulty === 'basic' && mode !== 'world') ? 'easy' : difficulty;
+  // Basic difficulty only exists for world mode (and the country packs) — fall back to easy for regional
+  const effectiveDifficulty = (difficulty === 'basic' && mode !== 'world' && !isPackMode(mode)) ? 'easy' : difficulty;
   const pool = getCitiesByDifficulty(effectiveDifficulty, mode);
   const shuffled = [...pool];
   // Seeded PRNG for deterministic multiplayer city selection
@@ -612,6 +629,9 @@ export function getMapBounds(mode: GameMode): MapBounds {
       return { latMin: -60, latMax: 72, lonMin: -170, lonMax: -30 };
     case 'africa':
       return { latMin: -38, latMax: 40, lonMin: -25, lonMax: 60 };
+    case 'colombia':
+      // Todo el territorio, incluido el archipiélago de San Andrés (≈ 82° O) y Leticia (4,2° S)
+      return { latMin: -4.6, latMax: 13.7, lonMin: -82.2, lonMax: -66.6 };
     default:
       // Hasta ~62° S: la ciudad más austral es Ushuaia (54,8° S); la Antártida no se juega y su espacio
       // queda para el encabezado sólido de la partida (el mapa conserva su tamaño y baja).
@@ -625,4 +645,5 @@ export const MODE_CONFIG: { key: GameMode; label: string; emoji: string }[] = [
   { key: 'asia', label: 'Asia', emoji: '🌏' },
   { key: 'americas', label: 'América', emoji: '🌎' },
   { key: 'africa', label: 'África', emoji: '🌍' },
+  { key: 'colombia', label: 'Colombia', emoji: '🇨🇴' },
 ];

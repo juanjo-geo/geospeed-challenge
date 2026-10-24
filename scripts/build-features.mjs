@@ -270,7 +270,7 @@ import type { City } from './cities';
 
 /** Lugares geográficos (Fase 6b): un ítem por accidente, con la forma de City (kind 'feature'). lat/lon = punto representativo. */
 export const FEATURE_ITEMS: City[] = [
-${items.map((it) => `  { id: '${it.id}', kind: 'feature', ftype: '${it.spec.type}', geom: '${it.geom}', name: ${q(it.spec.es)}, nameEn: ${q(it.spec.en)}, country: '', lat: ${it.lat}, lon: ${it.lon}, difficulty: '${it.spec.tier}', region: ${it.region ? `'${it.region}'` : 'null'}, isos: [${it.isos.map((c) => `'${c}'`).join(', ')}] },`).join('\n')}
+${items.map((it) => `  { id: '${it.id}', kind: 'feature', ftype: '${it.spec.type}', geom: '${it.geom}', name: ${q(it.spec.es)}, nameEn: ${q(it.spec.en)}, country: '', lat: ${it.lat}, lon: ${it.lon}, difficulty: '${it.spec.tier}', region: ${it.region ? `'${it.region}'` : 'null'}, isos: [${it.isos.map((c) => `'${c}'`).join(', ')}]${it.spec.packs ? `, packs: ${JSON.stringify(it.spec.packs)}` : ''}${it.spec.packOnly ? ', packOnly: true' : ''} },`).join('\n')}
 ];
 `;
 writeFileSync('src/data/featureCatalog.ts', ts);
@@ -303,9 +303,10 @@ ${shapeRows.join(',\n')};
 const TIER = { basic: 'Turista', easy: 'Rookie', medium: 'Crack', hard: 'Leyenda' };
 const TIERS = ['basic', 'easy', 'medium', 'hard'];
 const REG = { americas: 'América', europe: 'Europa', asia: 'Asia', africa: 'África', oceania: 'Oceanía (solo en Mundo)' };
-const TYPE_ES = { river: 'río', lake: 'lago', sea: 'mar', gulf: 'golfo', strait: 'estrecho', range: 'cordillera', peak: 'pico', volcano: 'volcán', desert: 'desierto', island: 'isla', islands: 'archipiélago', peninsula: 'península', cape: 'cabo', plateau: 'meseta', basin: 'cuenca', delta: 'delta', waterfall: 'cataratas', valley: 'valle', plain: 'llanura', wetland: 'humedal', canyon: 'cañón', region: 'región', reef: 'arrecife', isthmus: 'istmo', glacier: 'glaciar' };
+const TYPE_ES = { river: 'río', lake: 'lago', sea: 'mar', gulf: 'golfo', strait: 'estrecho', range: 'cordillera', peak: 'pico', volcano: 'volcán', desert: 'desierto', island: 'isla', islands: 'archipiélago', peninsula: 'península', cape: 'cabo', plateau: 'meseta', basin: 'cuenca', delta: 'delta', waterfall: 'cataratas', valley: 'valle', plain: 'llanura', wetland: 'humedal', canyon: 'cañón', region: 'región', reef: 'arrecife', isthmus: 'istmo', glacier: 'glaciar', park: 'parque natural', paramo: 'páramo' };
 const GEOM_ES = { area: 'área', line: 'línea', point: 'punto' };
 const regKey = (it) => it.region ?? 'oceania';
+const worldItems = items.filter((it) => !it.spec.packOnly);
 let doc = `# Fase 6b · Lugares geográficos — catálogo para revisión
 
 Borrador (2026-10-22), ${items.length} lugares con su nivel. Para cambiar algo: editar \`src/data/featureTiers.ts\` y correr
@@ -321,19 +322,24 @@ ríos, estrechos) o **punto** (distancia al punto: picos, volcanes, cabos, catar
 |---|---|---|---|---|---|
 `;
 for (const r of Object.keys(REG)) {
-  const c = items.filter((it) => regKey(it) === r);
+  const c = worldItems.filter((it) => regKey(it) === r);
   doc += `| ${REG[r]} | ${TIERS.map((t) => c.filter((it) => it.spec.tier === t).length).join(' | ')} | ${c.length} |\n`;
 }
-doc += `| **Total** | ${TIERS.map((t) => items.filter((it) => it.spec.tier === t).length).join(' | ')} | ${items.length} |\n\n`;
+doc += `| **Total** | ${TIERS.map((t) => worldItems.filter((it) => it.spec.tier === t).length).join(' | ')} | ${worldItems.length} |\n\n`;
 for (const r of Object.keys(REG)) {
   doc += `## ${REG[r]}\n\n`;
   for (const t of TIERS) {
-    const c = items.filter((it) => regKey(it) === r && it.spec.tier === t).map((it) => `${it.spec.es} (${TYPE_ES[it.spec.type]}, ${GEOM_ES[it.geom]})`).sort((a, b) => a.localeCompare(b, 'es'));
+    const c = worldItems.filter((it) => regKey(it) === r && it.spec.tier === t).map((it) => `${it.spec.es} (${TYPE_ES[it.spec.type]}, ${GEOM_ES[it.geom]})`).sort((a, b) => a.localeCompare(b, 'es'));
     if (c.length) doc += `- **${TIER[t]}** (${c.length}): ${c.join(' · ')}\n`;
   }
   doc += '\n';
 }
-doc += `## Fuera del catálogo
+doc += `## Pack Colombia (Fase 7a)\n\nLugares del mundo que también entran en el pack (con su nivel ahí) y lugares solo del pack (★).\n\n`;
+for (const t of TIERS) {
+  const c = items.filter((it) => it.spec.packs?.colombia === t).map((it) => `${it.spec.packOnly ? '★ ' : ''}${it.spec.es} (${TYPE_ES[it.spec.type]}, ${GEOM_ES[it.geom]})`).sort((a, b) => a.localeCompare(b, 'es'));
+  if (c.length) doc += `- **${TIER[t]}** (${c.length}): ${c.join(' · ')}\n`;
+}
+doc += `\n## Fuera del catálogo
 
 - Países-isla (Madagascar, Cuba, Islandia, Sri Lanka…): ya están en Banderas.
 - La Antártida y sus mares: el mapa termina en 62° S.

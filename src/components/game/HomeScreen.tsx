@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { CATEGORIES, CATEGORY_ART, CATEGORY_KEY, isCategory, type Category } from '@/lib/catalog';
+import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
+import { CATEGORY_ART, CATEGORY_KEY, isCategory, categoriesForMode, categoryForMode, type Category } from '@/lib/catalog';
 import { scrollAppToTop } from '@/lib/appScroll';
 import { useMemory, dueCount } from '@/lib/itemMemory';
-import { Difficulty, GameMode, MODE_CONFIG } from '@/data/cities';
+import { Difficulty, GameMode, MODE_CONFIG, isPackMode } from '@/data/cities';
 import { getPlayerStats, getDailyPlayerCount } from '@/lib/gameUtils';
 import { getPlayerLevel } from '@/lib/levelSystem';
 import DailyChestModal from './DailyChestModal';
@@ -25,7 +25,7 @@ import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
 import SprintHomeCard from './SprintHomeCard';
-import { REGION_ART, DIFF_ART } from '@/lib/selectionArt';
+import { REGION_ART, DIFF_ART, REGION_FLAG } from '@/lib/selectionArt';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode, category: Category) => void;
@@ -66,6 +66,7 @@ const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string; art: [string
   asia:     { level: 3, ...REGION_ART.asia },
   americas: { level: 4, ...REGION_ART.americas },
   africa:   { level: 5, ...REGION_ART.africa },
+  colombia: { level: 1, ...REGION_ART.colombia }, // pack gratis (Fase 7a)
 };
 
 const CLASSIC_ROUNDS = 13;
@@ -113,7 +114,8 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   // Fase 6: qué se ubica (ciudades o banderas); se recuerda como la región y la dificultad
   const [selectedCategory, setSelectedCategory] = useState<Category>(() => {
     const saved = loadSelection();
-    return saved && isCategory(saved.category) ? saved.category : 'cities';
+    // En un pack las banderas son departamentos (categoryForMode)
+    return saved && isCategory(saved.category) ? categoryForMode(saved.category, saved.mode ?? 'world') : 'cities';
   });
   useEffect(() => {
     try { localStorage.setItem(SELECTION_KEY, JSON.stringify({ mode: selectedMode, difficulty: selectedDifficulty, category: selectedCategory })); } catch { /* sin espacio */ }
@@ -171,6 +173,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
       key: m.key,
       emoji: lock.emoji,
       art: lock.art,
+      icon: REGION_FLAG[m.key] ? <img src={REGION_FLAG[m.key]} alt="" className="w-12 short:w-9 aspect-[3/2] object-cover rounded-md ring-1 ring-black/20" /> : undefined,
       label: t(`mode_${m.key}` as never) || m.label,
       desc: t(`region_desc_${m.key}` as never),
       locked,
@@ -195,10 +198,10 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
   const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
-  const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : selectedCategory === 'features' ? 'home_featuresInfo' : selectedCategory === 'monuments' ? 'home_monumentsInfo' : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
-  const categoryOptions: SelectorOption<Category>[] = useMemo(() => CATEGORIES.map(c => ({
-    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t(`${CATEGORY_KEY[c]}Desc` as never),
-  })), [t]);
+  const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : selectedCategory === 'features' ? 'home_featuresInfo' : selectedCategory === 'monuments' ? 'home_monumentsInfo' : selectedCategory === 'divisions' ? 'home_divisionsInfo' : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
+  const categoryOptions: SelectorOption<Category>[] = useMemo(() => categoriesForMode(selectedMode).map(c => ({
+    key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(CATEGORY_KEY[c] as never), desc: t((c === 'cities' && isPackMode(selectedMode) ? 'cat_citiesPackDesc' : `${CATEGORY_KEY[c]}Desc`) as never),
+  })), [t, selectedMode]);
   const categoryLabel = t(CATEGORY_KEY[selectedCategory] as never);
   const dateLabel = new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
 
@@ -326,7 +329,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             </h2>
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:col-span-2 lg:grid-cols-1 lg:mt-3">
               <Dropdown label={t('home_category')} emoji={CATEGORY_ART[selectedCategory].emoji} value={categoryLabel} onClick={() => { playButtonTap(); setSheet('category'); }} />
-              <Dropdown label={t('home_region')} emoji={MODE_UNLOCK[selectedMode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
+              <Dropdown label={t('home_region')} emoji={REGION_FLAG[selectedMode] ? <img src={REGION_FLAG[selectedMode]} alt="" className="w-6 aspect-[3/2] object-cover rounded-[3px] ring-1 ring-black/20" /> : MODE_UNLOCK[selectedMode].emoji} value={regionLabel} onClick={() => { playButtonTap(); setSheet('region'); }} />
               <Dropdown label={t('home_difficultyLabel')} emoji={difficultyEmoji} value={difficultyName} onClick={() => { playButtonTap(); setSheet('difficulty'); }} />
             </div>
           </div>
@@ -439,7 +442,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
           selected={selectedMode}
           confirmLabel={t('region_confirm')}
           footnote={t('region_keepDifficulty')}
-          onConfirm={(k) => { setSelectedMode(k); setSheet(null); }}
+          onConfirm={(k) => { setSelectedMode(k); setSelectedCategory((c) => categoryForMode(c, k)); setSheet(null); }}
           onClose={closeSheet}
           closeLabel={t('close')}
         />
@@ -483,7 +486,7 @@ const Chevron = ({ className = '' }: { className?: string }) => (
  * En teléfonos (< sm) son tres fichas de ~75 px junto a la mascota (Fase 6 sumó Categoría), así que la
  * caja se apila: ícono + flecha arriba y el valor debajo; "Banderas" / "Ciudades" no caben en una fila.
  */
-function Dropdown({ label, emoji, value, onClick }: { label: string; emoji: string; value: string; onClick: () => void }) {
+function Dropdown({ label, emoji, value, onClick }: { label: string; emoji: ReactNode; value: string; onClick: () => void }) {
   return (
     <div className="min-w-0">
       <span className="block text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground lg:text-foreground mb-0.5 sm:mb-1 truncate">{label}</span>
