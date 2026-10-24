@@ -35,6 +35,8 @@ interface RoundFeedbackCardProps {
   extra?: React.ReactNode;
   /** Entrenamiento y repaso (Fase 4): sin puntaje ni "Ver cálculo" */
   hidePoints?: boolean;
+  /** Dato clave de la ficha del lugar (Fase 8): "2,6 millones de habitantes", "Capital: Bogotá"… */
+  fact?: string | null;
 }
 
 /**
@@ -42,7 +44,7 @@ interface RoundFeedbackCardProps {
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
  * Puntaje v2: el combo y el desglose (cercanía × rapidez × combo × dificultad) salen del propio resultado.
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel, extra, hidePoints = false }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel, extra, hidePoints = false, fact }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
@@ -79,6 +81,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
               <p className={`font-extrabold leading-none text-[2.4rem] ${phraseColor}`}>{feedback.phrase}</p>
               <h3 className="font-extrabold text-2xl mt-2 leading-tight">{heading}</h3>
               <p className="text-muted-foreground text-base font-semibold"><Flag country={result.city.country} className="w-5 inline-block align-[-3px] mr-1.5" />{subheading}</p>
+              {fact && <p className="text-accent text-sm font-bold mt-0.5">📋 {fact}</p>}
             </div>
           </div>
           {(comboLine || nearMissMsg) && (
@@ -117,6 +120,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
             <span className="hidden [@media(max-height:420px)]:inline text-xs font-semibold text-muted-foreground"> · {subheading}</span>
           </h3>
           <p className="text-muted-foreground font-semibold text-xs sm:text-sm [@media(max-height:420px)]:hidden"><Flag country={result.city.country} className="w-4 inline-block align-[-2px] mr-1" />{subheading}</p>
+          {fact && <p className="text-accent font-bold text-[11px] sm:text-xs leading-tight">📋 {fact}</p>}
           {!hidePoints && (
             <p className="font-extrabold text-primary text-3xl sm:text-4xl [@media(max-height:420px)]:text-xl leading-tight mt-0.5" style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
               +{result.totalPoints.toLocaleString(numberLocale)} {t('game_pointsWord')}

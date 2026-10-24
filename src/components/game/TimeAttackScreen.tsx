@@ -22,6 +22,7 @@ import RoundFeedbackCard from './RoundFeedbackCard';
 import FitToBox from '@/components/ui/FitToBox';
 import { frameAnswer, feedbackCover } from '@/lib/mapFraming';
 import { preloadCountryPhoto } from '@/lib/countryPhotos';
+import { factIdOf, keyFact, usePlaceFacts } from '@/lib/placeFacts';
 
 const GLOBAL_TIME = 60;
 const POOL_SIZE = 40;
@@ -55,7 +56,9 @@ interface TimeAttackScreenProps {
 }
 
 export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onExit, musicMuted, onToggleMusic }: TimeAttackScreenProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  // Ficha del lugar (Fase 8): el dato clave en la tarjeta (en Caos la tarjeta sale al instante: hace de franja)
+  const placeFacts = usePlaceFacts();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
   const isCompact = layoutMode === 'compact';
@@ -509,6 +512,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
             timeLabel: `${(lastResult.timeExact ?? lastResult.timeUsed).toLocaleString(appNumberLocale(), { maximumFractionDigits: 1 })} s`,
             natural: true,
             quick: true,
+            fact: placeFacts ? keyFact(lastResult.city, placeFacts[factIdOf(lastResult.city) ?? ''] ?? null, t as never, locale) : null,
           };
           return isWide ? (
             <div className="absolute inset-y-0 right-0 z-10 w-[clamp(24rem,36vw,32rem)] flex items-center animate-slide-in-right p-3 lg:p-4" role="dialog" aria-label={t('game_resultLabel')}>

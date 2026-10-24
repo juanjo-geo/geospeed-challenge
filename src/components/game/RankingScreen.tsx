@@ -14,7 +14,7 @@ import HeaderBackdrop from './HeaderBackdrop';
 import PropExplorer from './PropExplorer';
 import FilterButton from './FilterButton';
 import { HomeIcon } from '@/components/ui/icons';
-import { REGION_ART, DIFF_ART, DIFF_ORDER } from '@/lib/selectionArt';
+import { REGION_ART, DIFF_ART, DIFF_ORDER, regionGroup, packGroups } from '@/lib/selectionArt';
 import { formatNumber } from '@/lib/format';
 
 interface RankingScreenProps {
@@ -91,7 +91,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
     return () => { cancelled = true; };
   }, [board.key, board.mode, board.gameType, difficulty, effPeriod, season, effCategory]);
 
-  const boardOptions: SelectorOption<string>[] = boards.map(b => ({ key: b.key, emoji: b.emoji, art: b.art, label: b.label, desc: b.gameType === 'timeattack' ? t('rank_caosDesc') : '' }));
+  const boardOptions: SelectorOption<string>[] = boards.map(b => ({ key: b.key, emoji: b.emoji, art: b.art, label: b.label, desc: b.gameType === 'timeattack' ? t('rank_caosDesc') : '', group: b.gameType ? undefined : regionGroup(b.key) }));
   const diffName = (d: Difficulty) => board.mode === 'mundial' ? t(`wc_diff_${d}` as never) : t(DIFF_LABEL[d] as never);
   const diffOptions: SelectorOption<string>[] = [
     { key: '', emoji: '🌐', label: t('hist_all'), desc: t('rank_allDiffsDesc') },
@@ -220,7 +220,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
       </div>
 
       {sheet === 'board' && (
-        <SelectorSheet<string> title={t('rank_pickBoard')} subtitle={t('rank_pickBoardSub')} options={boardOptions} selected={board.key} confirmLabel={t('hist_apply')}
+        <SelectorSheet<string> title={t('rank_pickBoard')} subtitle={t('rank_pickBoardSub')} options={boardOptions} groups={packGroups(t)} selected={board.key} confirmLabel={t('hist_apply')}
           onConfirm={(k) => { setBoardKey(k); setSheet(null); }} onClose={closeSheet} closeLabel={t('close')} />
       )}
       {sheet === 'difficulty' && (

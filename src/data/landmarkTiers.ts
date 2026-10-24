@@ -63,7 +63,7 @@ export const LANDMARKS: LandmarkSpec[] = [
   m('stonehenge', 'easy', 'Stonehenge', 'Stonehenge', 'Reino Unido', 'Salisbury', 51.179, -1.826, 'Q39671'),
   m('monte-rushmore', 'easy', 'Monte Rushmore', 'Mount Rushmore', 'Estados Unidos', 'Dakota del Sur', 43.879, -103.459, 'Q83497'),
   m('puerta-brandeburgo', 'easy', 'Puerta de Brandeburgo', 'Brandenburg Gate', 'Alemania', 'Berlín', 52.516, 13.378, 'Q82425'),
-  m('san-basilio', 'easy', 'Catedral de San Basilio', "Saint Basil's Cathedral", 'Rusia', 'Moscú', 55.753, 37.623, 'Q131463'),
+  m('san-basilio', 'easy', 'Catedral de San Basilio', "Saint Basil's Cathedral", 'Rusia', 'Moscú', 55.753, 37.623, 'Q129846'),
   m('alhambra', 'easy', 'Alhambra', 'Alhambra', 'España', 'Granada', 37.176, -3.588),
   m('torre-tokio', 'easy', 'Torre de Tokio', 'Tokyo Tower', 'Japón', 'Tokio', 35.659, 139.745),
   m('petronas', 'easy', 'Torres Petronas', 'Petronas Towers', 'Malasia', 'Kuala Lumpur', 3.158, 101.712),

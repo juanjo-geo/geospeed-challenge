@@ -16,6 +16,18 @@ export interface SelectorOption<K extends string> {
   /** Bloqueada por nivel (decisión D12: se muestra con candado, no se oculta) */
   locked?: boolean;
   lockLabel?: string;
+  /** Grupo (clave de `groups`): la opción no sale en la lista principal sino dentro de una fila que la agrupa */
+  group?: string;
+}
+
+/** Fila que agrupa varias opciones (p. ej. los packs de países) para que la lista principal no sea tan larga */
+export interface SelectorGroup {
+  label: string;
+  desc: string;
+  emoji: string;
+  art?: [string, string?];
+  /** Texto del botón para volver a la lista principal */
+  backLabel: string;
 }
 
 interface SelectorSheetProps<K extends string> {
@@ -32,15 +44,19 @@ interface SelectorSheetProps<K extends string> {
   onClose: () => void;
   /** aria-label del botón cerrar (traducido por quien abre la hoja) */
   closeLabel?: string;
+  /** Grupos de opciones (las opciones con `group` se muestran al tocar su fila) */
+  groups?: Record<string, SelectorGroup>;
 }
 
 /**
  * Hoja inferior de selección (maquetas Región / Dificultad APROBADA_v1).
  * Móvil: sube desde abajo con asa. Escritorio (md+): modal centrado.
  */
-export default function SelectorSheet<K extends string>({ title, subtitle, options, selected, confirmLabel, footnote, context, onConfirm, onClose, closeLabel = 'Cerrar' }: SelectorSheetProps<K>) {
+export default function SelectorSheet<K extends string>({ title, subtitle, options, selected, confirmLabel, footnote, context, onConfirm, onClose, closeLabel = 'Cerrar', groups }: SelectorSheetProps<K>) {
   const [value, setValue] = useState<K>(selected);
   const [visible, setVisible] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const group = openGroup ? groups?.[openGroup] : undefined;
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true));
@@ -85,8 +101,42 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
         </h2>
         <p className="text-sm short:text-xs text-muted-foreground mt-1 mb-4 short:mt-0 short:mb-2">{subtitle}</p>
 
-        <div className="flex flex-col gap-2 short:grid short:grid-cols-2" role="radiogroup" aria-label={title}>
-          {options.map(opt => {
+        {group && (
+          <button
+            type="button"
+            onClick={() => { playButtonTap(); setOpenGroup(null); }}
+            className="mb-2 short:mb-1 inline-flex items-center gap-1.5 text-sm short:text-xs font-bold text-accent hover:underline"
+          >
+            <span aria-hidden className="text-lg leading-none">‹</span> {group.backLabel}
+          </button>
+        )}
+        <div className="flex flex-col gap-2 short:grid short:grid-cols-2" role="radiogroup" aria-label={group ? group.label : title}>
+          {options.map((opt, i) => {
+            // Lista principal: cada grupo ocupa una sola fila (en el lugar de su primera opción)
+            if (!openGroup && opt.group && groups?.[opt.group]) {
+              if (options.findIndex(o => o.group === opt.group) !== i) return null;
+              const g = groups[opt.group];
+              const chosen = options.find(o => o.group === opt.group && o.key === value);
+              const gKey = opt.group;
+              return (
+                <button
+                  key={`group-${gKey}`}
+                  type="button"
+                  onClick={() => { playButtonTap(); setOpenGroup(gKey); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 short:px-2 short:py-1 short:gap-2 rounded-2xl border-2 text-left transition-all active:scale-[0.99] ${
+                    chosen ? 'border-accent bg-accent/10 shadow-[0_0_18px_hsl(var(--accent)/0.25)]' : 'border-border bg-muted/30 hover:border-accent/50'
+                  }`}
+                >
+                  <OptionArt art={g.art ?? [g.emoji]} locked={false} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-extrabold text-lg sm:text-xl short:text-sm leading-tight">{g.label}</span>
+                    <span className="block text-xs sm:text-sm short:text-[11px] text-muted-foreground leading-tight">{chosen ? `✓ ${chosen.label}` : g.desc}</span>
+                  </span>
+                  <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-2xl font-black text-accent" aria-hidden>›</span>
+                </button>
+              );
+            }
+            if (openGroup ? opt.group !== openGroup : opt.group && groups?.[opt.group]) return null;
             const isSel = value === opt.key;
             return (
               <button

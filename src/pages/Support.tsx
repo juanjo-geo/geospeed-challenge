@@ -129,6 +129,13 @@ const Support = () => {
 
           <PhotoCredits title="Créditos de las fotos de países" intro="Las fotografías de países que aparecen en el juego pertenecen a sus autores y se usan bajo las licencias indicadas (Wikimedia Commons). Las imágenes fueron redimensionadas y convertidas a WebP; las que tienen licencia CC BY-SA se comparten bajo la misma licencia." />
           <LandmarkPhotoCredits />
+          <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">Datos de los lugares</h2>
+          <p className="mb-10 text-sm text-[#d4d4c8]/70">
+            Las cifras de las fichas (habitantes, área, altitud, capital, año de construcción…) vienen de{' '}
+            <a href="https://www.wikidata.org" target="_blank" rel="noopener noreferrer" className="underline">Wikidata</a> (CC0, dominio público);
+            los mapas, de <a href="https://www.naturalearthdata.com" target="_blank" rel="noopener noreferrer" className="underline">Natural Earth</a> (dominio público).
+            Los datos curiosos los redactó el equipo de GeoSpeed. Si encuentras un error, escríbenos.
+          </p>
 
           {/* ────────── ENGLISH VERSION ────────── */}
           <div id="english" className="border-t border-[#f5c842]/20 pt-10">

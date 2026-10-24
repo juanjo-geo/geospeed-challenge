@@ -35,6 +35,7 @@ import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming'
 import FitToBox from '@/components/ui/FitToBox';
 import { appNumberLocale } from '@/lib/format';
 import { preloadCountryPhoto } from '@/lib/countryPhotos';
+import { factIdOf, getPlaceFact, keyFact, usePlaceFacts } from '@/lib/placeFacts';
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -44,6 +45,8 @@ const AUTO_ADVANCE_SECONDS = 4;
 /** Tiempo para ver la línea y los km entre la respuesta y la ciudad antes de que la tarjeta tape el mapa.
  *  JuanJo (2026-10-18): 2 s más que antes → 3,2 s; con el anuncio "¡al otro lado del mundo!" (≥ 5.000 km), 6,2 s. */
 const DISTANCE_VIEW_MS = 3200;
+/** Franja con un dato del lugar al acertar (Fase 8): 1,5 s, sin pausar nada */
+const FACT_STRIP_MS = 1500;
 const DISTANCE_VIEW_EPIC_MS = 6200;
 
 /** Quick continent guess from lat/lon — used for map highlight hint */
@@ -187,6 +190,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   useEffect(() => { resetComboJuice(); return () => resetComboJuice(); }, []);
   const [mascotState, setMascotState] = useState<MascotState>('idle');
   const [failShake, setFailShake] = useState(false);
+  // Ficha del lugar (Fase 8): las cifras se descargan al empezar; la franja del acierto dura 1,5 s
+  const placeFacts = usePlaceFacts();
+  const [factStrip, setFactStrip] = useState<string | null>(null);
+  const factStripTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => { if (factStripTimer.current) clearTimeout(factStripTimer.current); }, []);
   const [showHint, setShowHint] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [isPageHidden, setIsPageHidden] = useState(false);
@@ -446,6 +454,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     // Juice del combo en el mismo instante del clic: sonido (tono por nivel), vibración, música y
     // efectos visuales juntos (src/lib/comboJuice.ts, ComboFx)
     playComboFeedback(sc, prevLevel, { perfect: distance < PERFECT_KM });
+    // Acierto: franja con un dato del lugar ("Medellín · 2,6 millones de habitantes") durante 1,5 s
+    if (sc.quality === 'good') {
+      const f = keyFact(currentCity, getPlaceFact(factIdOf(currentCity)), t as never, locale);
+      if (factStripTimer.current) clearTimeout(factStripTimer.current);
+      setFactStrip(f ? `${itemTitle(currentCity, locale)} · ${f}` : null);
+      if (f) factStripTimer.current = setTimeout(() => setFactStrip(null), FACT_STRIP_MS);
+    }
     fireComboFx(sc.comboLevel, sc.broke, sc.quality !== 'miss');
     if (sc.quality !== 'miss' && sc.comboLevel >= 2) setComboHit(h => h + 1);
     if (sc.broke) { setBrokeLevel(prevLevel); setTimeout(() => setBrokeLevel(null), 600); }
@@ -604,6 +619,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     />
   ) : undefined;
   const cardExtra = ghostCompare ?? (isTraining && lastResult ? <TrainingTip city={lastResult.city} /> : undefined);
+  const cardFact = useMemo(() => (lastResult && placeFacts ? keyFact(lastResult.city, placeFacts[factIdOf(lastResult.city) ?? ''] ?? null, t as never, locale) : null), [lastResult, placeFacts, t, locale]);
   const isTimerCritical = timeLeft <= 3 && !isWaiting;
   const isTimerUrgent = timeLeft <= 5 && !isWaiting;
 
@@ -869,6 +885,15 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
         )}
 
+        {/* Franja del acierto (Fase 8): un dato del lugar 1,5 s, en el lugar de "Toca el mapa" */}
+        {isWaiting && factStrip && !showPopup && (
+          <div className="absolute left-1/2 -translate-x-1/2 z-[7] pointer-events-none max-w-[92%]" style={{ bottom: 'max(0.5rem, var(--sab))' }} role="status">
+            <span className="block animate-fade-in rounded-full px-4 py-1.5 short:py-1 text-xs sm:text-sm font-bold border-2 border-accent/70 text-foreground backdrop-blur-md truncate shadow-[0_0_18px_hsl(var(--accent)/0.35)]" style={{ background: 'hsl(var(--brand-navy-deep) / 0.9)' }}>
+              <span className="text-accent" aria-hidden>✓ </span>{factStrip}
+            </span>
+          </div>
+        )}
+
         {/* "Toca el mapa para responder" */}
         {!isWaiting && (
           <div className="absolute left-1/2 -translate-x-1/2 z-[6] pointer-events-none" style={{ bottom: 'max(0.5rem, var(--sab))' }}>
@@ -950,6 +975,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               title={itemTitle(lastResult.city, locale)}
               subtitle={itemSubtitle(lastResult.city, locale)}
               hidePoints={isTraining}
+              fact={cardFact}
             />
             </FitToBox>
           </div>
@@ -983,6 +1009,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               title={itemTitle(lastResult.city, locale)}
               subtitle={itemSubtitle(lastResult.city, locale)}
               hidePoints={isTraining}
+              fact={cardFact}
               />
             </FitToBox>
           </div>
