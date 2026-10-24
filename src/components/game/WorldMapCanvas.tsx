@@ -12,12 +12,21 @@ import { appNumberLocale } from '@/lib/format';
 import { getHiResMap, loadHiResMap, traceCountry, traceArcs, countryAt, labelSpots, boxesIntersect, type HiResMap } from '@/lib/hiResMap';
 import { layoutPills, layoutTexts, rectAround, nearestOnRect, type PillRequest, type PlacedPill, type Rect, type Pt } from '@/lib/mapLabels';
 import { planAnswerZoom, clampZoomFrame } from '@/lib/mapZoom';
-import { countryDisplayName } from '@/lib/flags';
+import { countryDisplayName, countryIso } from '@/lib/flags';
+import { PRO_PACK_META } from '@/data/proPackMeta';
 
 /** Índice de cada país en countries.ts: el mapa detallado usa el mismo color que la vista del mundo */
 const LOW_INDEX = new Map(countries.map((c, i) => [c.name, i]));
 /** Prefijo de los departamentos de cada pack en packShapes.json y el país del pack (nombre de countries.ts / 1:50m) */
-const PACK_INFO: Partial<Record<GameMode, { prefix: string; country: string }>> = { colombia: { prefix: 'div:co-', country: 'Colombia' } };
+/** Países de cada pack (ISO): sus divisiones se dibujan (`div:<iso>-…`) y el resto de países queda atenuado */
+const packIsos = (mode: GameMode): string[] | null =>
+  mode === 'colombia' ? ['CO'] : mode in PRO_PACK_META ? PRO_PACK_META[mode as keyof typeof PRO_PACK_META].isos : null;
+const PACK_INFO: Partial<Record<GameMode, { prefixes: string[]; isos: Set<string> }>> = Object.fromEntries(
+  (['colombia', 'andes', 'conosur', 'mexcam', 'caribe'] as GameMode[]).map((m) => {
+    const isos = packIsos(m) ?? [];
+    return [m, { prefixes: isos.map((i) => `div:${i.toLowerCase()}-`), isos: new Set(isos) }];
+  }),
+);
 
 /**
  * Pack de país (Fase 7) sobre el mapa: cada departamento con uno de cuatro tonos (los vecinos nunca comparten tono) y las
@@ -30,7 +39,7 @@ function drawPackOverlay(ctx: CanvasRenderingContext2D, shapes: FeatureShapes, m
   const TONES = ['rgba(255,255,255,0)', 'rgba(255,255,255,0.13)', 'rgba(255,255,255,0.26)', rgba(BRAND_RGB.navyDeep, 0.14)];
   ctx.save();
   for (const [id, sh] of Object.entries(shapes)) {
-    if (!id.startsWith(info.prefix)) continue;
+    if (!info.prefixes.some((p) => id.startsWith(p))) continue;
     ctx.fillStyle = TONES[(sh.tone ?? 0) % TONES.length];
     for (const ring of sh.rings) {
       ctx.beginPath();
@@ -219,7 +228,7 @@ export default function WorldMapCanvas({
   const detailMap = zoomedView ? hiRes : null;
   // Pack de país (Fase 7): departamentos y fronteras internas, que se descargan aparte
   const packOn = isPackMode(gameMode);
-  const packShapes = usePackShapes(packOn);
+  const packShapes = usePackShapes(packOn ? gameMode : null);
   const packInfo = packOn ? PACK_INFO[gameMode] : undefined;
   // Lo visible del lienzo en grados (con margen), para no recorrer lo que queda fuera
   const visibleBox = useCallback((w: number, h: number): [number, number, number, number] => [
@@ -332,7 +341,7 @@ export default function WorldMapCanvas({
         ctx.beginPath();
         if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
         // En un pack, los países vecinos quedan atenuados para que resalte el país del pack
-        if (packInfo && c.name !== packInfo.country && c.ref !== packInfo.country) {
+        if (packInfo && !packInfo.isos.has(countryIso(c.name) ?? countryIso(c.ref) ?? '')) {
           ctx.fillStyle = rgba(BRAND_RGB.navyDeep, 0.42);
           ctx.beginPath();
           if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');

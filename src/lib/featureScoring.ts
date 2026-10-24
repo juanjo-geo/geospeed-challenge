@@ -4,7 +4,9 @@
  *  · src/data/featureShapes.json (scripts/build-features.mjs): áreas (mares, lagos, desiertos, cordilleras, islas…)
  *    y líneas (ríos) de los lugares;
  *  · src/data/packShapes.json (scripts/build-colombia.mjs): departamentos (`div:co-…`, con un tono para el mapa) y las
- *    fronteras internas de cada pack (`borders:colombia`, solo para dibujar).
+ *    fronteras internas del pack Colombia (`borders:colombia`, solo para dibujar);
+ *  · src/data/proPackShapes.json (scripts/build-pro-packs.mjs): divisiones de los packs Pro (`div:ve-…`, `div:mx-…`…)
+ *    y sus fronteras internas (`borders:andes`, …).
  * Los lugares puntuales (picos, cabos, cataratas) se miden al punto, como las ciudades. Si un contorno aún no llegó,
  * se mide al punto representativo y el servidor (que siempre tiene el contorno) corrige el puntaje al guardar.
  */
@@ -34,19 +36,26 @@ function makeLoader(importer: () => Promise<unknown>) {
 }
 const features = makeLoader(() => import('@/data/featureShapes.json'));
 const packs = makeLoader(() => import('@/data/packShapes.json'));
+const proPacks = makeLoader(() => import('@/data/proPackShapes.json'));
+
+/** Archivo de contornos de un pack o de una división por su id: Colombia (`colombia`, `div:co-…`) o los packs Pro */
+export type PackSet = 'colombia' | 'pro';
+export const packSetOf = (modeOrId: string | null | undefined): PackSet | null =>
+  !modeOrId ? null : modeOrId === 'colombia' || modeOrId.startsWith('div:co-') ? 'colombia' : modeOrId.startsWith('div:') || ['andes', 'conosur', 'mexcam', 'caribe'].includes(modeOrId) ? 'pro' : null;
+const loaderOf = (set: PackSet) => (set === 'colombia' ? packs : proPacks);
 
 /** Descarga (una vez) los contornos de los lugares */
 export const loadFeatureShapes = (): Promise<FeatureShapes> => features.load();
-/** Descarga (una vez) los departamentos y fronteras internas de los packs */
-export const loadPackShapes = (): Promise<FeatureShapes> => packs.load();
+/** Descarga (una vez) las divisiones y fronteras internas de un pack (por modo o por id de división) */
+export const loadPackShapes = (modeOrId: string = 'colombia'): Promise<FeatureShapes> => loaderOf(packSetOf(modeOrId) ?? 'colombia').load();
 export const getFeatureShapes = (): FeatureShapes | null => features.get();
-export const getPackShapes = (): FeatureShapes | null => packs.get();
+export const getPackShapes = (modeOrId: string = 'colombia'): FeatureShapes | null => loaderOf(packSetOf(modeOrId) ?? 'colombia').get();
 /** Contorno de un lugar o de un departamento, si ya está cargado */
 export const featureShape = (id: string | undefined | null): FeatureShape | null =>
-  (id ? (id.startsWith('div:') ? packs.get()?.[id] : features.get()?.[id]) ?? null : null);
+  (id ? (id.startsWith('div:') ? loaderOf(packSetOf(id)!).get()?.[id] : features.get()?.[id]) ?? null : null);
 /** Solo pruebas: inyecta los contornos sin cargar los chunks */
 export function __setFeatureShapes(s: FeatureShapes | null): void { features.set(s); }
-export function __setPackShapes(s: FeatureShapes | null): void { packs.set(s); }
+export function __setPackShapes(s: FeatureShapes | null, set: PackSet = 'colombia'): void { loaderOf(set).set(s); }
 
 /** Distancia del clic al lugar: contorno si está cargado (0 dentro de un área); si no, al punto representativo */
 export function featureDistance(item: Pick<City, 'id' | 'lat' | 'lon'>, lat: number, lon: number): CountryHit {

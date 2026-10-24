@@ -140,6 +140,7 @@ import { toast } from 'sonner';
 import { showInterstitial, initAds } from '@/lib/adSystem';
 import { addBattlePassXP } from '@/lib/cosmetics';
 import { initAnalytics, trackGameStart, trackGameComplete, trackRageQuit, trackShare, trackStoreView, getSessionDurationMs, incrementSessionGames } from '@/lib/analytics';
+import { canPlayPack, isPackTrial, markPackTrial, refundPackTrial } from '@/lib/packAccess';
 import { resetSessionFrustration } from '@/lib/frustrationDetector';
 import { initFeatureFlags } from '@/lib/featureFlags';
 import { challengeCitiesToGame, mockRecordMyResult, isMockChallenges, createChallenge, fetchChallengeGhost, type Challenge, type ChallengeDetail, type ChallengeGhost, type MyChallenge } from '@/lib/challenges';
@@ -475,10 +476,18 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   const handleSelectDifficulty = useCallback((diff: Difficulty, mode: GameMode, category: Category = 'cities') => {
     unlockAudio(); // Pre-unlock audio on user gesture so sounds work on mobile
+    // Packs Pro (Fase 7b): sin Pro, una partida de prueba al día por pack; si ya la usó, a la tienda
+    if (!canPlayPack(mode)) {
+      toast(t('pack_trialUsed'));
+      trackStoreView();
+      setPhase('store');
+      return;
+    }
     if (!consumeLife()) {
       setShowNoLives(true);
       return;
     }
+    if (isPackTrial(mode)) { markPackTrial(mode); toast(t('pack_trialStarted')); }
     setIsTraining(false);
     setIsSpeedDemon(false);
     setActiveChallenge(null);
@@ -497,7 +506,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
     gameKeyRef.current += 1;
     setPhase('countdown');
-  }, [isMobile]);
+  }, [isMobile, t]);
 
   // Back gesture / hardware back button → return to home instead of leaving the app.
   // Works for Android swipe-back and browser back. (Native Capacitor back button also emits popstate.)
@@ -852,7 +861,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [finalRounds]);
   // "Nueva partida" desde el cierre: mismas condiciones, ciudades nuevas (consume vida como un inicio normal)
   const handleNewGame = useCallback(() => {
+    if (!canPlayPack(gameMode)) { toast(t('pack_trialUsed')); trackStoreView(); setPhase('store'); return; }
     if (!consumeLife()) { setShowNoLives(true); return; }
+    if (isPackTrial(gameMode)) markPackTrial(gameMode);
     setReplayCities(null);
     setRevengeCities(null);
     setChallengeSeed(null);
@@ -861,15 +872,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     newGameSeed();
     gameKeyRef.current += 1;
     setPhase('countdown');
-  }, []);
+  }, [gameMode, t]);
   // Cancelar durante la cuenta regresiva / aviso de giro: la partida no empezo → se devuelve la vida
   const handleCancelCountdown = useCallback(() => {
     if (!isTraining) addLives(1);
+    refundPackTrial(gameMode); // pack Pro sin Pro: la prueba de hoy tampoco se gastó
     setChallengeSeed(null);
     setChallengerScore(null);
     setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null);
     setPhase('home'); scrollAppToTop(); navigate('/', { replace: true });
-  }, [isTraining, navigate]);
+  }, [isTraining, navigate, gameMode]);
 
   // ── F3: retos asincrónicos ──
   const handleFriends = useCallback(() => { setPhase('friends'); scrollAppToTop(); }, []);

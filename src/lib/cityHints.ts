@@ -14,6 +14,8 @@ import { countryAdjacency } from '@/data/countryAdjacency';
 import { countryDisplayName } from '@/lib/flags';
 import { featureTypeLabel } from '@/lib/featureTypes';
 import { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
+import { PRO_PACK_META } from '@/data/proPackMeta';
+import { countryIso } from '@/lib/flags';
 
 type Lang = 'es' | 'en';
 
@@ -232,12 +234,43 @@ export function divisionHint(item: Pick<City, 'name' | 'nameEn' | 'capital' | 'n
     : `${name}: ${where}. It borders ${joinList(list, lang)}.`;
 }
 
+// ── Packs Pro (Fase 7b): la referencia es la capital del país ────────────────
+function nationalCapital(item: Pick<City, 'country' | 'region'>) {
+  const meta = item.region && item.region in PRO_PACK_META ? PRO_PACK_META[item.region as keyof typeof PRO_PACK_META] : null;
+  const iso = countryIso(item.country);
+  return meta && iso ? meta.capitals[iso] ?? null : null;
+}
+
+/** Pista de una ciudad de un pack Pro: su división y país, y dónde queda respecto a la capital del país. */
+export function proCityHint(item: Pick<City, 'name' | 'lat' | 'lon' | 'admin' | 'isCapital' | 'country' | 'region'>, lang: Lang): string {
+  const cap = nationalCapital(item);
+  const where = item.admin ? `${item.admin}, ${item.country}` : item.country;
+  if (cap && cap.name === item.name) return lang === 'es' ? `${item.name} es la capital de ${item.country}.` : `${item.name} is the capital of ${item.country}.`;
+  const rel = cap ? (lang === 'es' ? `; queda a unos ${kmFrom(cap, item, lang)} km al ${direction(cap, item, lang)} de ${cap.name}` : `; it lies about ${kmFrom(cap, item, lang)} km ${direction(cap, item, lang)} of ${cap.name}`) : '';
+  if (item.isCapital) return lang === 'es' ? `${item.name} es la capital de ${where}${rel}.` : `${item.name} is the capital of ${where}${rel}.`;
+  return lang === 'es' ? `${item.name} está en ${where}${rel}.` : `${item.name} is in ${where}${rel}.`;
+}
+
+/** Pista de una división de un pack Pro: tipo, país, capital y vecinos. */
+export function proDivisionHint(item: Pick<City, 'name' | 'nameEn' | 'capital' | 'nb' | 'ftype' | 'country' | 'region'>, lang: Lang): string {
+  const name = lang === 'en' && item.nameEn ? item.nameEn : item.name;
+  const type = featureTypeLabel(item.ftype, lang).toLowerCase();
+  const country = lang === 'en' ? countryDisplayName(item.country, 'en') : item.country;
+  const nb = item.nb ?? [];
+  const list = nb.length > 5 ? [...nb.slice(0, 4), lang === 'es' ? 'otros' : 'others'] : nb;
+  const head = lang === 'es' ? `${name}: ${type} de ${country}` : `${name}: ${type} of ${country}`;
+  const cap = item.capital ? (lang === 'es' ? `; su capital es ${item.capital}` : `; its capital is ${item.capital}`) : '';
+  const tail = nb.length ? (lang === 'es' ? ` Limita con ${joinList(list, lang)}.` : ` It borders ${joinList(list, lang)}.`) : '';
+  return `${head}${cap}.${tail}`;
+}
+
 /** Pista de cualquier ítem del catálogo según su tipo */
-export const itemHint = (item: Pick<City, 'name' | 'country' | 'lat' | 'lon' | 'kind' | 'nameEn' | 'ftype' | 'isos' | 'geom' | 'city' | 'admin' | 'isCapital' | 'capital' | 'nb'>, lang: Lang): string =>
+export const itemHint = (item: Pick<City, 'id' | 'name' | 'country' | 'lat' | 'lon' | 'kind' | 'nameEn' | 'ftype' | 'isos' | 'geom' | 'city' | 'admin' | 'isCapital' | 'capital' | 'nb' | 'region'>, lang: Lang): string =>
   item.kind === 'flag' ? flagHint(item, lang)
     : item.kind === 'feature' ? featureHint(item, lang)
       : item.kind === 'monument' ? landmarkHint(item, lang)
-        : item.kind === 'division' ? divisionHint(item, lang)
+        : item.kind === 'division' ? (item.id?.startsWith('div:co-') ? divisionHint(item, lang) : proDivisionHint(item, lang))
+          : item.id?.startsWith('ci:') ? proCityHint(item, lang)
           : item.admin ? packCityHint(item, lang)
             : cityHint(item, lang);
 

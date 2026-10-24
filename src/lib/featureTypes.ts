@@ -31,6 +31,12 @@ export const FEATURE_TYPE: Record<FeatureType, { emoji: string; es: string; en: 
   paramo: { emoji: '🌾', es: 'Páramo', en: 'Páramo' },
   department: { emoji: '🗺️', es: 'Departamento', en: 'Department' },
   district: { emoji: '🏛️', es: 'Distrito capital', en: 'Capital district' },
+  province: { emoji: '🗺️', es: 'Provincia', en: 'Province' },
+  state: { emoji: '🗺️', es: 'Estado', en: 'State' },
+  parish: { emoji: '🗺️', es: 'Parroquia', en: 'Parish' },
+  adistrict: { emoji: '🗺️', es: 'Distrito', en: 'District' },
+  territory: { emoji: '🗺️', es: 'Territorio', en: 'Territory' },
+  municipality: { emoji: '🗺️', es: 'Municipio especial', en: 'Special municipality' },
 };
 
 export const featureTypeLabel = (type: FeatureType | undefined, locale: string): string =>

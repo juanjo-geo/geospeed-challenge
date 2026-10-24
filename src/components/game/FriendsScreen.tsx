@@ -8,6 +8,7 @@ import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon } from '@/components/ui/icons';
 import { REGION_ART, DIFF_ART, DIFF_ORDER, REGION_FLAG } from '@/lib/selectionArt';
+import { isProPack } from '@/lib/packAccess';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot from './Mascot';
 // Globo que gira entre los dos exploradores (polígonos en carga diferida)
@@ -60,7 +61,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
     }
   };
 
-  const regionOptions: SelectorOption<GameMode>[] = useMemo(() => MODE_CONFIG.map(m => ({
+  const regionOptions: SelectorOption<GameMode>[] = useMemo(() => MODE_CONFIG.filter(m => !isProPack(m.key)).map(m => ({
     key: m.key, emoji: REGION_ART[m.key].emoji, art: REGION_ART[m.key].art,
     icon: REGION_FLAG[m.key] ? <img src={REGION_FLAG[m.key]} alt="" className="w-12 short:w-9 aspect-[3/2] object-cover rounded-md ring-1 ring-black/20" /> : undefined,
     label: t(`mode_${m.key}` as never) || m.label, desc: t(`region_desc_${m.key}` as never),

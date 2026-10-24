@@ -537,7 +537,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   }), [t, lastResult]);
   // Contornos de los lugares (Fase 6b): se cargan al entrar si la partida los usa; el país/lugar se resalta al responder
   const featureShapes = useFeatureShapes(cities.some(isFeature));
-  const packShapes = usePackShapes(cities.some((c) => c.kind === 'division'));
+  const packShapes = usePackShapes(cities.find((c) => c.kind === 'division')?.id ?? null);
   const highlightShape = useMemo(
     () => {
       if (!lastResult || !usesShapeFile(lastResult.city) || !lastResult.city.id) return null;

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { MODE_CONFIG, type Difficulty } from '@/data/cities';
-import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode, type Category } from '@/lib/catalog';
+import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode, categoryLabelKey, type Category } from '@/lib/catalog';
 import { FRAME_STYLE, TITLE_KEY, getCachedDailyStatus } from '@/lib/dailyChallenge';
 import { fetchLeaderboardTop, fetchMyRank, type LeaderboardTopRow, type RankPeriod, type RankSeason } from '@/lib/gameResults';
 import { hasSession } from '@/lib/history';
@@ -148,7 +148,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
             {board.mode !== 'mundial' && board.gameType !== 'timeattack' && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-3 rounded-xl border border-accent/40 bg-brand-navy-deep/60 p-1" role="tablist" aria-label={t('home_category')}>
                 {categoriesForMode(board.mode).map((c) => (
-                  <button key={c} role="tab" aria-selected={effCategory === c} onClick={() => { playButtonTap(); setCategory(c); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${effCategory === c ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{CATEGORY_ART[c].emoji} {t(CATEGORY_KEY[c] as never)}</button>
+                  <button key={c} role="tab" aria-selected={effCategory === c} onClick={() => { playButtonTap(); setCategory(c); }} className={`rounded-lg px-2 py-1.5 text-xs sm:text-sm font-extrabold ${effCategory === c ? 'bg-accent/20 text-accent' : 'text-foreground/70 hover:text-foreground'}`}>{CATEGORY_ART[c].emoji} {t(categoryLabelKey(c, board.mode) as never)}</button>
                 ))}
               </div>
             )}

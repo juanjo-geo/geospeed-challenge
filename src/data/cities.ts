@@ -1,10 +1,11 @@
 export type Difficulty = 'basic' | 'easy' | 'medium' | 'hard';
 import { COLOMBIA_CITIES } from './colombiaCatalog';
+import { PRO_PACK_META } from './proPackMeta';
 
-/** Regiones del juego: el mundo, cuatro continentes y los packs de país (Fase 7: 'colombia') */
-export type GameMode = 'world' | 'europe' | 'asia' | 'americas' | 'africa' | 'colombia';
-/** Packs de país: mapa del país con sus divisiones, escala de cercanía propia y ranking propio */
-export const PACK_MODES: GameMode[] = ['colombia'];
+/** Regiones del juego: el mundo, cuatro continentes y los packs (Fase 7: 'colombia' gratis; andes, conosur, mexcam, caribe Pro) */
+export type GameMode = 'world' | 'europe' | 'asia' | 'americas' | 'africa' | 'colombia' | 'andes' | 'conosur' | 'mexcam' | 'caribe';
+/** Packs: mapa del país o países con sus divisiones, escala de cercanía propia y ranking propio */
+export const PACK_MODES: GameMode[] = ['colombia', 'andes', 'conosur', 'mexcam', 'caribe'];
 export const isPackMode = (mode: string | null | undefined): boolean => PACK_MODES.includes(mode as GameMode);
 /** El mundo y los continentes (Caos, duelo en vivo y repaso siguen solo con estos) */
 export const REGION_MODES: GameMode[] = ['world', 'europe', 'asia', 'americas', 'africa'];
@@ -13,7 +14,8 @@ export const REGION_MODES: GameMode[] = ['world', 'europe', 'asia', 'americas', 
 export type FeatureType =
   | 'river' | 'lake' | 'sea' | 'gulf' | 'strait' | 'range' | 'peak' | 'volcano' | 'desert' | 'island' | 'islands'
   | 'peninsula' | 'cape' | 'plateau' | 'basin' | 'delta' | 'waterfall' | 'valley' | 'plain' | 'wetland' | 'canyon'
-  | 'region' | 'reef' | 'isthmus' | 'glacier' | 'park' | 'paramo' | 'department' | 'district';
+  | 'region' | 'reef' | 'isthmus' | 'glacier' | 'park' | 'paramo' | 'department' | 'district'
+  | 'province' | 'state' | 'parish' | 'adistrict' | 'territory' | 'municipality';
 
 export interface City {
   /** Identificador estable (slug del nombre; `flag:<ISO>` en banderas, `feat:<slug>` en lugares), el mismo de la tabla `places` del servidor */
@@ -529,6 +531,8 @@ export function getCitiesByMode(mode: GameMode): City[] {
     case 'americas': return americasCities;
     case 'africa': return africaCities;
     case 'colombia': return COLOMBIA_CITIES;
+    // Packs Pro (Fase 7b): sus ciudades viven en proPackCatalog.ts (src/lib/catalog.ts las elige)
+    case 'andes': case 'conosur': case 'mexcam': case 'caribe': return [];
     default: return worldCities;
   }
 }
@@ -632,6 +636,9 @@ export function getMapBounds(mode: GameMode): MapBounds {
     case 'colombia':
       // Todo el territorio, incluido el archipiélago de San Andrés (≈ 82° O) y Leticia (4,2° S)
       return { latMin: -4.6, latMax: 13.7, lonMin: -82.2, lonMax: -66.6 };
+    case 'andes': case 'conosur': case 'mexcam': case 'caribe':
+      // Packs Pro (Fase 7b): la caja de sus divisiones, calculada por scripts/build-pro-packs.mjs
+      return PRO_PACK_META[mode].bounds;
     default:
       // Hasta ~62° S: la ciudad más austral es Ushuaia (54,8° S); la Antártida no se juega y su espacio
       // queda para el encabezado sólido de la partida (el mapa conserva su tamaño y baja).
@@ -646,4 +653,8 @@ export const MODE_CONFIG: { key: GameMode; label: string; emoji: string }[] = [
   { key: 'americas', label: 'América', emoji: '🌎' },
   { key: 'africa', label: 'África', emoji: '🌍' },
   { key: 'colombia', label: 'Colombia', emoji: '🇨🇴' },
+  { key: 'andes', label: 'Andes', emoji: '🦙' },
+  { key: 'conosur', label: 'Cono Sur', emoji: '🧉' },
+  { key: 'mexcam', label: 'México y Centroamérica', emoji: '🌮' },
+  { key: 'caribe', label: 'Caribe', emoji: '🏝️' },
 ];
