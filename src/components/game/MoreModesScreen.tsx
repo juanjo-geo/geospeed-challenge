@@ -6,6 +6,7 @@ import { getPlayerLevel } from '@/lib/levelSystem';
 import { getFlag } from '@/lib/featureFlags';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon, HomeIcon, LegendPin } from '@/components/ui/icons';
+import FavStar from './FavStar';
 const SplashGlobe = lazy(() => import('./SplashGlobe'));
 
 interface MoreModesScreenProps {
@@ -18,6 +19,8 @@ interface MoreModesScreenProps {
   onMemory?: () => void;
   /** Fase 5: Sprint */
   onSprint?: () => void;
+  /** Fase 10: Mis quizzes */
+  onQuizzes?: () => void;
 }
 
 const IMPOSSIBLE_UNLOCK_LEVEL = 5;
@@ -27,7 +30,7 @@ const IMPOSSIBLE_UNLOCK_LEVEL = 5;
  * Tarjetas grandes con ilustración a la izquierda, etiqueta y flecha; cada una lleva a las reglas/selección
  * que ya tiene cada modo.
  */
-export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory, onSprint }: MoreModesScreenProps) {
+export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory, onSprint, onQuizzes }: MoreModesScreenProps) {
   const { t } = useI18n();
   const level = getPlayerLevel().level;
   const impossibleLocked = level < IMPOSSIBLE_UNLOCK_LEVEL;
@@ -65,7 +68,14 @@ export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, on
       ring: 'border-primary/70 shadow-[0_0_18px_hsl(var(--primary)/0.15)]', tagClass: due > 0 ? 'border-accent text-accent' : 'border-primary text-primary',
       onClick: onMemory, locked: false,
     }] : []),
+    ...(onQuizzes ? [{
+      key: 'quizzes', art: ['🧩', '✏️'], title: t('quiz_myTitle'), desc: t('more_quizzesDesc'), tag: t('more_quizzesTag'),
+      ring: 'border-accent/70 shadow-[0_0_18px_hsl(var(--accent)/0.18)]', tagClass: 'border-accent text-accent',
+      onClick: onQuizzes, locked: false,
+    }] : []),
   ];
+  // Clave de cada tarjeta → id del favorito de modo (src/lib/favorites.ts FavMode)
+  const favId: Record<string, string> = { caos: 'caos', impossible: 'impossible', mundial: 'mundial', training: 'training', memory: 'memory', sprint: 'sprint', quizzes: 'quizzes' };
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center px-3 py-4 sm:px-4 sm:py-6 md:px-6 overflow-y-auto game-bg">
@@ -87,8 +97,8 @@ export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, on
 
         <div className="flex flex-col md:grid md:grid-cols-3 gap-3 sm:gap-4">
           {cards.map(c => (
+            <div key={c.key} className="relative">
             <button
-              key={c.key}
               disabled={c.locked}
               onClick={() => { if (!c.locked) { playButtonTap(); c.onClick(); } }}
               className={`relative flex md:flex-col items-center md:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-3xl border-2 bg-card/75 text-left transition-all active:scale-[0.98] hover:brightness-110 ${c.ring} ${c.locked ? 'opacity-55 cursor-not-allowed' : ''}`}
@@ -109,6 +119,8 @@ export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, on
               </span>
               <ChevronIcon className="w-7 h-7 text-foreground/85 md:absolute md:right-4 md:top-4" />
             </button>
+            {favId[c.key] && !c.locked && <FavStar type="mode" id={favId[c.key]} className="absolute right-2 bottom-2" />}
+            </div>
           ))}
         </div>
 

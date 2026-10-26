@@ -142,6 +142,8 @@ interface WorldMapCanvasProps {
   highlightCountry?: string | null;
   /** Lugares (Fase 6b): contorno a resaltar tras responder (featureShapes.json): área rellena o trazo (río). Pasar memoizado. */
   highlightShape?: { line: boolean; rings: number[][][] } | null;
+  /** Editor de quizzes (Fase 10): puntos de los lugares disponibles (on = elegido). Pasar memoizado. */
+  markers?: { lat: number; lon: number; on: boolean }[] | null;
 }
 
 export default function WorldMapCanvas({
@@ -167,6 +169,7 @@ export default function WorldMapCanvas({
   pinFx,
   highlightCountry,
   highlightShape,
+  markers,
 }: WorldMapCanvasProps) {
   const { t, locale } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -726,6 +729,17 @@ export default function WorldMapCanvas({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
+      // Editor de quizzes: disponibles en turquesa tenue, elegidos en amarillo con borde
+      for (const m of markers ?? []) {
+        const x = lonToX(m.lon), y = latToY(m.lat);
+        ctx.beginPath();
+        ctx.arc(x, y, m.on ? 5.5 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = m.on ? BRAND.yellow : rgba(BRAND_RGB.turquoise, 0.7);
+        ctx.fill();
+        ctx.lineWidth = m.on ? 2 : 1;
+        ctx.strokeStyle = BRAND.navyDeep;
+        ctx.stroke();
+      }
       lineProgressRef.current = 0;
       return;
     }
@@ -1147,7 +1161,7 @@ export default function WorldMapCanvas({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct, rivalClick, detailMap, labelAvoid, locale, showZoomControls, visibleBox, pinFx]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dimensions, userClick, correctLocation, distanceKm, lonToX, latToY, theme, pinConfig, pinEmoji, trailConfig, decorReady, pinLabels?.you, pinLabels?.correct, rivalClick, detailMap, labelAvoid, locale, showZoomControls, visibleBox, pinFx, markers]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Training mode: pulsing hint zone animation (runs only when hintZone is set and user hasn't clicked)
   const hintAnimFrameRef = useRef<number>(0);

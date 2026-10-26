@@ -107,12 +107,13 @@ export interface RoundScore {
  * Puntúa una ronda. `closenessPts` ya calculada (ciudades: closeness(km, escala); Mundial: puntos de banda).
  * Entero exacto: round(cercanía × rapidez‰ × combo‰₀ × dificultad% / 10⁶), mitad hacia arriba (como SQL).
  */
-export function scoreRound(closenessPts: number, seconds: number, prevCombo: number, diffHundredths = 100): RoundScore {
+export function scoreRound(closenessPts: number, seconds: number, prevCombo: number, diffHundredths = 100, fixedSpeed = false): RoundScore {
   const q = qualityOf(closenessPts);
   const combo = nextComboCount(prevCombo, q);
   const level = comboLevelOf(combo);
   const comboTenths = COMBO_LEVELS[level].tenths;
-  const sMilli = speedMilli(toTenths(seconds));
+  // Quiz sin reloj (Fase 10): la rapidez no cuenta, ×1,0 (el servidor hace lo mismo con game_type 'quiz_free')
+  const sMilli = fixedSpeed ? 1000 : speedMilli(toTenths(seconds));
   const raw = closenessPts * sMilli * comboTenths * diffHundredths; // ≤ 1.000 × 2.200 × 25 × 150
   return {
     closeness: closenessPts,
