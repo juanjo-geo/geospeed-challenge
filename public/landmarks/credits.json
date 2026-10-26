@@ -117,6 +117,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Basilica_Chiquinquira_01.jpg"
  },
  {
+  "id": "basilica-higuey",
+  "name": "Basílica de Higüey",
+  "author": "Celiovmota",
+  "source": "BasílicaHigüey.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Bas%C3%ADlicaHig%C3%BCey.jpg"
+ },
+ {
   "id": "san-marcos",
   "name": "Basílica de San Marcos",
   "author": "Nino Barbieri",
@@ -378,6 +387,24 @@
   "url": "https://commons.wikimedia.org/wiki/File:Panorama_Castillo_San_Felipe_de_Barajas_CTG_11_2019_2864.jpg"
  },
  {
+  "id": "san-pedro-roca",
+  "name": "Castillo de San Pedro de la Roca",
+  "author": "Glogg, Peter, Switzerland",
+  "source": "Castillo del Morro by Glogg 4.jpg",
+  "license": "CC BY 2.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Castillo_del_Morro_by_Glogg_4.jpg"
+ },
+ {
+  "id": "morro-habana",
+  "name": "Castillo del Morro (La Habana)",
+  "author": "Dr. Anthony R. Picciolo, NOAA NODC",
+  "source": "El Moro Havanna Cuba.jpg",
+  "license": "Public domain",
+  "licenseUrl": "",
+  "url": "https://commons.wikimedia.org/wiki/File:El_Moro_Havanna_Cuba.jpg"
+ },
+ {
   "id": "castillo-san-cristobal",
   "name": "Castillo San Cristóbal",
   "author": "Daderot",
@@ -423,6 +450,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:K%C3%B6lner_Dom_von_Osten.jpg"
  },
  {
+  "id": "catedral-habana",
+  "name": "Catedral de La Habana",
+  "author": "Velvet",
+  "source": "La Havane cathedrale face.JPG",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:La_Havane_cathedrale_face.JPG"
+ },
+ {
   "id": "duomo-milan",
   "name": "Catedral de Milán",
   "author": "Jakub Hałun",
@@ -466,6 +502,15 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
   "url": "https://commons.wikimedia.org/wiki/File:Catedral_Metropolitana_de_la_Ciudad_de_M%C3%A9xico_1.jpg"
+ },
+ {
+  "id": "catedral-santo-domingo",
+  "name": "Catedral Primada de América",
+  "author": "Georg Karl Ell",
+  "source": "Dominikanische Republik Santo Domingo Basilica Catedral Menor de Santa Maria 02.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Dominikanische_Republik_Santo_Domingo_Basilica_Catedral_Menor_de_Santa_Maria_02.jpg"
  },
  {
   "id": "catedral-primada",
@@ -718,6 +763,15 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
   "url": "https://commons.wikimedia.org/wiki/File:Statue_of_Liberty_and_a_sightseeing_boat,_Liberty_Island,_New_York.jpg"
+ },
+ {
+  "id": "faro-colon",
+  "name": "Faro a Colón",
+  "author": "Dr. Thomas Liptak",
+  "source": "Dominican Republic, Santo Domingo, Columbus Lighthouse.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Dominican_Republic,_Santo_Domingo,_Columbus_Lighthouse.jpg"
  },
  {
   "id": "faro-fin-del-mundo",
@@ -1017,6 +1071,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:80_-_Machu_Picchu_-_Juin_2009_-_edit.jpg"
  },
  {
+  "id": "malecon-habana",
+  "name": "Malecón de La Habana",
+  "author": "Lukas Mathis",
+  "source": "Havana malecon (cropped).jpg",
+  "license": "CC BY-SA 2.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Havana_malecon_(cropped).jpg"
+ },
+ {
   "id": "marina-bay-sands",
   "name": "Marina Bay Sands",
   "author": "Tony Hisgett from Birmingham, UK",
@@ -1233,6 +1296,15 @@
   "url": "https://commons.wikimedia.org/wiki/File:Porporela_2011.jpg"
  },
  {
+  "id": "museo-bob-marley",
+  "name": "Museo Bob Marley",
+  "author": "No machine-readable author provided. RsAzevedo assumed (based on copyright claims).",
+  "source": "56hoperd.JPG",
+  "license": "Public domain",
+  "licenseUrl": "",
+  "url": "https://commons.wikimedia.org/wiki/File:56hoperd.JPG"
+ },
+ {
   "id": "hermitage",
   "name": "Museo del Hermitage",
   "author": "Florstein (Telegram:WikiPhoto.Space)",
@@ -1303,6 +1375,15 @@
   "license": "CC BY 2.5",
   "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
   "url": "https://commons.wikimedia.org/wiki/File:Rome_Stele.jpg"
+ },
+ {
+  "id": "observatorio-arecibo",
+  "name": "Observatorio de Arecibo",
+  "author": "Mariordo (Mario Roberto Durán Ortiz)",
+  "source": "Arecibo radio telescope SJU 06 2019 6144.jpg",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Arecibo_radio_telescope_SJU_06_2019_6144.jpg"
  },
  {
   "id": "ouro-preto",
@@ -1384,6 +1465,15 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
   "url": "https://commons.wikimedia.org/wiki/File:Palaciosalvouruguay.jpg"
+ },
+ {
+  "id": "sans-souci",
+  "name": "Palacio Sans-Souci",
+  "author": "Rémi Kaupp",
+  "source": "Sans-Souci Palace front.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "url": "https://commons.wikimedia.org/wiki/File:Sans-Souci_Palace_front.jpg"
  },
  {
   "id": "palenque",
@@ -1548,6 +1638,24 @@
   "url": "https://commons.wikimedia.org/wiki/File:Plaza_de_Bol%C3%ADvar_en_Bogot%C3%A1_(Colombia).jpg"
  },
  {
+  "id": "plaza-revolucion-habana",
+  "name": "Plaza de la Revolución",
+  "author": "Takethemud at English Wikipedia",
+  "source": "Plaza of the Revolution.JPG",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "url": "https://commons.wikimedia.org/wiki/File:Plaza_of_the_Revolution.JPG"
+ },
+ {
+  "id": "plaza-mayor-trinidad",
+  "name": "Plaza Mayor de Trinidad",
+  "author": "Dieter Mueller, dino1948",
+  "source": "Trinidad (Kuba) 03.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "url": "https://commons.wikimedia.org/wiki/File:Trinidad_(Kuba)_03.jpg"
+ },
+ {
   "id": "pompeya",
   "name": "Pompeya",
   "author": "Glen Scarborough from The Central Coast, Australia",
@@ -1699,6 +1807,15 @@
   "license": "CC0",
   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
   "url": "https://commons.wikimedia.org/wiki/File:Registan_01.jpg"
+ },
+ {
+  "id": "rose-hall",
+  "name": "Rose Hall",
+  "author": "Don Ramey Logan",
+  "source": "Rose Hall Jamaica Photo Don Ramey Logan.jpg",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Rose_Hall_Jamaica_Photo_Don_Ramey_Logan.jpg"
  },
  {
   "id": "cartago",

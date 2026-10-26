@@ -9,7 +9,13 @@ import { scaleForMode } from '@/lib/scoring';
 import { itemHint } from '@/lib/cityHints';
 
 vi.mock('@/lib/premiumSystem', () => ({ isPro: () => false }));
-import { canPlayPack, markPackTrial, refundPackTrial, isPackTrial } from '@/lib/packAccess';
+// La prueba también se pregunta al servidor (claim_pack_trial): respuesta simulada
+const server = { claim: true as boolean | null, calls: [] as string[] };
+vi.mock('@/lib/identity', () => ({ ensureGuestSession: async () => 'existing' }));
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: { rpc: async (fn: string) => { server.calls.push(fn); return server.claim === null ? { data: null, error: { message: 'x' } } : { data: server.claim, error: null }; } },
+}));
+import { canPlayPack, markPackTrial, refundPackTrial, isPackTrial, claimPackTrial } from '@/lib/packAccess';
 
 const PACKS = ['andes', 'conosur', 'mexcam', 'caribe'] as const;
 const shapes = proShapesJson as unknown as Record<string, { rings: number[][][] }>;
@@ -74,5 +80,19 @@ describe('partida de prueba diaria (sin Pro)', () => {
     expect(canPlayPack('caribe')).toBe(true);
     refundPackTrial('andes');
     expect(canPlayPack('andes')).toBe(true);
+  });
+
+  it('la prueba la decide el servidor: si ya la usó (otro teléfono, datos borrados) no se juega', async () => {
+    server.calls = [];
+    server.claim = false;
+    expect(await claimPackTrial('andes')).toBe(false);
+    expect(canPlayPack('andes')).toBe(false); // Inicio muestra "prueba de hoy usada"
+    server.claim = true;
+    expect(await claimPackTrial('caribe')).toBe(true);
+    expect(await claimPackTrial('caribe')).toBe(false); // segunda vez el mismo día: ni pregunta
+    server.claim = null; // sin red / migración sin aplicar: decide la marca local
+    expect(await claimPackTrial('mexcam')).toBe(true);
+    expect(await claimPackTrial('colombia')).toBe(true);
+    expect(server.calls.filter((f) => f === 'claim_pack_trial')).toHaveLength(3);
   });
 });

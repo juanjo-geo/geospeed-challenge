@@ -438,6 +438,28 @@ export const FEATURES: FeatureSpec[] = [
   f('everglades', 'wetland', 'hard', 'Everglades', 'Everglades', undefined, pt(25.7, -80.9)),
   f('valle-de-la-muerte', 'valley', 'hard', 'Valle de la Muerte', 'Death Valley', undefined, pt(36.5, -116.9)),
 
+  // ── Caribe (2026-10-26): el pack Caribe no llegaba a 13 lugares; también entran en Mundo y América ───────────
+  f('estrecho-florida', 'strait', 'easy', 'Estrecho de Florida', 'Straits of Florida', M('Straits of Florida'), { region: 'americas' }),
+  f('canal-yucatan', 'strait', 'hard', 'Canal de Yucatán', 'Yucatán Channel', M('Yucatan Channel'), { region: 'americas' }),
+  f('paso-vientos', 'strait', 'hard', 'Paso de los Vientos', 'Windward Passage', undefined, { ...pt(20.0, -73.85), region: 'americas' }),
+  f('canal-mona', 'strait', 'hard', 'Canal de la Mona', 'Mona Passage', undefined, { ...pt(18.2, -67.9), region: 'americas' }),
+  f('bahia-cochinos', 'gulf', 'medium', 'Bahía de Cochinos', 'Bay of Pigs', undefined, pt(22.1, -81.15)),
+  f('bahia-guantanamo', 'gulf', 'hard', 'Bahía de Guantánamo', 'Guantánamo Bay', undefined, pt(19.93, -75.15)),
+  f('lago-enriquillo', 'lake', 'hard', 'Lago Enriquillo', 'Lake Enriquillo', L10('Lago Enriquillo')),
+  f('yaque-norte', 'river', 'hard', 'Río Yaque del Norte', 'Yaque del Norte River', R10('Yaque del Norte')),
+  f('pico-duarte', 'peak', 'medium', 'Pico Duarte', 'Pico Duarte', undefined, pt(19.023, -70.998)),
+  f('pico-turquino', 'peak', 'hard', 'Pico Turquino', 'Pico Turquino', undefined, pt(19.990, -76.836)),
+  f('sierra-maestra', 'range', 'medium', 'Sierra Maestra', 'Sierra Maestra', undefined, pt(20.05, -76.75)),
+  f('montanas-azules', 'range', 'hard', 'Montañas Azules', 'Blue Mountains', undefined, pt(18.05, -76.58)),
+  f('isla-juventud', 'island', 'hard', 'Isla de la Juventud', 'Isle of Youth', undefined, pt(21.72, -82.85)),
+  f('isla-gonave', 'island', 'hard', 'Isla de la Gonâve', 'Gonâve Island', undefined, pt(18.85, -73.05)),
+  f('isla-saona', 'island', 'hard', 'Isla Saona', 'Saona Island', undefined, pt(18.16, -68.72)),
+  f('vieques', 'island', 'hard', 'Isla de Vieques', 'Vieques', undefined, pt(18.12, -65.43)),
+  f('peninsula-samana', 'peninsula', 'hard', 'Península de Samaná', 'Samaná Peninsula', undefined, pt(19.25, -69.45)),
+  f('el-yunque', 'park', 'hard', 'El Yunque', 'El Yunque National Forest', undefined, pt(18.30, -65.80)),
+  f('valle-vinales', 'valley', 'hard', 'Valle de Viñales', 'Viñales Valley', undefined, pt(22.62, -83.72)),
+  f('dunns-river', 'waterfall', 'hard', 'Cataratas del río Dunn', "Dunn's River Falls", undefined, pt(18.414, -77.135)),
+
   // ── Pack Colombia (Fase 7a): solo en el pack; el nivel es para un jugador colombiano ─────────────────────────
   ...([
     f('cordillera-occidental', 'range', 'basic', 'Cordillera Occidental', 'Western Cordillera (Colombia)', G('CORD. OCCIDENTAL', [-79, -1, -71, 12])),

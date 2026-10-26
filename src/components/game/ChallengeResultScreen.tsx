@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { itemTitleAuto, itemSubtitleAuto, kindFromPlaceId, itemPhotoUrl } from '@/lib/catalog';
 import { type ChallengeDetail, type ChallengeRound, challengeLink } from '@/lib/challenges';
-import { type MapBounds } from '@/data/cities';
+import { type GameMode, type MapBounds } from '@/data/cities';
+import { useFeatureShapes, usePackShapes } from '@/hooks/useFeatureShapes';
 import { formatDistance } from '@/lib/gameUtils';
 import { itemHint, useCityTips } from '@/lib/cityHints';
 import { playButtonTap, playShareSuccess, playVictory, playGameOver } from '@/lib/sounds';
@@ -95,7 +96,9 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
   const rows = useMemo(() => {
     if (!mine) return [];
     return detail.cities.map((c, i) => ({
-      city: c,
+      // El reto guarda solo id, tipo, nombre y coordenadas: el catálogo completa lo demás (tipo de lugar, capital y
+      // vecinos de un departamento…) para la pista y el contorno
+      city: { ...c, ...kindFromPlaceId(c.id) },
       me: mine.rounds.find(r => r.round_no === i + 1) ?? null,
       rv: rival?.rounds.find(r => r.round_no === i + 1) ?? null,
     }));
@@ -375,6 +378,13 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
   const rv = useMemo(() => (row.rv?.click_lat != null && row.rv.click_lon != null ? { lat: row.rv.click_lat, lon: row.rv.click_lon, label: rivalName, distanceKm: row.rv.distance_km } : null), [row.rv, rivalName]);
   const bounds = useMemo(() => boundsFor([me, correct, ...(rv ? [rv] : [])]), [me, correct, rv]);
   const pinLabels = useMemo(() => ({ you: t('ch_you'), correct: `${itemTitleAuto(row.city)} · ${t('chm_correct')}` }), [t, row.city]);
+  // Banderas, lugares y departamentos: se resalta el país o el contorno, como en la revisión de la partida
+  const featureShapes = useFeatureShapes(row.city.kind === 'feature');
+  const packShapes = usePackShapes(row.city.kind === 'division' ? row.city.id : null);
+  const highlightShape = useMemo(() => {
+    if (!row.city.id || (row.city.kind !== 'feature' && row.city.kind !== 'division')) return null;
+    return (row.city.kind === 'division' ? packShapes : featureShapes)?.[row.city.id] ?? null;
+  }, [row.city, featureShapes, packShapes]);
   useCityTips();
   const hint = itemHint(row.city, locale === 'en' ? 'en' : 'es');
   const mp = row.me?.points ?? 0, rp = row.rv?.points ?? 0;
@@ -398,7 +408,8 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
 
       <div className="flex-1 min-h-0 w-full max-w-6xl mx-auto flex flex-col landscape:flex-row gap-2 short:gap-1.5">
         <div className="relative flex-1 min-h-[180px] landscape:min-h-0 rounded-2xl overflow-hidden border border-border/80 [&>div]:!min-h-0">
-          <WorldMapCanvas onMapClick={noop} clickDisabled userClick={me} correctLocation={correct} distanceKm={row.me?.distance_km ?? null} gameMode="world" viewBounds={bounds} pinLabels={pinLabels} rivalClick={rv} labelAvoid={CHALLENGE_LEGEND_AVOID} />
+          <WorldMapCanvas onMapClick={noop} clickDisabled userClick={me} correctLocation={correct} distanceKm={row.me?.distance_km ?? null} gameMode={(detail.mode as GameMode) || 'world'} viewBounds={bounds} pinLabels={pinLabels} rivalClick={rv} labelAvoid={CHALLENGE_LEGEND_AVOID}
+            highlightCountry={row.city.kind === 'flag' ? row.city.name : null} highlightShape={highlightShape} />
           <div className="absolute left-2 bottom-2 rounded-xl border border-accent/40 px-3 py-2 text-xs sm:text-sm font-semibold flex flex-col gap-1 short:hidden" style={{ background: 'hsl(var(--brand-navy-deep) / 0.85)' }}>
             <span className="flex items-center gap-2"><LegendPin color="hsl(var(--primary))" className="w-5 h-5" /> {t('ch_you')}</span>
             <span className="flex items-center gap-2"><LegendPin color="hsl(var(--accent))" className="w-5 h-5" /> {rivalName}</span>

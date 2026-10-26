@@ -6,6 +6,8 @@ Turista; los distritos capitales siempre en Turista) y ciudades por población (
 algo no te cuadra, dime qué subir o bajar y lo fijo a mano. Lugares y monumentos: los del catálogo que están en esos países
 (si una categoría no llega a 13, no se ofrece en ese pack). Escala de cercanía: 400 km.
 
+**2026-10-26:** el Caribe ganó 20 lugares y 13 monumentos (ver `docs/Fase6_Lugares_catalogo.md` y `docs/Fase6_Monumentos_catalogo.md`), así que ya ofrece Lugares y Monumentos. La partida de prueba diaria la controla también el servidor (`claim_pack_trial`): sin Pro, una segunda partida el mismo día queda fuera del ranking.
+
 ## Andes (Venezuela, Ecuador, Perú, Bolivia)
 
 ### Divisiones (84)
