@@ -4,6 +4,7 @@
  * libres). public/landmarks/credits.json lleva autor, licencia y fuente de cada una (se listan en Soporte).
  */
 import type { PhotoSize } from './countryPhotos';
+import { photoUrl } from '@/lib/assetUrl';
 
 const slugOf = (id: string | undefined | null): string | null => (id && id.startsWith('mon:') ? id.slice(4) : null);
 
@@ -11,7 +12,7 @@ const slugOf = (id: string | undefined | null): string | null => (id && id.start
 export function landmarkPhotoUrl(item: { id?: string; photo?: boolean } | null | undefined, size: PhotoSize = 'lg'): string | null {
   const slug = slugOf(item?.id);
   if (!slug || !item?.photo) return null;
-  return `/landmarks/${slug}${size === 'sm' ? '-sm' : ''}.webp`;
+  return photoUrl(`/landmarks/${slug}${size === 'sm' ? '-sm' : ''}.webp`);
 }
 
 export function preloadLandmarkPhoto(item: { id?: string; photo?: boolean } | null | undefined, size: PhotoSize = 'sm'): void {
@@ -25,7 +26,7 @@ export interface LandmarkCredit { id: string; name: string; author?: string; sou
 let creditsPromise: Promise<LandmarkCredit[]> | null = null;
 export function fetchLandmarkCredits(): Promise<LandmarkCredit[]> {
   if (!creditsPromise) {
-    creditsPromise = fetch('/landmarks/credits.json').then((r) => (r.ok ? r.json() : [])).catch(() => []);
+    creditsPromise = fetch(photoUrl('/landmarks/credits.json')).then((r) => (r.ok ? r.json() : [])).catch(() => []);
   }
   return creditsPromise;
 }

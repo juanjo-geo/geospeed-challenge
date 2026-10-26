@@ -1,13 +1,16 @@
 /**
- * GeoSpeed — Service Worker v5
+ * GeoSpeed — Service Worker v6
  *
  * Strategy: Network-first for ALL requests (ensures fresh deploys are picked up).
  * Falls back to cache only when offline.
- * Pre-caches the app shell for instant offline startup.
+ * Fase 11 (juego sin conexión): al instalarse guarda el PAQUETE BASE completo (/offline-manifest.json, generado por el
+ * build: código, datos, mascota, banderas, música; ~6 MB) para abrir y jugar sin señal. Los archivos con hash
+ * (/assets/…) que ya estaban en la versión anterior se copian sin volver a descargarlos. Los packs de fotos los guarda
+ * la pantalla Descargas en cachés "geospeed-pack-<id>", que sobreviven a las actualizaciones.
  * Handles SPA navigation (falls back to /index.html for HTML requests).
  */
 
-const CACHE_NAME = 'geospeed-v142';
+const CACHE_NAME = 'geospeed-v143';
 
 // Critical app shell files to pre-cache for offline support
 const APP_SHELL = [
@@ -19,10 +22,31 @@ const APP_SHELL = [
   '/icon-512.png',
 ];
 
-// Install: pre-cache app shell, then skip waiting
+const PACK_PREFIX = 'geospeed-pack-';
+
+// Paquete base para jugar sin conexión (lo que falle no impide instalar: se guardará al usarse)
+async function precacheBase(cache) {
+  try {
+    const res = await fetch('/offline-manifest.json', { cache: 'no-store' });
+    if (!res.ok) return;
+    const manifest = await res.json();
+    await Promise.allSettled((manifest.base || []).map(async (url) => {
+      if (url.startsWith('/assets/')) {
+        const old = await caches.match(url);
+        if (old) return cache.put(url, old);
+      }
+      return cache.add(new Request(url, { cache: 'reload' }));
+    }));
+  } catch (_) { /* sin red o sin manifiesto: queda el app shell */ }
+}
+
+// Install: pre-cache app shell + paquete base, then skip waiting
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await cache.addAll(APP_SHELL);
+      await precacheBase(cache);
+    })
   );
   self.skipWaiting();
 });
@@ -31,7 +55,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      // Las versiones viejas se borran; los packs descargados (fotos) se conservan
+      Promise.all(keys.filter((k) => k !== CACHE_NAME && !k.startsWith(PACK_PREFIX)).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -96,7 +121,8 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(async () => {
         // Network failed — try cache as fallback
-        const cached = await caches.match(event.request);
+        // ignoreVary: lo precargado se guardó sin la cabecera Origin que traen los módulos JS (Vary: Origin)
+        const cached = await caches.match(event.request, { ignoreSearch: url.pathname.startsWith('/assets/'), ignoreVary: true });
         if (cached) return cached;
 
         // SPA fallback: serve cached /index.html for navigation requests

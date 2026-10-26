@@ -20,6 +20,7 @@ import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import { MEDAL_RULE, medalKey, medalMap, useProgression } from '@/lib/progression';
 import { classicFavId, quizNameOf, useFavorites, type Favorite } from '@/lib/favorites';
 import FavStar from './FavStar';
+import { canPlayOffline } from '@/lib/offline';
 import { AccountButton, SettingsButton } from './HeaderActions';
 import { playButtonTap } from '@/lib/sounds';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -33,6 +34,8 @@ import { canPlayPack, isPackTrial, isProPack } from '@/lib/packAccess';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode, category: Category) => void;
+  /** Fase 11: Descargas (desde el aviso sin conexión) */
+  onOpenDownloads?: () => void;
   /** Fase 10: abrir un favorito de la sección "Favoritos" */
   onFavorite?: (f: Favorite) => void;
   onMultiplayer: () => void;
@@ -105,7 +108,7 @@ function loadSelection(): { mode: GameMode; difficulty: Difficulty; category?: C
 /** El día del cofre se registra una vez por apertura de la app (ver efecto del cofre). */
 let dayRegisteredThisSession = false;
 
-export default function HomeScreen({ onStartGame, onFavorite, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onOpenSprint, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onOpenSprint, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { t, locale } = useI18n();
   const reviewDue = dueCount(useMemory());
   const stats = getPlayerStats();
@@ -306,8 +309,11 @@ export default function HomeScreen({ onStartGame, onFavorite, onMultiplayer, onT
         <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 animate-fade-in">
           <div className="bg-primary/15 border border-primary/30 rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
             <span>📡</span>
-            <span className="text-primary font-bold">{t('home_offline')}</span>
-            <span className="text-muted-foreground">{t('home_offlineDesc')}</span>
+            <span className="flex-1 min-w-0">
+              <span className="text-primary font-bold">{t('home_offline')}</span>{' '}
+              <span className="text-muted-foreground">{canPlayOffline() ? t('offline_homeDesc') : t('offline_proPitch')}</span>
+            </span>
+            {onOpenDownloads && <button onClick={() => { playButtonTap(); onOpenDownloads(); }} className="shrink-0 font-bold text-accent underline">{t('dl_title')}</button>}
           </div>
         </div>
       )}
@@ -383,7 +389,7 @@ export default function HomeScreen({ onStartGame, onFavorite, onMultiplayer, onT
 
       {/* ── Sprint (Fase 5): el modo competitivo, con su división y las carreras del día ── */}
       {onOpenSprint && (
-        <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">
+        <div className={`w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200 ${isOnline ? '' : 'opacity-60 grayscale'}`}>
           <SprintHomeCard onOpen={onOpenSprint} />
         </div>
       )}
@@ -406,10 +412,10 @@ export default function HomeScreen({ onStartGame, onFavorite, onMultiplayer, onT
 
       {/* ── Tarjetas de acceso (orden de la maqueta: Diario · Amigos · Mis retos · Más modos) ── */}
       <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">
-        <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📅</span>} title={t('home_dailyCard')} desc={dailyDone ? t('home_dailyDoneDesc', { n: dailyStreakNow }) : dailyStreakNow > 0 ? `${t('home_dailyStreakDesc', { n: dailyStreakNow })} · ${t('home_dailyRollover', { time: dailyRolloverTime })}` : `${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-1.5 right-2 text-xs opacity-60 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
-        <AccessCard icon={<FriendsIcon />} title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
+        <AccessCard offline={!isOnline} icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📅</span>} title={t('home_dailyCard')} desc={dailyDone ? t('home_dailyDoneDesc', { n: dailyStreakNow }) : dailyStreakNow > 0 ? `${t('home_dailyStreakDesc', { n: dailyStreakNow })} · ${t('home_dailyRollover', { time: dailyRolloverTime })}` : `${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-1.5 right-2 text-xs opacity-60 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
+        <AccessCard offline={!isOnline} icon={<FriendsIcon />} title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
         {onMyChallenges
-          ? <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📋</span>} title={t('home_myChallenges')} desc={t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />
+          ? <AccessCard offline={!isOnline} icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📋</span>} title={t('home_myChallenges')} desc={t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />
           : <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">🎯</span>} title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />}
         <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">⚡</span>} title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
       </div>
@@ -568,17 +574,19 @@ function FriendsIcon() {
   );
 }
 
-function AccessCard({ icon, title, desc, onClick, extra }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void; extra?: React.ReactNode }) {
+/** offline = necesita conexión (Fase 11): en gris con candado; el toque avisa (lo resuelve Index) */
+function AccessCard({ icon, title, desc, onClick, extra, offline = false }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void; extra?: React.ReactNode; offline?: boolean }) {
+  const { t } = useI18n();
   return (
     <div className="relative min-w-0">
       <button
         onClick={onClick}
-        className="w-full h-full flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3.5 rounded-2xl border border-border bg-card/70 hover:border-accent/50 text-left transition-all active:scale-[0.98]"
+        className={`w-full h-full flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3.5 rounded-2xl border border-border bg-card/70 hover:border-accent/50 text-left transition-all active:scale-[0.98] ${offline ? 'opacity-60 grayscale' : ''}`}
       >
         <span className="shrink-0 leading-none" aria-hidden>{icon}</span>
         <span className="flex-1 min-w-0">
           <span className="block font-bold text-[13px] sm:text-base leading-tight">{title}</span>
-          <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight mt-0.5 line-clamp-1 sm:line-clamp-2">{desc}</span>
+          <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight mt-0.5 line-clamp-1 sm:line-clamp-2">{offline ? `🔒 ${t('offline_needsConnectionShort')}` : desc}</span>
         </span>
         <Chevron className="text-muted-foreground shrink-0" />
       </button>

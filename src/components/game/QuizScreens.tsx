@@ -122,19 +122,22 @@ export function MyQuizzesScreen({ onBack, onCreate, onEdit, onOpen, onPlay, onOp
               <div className="flex items-start gap-2">
                 <button onClick={() => { playButtonTap(); onOpen(q.code); }} className="flex-1 min-w-0 text-left">
                   <span className="block font-extrabold text-lg leading-tight truncate">🧩 {q.name}</span>
+                  {q.pending && <span className="inline-block mt-0.5 rounded-full border border-primary/60 px-2 text-[10px] font-bold text-primary">⏳ {t('quiz_pendingUpload')}</span>}
                   <span className="block text-xs text-muted-foreground mt-0.5">{settingsLine(q, tt)}</span>
                   <span className="block text-xs font-bold mt-1">
                     {q.my_best ? <span className="text-primary">{tt('quiz_myBest', { score: formatNumber(q.my_best.score), rank: q.my_best.rank, players: q.my_best.players })}</span> : <span className="text-foreground/60">{t('quiz_notPlayed')}</span>}
                     <span className="text-muted-foreground"> · {tt('quiz_plays', { n: q.plays })}</span>
                   </span>
                 </button>
-                <FavStar type="quiz" id={q.code} />
+                {!q.pending && <FavStar type="quiz" id={q.code} />}
               </div>
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 <button onClick={() => { playButtonTap(); onPlay(q); }} className="btn3d rounded-xl px-4 py-1.5 font-black text-sm text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>▶ {t('quiz_play')}</button>
+                {!q.pending && <>
                 <button onClick={() => { playButtonTap(); shareQuiz(q, t).whatsapp(); }} className="rounded-xl border-2 border-accent/50 px-3 py-1.5 text-sm font-bold text-accent">💬 WhatsApp</button>
                 <button onClick={() => { playButtonTap(); onEdit(q); }} className="rounded-xl border-2 border-foreground/20 px-3 py-1.5 text-sm font-bold">✏️ {t('quiz_edit')}</button>
                 <button onClick={() => duplicate(q)} className="rounded-xl border-2 border-foreground/20 px-3 py-1.5 text-sm font-bold">⧉ {t('quiz_duplicate')}</button>
+                </>}
                 {confirmDel === q.id
                   ? <button onClick={() => remove(q)} className="rounded-xl border-2 border-destructive bg-destructive/15 px-3 py-1.5 text-sm font-bold text-destructive">{t('quiz_confirmDelete')}</button>
                   : <button onClick={() => { playButtonTap(); setConfirmDel(q.id); }} className="rounded-xl border-2 border-foreground/20 px-3 py-1.5 text-sm font-bold text-destructive/90">🗑 {t('quiz_delete')}</button>}

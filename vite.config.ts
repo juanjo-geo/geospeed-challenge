@@ -1,7 +1,54 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+import { readdirSync, statSync, writeFileSync } from "fs";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+
+/**
+ * Fase 11 (juego sin conexión): al terminar el build escribe dist/offline-manifest.json con el paquete base (todo lo
+ * que necesita el juego para abrir y jugar sin señal: código, datos, mascota, banderas, música) y los packs de fotos
+ * que se descargan aparte desde "Descargas", cada uno con su tamaño. El service worker guarda el paquete base al
+ * instalarse; los packs los guarda la pantalla Descargas (src/lib/offline.ts).
+ */
+export const PHOTO_PACKS: { id: string; test: (url: string) => boolean }[] = [
+  { id: "countries", test: (u) => u.startsWith("/countries/") && !u.endsWith(".md") },
+  { id: "cities-world", test: (u) => u.startsWith("/cities/") && !/^\/cities\/(co|ci)-/.test(u) },
+  { id: "cities-colombia", test: (u) => u.startsWith("/cities/co-") },
+  { id: "cities-latam", test: (u) => u.startsWith("/cities/ci-") },
+  { id: "landmarks", test: (u) => u.startsWith("/landmarks/") },
+];
+const NOT_BASE = /^\/(sw\.js|offline-manifest\.json|og-image[^/]*|email-logo\.png|robots\.txt|placeholder\.svg)$|\.map$|\.md$|^\/(countries|cities|landmarks)\//;
+
+function offlineManifest(): Plugin {
+  return {
+    name: "geospeed-offline-manifest",
+    apply: "build",
+    closeBundle() {
+      const dist = path.resolve(__dirname, "dist");
+      const files: { url: string; bytes: number }[] = [];
+      const walk = (dir: string, rel: string) => {
+        for (const name of readdirSync(dir)) {
+          const full = path.join(dir, name);
+          const url = `${rel}/${name}`;
+          const st = statSync(full);
+          if (st.isDirectory()) walk(full, url);
+          else files.push({ url, bytes: st.size });
+        }
+      };
+      walk(dist, "");
+      const packs = PHOTO_PACKS.map((p) => {
+        const list = files.filter((f) => p.test(f.url));
+        return { id: p.id, files: list.map((f) => f.url), bytes: list.reduce((n, f) => n + f.bytes, 0) };
+      });
+      const base = files.filter((f) => !NOT_BASE.test(f.url));
+      writeFileSync(path.join(dist, "offline-manifest.json"), JSON.stringify({
+        base: ["/", ...base.map((f) => f.url)],
+        baseBytes: base.reduce((n, f) => n + f.bytes, 0),
+        packs,
+      }));
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -12,7 +59,7 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger(), offlineManifest()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

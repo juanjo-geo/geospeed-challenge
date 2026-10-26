@@ -9,6 +9,7 @@
  * cierra. Ver public/countries/README.md.
  */
 import { countryIso } from '@/lib/flags';
+import { photoUrl } from '@/lib/assetUrl';
 
 export type PhotoSize = 'lg' | 'sm';
 
@@ -33,7 +34,7 @@ export function hasCountryPhoto(country: string | null | undefined): boolean {
 export function countryPhotoUrl(country: string | null | undefined, size: PhotoSize = 'lg'): string | null {
   const iso = countryIso(country);
   if (!iso || !PHOTO_ISOS.has(iso)) return null;
-  return `/countries/${iso}${size === 'sm' ? '-sm' : ''}.webp`;
+  return photoUrl(`/countries/${iso}${size === 'sm' ? '-sm' : ''}.webp`);
 }
 
 /** Descarga la foto por adelantado (p.ej. al mostrar la ciudad) para que la tarjeta la tenga lista. */
@@ -51,7 +52,7 @@ let creditsCache: Promise<PhotoCredit[]> | null = null;
 /** Créditos de las fotos (para la página de Soporte). Lista vacía si el archivo no existe. */
 export function fetchPhotoCredits(): Promise<PhotoCredit[]> {
   if (!creditsCache) {
-    creditsCache = fetch('/countries/credits.json', { cache: 'force-cache' })
+    creditsCache = fetch(photoUrl('/countries/credits.json'), { cache: 'force-cache' })
       .then(r => (r.ok ? r.json() : []))
       .then(j => (Array.isArray(j) ? j as PhotoCredit[] : []))
       .catch(() => []);
