@@ -1,4 +1,5 @@
 import { fetchPhotoCredits, type PhotoCredit } from '@/lib/countryPhotos';
+import { fetchCityPhotoCredits, type CityPhotoCredit } from '@/lib/cityPhotos';
 import { fetchLandmarkCredits, type LandmarkCredit } from '@/lib/landmarkPhotos';
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -129,6 +130,7 @@ const Support = () => {
 
           <PhotoCredits title="Créditos de las fotos de países" intro="Las fotografías de países que aparecen en el juego pertenecen a sus autores y se usan bajo las licencias indicadas (Wikimedia Commons). Las imágenes fueron redimensionadas y convertidas a WebP; las que tienen licencia CC BY-SA se comparten bajo la misma licencia." />
           <LandmarkPhotoCredits />
+          <CityPhotoCredits />
           <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">Datos de los lugares</h2>
           <p className="mb-10 text-sm text-[#d4d4c8]/70">
             Las cifras de las fichas (habitantes, área, altitud, capital, año de construcción…) vienen de{' '}
@@ -265,6 +267,30 @@ function LandmarkPhotoCredits() {
         {credits.map(c => (
           <li key={c.id}>
             <span className="text-[#f5c842]">{c.name}</span> · {c.author ?? '—'}
+            {c.license && <> · {c.licenseUrl ? <a href={c.licenseUrl} target="_blank" rel="noopener noreferrer" className="underline">{c.license}</a> : c.license}</>}
+            {c.url && <> · <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline">Fuente ↗</a></>}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** Créditos de las fotos de ciudades (public/cities/credits.json). Los collages nombran a muchos autores: se recortan y
+ *  queda el enlace a la página del archivo en Commons, que los lista todos. */
+function CityPhotoCredits() {
+  const [credits, setCredits] = useState<CityPhotoCredit[]>([]);
+  useEffect(() => { fetchCityPhotoCredits().then(setCredits); }, []);
+  if (credits.length === 0) return null;
+  const short = (a: string | null) => (!a ? '—' : a.length > 90 ? `${a.slice(0, 88)}…` : a);
+  return (
+    <>
+      <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">Créditos de las fotos de ciudades</h2>
+      <p className="mb-3 text-sm text-[#d4d4c8]/70">Las fotografías de ciudades pertenecen a sus autores y se usan bajo las licencias indicadas (Wikimedia Commons). Fueron redimensionadas y convertidas a WebP; las que tienen licencia CC BY-SA se comparten bajo la misma licencia.</p>
+      <ul className="mb-10 grid gap-1 text-xs text-[#d4d4c8] sm:grid-cols-2">
+        {credits.map(c => (
+          <li key={c.id}>
+            <span className="text-[#f5c842]">{c.name}</span> · {short(c.author)}
             {c.license && <> · {c.licenseUrl ? <a href={c.licenseUrl} target="_blank" rel="noopener noreferrer" className="underline">{c.license}</a> : c.license}</>}
             {c.url && <> · <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline">Fuente ↗</a></>}
           </li>

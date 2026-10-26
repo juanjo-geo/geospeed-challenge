@@ -22,6 +22,7 @@ import { loadFeatureShapes, loadPackShapes } from '@/lib/featureScoring';
 import { isProPack } from '@/lib/packAccess';
 import { countryPhotoUrl, hasCountryPhoto, type PhotoSize } from '@/lib/countryPhotos';
 import { landmarkPhotoUrl } from '@/lib/landmarkPhotos';
+import { cityPhotoUrl, hasCityPhoto } from '@/lib/cityPhotos';
 
 export type Category = 'cities' | 'flags' | 'features' | 'monuments' | 'divisions';
 /** Todas las categorías (para validar lo guardado); las que se ofrecen dependen de la región: categoriesForMode */
@@ -224,6 +225,15 @@ export const itemSubtitleAuto = (item: Pick<City, 'country' | 'kind' | 'lat' | '
 export const itemFlagUrl = (item: Pick<City, 'iso' | 'country' | 'kind'>): string | null =>
   item.iso ? `/flags/${item.iso}.svg` : isFeature(item) ? null : flagUrl(item.country);
 
-/** Foto que acompaña al ítem: la del monumento si la tiene; si no, la de su país (ciudades, banderas). null = ninguna */
+/** ¿La foto del ítem es la de la propia ciudad (y no la de su país)? */
+export const hasOwnCityPhoto = (item: Pick<City, 'id' | 'kind'>): boolean => (!item.kind || item.kind === 'city') && hasCityPhoto(item.id);
+
+/**
+ * Foto que acompaña al ítem: la del monumento; la de la propia ciudad si la tiene (public/cities); si no, la de su
+ * país (ciudades sin foto libre, banderas, departamentos). null = ninguna (lugares geográficos)
+ */
 export const itemPhotoUrl = (item: Pick<City, 'id' | 'kind' | 'country' | 'photo'>, size: PhotoSize = 'lg'): string | null =>
-  isMonument(item) ? landmarkPhotoUrl(item, size) : isFeature(item) || !hasCountryPhoto(item.country) ? null : countryPhotoUrl(item.country, size);
+  isMonument(item) ? landmarkPhotoUrl(item, size)
+  : isFeature(item) ? null
+  : hasOwnCityPhoto(item) ? cityPhotoUrl(item.id!)
+  : !hasCountryPhoto(item.country) ? null : countryPhotoUrl(item.country, size);

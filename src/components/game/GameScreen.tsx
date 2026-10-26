@@ -34,7 +34,7 @@ import { HudIconButton, InGameSettings } from './GameHud';
 import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming';
 import FitToBox from '@/components/ui/FitToBox';
 import { appNumberLocale } from '@/lib/format';
-import { preloadCountryPhoto } from '@/lib/countryPhotos';
+import { preloadPhoto } from '@/lib/cityPhotos';
 import { factIdOf, getPlaceFact, keyFact, usePlaceFacts } from '@/lib/placeFacts';
 
 const MAX_TIME = 15;
@@ -220,7 +220,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   // La foto del país se descarga mientras el jugador busca la ciudad: la tarjeta la muestra sin esperar
   useEffect(() => {
     if (!currentCity) return;
-    preloadCountryPhoto(currentCity.country, 'sm');
+    preloadPhoto(itemPhotoUrl(currentCity, 'sm'));
     // Monumentos: la foto es la pregunta, así que la del siguiente se pide desde ya (y la de este, por si acaso)
     for (const it of [currentCity, cities[currentRound + 1]]) {
       if (it && isMonument(it)) { preloadLandmarkPhoto(it, 'lg'); preloadLandmarkPhoto(it, 'sm'); }

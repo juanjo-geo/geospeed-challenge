@@ -21,7 +21,8 @@ import { appNumberLocale } from '@/lib/format';
 import RoundFeedbackCard from './RoundFeedbackCard';
 import FitToBox from '@/components/ui/FitToBox';
 import { frameAnswer, feedbackCover } from '@/lib/mapFraming';
-import { preloadCountryPhoto } from '@/lib/countryPhotos';
+import { preloadPhoto } from '@/lib/cityPhotos';
+import { itemPhotoUrl } from '@/lib/catalog';
 import { factIdOf, keyFact, usePlaceFacts } from '@/lib/placeFacts';
 
 const GLOBAL_TIME = 60;
@@ -97,7 +98,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
 
   const currentCity = cities[currentIdx % cities.length];
   // La foto del país se descarga mientras el jugador busca la ciudad
-  useEffect(() => { if (currentCity) preloadCountryPhoto(currentCity.country, 'sm'); }, [currentCity]);
+  useEffect(() => { if (currentCity) preloadPhoto(itemPhotoUrl(currentCity, 'sm')); }, [currentCity]);
   useEffect(() => {
     const el = mapAreaRef.current;
     if (!el) return;
