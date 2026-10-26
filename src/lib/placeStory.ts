@@ -1,7 +1,7 @@
 /**
- * Reseña del lugar ("Ver más", docs/GeoSpeed_Resena_Lugar_Diseno.md, bloque R1): fotos del carrusel y sus créditos.
- * Hoy el carrusel usa las fotos que ya están en el juego: la propia del lugar, la del país y las de los lugares
- * cercanos de la ficha (Fase 8). El bloque R2 sumará las del artículo de Wikipedia.
+ * Reseña del lugar ("Ver más", docs/GeoSpeed_Resena_Lugar_Diseno.md): fotos del carrusel y sus créditos. El carrusel
+ * junta la foto propia del lugar, las de su galería de Wikimedia Commons (bloque R2, src/lib/placeGallery.ts), la del
+ * país y las de los lugares cercanos de la ficha (Fase 8).
  */
 import { useEffect, useState } from 'react';
 import type { City } from '@/data/cities';
@@ -11,12 +11,13 @@ import { cityPhotoUrl, fetchCityPhotoCredits } from '@/lib/cityPhotos';
 import { countryPhotoUrlByIso, fetchPhotoCredits } from '@/lib/countryPhotos';
 import { fetchLandmarkCredits, landmarkPhotoUrl } from '@/lib/landmarkPhotos';
 import type { PlaceFact } from '@/lib/placeFacts';
+import { commonsPage, commonsThumb, type GalleryEntry } from '@/lib/placeGallery';
 
-export type CreditRef = { kind: 'city' | 'landmark'; id: string } | { kind: 'country'; iso: string };
-export interface StorySlide { url: string; caption: string; credit: CreditRef }
+export type CreditRef = { kind: 'city' | 'landmark'; id: string } | { kind: 'country'; iso: string } | { kind: 'commons'; author: string; license: string; url: string };
+export interface StorySlide { url: string; srcSet?: string; caption: string; credit: CreditRef }
 export interface PhotoCreditInfo { author: string | null; license: string | null; url: string | null }
 
-const MAX_SLIDES = 5;
+const MAX_SLIDES = 6;
 
 /** Foto propia de un elemento del catálogo (monumento o ciudad), con su crédito */
 function ownSlide(item: City, locale: string): StorySlide | null {
@@ -39,13 +40,22 @@ function countrySlide(iso: string | null | undefined, locale: string): StorySlid
 }
 
 /**
- * Fotos del carrusel: la del lugar, la de su país (o países, en un lugar geográfico) y las de los lugares cercanos
- * con foto. Sin repetir y hasta 5.
+ * Fotos del carrusel: la del lugar, las de su galería de Commons, la de su país (o países, en un lugar geográfico) y
+ * las de los lugares cercanos con foto. Sin repetir y hasta 6.
  */
-export function storySlides(item: City, fact: PlaceFact | null, locale: string): StorySlide[] {
+export function storySlides(item: City, fact: PlaceFact | null, locale: string, gallery: GalleryEntry[] = []): StorySlide[] {
   const out: StorySlide[] = [];
   const add = (s: StorySlide | null) => { if (s && out.length < MAX_SLIDES && !out.some((o) => o.url === s.url)) out.push(s); };
   add(ownSlide(item, locale));
+  const title = itemTitle(item, locale);
+  for (const [file, hash, author, license] of gallery) {
+    add({
+      url: commonsThumb(file, hash, 960),
+      srcSet: `${commonsThumb(file, hash, 500)} 500w, ${commonsThumb(file, hash, 960)} 960w`,
+      caption: title,
+      credit: { kind: 'commons', author, license, url: commonsPage(file) },
+    });
+  }
   if (item.kind === 'feature') {
     for (const iso of item.isos ?? []) add(countrySlide(iso, locale));
   } else if (item.kind !== 'division') {
@@ -65,15 +75,19 @@ export function useSlideCredits(slides: StorySlide[]): Record<string, PhotoCredi
   useEffect(() => {
     let alive = true;
     const kinds = new Set(slides.map((s) => s.credit.kind));
+    const inline: Record<string, PhotoCreditInfo> = {};
+    for (const s of slides) if (s.credit.kind === 'commons') inline[s.url] = { author: s.credit.author, license: s.credit.license, url: s.credit.url };
+    setCredits(inline);
     Promise.all([
       kinds.has('city') ? fetchCityPhotoCredits() : Promise.resolve([]),
       kinds.has('country') ? fetchPhotoCredits() : Promise.resolve([]),
       kinds.has('landmark') ? fetchLandmarkCredits() : Promise.resolve([]),
     ]).then(([city, country, landmark]) => {
       if (!alive) return;
-      const map: Record<string, PhotoCreditInfo> = {};
+      const map: Record<string, PhotoCreditInfo> = { ...inline };
       for (const s of slides) {
         const c = s.credit;
+        if (c.kind === 'commons') continue;
         const found = c.kind === 'country' ? country.find((x) => x.iso === c.iso)
           : c.kind === 'city' ? city.find((x) => x.id === c.id)
           : landmark.find((x) => x.id === c.id);

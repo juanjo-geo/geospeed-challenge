@@ -138,6 +138,12 @@ const Support = () => {
             los mapas, de <a href="https://www.naturalearthdata.com" target="_blank" rel="noopener noreferrer" className="underline">Natural Earth</a> (dominio público).
             Los datos curiosos los redactó el equipo de GeoSpeed. Si encuentras un error, escríbenos.
           </p>
+          <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">Fotos de las reseñas</h2>
+          <p className="mb-10 text-sm text-[#d4d4c8]/70">
+            Las fotos adicionales de la ventana "Conoce…" se muestran directamente desde{' '}
+            <a href="https://commons.wikimedia.org" target="_blank" rel="noopener noreferrer" className="underline">Wikimedia Commons</a>,
+            con su autor y su licencia (CC BY, CC BY-SA, CC0 o dominio público) debajo de cada una y un enlace a la página del archivo.
+          </p>
 
           {/* ────────── ENGLISH VERSION ────────── */}
           <div id="english" className="border-t border-[#f5c842]/20 pt-10">
