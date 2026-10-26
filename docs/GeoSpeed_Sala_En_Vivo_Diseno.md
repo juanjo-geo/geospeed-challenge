@@ -1,6 +1,6 @@
 # GeoSpeed · Sala en vivo para hasta 20 jugadores — diseño
 
-2026-10-26. Estado: **decisiones tomadas** (sección 9), sin código todavía. Se programa por bloques (sección 8) con el
+2026-10-26. Estado: **decisiones tomadas** (sección 9); bloque S1 (servidor) hecho en la migración `20261106120000_rooms.sql`. Se programa por bloques (sección 8) con el
 visto bueno de JuanJo. Reemplaza el pendiente "salas de 3–10 en vivo" del plan de competencia (paridad P5) y sube el
 tope a 20.
 
@@ -66,7 +66,7 @@ No responde preguntas. Si el anfitrión elige "solo presentar", esta pantalla es
 | Vidas | No gasta vidas (es social; las vidas dejarían a medio grupo por fuera) |
 | Entrar tarde | Solo antes de empezar. Si la partida ya empezó, el link muestra el marcador en vivo (modo espectador) |
 | Salirse | El jugador puede volver mientras dure la partida y retoma en la ronda actual; las rondas perdidas cuentan 0 |
-| Qué cuenta | Historial, Tu memoria (repaso) y logros por partidas jugadas. **No** cuenta para el ranking mundial ni para medallas ni para Sprint |
+| Qué cuenta | Historial, Tu memoria (repaso) y los logros (partidas, perfectas, rápidas, combo). **No** cuenta para el ranking mundial ni para medallas ni para Sprint |
 | Nombres | Apodo de 2 a 20 letras con el mismo filtro de groserías de los quizzes |
 
 ## 4. Cómo funciona por dentro
@@ -108,14 +108,15 @@ convendría hacerlo ya en el plan Pro de Supabase (US$25 al mes).
 ### 4.3 Antitrampa
 - El servidor calcula todos los puntos con la misma función del juego (`_score_rounds_v2`): el teléfono solo manda dónde
   tocó y cuánto tardó.
-- Respuestas fuera de la ventana de la ronda (más 1,5 s de margen por la red) se rechazan.
+- Respuestas fuera de la ventana de la ronda (más 1 s de margen por la red) se rechazan.
 - Tiempo usado = el mayor entre el que mide el teléfono y el que mide el servidor menos 1 s. Mentir sobre el tiempo
   da como mucho 1 s de ventaja.
 - Una respuesta por jugador y ronda. Respuestas en menos de 0,3 s se marcan como sospechosas, como en el resto del
   juego.
-- El lugar correcto no viaja al teléfono antes de que cierre la ronda. Hoy el reto manda la lista completa de
-  ciudades; aquí cada ronda entrega solo su pregunta y la respuesta llega al cerrar. El cliente solo necesita el id
-  para dibujar la pregunta.
+- Las preguntas no llegan todas al empezar: cada una llega durante la cuenta regresiva o la revelación anterior (sin
+  coordenadas) y la pantalla la muestra justo al abrir la ronda; las coordenadas de la respuesta llegan al cerrar. Límite
+  conocido: el catálogo vive en el teléfono (un jugador que inspeccione el código podría buscar las coordenadas por el
+  id) y el teléfono del anfitrión elige los lugares al crear la sala; el servidor los valida contra `places`.
 - Salas privadas por PIN y máximo 20 salas creadas por día por anfitrión.
 
 ## 5. Datos y funciones del servidor
