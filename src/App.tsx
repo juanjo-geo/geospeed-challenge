@@ -16,6 +16,7 @@ const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const Support = lazy(() => import("./pages/Support.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const RoomTv = lazy(() => import("./pages/RoomTv.tsx"));
 
 // Los enlaces profundos renderizan <Index> DIRECTAMENTE (no un wrapper por ruta): así, cuando Index
 // hace navigate('/') tras procesar el enlace, React conserva la instancia (mismo tipo en la misma
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/duel/:code" element={<Index deepLink={{ type: 'duel' }} />} />
               <Route path="/reto/:code" element={<Index deepLink={{ type: 'reto' }} />} />
               <Route path="/q/:code" element={<Index deepLink={{ type: 'quiz' }} />} />
+              <Route path="/sala/:pin/tv" element={<RoomTv />} />
               <Route path="/sala/:pin" element={<Index deepLink={{ type: 'sala' }} />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />

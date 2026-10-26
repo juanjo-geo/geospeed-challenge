@@ -80,6 +80,8 @@ export default defineConfig(({ mode }) => ({
         manualChunks(id) {
           if (id.includes("node_modules")) {
             if (id.includes("@supabase")) return "vendor-supabase";
+            // Generador de QR (sala en vivo): solo se importa de forma diferida; no debe ir en la carga inicial
+            if (id.includes("qrcode-generator")) return "vendor-qrcode";
             return "vendor";
           }
           if (id.includes("/src/data/countries.ts")) return "data-countries";

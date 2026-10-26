@@ -20,7 +20,7 @@ import type { TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import { getGameHistory, getPlayerStats, type GameHistoryEntry } from './gameUtils';
 import { ensureGuestSession } from './identity';
 
-export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel' | 'sprint' | 'quiz' | 'quiz_free';
+export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel' | 'sprint' | 'quiz' | 'quiz_free' | 'room';
 export type EndReason = 'complete' | 'timeout' | 'abandoned';
 
 export interface SaveRoundInput {

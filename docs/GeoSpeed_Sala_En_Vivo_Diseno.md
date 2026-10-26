@@ -1,6 +1,6 @@
 # GeoSpeed · Sala en vivo para hasta 20 jugadores — diseño
 
-2026-10-26. Estado: **decisiones tomadas** (sección 9); bloque S1 (servidor) hecho en la migración `20261106120000_rooms.sql`; bloques S2 (cliente base, simulador, crear, unirse y sala de espera) y S3 (partida, revelación con los toques de todos, resultado con podio y otra ronda) hechos, ocultos tras el interruptor `live_rooms_enabled` (`?salas=beta` la activa en un teléfono para probarla). Falta S4 (pantalla para proyectar) y S5 (prueba real). Se programa por bloques (sección 8) con el
+2026-10-26. Estado: **decisiones tomadas** (sección 9); bloque S1 (servidor) hecho en la migración `20261106120000_rooms.sql`; bloques S2 (cliente base, simulador, crear, unirse y sala de espera) y S3 (partida, revelación con los toques de todos, resultado con podio y otra ronda) hechos, ocultos tras el interruptor `live_rooms_enabled` (`?salas=beta` la activa en un teléfono para probarla). S4 (pantalla para proyectar `/sala/PIN/tv` con QR) hecho. Falta S5 (prueba con personas reales y abrirla a todos con el interruptor). Se programa por bloques (sección 8) con el
 visto bueno de JuanJo. Reemplaza el pendiente "salas de 3–10 en vivo" del plan de competencia (paridad P5) y sube el
 tope a 20.
 

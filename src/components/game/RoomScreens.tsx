@@ -10,10 +10,11 @@ import { fireCelebration } from '@/lib/confetti';
 import { trackEvent } from '@/lib/analytics';
 import {
   ROOM_MAX_PLAYERS, ROOM_NAME_MIN, ROOM_ROUNDS, ROOM_SECONDS, RoomError, cancelRoom, cleanRoomName, createRoom, fetchRoomState,
-  joinRoom, kickFromRoom, leaveRoom, rematchRoom, roomLink, roomsMockEnabled, saveRoomName, savedRoomName, startRoom, useRoomState,
+  joinRoom, kickFromRoom, leaveRoom, rematchRoom, roomLink, roomTvLink, roomsMockEnabled, saveRoomName, savedRoomName, startRoom, useRoomState,
   type RoomErrorCode, type RoomPlayer, type RoomSettings, type RoomState,
 } from '@/lib/rooms';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import QrCode from '@/components/ui/QrCode';
 import { ChevronIcon } from '@/components/ui/icons';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot from './Mascot';
@@ -429,6 +430,14 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
               ) : <span />}
             </div>
             <p className="text-xs text-muted-foreground">{t('room_pinHint')}</p>
+            <QrCode text={link} label={t('room_tvQr')} className="w-32 short:w-24 sm:w-36" />
+            {host && (
+              <a href={roomTvLink(state.pin)} target="_blank" rel="noopener noreferrer" onClick={() => playButtonTap()}
+                className="w-full rounded-2xl border-2 border-primary/60 py-2.5 font-bold text-sm hover:bg-primary/10 flex flex-col items-center gap-0.5">
+                <span>📺 {t('room_tvOpen')}</span>
+                <span className="text-[11px] font-normal text-muted-foreground">{t('room_tvOpenDesc')}</span>
+              </a>
+            )}
           </section>
 
           {/* Jugadores */}
