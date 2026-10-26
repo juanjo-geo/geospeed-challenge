@@ -111,6 +111,10 @@ interface GameScreenProps {
   ghost?: ChallengeGhost | null;
   /** Entrenamiento sin reloj (Fase 4): sin cuenta regresiva por ciudad */
   noClock?: boolean;
+  /** Quiz sin reloj (Fase 10): puntúa con la rapidez fija en ×1,0 */
+  fixedSpeed?: boolean;
+  /** Quiz con reloj: se acabó el tiempo = fallo de esa ronda y la partida sigue (como el entrenamiento) */
+  continueOnTimeout?: boolean;
   /** Texto de la confirmación al salir con la × (Sprint: salir cuenta como derrota) */
   exitConfirm?: string;
   /** Rótulo del modo en el HUD en vez de "región · dificultad" (Sprint) */
@@ -154,7 +158,7 @@ export function getRoundFeedback(distance: number, palette?: ReturnType<typeof u
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false, exitConfirm, hudLabel, category = 'cities' }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false, exitConfirm, hudLabel, category = 'cities', fixedSpeed = false, continueOnTimeout = false }: GameScreenProps) {
   const { t, locale } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -316,7 +320,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         if (prev <= 1) {
           clearInterval(timerRef.current);
           // Entrenamiento: se acabó el tiempo = fallo de esta ciudad; la tanda sigue
-          if (isTraining) { setTimeout(() => timeoutMissRef.current(), 0); return 0; }
+          if (isTraining || continueOnTimeout) { setTimeout(() => timeoutMissRef.current(), 0); return 0; }
           playTimeExpired();
           setTimeout(() => playGameOver(), 300);
           hapticError();
@@ -421,7 +425,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     const distance = flagHit ? flagHit.km : haversineDistance(lat, lon, currentCity.lat, currentCity.lon);
     // Puntaje v2: cercanía × rapidez × combo × dificultad (src/lib/scoring.ts; el servidor lo recalcula igual)
     const prevLevel = comboLevelOf(comboRef.current);
-    const sc = scoreRound(closeness(distance, scaleForMode(gameMode)), timeExact, comboRef.current, difficultyHundredths(difficulty));
+    const sc = scoreRound(closeness(distance, scaleForMode(gameMode)), timeExact, comboRef.current, difficultyHundredths(difficulty), fixedSpeed);
     const newStreak = sc.combo;
     comboRef.current = sc.combo;
     setCombo(sc.combo);

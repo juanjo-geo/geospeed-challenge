@@ -18,6 +18,8 @@ const AutoDemo = lazy(() => import('./AutoDemo'));
 import Mascot from './Mascot';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import { MEDAL_RULE, medalKey, medalMap, useProgression } from '@/lib/progression';
+import { classicFavId, quizNameOf, useFavorites, type Favorite } from '@/lib/favorites';
+import FavStar from './FavStar';
 import { AccountButton, SettingsButton } from './HeaderActions';
 import { playButtonTap } from '@/lib/sounds';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -31,6 +33,8 @@ import { canPlayPack, isPackTrial, isProPack } from '@/lib/packAccess';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode, category: Category) => void;
+  /** Fase 10: abrir un favorito de la sección "Favoritos" */
+  onFavorite?: (f: Favorite) => void;
   onMultiplayer: () => void;
   onTimeAttack: () => void;
   onDailyChallenge: () => void;
@@ -76,6 +80,10 @@ const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string; art: [string
   caribe:   { level: REGION_UNLOCK_LEVEL.caribe, ...REGION_ART.caribe },
 };
 
+/** Favoritos de modo (Fase 10): emoji y nombre (las claves de i18n de cada pantalla) */
+const FAV_MODE_EMOJI: Record<string, string> = { daily: '📅', caos: '⚡', impossible: '🔥', mundial: '⚽', training: '🎯', memory: '🧠', sprint: '🏁', quizzes: '🧩' };
+const FAV_MODE_KEY: Record<string, string> = { daily: 'home_dailyCard', caos: 'ta_title', impossible: 'home_speedDemon', mundial: 'wc_modeName', training: 'train_title', memory: 'mem_title', sprint: 'more_sprintName', quizzes: 'quiz_myTitle' };
+
 const CLASSIC_ROUNDS = 13;
 const CLASSIC_SECONDS = 15;
 const SELECTION_KEY = 'geospeed_last_selection';
@@ -97,7 +105,7 @@ function loadSelection(): { mode: GameMode; difficulty: Difficulty; category?: C
 /** El día del cofre se registra una vez por apertura de la app (ver efecto del cofre). */
 let dayRegisteredThisSession = false;
 
-export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onOpenSprint, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onFavorite, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onOpenSprint, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { t, locale } = useI18n();
   const reviewDue = dueCount(useMemory());
   const stats = getPlayerStats();
@@ -206,6 +214,15 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
   const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
+  // Fase 10: favoritos (configuraciones del Clásico, modos y quizzes)
+  const favorites = useFavorites();
+  const favLabel = (f: Favorite): string => {
+    if (f.type === 'quiz') return `🧩 ${quizNameOf(f.id) ?? t('fav_quizCode', { code: f.id })}`;
+    if (f.type === 'mode') return `${FAV_MODE_EMOJI[f.id] ?? '⭐'} ${t(FAV_MODE_KEY[f.id] as never)}`;
+    const [mode, diff, cat] = f.id.split('|');
+    const cap = diff ? diff.charAt(0).toUpperCase() + diff.slice(1) : '';
+    return `${REGION_ART[mode as GameMode]?.emoji ?? '🌍'} ${t(`mode_${mode}` as never)} · ${t(`home_diff${cap}` as never)} · ${t(categoryLabelKey((cat || 'cities') as Category, mode) as never)}`;
+  };
   // Fase 9: la medalla de este mapa y lo que falta para la siguiente
   const progression = useProgression();
   const medalNow = medalMap(progression).get(medalKey(selectedMode, selectedDifficulty, selectedCategory));
@@ -334,7 +351,9 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         </section>
 
         {/* ── Tu próxima aventura ── */}
-        <section id="game-modes" className="rounded-3xl border border-accent/40 bg-card/70 p-3 sm:p-5 mb-2 sm:mb-3 lg:mb-0 animate-fade-in-up animation-delay-150 flex flex-col shadow-[0_0_24px_hsl(var(--accent)/0.10)]" aria-label={t('home_nextAdventure')}>
+        <section id="game-modes" className="relative rounded-3xl border border-accent/40 bg-card/70 p-3 sm:p-5 mb-2 sm:mb-3 lg:mb-0 animate-fade-in-up animation-delay-150 flex flex-col shadow-[0_0_24px_hsl(var(--accent)/0.10)]" aria-label={t('home_nextAdventure')}>
+          {/* Fase 10: guardar esta configuración (región · dificultad · categoría) en Favoritos */}
+          <FavStar type="classic" id={classicFavId(selectedMode, selectedDifficulty, selectedCategory)} className="absolute right-1.5 top-1.5 sm:right-3 sm:top-3 z-[1]" />
           <div className="grid grid-cols-[3.9rem_1fr] min-[400px]:grid-cols-[4.4rem_1fr] sm:grid-cols-[5.5rem_1fr] lg:grid-cols-[5rem_1fr] gap-x-2.5 sm:gap-x-3 gap-y-1.5 sm:gap-y-2 items-center">
             <div className="row-span-2 lg:row-span-1 self-center">
               <Mascot state="happy" className="w-full animate-mascot-float drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
@@ -367,6 +386,22 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
         <div className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200">
           <SprintHomeCard onOpen={onOpenSprint} />
         </div>
+      )}
+
+      {/* ── Favoritos (Fase 10): hasta 20, por uso reciente; un toque los abre ── */}
+      {onFavorite && favorites.length > 0 && (
+        <section className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 lg:mt-4 animate-fade-in-up animation-delay-200" aria-label={t('fav_title')}>
+          <h2 className="text-sm font-extrabold mb-1.5"><span className="text-primary">★</span> {t('fav_title')}</h2>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+            {favorites.map((f) => (
+              <button key={`${f.type}:${f.id}`} type="button" onClick={() => { playButtonTap(); onFavorite(f); }}
+                className="snap-start shrink-0 max-w-[15rem] rounded-2xl border-2 border-primary/40 bg-card/75 px-3 py-2 text-left hover:border-primary/80 transition-colors">
+                <span className="block text-sm font-bold truncate">{favLabel(f)}</span>
+                <span className="block text-[11px] text-muted-foreground">{t(f.type === 'classic' ? 'fav_typeClassic' : f.type === 'quiz' ? 'fav_typeQuiz' : 'fav_typeMode')}</span>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* ── Tarjetas de acceso (orden de la maqueta: Diario · Amigos · Mis retos · Más modos) ── */}

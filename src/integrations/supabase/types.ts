@@ -515,6 +515,13 @@ export type Database = {
         Args: Record<string, never>
         Returns: Json
       }
+      quiz_save: { Args: { p: Json }; Returns: Json }
+      my_quizzes: { Args: Record<string, never>; Returns: Json }
+      quiz_get: { Args: { p_code: string }; Returns: Json }
+      quiz_delete: { Args: { p_id: string }; Returns: boolean }
+      my_favorites: { Args: Record<string, never>; Returns: Json }
+      favorite_toggle: { Args: { p_type: string; p_id: string }; Returns: boolean }
+      favorite_touch: { Args: { p_type: string; p_id: string }; Returns: undefined }
       my_memory: {
         Args: Record<string, never>
         Returns: {

@@ -132,6 +132,15 @@ function poolForCategory(cat: Category, mode: GameMode): City[] {
   return packCities(mode);
 }
 
+/** Todos los ítems de una categoría en una región, sin repetir (editor de quizzes, Fase 10): en el mundo, las ciudades
+ *  de todas las listas (cada continente suma ciudades que la lista del mundo no trae) */
+export function catalogPool(cat: Category, mode: GameMode): City[] {
+  if (cat !== 'cities' || mode !== 'world') return poolForCategory(cat, mode);
+  const seen = new Set<string>();
+  return (['world', 'europe', 'asia', 'americas', 'africa'] as GameMode[]).flatMap((m) => getCitiesByMode(m))
+    .filter((c) => { const id = c.id ?? c.name; if (seen.has(id)) return false; seen.add(id); return true; });
+}
+
 /** Banderas de una región (world = todas, incluida Oceanía) */
 export const flagsByMode = (mode: GameMode): City[] => FLAG_ITEMS.filter((f) => mode === 'world' || f.region === mode);
 /** Lugares geográficos de una región (world = todos los que no son exclusivos de un pack) */

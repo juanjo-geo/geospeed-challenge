@@ -20,7 +20,7 @@ import type { TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import { getGameHistory, getPlayerStats, type GameHistoryEntry } from './gameUtils';
 import { ensureGuestSession } from './identity';
 
-export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel' | 'sprint';
+export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel' | 'sprint' | 'quiz' | 'quiz_free';
 export type EndReason = 'complete' | 'timeout' | 'abandoned';
 
 export interface SaveRoundInput {
@@ -56,6 +56,8 @@ export interface SaveGameInput {
   dailyNo?: number | null;
   /** Fase 6: qué se ubicó (ciudades por defecto; el servidor valida el valor) */
   category?: Category;
+  /** Fase 10: quiz jugado (el servidor guarda el mejor puntaje en su mini ranking) */
+  quizCode?: string | null;
   rounds: SaveRoundInput[];
   /** Para reintentos: si no se pasa, se genera uno. */
   clientId?: string;
@@ -89,6 +91,7 @@ function toPayload(input: SaveGameInput, clientId: string): Json {
     challenge_id: input.challengeId ?? null,
     daily_no: input.dailyNo ?? null,
     category: input.category ?? 'cities',
+    quiz_code: input.quizCode ?? null,
     // Puntaje v2 (Temporada 1): el servidor recalcula cada ronda desde el clic, la ciudad y el tiempo
     scoring_version: SCORING_VERSION,
     rounds: input.rounds.map(r => ({

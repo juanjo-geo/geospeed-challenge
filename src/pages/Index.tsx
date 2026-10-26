@@ -127,6 +127,10 @@ const TrainingSetupScreen = lazyWithReload(() => import('@/components/game/Train
 const TrainingRepeatScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingRepeatScreen })));
 const TrainingResultScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingResultScreen })));
 const MemoryScreen = lazyWithReload(() => import('@/components/game/MemoryScreen'));
+const MyQuizzesScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.MyQuizzesScreen })));
+const QuizEditorScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizEditorScreen })));
+const QuizIntroScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizIntroScreen })));
+const QuizResultPanel = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizResultPanel })));
 const MedalsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.MedalsScreen })));
 const AchievementsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.AchievementsScreen })));
 const SprintScreen = lazyWithReload(() => import('@/components/game/SprintScreen'));
@@ -157,6 +161,9 @@ import {
 import type { ChallengeSource } from '@/components/game/ChallengeScreen';
 import { syncAfterGame } from '@/lib/cloudSync';
 import { saveGameResult, roundsFromResults, roundsFromTimeAttack, avgDistance as avgDistanceOf, buildSavePayload } from '@/lib/gameResults';
+import { quizRun, type Quiz, type QuizDraft } from '@/lib/quizzes';
+import { isMockQuizzes, mockQuizzes } from '@/lib/quizzesMock';
+import { touchFavorite, type Favorite } from '@/lib/favorites';
 import { getStreakState } from '@/lib/dailyStreak';
 import { getPlayerStats } from '@/lib/gameUtils';
 import { isBusyPhase, resetHomeVisit, markHomeInterruption, homeInterruptionShown } from '@/lib/interruptions';
@@ -177,7 +184,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -196,7 +203,7 @@ interface TrainingRun {
 }
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -241,7 +248,7 @@ const difficultyLabelsEs: Record<Difficulty, string> = {
 };
 
 export interface DeepLinkProps {
-  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' };
+  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' | 'quiz' };
 }
 
 const Index = ({ deepLink }: DeepLinkProps = {}) => {
@@ -368,6 +375,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [replayCities, setReplayCities] = useState<City[] | null>(null);
   // F3: reto asincrónico que se está jugando y fuente de la pantalla del reto
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  // Fase 10: quiz en juego (sus rondas) y lo que abren las pantallas de quizzes
+  const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
+  const [quizCities, setQuizCities] = useState<City[] | null>(null);
+  const [quizDraft, setQuizDraft] = useState<Partial<QuizDraft> | null>(null);
+  const [quizCode, setQuizCode] = useState<string | null>(null);
+  const [quizReturn, setQuizReturn] = useState<'home' | 'quizzes'>('home');
   // Carrera contra el fantasma (Fase 3): la partida del rival si ya jugó este reto (se pide al empezar)
   const [challengeGhost, setChallengeGhost] = useState<{ id: string; ghost: ChallengeGhost } | null>(null);
   // Al terminar un reto se espera a que la partida llegue al servidor y se va directo a la comparación
@@ -684,6 +697,26 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return;
     }
 
+    // Fase 10: quiz — el servidor puntúa la partida y guarda el mejor puntaje en el mini ranking del quiz
+    if (activeQuiz && quizCities) {
+      setFinalRounds(rounds);
+      setFinalScore(total);
+      setEndReason(reason);
+      setDailyFinish(null);
+      incrementGameCounter();
+      addBattlePassXP(total);
+      syncAfterGame();
+      saveGameResult({
+        gameType: activeQuiz.settings.clock ? 'quiz' : 'quiz_free', mode: activeQuiz.region, difficulty: 'basic', score: total,
+        roundsPlayed: rounds.length, roundsTotal: quizCities.length, avgDistanceKm: avgDist, endReason: reason, seed: null,
+        category: categoryOf(rounds.map(r => r.city)), quizCode: activeQuiz.code, rounds: roundsFromResults(rounds),
+      });
+      if (isMockQuizzes()) mockQuizzes.record(activeQuiz.code, total, Math.round(rounds.reduce((s, r) => s + (r.timeExact ?? r.timeUsed), 0) * 1000));
+      trackEvent('quiz_complete', { score: total, rounds: rounds.length, clock: activeQuiz.settings.clock, mine: activeQuiz.mine });
+      setPhase('final');
+      return;
+    }
+
     if (revengeCities) {
       // Revenge game finished — calculate improvement over original worst scores
       const revengeScore = total;
@@ -783,7 +816,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     } else {
       setPhase('final');
     }
-  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge, finishTraining, deliverSprint]);
+  }, [difficulty, gameMode, revengeCities, originalScore, originalWorstScores, isTraining, isSpeedDemon, challengeSeed, replayCities, activeChallenge, finishTraining, deliverSprint, activeQuiz, quizCities]);
 
   // ── Notifications: start check loop + schedule after each game ──
   // Recordatorio de la racha: se reprograma cada vez que cambia el estado del diario (al abrir, al terminarlo)
@@ -933,7 +966,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate]);
+  const handleGoHome = useCallback(() => { setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setActiveQuiz(null); setQuizCities(null); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => { setProfileTab('overview'); setPhase('profile'); }, []);
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
@@ -984,7 +1017,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [showNav]);
   useEffect(() => { document.getElementById(APP_SCROLL_ID)?.scrollTo(0, 0); }, [phase]);
   const activeNavTab: NavTab | null =
-    phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' || phase === 'training-setup' || phase === 'training-result' || phase === 'sprint' || phase === 'sprint-result' ? 'home'
+    phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' || phase === 'quizzes' || phase === 'quiz-edit' || phase === 'quiz-intro' || phase === 'training-setup' || phase === 'training-result' || phase === 'sprint' || phase === 'sprint-result' ? 'home'
     : phase === 'store' ? 'store'
     : phase === 'battlepass' ? 'pass'
     : phase === 'history' || phase === 'ranking' || phase === 'memory' || phase === 'medals' || phase === 'achievements' ? 'progress'
@@ -1062,6 +1095,48 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
+
+  // ── Quizzes personalizados y favoritos (Fase 10) ──
+  const handleOpenQuizzes = useCallback(() => { setPhase('quizzes'); scrollAppToTop(); touchFavorite('mode', 'quizzes'); }, []);
+  const handleCreateQuiz = useCallback((prefill?: Partial<QuizDraft>) => { setQuizDraft(prefill ?? {}); setPhase('quiz-edit'); scrollAppToTop(); }, []);
+  const handleEditQuiz = useCallback((q: Quiz) => {
+    setQuizDraft({ id: q.id, name: q.name, region: q.region, categories: q.categories, item_ids: q.item_ids, settings: q.settings });
+    setPhase('quiz-edit');
+    scrollAppToTop();
+  }, []);
+  const handleOpenQuiz = useCallback((code: string, from: 'home' | 'quizzes' = 'home') => {
+    setQuizCode(code);
+    setQuizReturn(from);
+    setPhase('quiz-intro');
+    scrollAppToTop();
+    touchFavorite('quiz', code);
+  }, []);
+  // Jugar un quiz no gasta vidas (como el entrenamiento); sin reloj se entra directo, con reloj hay cuenta regresiva
+  const startQuizRun = useCallback((q: Quiz) => {
+    const cities = quizRun(q);
+    if (!cities.length) { toast(t('quiz_errItems')); return; }
+    unlockAudio();
+    setActiveQuiz(q);
+    setQuizCities(cities);
+    setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null);
+    setIsSpeedDemon(false); setReplayCities(null); setRevengeCities(null); setActiveChallenge(null); setChallengeSeed(null);
+    setDifficulty('basic');
+    setGameMode(q.region);
+    setGameCategory(categoryOf(cities));
+    gameKeyRef.current += 1;
+    touchFavorite('quiz', q.code);
+    trackEvent('quiz_start', { rounds: cities.length, clock: q.settings.clock, mine: q.mine });
+    if (q.settings.clock) { countdownNextRef.current = 'playing'; setPhase('countdown'); } else setPhase('playing');
+  }, [t]);
+  // Un favorito del Inicio: la configuración del Clásico arranca la partida; un modo abre su pantalla; un quiz, su presentación
+  const handleFavorite = useCallback((f: Favorite) => {
+    touchFavorite(f.type, f.id);
+    if (f.type === 'classic') {
+      const [mode, diff, cat] = f.id.split('|');
+      handleSelectDifficulty(diff as Difficulty, mode as GameMode, (cat || 'cities') as Category);
+    } else if (f.type === 'quiz') handleOpenQuiz(f.id);
+    else ({ daily: handleDailyIntro, caos: handleTimeAttack, impossible: handleSpeedDemon, mundial: handleWorldChallenge, training: handleStartTraining, memory: handleOpenMemory, sprint: handleOpenSprint, quizzes: handleOpenQuizzes } as Record<string, () => void>)[f.id]?.();
+  }, [handleSelectDifficulty, handleOpenQuiz, handleDailyIntro, handleTimeAttack, handleSpeedDemon, handleWorldChallenge, handleStartTraining, handleOpenMemory, handleOpenSprint, handleOpenQuizzes]);
 
   // ── Challenge a Friend ──
   // Usa la semilla REAL de la partida que acaba de jugarse: el amigo recibe las mismas ciudades.
@@ -1161,6 +1236,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         // challengeSeed effect will auto-start the game
       }
       navigate('/', { replace: true });
+    } else if (deepLink.type === 'quiz' && routeParams.code) {
+      // /q/ABC123 → presentación del quiz compartido (sin cuenta; el código se valida en el servidor)
+      setQuizCode(routeParams.code.toUpperCase());
+      setQuizReturn('home');
+      setPhase('quiz-intro');
+      trackEvent('quiz_link_open', {});
+      navigate('/', { replace: true });
     } else if (deepLink.type === 'reto' && routeParams.code) {
       // /reto/ABC12 → invitación al reto (D3: el código se valida en el servidor)
       setChallengeSource({ type: 'code', code: routeParams.code.toUpperCase() });
@@ -1258,7 +1340,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'more-modes') {
-      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} onSprint={handleOpenSprint} />;
+      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} onSprint={handleOpenSprint} onQuizzes={handleOpenQuizzes} />;
+    }
+    if (phase === 'quizzes') {
+      return <MyQuizzesScreen onBack={handleGoHome} onCreate={handleCreateQuiz} onEdit={handleEditQuiz} onOpen={(code) => handleOpenQuiz(code, 'quizzes')} onPlay={startQuizRun} onOpenStore={handleOpenStore} />;
+    }
+    if (phase === 'quiz-edit') {
+      return <QuizEditorScreen initial={quizDraft} onBack={handleOpenQuizzes} onSaved={(q) => handleOpenQuiz(q.code, 'quizzes')} onOpenStore={handleOpenStore} />;
+    }
+    if (phase === 'quiz-intro' && quizCode) {
+      return <QuizIntroScreen code={quizCode} onBack={quizReturn === 'quizzes' ? handleOpenQuizzes : handleGoHome} onPlay={startQuizRun} onEdit={handleEditQuiz} onDaily={handleDailyIntro} />;
     }
 
     if (phase === 'daily-intro') {
@@ -1324,7 +1415,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return (
         <CountdownIntro
           count={countdown}
-          label={sprintMatch ? `⚡ Sprint · vs ${sprintMatch.opponent.name}` : activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
+          label={activeQuiz ? `🧩 ${activeQuiz.name}` : sprintMatch ? `⚡ Sprint · vs ${sprintMatch.opponent.name}` : activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
           onCancel={handleCancelCountdown}
           running={!showRotateOverlay}
         />
@@ -1607,6 +1698,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           category={gameCategory}
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(isTraining && trainingRun ? { citiesOverride: trainingRun.cities, totalRoundsOverride: trainingRun.cities.length, noClock: !trainingRun.clock } : {})}
+          {...(activeQuiz && quizCities ? { citiesOverride: quizCities, totalRoundsOverride: quizCities.length, noClock: !activeQuiz.settings.clock, fixedSpeed: !activeQuiz.settings.clock, continueOnTimeout: activeQuiz.settings.clock, hudLabel: `🧩 ${activeQuiz.name}` } : {})}
           {...(sprintMatch ? { citiesOverride: sprintCitiesToGame(sprintMatch), totalRoundsOverride: sprintMatch.cities.length || SPRINT_ROUNDS, maxTimeOverride: SPRINT_SECONDS, ghost: sprintGhost(sprintMatch), onExit: handleSprintExit, exitConfirm: t('sprint_exitConfirm'), hudLabel: '⚡ Sprint' } : {})}
           {...(activeChallenge
             ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round, ghost: challengeGhost?.id === activeChallenge.id ? challengeGhost.ghost : null }
@@ -1624,7 +1716,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       const raceGhost = playedChallenge && challengeGhost?.id === playedChallenge.id ? challengeGhost.ghost : null;
       return (
         <FinalResultScreen
-          noOffers={isTraining}
+          noOffers={isTraining || !!activeQuiz}
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
           rounds={finalRounds}
@@ -1632,16 +1724,18 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           difficulty={difficulty}
           mode={gameMode}
           reason={endReason}
-          onPlayAgain={playedChallenge ? undefined : handlePlayAgain}
-          onNewGame={handleNewGame}
+          onPlayAgain={playedChallenge ? undefined : activeQuiz ? () => startQuizRun(activeQuiz) : handlePlayAgain}
+          onNewGame={activeQuiz ? () => startQuizRun(activeQuiz) : handleNewGame}
           onGoHome={handleGoHome}
-          onRevenge={revengeUsed || activeChallenge ? undefined : handleRevenge}
-          onShareChallenge={canShareChallenge && !dailyFinish ? handleFriends : undefined}
+          onRevenge={revengeUsed || activeChallenge || activeQuiz ? undefined : handleRevenge}
+          onShareChallenge={canShareChallenge && !dailyFinish && !activeQuiz ? handleFriends : undefined}
           onViewChallenge={playedChallenge ? handleViewChallenge : undefined}
           onOpenStore={handleOpenStore}
           challengerScore={challengerScore}
-          totalRounds={isSpeedDemon ? 30 : isTraining ? 6 : 13}
-          topPanel={dailyFinish ? (
+          totalRounds={activeQuiz && quizCities ? quizCities.length : isSpeedDemon ? 30 : isTraining ? 6 : 13}
+          topPanel={activeQuiz ? (
+            <QuizResultPanel code={activeQuiz.code} name={activeQuiz.name} />
+          ) : dailyFinish ? (
             <DailyResultPanel
               result={dailyFinish}
               status={dailyAfter}
@@ -1666,7 +1760,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onStartReview={handleStartReview} onOpenSprint={handleOpenSprint} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onFavorite={handleFavorite} onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onStartReview={handleStartReview} onOpenSprint={handleOpenSprint} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
+import FavStar from './FavStar';
 import { formatNumber } from '@/lib/format';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon } from '@/components/ui/icons';
@@ -137,6 +138,7 @@ export default function DailyIntroScreen({ onBack, onPlay, invite = null }: Dail
           <button onClick={() => { playButtonTap(); onBack(); }} className="w-full max-w-xl rounded-2xl py-3 border-2 border-accent/50 font-bold flex items-center justify-center gap-2 hover:bg-accent/10 active:scale-[0.98]">
             <ChevronIcon dir="left" className="w-5 h-5" /> {t('ob_backHome')}
           </button>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><FavStar type="mode" id="daily" /> {t('fav_title')}</span>
         </div>
       </div>
     </div>
