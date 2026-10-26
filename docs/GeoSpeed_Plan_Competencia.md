@@ -168,6 +168,7 @@ migraciones aplicadas. La versión indica en qué publicación salió cada una.
 | — | Publicados (v144): detalles menores — Mis retos por categoría, contornos en el mapa del reto, prueba diaria de los packs Pro en el servidor, 20 lugares y 13 monumentos del Caribe | 2026-10-26 |
 
 ### Lo que queda fuera de estas fases
-- **Sin especificar:** salas en vivo (ver `docs/GeoSpeed_Sala_En_Vivo_Diseno.md`), personalidad de la mascota (frases y animación), modo por equipos.
+- **Sala en vivo** (paridad P5, hasta 20 jugadores): publicada y abierta a todos el 2026-10-26 (v148); diseño y estado en `docs/GeoSpeed_Sala_En_Vivo_Diseno.md`.
+- **Sin especificar:** personalidad de la mascota (frases y animación), modo por equipos.
 - **Depende de JuanJo:** nueva AAB; Firebase (push nativo); RevenueCat (cuenta, productos y un webhook que escriba `purchases` para que el servidor reconozca el Pro comprado en Android); plugin nativo de AdMob; revisión de contenido de las fases 6–8.
 - **Mejoras conocidas:** nombres de ciudades solo en español (C3), Oceanía solo en Mundo, mapas de los packs Pro sin nombres de países, microestados fuera de Banderas.
