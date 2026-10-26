@@ -1,7 +1,8 @@
-# GeoSpeed · Sala en vivo para hasta 20 jugadores — diseño (borrador para aprobar)
+# GeoSpeed · Sala en vivo para hasta 20 jugadores — diseño
 
-2026-10-26. Estado: **propuesta**, no hay código. Se programa cuando JuanJo apruebe este documento y las decisiones de
-la sección 9. Reemplaza el pendiente "salas de 3–10 en vivo" del plan de competencia (paridad P5) y sube el tope a 20.
+2026-10-26. Estado: **decisiones tomadas** (sección 9), sin código todavía. Se programa por bloques (sección 8) con el
+visto bueno de JuanJo. Reemplaza el pendiente "salas de 3–10 en vivo" del plan de competencia (paridad P5) y sube el
+tope a 20.
 
 ## 1. Qué es y para quién
 
@@ -190,6 +191,10 @@ Todas en español e inglés. Se revisan en 568×320, 667×375, vertical y escrit
 Al publicar las salas se borra el duelo en vivo viejo (oculto desde la decisión D8), que una sala de 2 reemplaza.
 
 ## 9. Decisiones para JuanJo
+
+**Decidido por JuanJo el 2026-10-26:** S-D1 cualquiera con cuenta registrada crea salas de hasta 20, gratis (Pro suma
+los packs Pro como región); S-D2 carrera de puntos; S-D3 pantalla para proyectar en la v1; S-D4 "Sala en vivo"
+("Live room" en inglés). S-D5 queda como se recomienda (no cuenta para el ranking mundial).
 
 | # | Decisión | Recomendación |
 |---|---|---|
