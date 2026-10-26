@@ -38,3 +38,13 @@ export const DIFF_ART: Record<Difficulty, { emoji: string; art: [string, string?
 };
 
 export const DIFF_ORDER: Difficulty[] = ['basic', 'easy', 'medium', 'hard'];
+
+/** Nivel del jugador que desbloquea cada región y dificultad (decisión D12: se muestran con candado) */
+export const REGION_UNLOCK_LEVEL: Record<GameMode, number> = {
+  world: 1, europe: 2, asia: 3, americas: 4, africa: 5,
+  // Packs: Colombia es gratis; los Pro no tienen nivel (sin Pro, una partida de prueba al día, src/lib/packAccess.ts)
+  colombia: 1, andes: 1, conosur: 1, mexcam: 1, caribe: 1,
+};
+export const DIFF_UNLOCK_LEVEL: Record<Difficulty, number> = { basic: 1, easy: 2, medium: 4, hard: 6 };
+/** Nivel que pide un mapa (región × dificultad) */
+export const mapUnlockLevel = (mode: GameMode, difficulty: Difficulty) => Math.max(REGION_UNLOCK_LEVEL[mode] ?? 1, DIFF_UNLOCK_LEVEL[difficulty] ?? 1);

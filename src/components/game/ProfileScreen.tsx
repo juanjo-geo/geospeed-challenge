@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { ACHIEVEMENTS, achievementTier, medalCounts, useProgression } from '@/lib/progression';
 import { scrollAppToTop } from '@/lib/appScroll';
 import { fetchMyProgress, type MyProgress } from '@/lib/gameResults';
 import { getStreakState } from '@/lib/dailyStreak';
@@ -44,6 +45,9 @@ interface ProfileScreenProps {
   onMyChallenges?: () => void;
   onOpenHistory?: () => void;
   onOpenRanking?: () => void;
+  /** Fase 9: medallas por mapa y logros (vitrina) */
+  onOpenMedals?: () => void;
+  onOpenAchievements?: () => void;
 }
 
 function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
@@ -56,7 +60,10 @@ function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
  * medallón de brújula · Tus estadísticas · Explora tu progreso (Historial, Ranking, Mis retos + accesos compactos
  * a Niveles, Insignias y Estadísticas, que la maqueta no muestra) · Volver al inicio.
  */
-export default function ProfileScreen({ onBack, initialTab = 'overview', onMyChallenges, onOpenHistory, onOpenRanking }: ProfileScreenProps) {
+export default function ProfileScreen({ onBack, initialTab = 'overview', onMyChallenges, onOpenHistory, onOpenRanking, onOpenMedals, onOpenAchievements }: ProfileScreenProps) {
+  const progression = useProgression();
+  const mc = medalCounts(progression);
+  const achReached = ACHIEVEMENTS.reduce((n, a) => n + achievementTier(a, progression?.stats[a.id] ?? 0), 0);
   const { user, displayName, avatar: serverAvatar, isAnonymous, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const navigateTo = (path: string) => navigate(path);
@@ -222,13 +229,15 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
               <section className="rounded-3xl border-2 border-accent/50 bg-card/70 p-3 sm:p-5 shadow-[0_0_20px_hsl(var(--accent)/0.12)]">
                 <h2 className="text-[1.6rem] sm:text-3xl font-black mb-3 leading-tight">{t('profile_exploreLead')} <span className="text-primary">{t('profile_exploreTail')}</span></h2>
                 <div className="flex flex-col gap-2">
+                  {onOpenMedals && <ExploreRow icon="🥇" title={t('medals_title')} desc={t('profile_medalsDesc', { gold: mc.gold, silver: mc.silver, bronze: mc.bronze })} onClick={() => { playButtonTap(); onOpenMedals(); }} />}
+                  {onOpenAchievements && <ExploreRow icon="🏆" title={t('ach_title')} desc={t('profile_achDesc', { n: achReached, total: ACHIEVEMENTS.length * 3 })} onClick={() => { playButtonTap(); onOpenAchievements(); }} />}
                   <ExploreRow icon="📊" title={t('profile_historyTitle')} desc={t('profile_historyDesc')} onClick={() => onOpenHistory ? (playButtonTap(), onOpenHistory()) : open('history')} />
                   {onOpenRanking && <ExploreRow icon="🏆" title={t('rank_title')} desc={t('profile_rankingDesc')} onClick={() => { playButtonTap(); onOpenRanking(); }} />}
                   {onMyChallenges && <ExploreRow icon="📋" title={t('home_myChallenges')} desc={t('profile_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />}
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <MiniTile icon="🏅" label={t('profile_levels')} onClick={() => open('levels')} />
-                  <MiniTile icon="🎖️" label={t('profile_badgesShort')} extra={`${unlockedBadges}/${badges.length}`} onClick={() => open('badges')} />
+                  <MiniTile icon="🎖️" label={t('profile_badgesShort')} extra={`${unlockedBadges}/${badges.length}`} onClick={() => (onOpenAchievements ? (playButtonTap(), onOpenAchievements()) : open('badges'))} />
                   <MiniTile icon="📈" label={t('profile_statsShort')} onClick={() => open('stats')} />
                 </div>
               </section>
