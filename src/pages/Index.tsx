@@ -132,6 +132,7 @@ const QuizEditorScreen = lazyWithReload(() => import('@/components/game/QuizScre
 const QuizIntroScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizIntroScreen })));
 const QuizResultPanel = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizResultPanel })));
 const DownloadsScreen = lazyWithReload(() => import('@/components/game/DownloadsScreen'));
+import { noteRoomsBetaParam } from '@/lib/roomsBeta';
 const RoomCreateScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomCreateScreen })));
 const RoomJoinScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomJoinScreen })));
 const RoomScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomScreen })));
@@ -1236,6 +1237,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Parse challenge URL on mount (supports both old ?ch= query params and new /challenge/:seed route)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    noteRoomsBetaParam(window.location.search); // sala en vivo: ?salas=beta la activa en este teléfono
     // Old format: /?ch=123&d=easy&m=world&s=5000
     const ch = params.get('ch');
     // New format: /challenge/123?d=easy&m=world&s=5000

@@ -246,3 +246,11 @@ export const itemPhotoUrl = (item: Pick<City, 'id' | 'kind' | 'country' | 'photo
   : isFeature(item) ? null
   : hasOwnCityPhoto(item) ? cityPhotoUrl(item.id!)
   : !hasCountryPhoto(item.country) ? null : countryPhotoUrl(item.country, size);
+
+/** Etiqueta del pin correcto según el tipo de ítem (Fase 6): país/borde para banderas, dentro/borde/trazo/punto para lugares y monumentos */
+export function correctPinLabel(r: { city: Pick<City, 'kind' | 'geom'>; inside?: boolean }, t: (key: string) => string, cityName?: string): string {
+  if (r.city.kind === 'flag') return r.inside ? t('flag_inside') : t('flag_border');
+  if (r.city.kind === 'monument') return t('feat_correct');
+  if (r.city.kind === 'feature' || r.city.kind === 'division') return r.inside ? t('feat_inside') : r.city.geom === 'line' ? t('feat_nearest') : r.city.geom === 'area' ? t('feat_edge') : t('feat_correct');
+  return cityName ?? t('game_correctCity');
+}

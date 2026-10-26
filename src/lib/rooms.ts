@@ -16,6 +16,7 @@ import type { Category } from '@/lib/catalog';
 import type { Difficulty, GameMode } from '@/data/cities';
 import { haversineDistance } from '@/lib/gameUtils';
 import { closeness, scaleForMode, scoreRound, difficultyHundredths } from '@/lib/scoring';
+import { roomsBetaOn } from '@/lib/roomsBeta';
 
 // ── Tipos (lo que devuelve room_state) ──────────────────────────────────────────────────────────────────
 export type RoomPhase = 'lobby' | 'countdown' | 'question' | 'reveal' | 'finished' | 'cancelled';
@@ -116,9 +117,9 @@ function mockEnabled(): boolean {
 }
 /** Simulador activo (solo desarrollo): deja probar crear salas sin cuenta registrada */
 export const roomsMockEnabled = mockEnabled;
-/** ¿Se ofrece la sala en vivo? Interruptor remoto, o siempre en desarrollo */
+/** ¿Se ofrece la sala en vivo? Interruptor remoto, la prueba en este teléfono (`?salas=beta`), o siempre en desarrollo */
 export function roomsEnabled(flag: boolean): boolean {
-  return flag || import.meta.env.DEV;
+  return flag || import.meta.env.DEV || roomsBetaOn();
 }
 
 async function rpc<T>(fn: string, args: Record<string, unknown>, needsSession = true): Promise<T> {
@@ -208,21 +209,26 @@ export function useRoomState(target: { id?: string | null; pin?: string | null }
   const key = target.id ?? target.pin ?? '';
   const targetRef = useRef(target);
   targetRef.current = target;
-  const busy = useRef(false);
+  const keyRef = useRef(key);
+  keyRef.current = key;
+  // Una consulta a la vez por sala; la respuesta de otra sala (p. ej. la anterior a "Otra ronda") se descarta
+  const inflight = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (busy.current || !key) return;
-    busy.current = true;
+    const k = keyRef.current;
+    if (!k || inflight.current === k) return;
+    inflight.current = k;
     try {
       const s = await fetchRoomState(targetRef.current);
+      if (keyRef.current !== k) return;
       setState(s);
       setError(null);
     } catch (e) {
-      setError(e instanceof RoomError ? e : new RoomError('network'));
+      if (keyRef.current === k) setError(e instanceof RoomError ? e : new RoomError('network'));
     } finally {
-      busy.current = false;
+      if (inflight.current === k) inflight.current = null;
     }
-  }, [key]);
+  }, []);
 
   useEffect(() => { setState(null); setError(null); void refresh(); }, [key, refresh]);
   const interval = pollInterval(state?.phase ?? (error ? null : 'lobby'));

@@ -3,7 +3,7 @@ import type { ChallengeGhost } from '@/lib/challenges';
 import { GhostSideCard, GhostChip, GhostPulse, GhostCompare } from './GhostRace';
 import TrainingTip from './TrainingTip';
 import { City, getProgressiveCities, getMapBounds, isPackMode, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
-import { getRandomItems, isFlag, isFeature, isMonument, isSpecial, usesShapeFile, itemTitle, itemSubtitle, itemFlagUrl, itemPhotoUrl, featureTypeEmoji, featureTypeLabel, type Category } from '@/lib/catalog';
+import { correctPinLabel, getRandomItems, isFlag, isFeature, isMonument, isSpecial, usesShapeFile, itemTitle, itemSubtitle, itemFlagUrl, itemPhotoUrl, featureTypeEmoji, featureTypeLabel, type Category } from '@/lib/catalog';
 import { preloadLandmarkPhoto } from '@/lib/landmarkPhotos';
 import { countryDistance } from '@/lib/flagScoring';
 import { featureDistance } from '@/lib/featureScoring';
@@ -133,13 +133,7 @@ function sidebarNameSize(name: string, compact = false): string {
   return longest > 12 ? 'text-[9.5cqi]' : longest > 9 ? 'text-[11.5cqi]' : 'text-[14.5cqi]';
 }
 
-/** Etiqueta del pin correcto según el tipo de ítem (Fase 6): país/borde para banderas, dentro/borde/trazo/punto para lugares y monumentos */
-export function correctPinLabel(r: { city: Pick<City, 'kind' | 'geom'>; inside?: boolean }, t: (key: string) => string, cityName?: string): string {
-  if (r.city.kind === 'flag') return r.inside ? t('flag_inside') : t('flag_border');
-  if (r.city.kind === 'monument') return t('feat_correct');
-  if (r.city.kind === 'feature' || r.city.kind === 'division') return r.inside ? t('feat_inside') : r.city.geom === 'line' ? t('feat_nearest') : r.city.geom === 'area' ? t('feat_edge') : t('feat_correct');
-  return cityName ?? t('game_correctCity');
-}
+export { correctPinLabel };
 
 /**
  * Distancia "equivalente al mapa del mundo" para la frase y la reacción de la mascota: en un pack de país la cercanía

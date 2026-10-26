@@ -1,21 +1,26 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useI18n } from '@/i18n';
 import { MODE_CONFIG, isPackMode, type Difficulty, type GameMode } from '@/data/cities';
 import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode, type Category } from '@/lib/catalog';
 import { REGION_ART, DIFF_ART, DIFF_ORDER, REGION_FLAG } from '@/lib/selectionArt';
 import { isProPack } from '@/lib/packAccess';
 import { isPro } from '@/lib/premiumSystem';
-import { playButtonTap, playShareSuccess } from '@/lib/sounds';
+import { playButtonTap, playShareSuccess, playVictory } from '@/lib/sounds';
+import { fireCelebration } from '@/lib/confetti';
 import { trackEvent } from '@/lib/analytics';
 import {
   ROOM_MAX_PLAYERS, ROOM_NAME_MIN, ROOM_ROUNDS, ROOM_SECONDS, RoomError, cancelRoom, cleanRoomName, createRoom, fetchRoomState,
-  joinRoom, kickFromRoom, leaveRoom, roomLink, roomTimeline, roomsMockEnabled, saveRoomName, savedRoomName, serverNow, startRoom, useRoomState,
+  joinRoom, kickFromRoom, leaveRoom, rematchRoom, roomLink, roomsMockEnabled, saveRoomName, savedRoomName, startRoom, useRoomState,
   type RoomErrorCode, type RoomPlayer, type RoomSettings, type RoomState,
 } from '@/lib/rooms';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon } from '@/components/ui/icons';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot from './Mascot';
+import { PlayerFace, formatPin } from './RoomParts';
+import { appNumberLocale } from '@/lib/format';
+
+const RoomGame = lazy(() => import('./RoomGame'));
 
 /** Texto de un error de la sala */
 function useRoomErrorText() {
@@ -244,7 +249,10 @@ interface RoomScreenProps {
 export function RoomScreen({ roomId, onExit }: RoomScreenProps) {
   const { t } = useI18n();
   const errText = useRoomErrorText();
-  const { state, setState, error, refresh } = useRoomState({ id: roomId });
+  // "Otra ronda" lleva a todos a una sala nueva con los mismos jugadores
+  const [id, setId] = useState(roomId);
+  useEffect(() => { setId(roomId); }, [roomId]);
+  const { state, setState, error, refresh } = useRoomState({ id });
 
   if (!state) {
     return (
@@ -257,25 +265,98 @@ export function RoomScreen({ roomId, onExit }: RoomScreenProps) {
   if (state.kicked) return <Centered><Mascot state="sad" className="w-20" /><p className="font-extrabold text-lg">{t('room_err_kicked')}</p><BackHome onClick={onExit} /></Centered>;
   if (state.status === 'cancelled') return <Centered><Mascot state="sad" className="w-20" /><p className="font-extrabold text-lg">{t('room_cancelled')}</p><BackHome onClick={onExit} /></Centered>;
   if (state.status === 'lobby') return <RoomLobby state={state} onState={setState} onRefresh={refresh} onExit={onExit} />;
-  return <RoomPlaying state={state} onExit={onExit} />;
+  if (state.status === 'finished') return <RoomFinal state={state} onExit={onExit} onSwitch={setId} />;
+  return <Suspense fallback={<Centered><p className="text-muted-foreground">{t('loading')}</p></Centered>}><RoomGame state={state} onRefresh={refresh} onExit={onExit} /></Suspense>;
 }
 
-/** Marcador temporal mientras se construye la pantalla de partida (bloque S3) */
-function RoomPlaying({ state, onExit }: { state: RoomState; onExit: () => void }) {
+/** Resultado de la sala: podio, tabla completa y "Otra ronda" (el anfitrión la arma; a los demás los lleva solos) */
+function RoomFinal({ state, onExit, onSwitch }: { state: RoomState; onExit: () => void; onSwitch: (id: string) => void }) {
   const { t } = useI18n();
-  const [now, setNow] = useState(serverNow());
-  useEffect(() => { const id = setInterval(() => setNow(serverNow()), 250); return () => clearInterval(id); }, []);
-  const tl = roomTimeline(state, now);
+  const errText = useRoomErrorText();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<RoomErrorCode | null>(null);
+  const me = state.players.find((p) => p.me) ?? null;
+  const fmt = (n: number) => n.toLocaleString(appNumberLocale());
+  const celebrated = useRef(false);
+  useEffect(() => {
+    if (celebrated.current || !me) return;
+    celebrated.current = true;
+    trackEvent('room_finish', { players: state.player_count, rank: me.rank });
+    if (me.rank === 1) { playVictory(); fireCelebration(); }
+  }, [me, state.player_count]);
+  // Otra ronda armada por el anfitrión: los jugadores pasan solos a la sala nueva
+  useEffect(() => {
+    if (state.next_room && !state.i_am_host && state.next_room.status === 'lobby') onSwitch(state.next_room.id);
+  }, [state.next_room, state.i_am_host, onSwitch]);
+
+  const rematch = async () => {
+    if (busy) return;
+    playButtonTap();
+    setBusy(true);
+    setError(null);
+    try {
+      const n = await rematchRoom(state.id, state.settings, state.items.map((i) => i.name));
+      trackEvent('room_rematch', { players: n.player_count });
+      onSwitch(n.id);
+    } catch (e) {
+      setError(e instanceof RoomError ? e.code : 'network');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const podium = state.players.slice(0, 3);
+  const order = podium.length === 3 ? [podium[1], podium[0], podium[2]] : podium;
+  const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉');
   return (
-    <Centered>
-      <p className="font-black text-2xl">{tl.phase === 'countdown' ? t('room_getReady') : tl.phase === 'finished' ? t('room_finished') : t('room_roundOf', { n: tl.round, total: state.settings.rounds_total })}</p>
-      {tl.phase === 'countdown' && <p className="text-6xl font-black text-primary">{Math.max(1, Math.ceil((tl.opensAt - now) / 1000))}</p>}
-      {tl.phase === 'question' && <p className="text-4xl font-black text-accent">{Math.max(0, Math.ceil((tl.closesAt - now) / 1000))} s</p>}
-      <ol className="text-left text-sm w-full max-w-xs">
-        {state.players.slice(0, 5).map((p) => <li key={p.slot} className="flex justify-between"><span>{p.rank}. {p.name}</span><b>{p.total}</b></li>)}
-      </ol>
-      <BackHome onClick={onExit} />
-    </Centered>
+    <div className="min-h-[100dvh] flex flex-col items-center game-bg overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6">
+      <div className="w-full max-w-4xl animate-fade-in-up flex flex-col gap-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
+        <h1 className="text-center font-extrabold text-3xl sm:text-4xl">{t('room_finalTitle')} <span className="text-primary">{t('room_finalTitleTail')}</span></h1>
+        {me && <p className="text-center font-bold text-lg">{t('room_finalYou', { n: me.rank, total: state.player_count, points: fmt(me.total) })}</p>}
+
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] short:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start">
+          {/* Podio */}
+          <section className="rounded-3xl border-2 border-primary/60 bg-card/85 p-4 flex items-end justify-center gap-2 sm:gap-4 min-h-[13rem] short:min-h-0">
+            {order.map((p) => (
+              <div key={p.slot} className={`flex flex-col items-center gap-1 text-center min-w-0 w-1/3 ${p.rank === 1 ? 'animate-score-pop' : ''}`}>
+                <span className="text-3xl" aria-hidden>{medal(p.rank)}</span>
+                <PlayerFace player={p} size="lg" />
+                <span className={`block w-full truncate font-bold ${p.me ? 'text-primary' : ''}`}>{p.name}</span>
+                <span className="font-black tabular-nums">{fmt(p.total)}</span>
+                <span className={`w-full rounded-t-xl bg-gradient-to-t from-accent/10 to-accent/40 ${p.rank === 1 ? 'h-16' : p.rank === 2 ? 'h-11' : 'h-7'} short:h-4`} aria-hidden />
+              </div>
+            ))}
+          </section>
+
+          {/* Tabla completa */}
+          <section className="rounded-3xl border-2 border-accent/50 bg-card/85 p-3 sm:p-4">
+            <ol className="flex flex-col gap-1">
+              {state.players.map((p) => (
+                <li key={p.slot} className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm sm:text-base ${p.me ? 'bg-primary/15 border border-primary/50' : 'bg-background/40'}`}>
+                  <span className="w-6 text-center font-black text-muted-foreground">{p.rank}</span>
+                  <PlayerFace player={p} />
+                  <span className="min-w-0 flex-1 truncate font-semibold">{p.name}{p.me ? ` · ${t('ch_you')}` : ''}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">🎯 {p.hits}</span>
+                  <span className="font-black tabular-nums">{fmt(p.total)}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+
+        {error && <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm text-center" role="alert">{errText(error)}</p>}
+        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+          {state.i_am_host && (
+            <button onClick={rematch} disabled={busy} className="btn3d rounded-2xl px-8 py-3.5 font-black text-lg text-primary-foreground disabled:opacity-60" style={{ background: 'var(--grad-cta)' }}>
+              {busy ? '⏳' : '🔁'} {t('room_rematch')}
+            </button>
+          )}
+          {!state.i_am_host && <p className="text-center text-sm text-muted-foreground self-center">{t('room_rematchWaiting', { name: state.host_name ?? '' })}</p>}
+          <button onClick={() => { playButtonTap(); onExit(); }} className="rounded-2xl border-2 border-accent/50 px-8 py-3 font-bold hover:bg-accent/10">{t('ob_backHome')}</button>
+        </div>
+        <p className="text-center text-xs text-muted-foreground">{t('room_finalSaved')}</p>
+      </div>
+    </div>
   );
 }
 
@@ -409,20 +490,6 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
 }
 
 // ═══════════════════════════════════════ Piezas ═══════════════════════════════════════
-export const formatPin = (pin: string) => `${pin.slice(0, 3)} ${pin.slice(3)}`;
-
-/** Avatar del jugador: su emoji o el Explorador con un color distinto por puesto */
-export function PlayerFace({ player, size = 'sm' }: { player: Pick<RoomPlayer, 'avatar' | 'slot'>; size?: 'sm' | 'lg' }) {
-  const cls = size === 'lg' ? 'w-14 h-14 text-3xl' : 'w-9 h-9 text-xl';
-  return (
-    <span className={`${cls} shrink-0 rounded-full border-2 border-accent/60 bg-[radial-gradient(circle_at_50%_40%,hsl(var(--brand-navy-card)),hsl(var(--brand-navy-deep)))] flex items-center justify-center overflow-hidden`} aria-hidden>
-      {player.avatar && player.avatar !== 'mascot'
-        ? <span>{player.avatar}</span>
-        : <span className="block w-[82%]" style={{ filter: `hue-rotate(${(player.slot * 47) % 360}deg)` }}><Mascot state="idle" className="w-full" /></span>}
-    </span>
-  );
-}
-
 function SettingsLine({ s, left = false }: { s: RoomSettings; left?: boolean }) {
   const { t } = useI18n();
   const cap = s.difficulty.charAt(0).toUpperCase() + s.difficulty.slice(1);
