@@ -555,7 +555,16 @@ export type Database = {
           rival_finished: boolean
           my_score: number | null
           rival_score: number | null
+          category: string
         }[]
+      }
+      claim_pack_trial: {
+        Args: { p_mode: string }
+        Returns: boolean
+      }
+      refund_pack_trial: {
+        Args: { p_mode: string }
+        Returns: undefined
       }
     }
     Enums: {

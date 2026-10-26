@@ -1,6 +1,6 @@
 # Fase 6c · Monumentos — catálogo para revisión
 
-Borrador (2026-10-23), 241 monumentos y sitios. Para cambiar algo: editar `src/data/landmarkTiers.ts` y correr
+Borrador (2026-10-23), 254 monumentos y sitios. Para cambiar algo: editar `src/data/landmarkTiers.ts` y correr
 `node scripts/build-landmarks.mjs --out <carpeta>` + `python scripts/convert-landmarks.py <carpeta>` (regeneran el catálogo,
 las fotos en `public/landmarks`, `credits.json` y `supabase/seed/landmark_places.sql`).
 
@@ -11,12 +11,12 @@ nuestro; en la spec se puede fijar `q` a otra entidad o dejar el sitio sin foto 
 
 | Región | Turista | Rookie | Crack | Leyenda | Total |
 |---|---|---|---|---|---|
-| América | 8 | 18 | 21 | 25 | 72 |
+| América | 8 | 18 | 24 | 35 | 85 |
 | Europa | 8 | 12 | 21 | 15 | 56 |
 | Asia | 5 | 8 | 23 | 22 | 58 |
 | África | 1 | 0 | 7 | 8 | 16 |
 | Oceanía (solo en Mundo) | 2 | 0 | 2 | 3 | 7 |
-| **Total** | 24 | 38 | 74 | 73 | 209 |
+| **Total** | 24 | 38 | 77 | 83 | 222 |
 
 ## América
 
@@ -48,10 +48,11 @@ nuestro; en la spec se puede fijar `q` a otra entidad o dejar el sitio sin foto 
   - Santuario de Las Lajas — Ipiales, Colombia · foto CC BY-SA 4.0 (Diego Delso) · [Commons](https://commons.wikimedia.org/wiki/File:Santuario_de_Las_Lajas,_Ipiales,_Colombia,_2015-07-21,_DD_21-23_HDR.jpg)
   - Tikal — Petén, Guatemala · foto CC BY-SA 4.0 (Mundo Maya) · [Commons](https://commons.wikimedia.org/wiki/File:Tikal_3.jpg)
   - Torre CN — Toronto, Canadá · foto CC BY-SA 4.0 (Chris Woodrich) · [Commons](https://commons.wikimedia.org/wiki/File:CN_Tower_from_Puente_de_Luz,_Toronto,_Ontario,_2025-08-25_01.jpg)
-- **Crack** (21):
+- **Crack** (24):
   - Alcatraz — San Francisco, Estados Unidos · foto CC BY-SA 4.0 (Frank Schulenburg) · [Commons](https://commons.wikimedia.org/wiki/File:Alcatraz_Island_as_seen_from_the_East.jpg)
   - Capitolio de Estados Unidos — Washington, Estados Unidos · foto Public domain (United_States_Capitol_-_west_front.jpg: ) · [Commons](https://commons.wikimedia.org/wiki/File:United_States_Capitol_west_front_edit2.jpg)
   - Castillo de Chapultepec — Ciudad de México, México · foto CC BY-SA 4.0 (Own work) · [Commons](https://commons.wikimedia.org/wiki/File:Vista_a%C3%A9rea_del_Castillo_de_Chapultepec_7.jpg)
+  - Castillo del Morro (La Habana) — La Habana, Cuba · foto Public domain (Dr. Anthony R. Picciolo, NOAA NODC) · [Commons](https://commons.wikimedia.org/wiki/File:El_Moro_Havanna_Cuba.jpg)
   - Castillo San Felipe del Morro — San Juan, Puerto Rico · foto CC BY-SA 3.0 (Joshua Wood) · [Commons](https://commons.wikimedia.org/wiki/File:Castillo_San_Felipe_del_Morro3.jpg)
   - Catedral de Brasilia — Brasilia, Brasil · foto CC BY-SA 4.0 (Mariordo (Mario Roberto Durán Ortiz)) · [Commons](https://commons.wikimedia.org/wiki/File:Brasilia_Catedral_08_2005_03.jpg)
   - Catedral Metropolitana de México — Ciudad de México, México · foto CC BY-SA 4.0 (ProtoplasmaKid) · [Commons](https://commons.wikimedia.org/wiki/File:Catedral_Metropolitana_de_la_Ciudad_de_M%C3%A9xico_1.jpg)
@@ -59,25 +60,32 @@ nuestro; en la spec se puede fijar `q` a otra entidad o dejar el sitio sin foto 
   - Ciudad Perdida — Santa Marta, Colombia · foto CC BY 2.0 (Gavin Rough from Waterloo, Canada) · [Commons](https://commons.wikimedia.org/wiki/File:Lost_City_Ruins.jpg)
   - Copán — Copán Ruinas, Honduras · foto CC0 (Nosferattus) · [Commons](https://commons.wikimedia.org/wiki/File:Cop%C3%A1n_Stela_B.jpg)
   - Gateway Arch — San Luis, Estados Unidos · foto CC BY 2.0 ([https://www.flickr.com/photos/11399912@) · [Commons](https://commons.wikimedia.org/wiki/File:St_Louis_Gateway_Arch.jpg)
+  - Malecón de La Habana — La Habana, Cuba · foto CC BY-SA 2.0 (Lukas Mathis) · [Commons](https://commons.wikimedia.org/wiki/File:Havana_malecon_(cropped).jpg)
   - Mitad del Mundo — Quito, Ecuador · foto CC0 (Kaldari) · [Commons](https://commons.wikimedia.org/wiki/File:Mitad_del_Mundo_01.jpg)
   - Monte Albán — Oaxaca, México · foto CC BY-SA 3.0 (Wikimedia Commons) · [Commons](https://commons.wikimedia.org/wiki/File:Monte_Alb%C3%A1n_archeological_site,_Oaxaca.jpg)
   - Monumento a Lincoln — Washington, Estados Unidos · foto Public domain (Aerial_view_of_Lincoln_Memorial_-_east_s) · [Commons](https://commons.wikimedia.org/wiki/File:Aerial_view_of_Lincoln_Memorial_-_east_side_EDIT.jpeg)
   - Palacio de La Moneda — Santiago, Chile · foto CC BY-SA 2.0 (Miguel hernandez) · [Commons](https://commons.wikimedia.org/wiki/File:Palacio_de_La_Moneda_-_miguelreflex.jpg)
   - Palenque — Chiapas, México · foto CC BY-SA 4.0 (AlejandroLinaresGarcia) · [Commons](https://commons.wikimedia.org/wiki/File:PalacioMunicipalPalenque.JPG)
   - Parque Arqueológico de San Agustín — San Agustín, Colombia · foto CC BY-SA 4.0 (Bernard Gagnon) · [Commons](https://commons.wikimedia.org/wiki/File:Parque_Arqueol%C3%B3gico_de_San_Agust%C3%ADn-Mesita_A_12.jpg)
+  - Plaza de la Revolución — La Habana, Cuba · foto CC BY-SA 3.0 (Takethemud at English Wikipedia) · [Commons](https://commons.wikimedia.org/wiki/File:Plaza_of_the_Revolution.JPG)
   - Presa Hoover — Nevada, Estados Unidos · foto Public domain (Ansel Adams) · [Commons](https://commons.wikimedia.org/wiki/File:Ansel_Adams_-_National_Archives_79-AAB-01.jpg)
   - Sacsayhuamán — Cusco, Perú · foto CC BY-SA 3.0 (Leon Petrosyan) · [Commons](https://commons.wikimedia.org/wiki/File:Sacsayhuaman_Inca.jpg)
   - Space Needle — Seattle, Estados Unidos · foto CC BY-SA 4.0 (Another Believer) · [Commons](https://commons.wikimedia.org/wiki/File:Seattle,_October_6,_2023_-_60.jpg)
   - Tiwanaku — La Paz, Bolivia · foto Public domain (Mhwater) · [Commons](https://commons.wikimedia.org/wiki/File:Zonnepoort_tiwanaku.jpg)
   - Tulum — Quintana Roo, México · foto CC BY-SA 3.0 (Haakon S. Krohn) · [Commons](https://commons.wikimedia.org/wiki/File:Tulum_palacio_municipal.jpg)
-- **Leyenda** (25):
+- **Leyenda** (35):
   - Alcázar de Colón — Santo Domingo, República Dominicana · foto CC BY-SA 4.0 (Martin Falbisoner) · [Commons](https://commons.wikimedia.org/wiki/File:Santo_Domingo_-_Alcazar_de_Colon_02.JPG)
+  - Basílica de Higüey — Higüey, República Dominicana · foto CC BY-SA 3.0 (Celiovmota) · [Commons](https://commons.wikimedia.org/wiki/File:Bas%C3%ADlicaHig%C3%BCey.jpg)
   - Caral — Supe, Perú · foto CC BY 2.5 (Håkan Svensson Xauxa) · [Commons](https://commons.wikimedia.org/wiki/File:PeruCaral01.jpg)
+  - Castillo de San Pedro de la Roca — Santiago de Cuba, Cuba · foto CC BY 2.0 (Glogg, Peter, Switzerland) · [Commons](https://commons.wikimedia.org/wiki/File:Castillo_del_Morro_by_Glogg_4.jpg)
   - Castillo San Cristóbal — San Juan, Puerto Rico · foto Public domain (Daderot) · [Commons](https://commons.wikimedia.org/wiki/File:Fort_San_Crist%C3%B3bal_(Puerto_Rico)_-_IMG_0173.JPG)
+  - Catedral de La Habana — La Habana, Cuba · foto CC BY-SA 4.0 (Velvet) · [Commons](https://commons.wikimedia.org/wiki/File:La_Havane_cathedrale_face.JPG)
+  - Catedral Primada de América — Santo Domingo, República Dominicana · foto CC BY-SA 4.0 (Georg Karl Ell) · [Commons](https://commons.wikimedia.org/wiki/File:Dominikanische_Republik_Santo_Domingo_Basilica_Catedral_Menor_de_Santa_Maria_02.jpg)
   - Chan Chan — Trujillo, Perú · foto CC BY-SA 4.0 (Draceane) · [Commons](https://commons.wikimedia.org/wiki/File:Chan_Chan,_2023_(32).jpg)
   - Ciudadela Laferrière — Cabo Haitiano, Haití · foto Public domain (SPC Gibran Torres, United States Army) · [Commons](https://commons.wikimedia.org/wiki/File:Citadelle_Laferri%C3%A8re_Aerial_View.jpg)
   - Congreso Nacional de Brasil — Brasilia, Brasil · foto CC BY-SA 2.0 (Gribiche (Rob Sinclair)) · [Commons](https://commons.wikimedia.org/wiki/File:Congresso_Nacional.jpg)
   - El Álamo — San Antonio, Estados Unidos · foto CC BY-SA 4.0 (Zygmunt Put Zetpe0202) · [Commons](https://commons.wikimedia.org/wiki/File:Alamo_Mission,_San_Antonio,_Texas,_USA.jpg)
+  - Faro a Colón — Santo Domingo, República Dominicana · foto CC BY-SA 4.0 (Dr. Thomas Liptak) · [Commons](https://commons.wikimedia.org/wiki/File:Dominican_Republic,_Santo_Domingo,_Columbus_Lighthouse.jpg)
   - Faro del Fin del Mundo — Ushuaia, Argentina · foto CC BY 2.0 (Ricardo Martins) · [Commons](https://commons.wikimedia.org/wiki/File:Les_Eclaireurs_Lighthouse.jpg)
   - Fuerte de Samaipata — Samaipata, Bolivia · foto CC BY-SA 3.0 (Mhwater at Dutch Wikipedia) · [Commons](https://commons.wikimedia.org/wiki/File:Fuerte03.jpg)
   - Habitat 67 — Montreal, Canadá · foto CC BY 2.0 (Parcours riverain - Ville de Montréal fr) · [Commons](https://commons.wikimedia.org/wiki/File:Habitat_67,_2600,_avenue_Pierre-Dupuy_(Ville-Marie)_(35399872943).jpg)
@@ -89,11 +97,16 @@ nuestro; en la spec se puede fijar `q` a otra entidad o dejar el sitio sin foto 
   - Mesa Verde — Colorado, Estados Unidos · foto CC BY 2.0 (Elaine from Sheffield, England) · [Commons](https://commons.wikimedia.org/wiki/File:Mesa_Verde.jpg)
   - Misiones jesuíticas de San Ignacio Miní — Misiones, Argentina · foto CC BY-SA 2.5 (Loco085) · [Commons](https://commons.wikimedia.org/wiki/File:Ruinas-san-ignacio.jpg)
   - Montículos de Cahokia — San Luis, Estados Unidos · foto CC BY-SA 3.0 (Skubasteve834) · [Commons](https://commons.wikimedia.org/wiki/File:Monks_Mound_in_July.JPG)
+  - Museo Bob Marley — Kingston, Jamaica · foto Public domain (No machine-readable author provided. RsA) · [Commons](https://commons.wikimedia.org/wiki/File:56hoperd.JPG)
+  - Observatorio de Arecibo — Arecibo, Puerto Rico · foto CC BY-SA 4.0 (Mariordo (Mario Roberto Durán Ortiz)) · [Commons](https://commons.wikimedia.org/wiki/File:Arecibo_radio_telescope_SJU_06_2019_6144.jpg)
   - Ouro Preto — Minas Gerais, Brasil · foto CC BY-SA 4.0 (Raquel Mendes Silva) · [Commons](https://commons.wikimedia.org/wiki/File:Conjunto_arquitet%C3%B4nico_e_urban%C3%ADstico_de_Ouro_Preto.JPG)
   - Palacio Salvo — Montevideo, Uruguay · foto CC BY-SA 3.0 (Coolcaesar) · [Commons](https://commons.wikimedia.org/wiki/File:Palaciosalvouruguay.jpg)
+  - Palacio Sans-Souci — Milot, Haití · foto CC BY-SA 3.0 (Rémi Kaupp) · [Commons](https://commons.wikimedia.org/wiki/File:Sans-Souci_Palace_front.jpg)
   - Parlamento de Canadá — Ottawa, Canadá · foto CC BY-SA 3.0 (David Samuel, User:Hellodavey1902) · [Commons](https://commons.wikimedia.org/wiki/File:Parliament_Hill,_Ottawa.jpg)
   - Pelourinho — Salvador de Bahía, Brasil · foto Public domain (Miquel Girones) · [Commons](https://commons.wikimedia.org/wiki/File:Pelourinho.png)
+  - Plaza Mayor de Trinidad — Trinidad, Cuba · foto CC BY-SA 3.0 (Dieter Mueller, dino1948) · [Commons](https://commons.wikimedia.org/wiki/File:Trinidad_(Kuba)_03.jpg)
   - Puente de Boyacá — Tunja, Colombia · foto Public domain (Néstor Daza) · [Commons](https://commons.wikimedia.org/wiki/File:Puente_Boyaca_Nov_09_2005.jpg)
+  - Rose Hall — Montego Bay, Jamaica · foto CC BY-SA 3.0 (Don Ramey Logan) · [Commons](https://commons.wikimedia.org/wiki/File:Rose_Hall_Jamaica_Photo_Don_Ramey_Logan.jpg)
   - Teatro Nacional de Costa Rica — San José, Costa Rica · foto CC BY-SA 4.0 (Mariordo ((Mario Roberto Durán Ortiz)) · [Commons](https://commons.wikimedia.org/wiki/File:Teatro_Nacional_CRI_07_2019_8963.jpg)
   - Tierradentro — Inzá, Colombia · foto CC BY 2.0 (inyucho) · [Commons](https://commons.wikimedia.org/wiki/File:Tombs_in_Tierra_Dentro.jpg)
 
@@ -312,13 +325,13 @@ Monumentos del mundo que también entran en el pack (con su nivel ahí) y monume
 
 ## Licencias de las fotos
 
-- CC BY-SA 4.0: 85
-- CC BY-SA 3.0: 66
-- Public domain: 20
-- CC BY 2.0: 17
+- CC BY-SA 4.0: 89
+- CC BY-SA 3.0: 71
+- Public domain: 22
+- CC BY 2.0: 18
 - CC BY 2.5: 10
+- CC BY-SA 2.0: 9
 - CC0: 8
-- CC BY-SA 2.0: 8
 - sin foto: 7
 - CC BY 4.0: 6
 - CC BY-SA 2.5: 5

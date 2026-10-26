@@ -93,6 +93,8 @@ export interface MyChallenge {
   my_role: 'creator' | 'opponent'; state: ChallengeState;
   rival_name: string | null; rival_avatar: string | null; rival_finished: boolean;
   my_score: number | null; rival_score: number | null;
+  /** Categoría del reto (servidor desde 20261105120000_detalles.sql; antes no venía = ciudades) */
+  category?: Category;
 }
 
 export type ChallengeErrorCode = 'auth_required' | 'unavailable' | 'network';
@@ -299,7 +301,7 @@ const mock = {
     await delay();
     return Object.values(mockDb()).map(r => ({
       id: r.ch.id, code: r.ch.code, mode: r.ch.mode, difficulty: r.ch.difficulty, status: mockStatus(r), created_at: r.ch.created_at,
-      completed_at: null, rounds_total: r.ch.rounds_total, is_rematch: !!r.ch.parentId, my_role: r.myRole ?? 'creator', state: mockState(r),
+      completed_at: null, rounds_total: r.ch.rounds_total, is_rematch: !!r.ch.parentId, my_role: r.myRole ?? 'creator', state: mockState(r), category: r.ch.category ?? 'cities',
       rival_name: r.rival.joined ? r.rival.name : null, rival_avatar: null, rival_finished: !!r.rival.result,
       my_score: mockStatus(r) === 'completed' ? r.mine!.score : null, rival_score: mockStatus(r) === 'completed' ? r.rival.result!.score : null,
     })).sort((a, b) => b.created_at.localeCompare(a.created_at));

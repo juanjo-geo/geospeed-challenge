@@ -62,7 +62,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Dublín | [Q1761](https://www.wikidata.org/wiki/Q1761) Dublín | 592.713 hab. (2022) · 115 km² · 20 m | Newgrange, Islas Británicas, Mar de Irlanda | Su nombre viene del irlandés Dubh Linn, estanque negro, y allí se elabora la cerveza Guinness desde 1759. |
 | Bruselas | [Q239](https://www.wikidata.org/wiki/Q239) Bruselas | 195.546 hab. (2024) · 33 km² · 70 m | Atomium, Llanura del Norte de Europa | Su pequeña estatua del Manneken Pis tiene más de mil trajes, que le cambian en fechas especiales. |
 | Berna | [Q70](https://www.wikidata.org/wiki/Q70) Berna | 138.562 hab. (2025) · 52 km² · 542 m | Alpes | Albert Einstein vivía allí en 1905, el año en que publicó su teoría de la relatividad especial. |
-| La Habana | [Q1563](https://www.wikidata.org/wiki/Q1563) La Habana | 2.492.618 hab. (2022) · 728 km² · 59 m | Capitolio de La Habana, Antillas Mayores | Por sus calles aún ruedan muchos autos clásicos estadounidenses de los años cuarenta y cincuenta. |
+| La Habana | [Q1563](https://www.wikidata.org/wiki/Q1563) La Habana | 2.492.618 hab. (2022) · 728 km² · 59 m | Capitolio de La Habana, Plaza de la Revolución, Estrecho de Florida | Por sus calles aún ruedan muchos autos clásicos estadounidenses de los años cuarenta y cincuenta. |
 | Caracas | [Q1533](https://www.wikidata.org/wiki/Q1533) Caracas | 2.245.744 hab. (2017) · 776 km² · 920 m | Cordillera Oriental, Mar Caribe | Allí nació Simón Bolívar en 1783, y su casa natal es hoy un museo en el centro histórico. |
 | Quito | [Q2900](https://www.wikidata.org/wiki/Q2900) Quito | 1.763.275 hab. (2022) · 372 km² · 2.850 m | Mitad del Mundo, Cordillera de los Andes, Cordillera Occidental | En 1978, junto con Cracovia, fue una de las primeras ciudades declaradas Patrimonio de la Humanidad por la UNESCO. |
 | Montevideo | [Q1335](https://www.wikidata.org/wiki/Q1335) Montevideo | 1.302.954 hab. (2023) · 730 km² · 41 m | Palacio Salvo, Río de la Plata | Fue sede del primer Mundial de fútbol en 1930, cuya final se jugó en su Estadio Centenario. |
@@ -113,7 +113,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Cracovia | [Q31487](https://www.wikidata.org/wiki/Q31487) Cracovia | 804.237 hab. (2023) · 327 km² · 219 m | Cárpatos | La leyenda dice que bajo su castillo de Wawel vivía un dragón, y hoy una estatua suya echa fuego junto al río. |
 | Gdansk | [Q1792](https://www.wikidata.org/wiki/Q1792) Gdansk | 487.834 hab. (2024) · 683 km² · 11 m | Castillo de Malbork, Mar Báltico, Llanura del Norte de Europa | Se presenta como la capital mundial del ámbar, la resina fósil que sus artesanos trabajan desde hace siglos. |
 | San Francisco | [Q62](https://www.wikidata.org/wiki/Q62) San Francisco | 808.988 hab. (2023) · 601 km² · 30 m | Puente Golden Gate, Alcatraz | Sus tranvías de cable funcionan desde 1873 y son el último sistema de este tipo en el mundo que se opera a mano. |
-| Miami | [Q8652](https://www.wikidata.org/wiki/Q8652) Miami | 449.514 hab. (2022) · 145 km² · 2 m | Florida | Es la única gran ciudad de Estados Unidos fundada por una mujer, Julia Tuttle, en 1896. |
+| Miami | [Q8652](https://www.wikidata.org/wiki/Q8652) Miami | 449.514 hab. (2022) · 145 km² · 2 m | Florida, Estrecho de Florida | Es la única gran ciudad de Estados Unidos fundada por una mujer, Julia Tuttle, en 1896. |
 | Guadalajara | [Q9022](https://www.wikidata.org/wiki/Q9022) Guadalajara | 1.385.621 hab. (2020) · 145 km² · 1.536 m |  | Es considerada la capital del mariachi, música que la UNESCO declaró patrimonio inmaterial en 2011. |
 | Medellín | [Q48278](https://www.wikidata.org/wiki/Q48278) Medellín | 2.529.403 hab. (2018) · 381 km² · 1.405 m | Plaza Botero, Pueblito Paisa (Cerro Nutibara), Cordillera de los Andes | Fue la primera ciudad de Colombia con metro, inaugurado en 1995, y su Feria de las Flores se celebra cada agosto. |
 | Córdoba | [Q44210](https://www.wikidata.org/wiki/Q44210) Córdoba | 1.505.250 hab. (2022) · 576 km² · 390 m | La Pampa | La llaman La Docta por su universidad, fundada por los jesuitas en 1613, una de las más antiguas de América. |
@@ -221,7 +221,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | San José | [Q3070](https://www.wikidata.org/wiki/Q3070) San José | 335.007 hab. (2025) · 45 km² · 1.161 m | Teatro Nacional de Costa Rica | Su Teatro Nacional, inaugurado en 1897, se financió con un impuesto a la exportación de café. |
 | Panamá | [Q3306](https://www.wikidata.org/wiki/Q3306) Ciudad de Panamá | 1.540.000 hab. (2026) · 275 km² · 20 m | Canal de Panamá, Istmo de Panamá | Su colorido Biomuseo, abierto en 2014, fue la primera obra del arquitecto Frank Gehry en América Latina. |
 | Guatemala | [Q1555](https://www.wikidata.org/wiki/Q1555) Ciudad de Guatemala | 994.938 hab. (2025) · 692 km² · 1.500 m |  | Su nombre oficial es Nueva Guatemala de la Asunción, y dentro de la ciudad están las ruinas mayas de Kaminaljuyú. |
-| Santo Domingo | [Q34820](https://www.wikidata.org/wiki/Q34820) Santo Domingo | 2.201.941 hab. (2025) · 1.302 km² · 14 m | Alcázar de Colón, Mar Caribe, La Española | Fundada en 1496, es la ciudad europea más antigua de América y tiene la primera catedral del continente. |
+| Santo Domingo | [Q34820](https://www.wikidata.org/wiki/Q34820) Santo Domingo | 2.201.941 hab. (2025) · 1.302 km² · 14 m | Catedral Primada de América, Alcázar de Colón, Mar Caribe | Fundada en 1496, es la ciudad europea más antigua de América y tiene la primera catedral del continente. |
 | Monterrey | [Q81033](https://www.wikidata.org/wiki/Q81033) Monterrey | 1.142.952 hab. (2020) · 970 km² · 546 m | Sierra Madre Oriental | Su símbolo es el Cerro de la Silla, una montaña con forma de silla de montar, y su plato típico es el cabrito asado. |
 | Cali | [Q51103](https://www.wikidata.org/wiki/Q51103) Cali | 2.471.474 hab. (2018) · 564 km² · 1.018 m | Cristo Rey de Cali, Basílica del Señor de los Milagros de Buga, Cordillera de los Andes | La llaman la capital mundial de la salsa, y cada diciembre celebra la Feria de Cali con desfiles y orquestas. |
 | Valparaíso | [Q33986](https://www.wikidata.org/wiki/Q33986) Valparaíso | 296.655 hab. (2017) · 48 km² · 21 m | Cordillera de los Andes | Sus ascensores funiculares suben los cerros desde 1883 y su casco histórico es Patrimonio de la Humanidad. |
@@ -235,7 +235,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Sucre | [Q2907](https://www.wikidata.org/wiki/Q2907) Sucre | 360.544 hab. (2021) · 1.768 km² · 2.810 m | Cordillera de los Andes, Amazonia | Lleva el nombre del mariscal Antonio José de Sucre, y en su Casa de la Libertad se firmó la independencia de Bolivia en 1825. |
 | Cayena | [Q44401](https://www.wikidata.org/wiki/Q44401) Cayena | 62.675 hab. (2023) · 24 km² · 143 m | Macizo Guayanés | Su carnaval es famoso por las touloulous, mujeres disfrazadas de pies a cabeza que eligen pareja en bailes de máscaras. |
 | Belmopan | [Q3043](https://www.wikidata.org/wiki/Q3043) Belmopán | 20.754 hab. (2022) · 33 km² · 76 m | Península de Yucatán | Es una capital planificada, inaugurada en 1970, y su nombre combina los de los ríos Belice y Mopan. |
-| Kingston | [Q34692](https://www.wikidata.org/wiki/Q34692) Kingston | 937.700 hab. (2025) · 22 km² · 9 m | Mar Caribe, Antillas Mayores | La antigua casa de Bob Marley es hoy un museo dedicado a él, y la ciudad es considerada la cuna del reggae. |
+| Kingston | [Q34692](https://www.wikidata.org/wiki/Q34692) Kingston | 937.700 hab. (2025) · 22 km² · 9 m | Museo Bob Marley, Mar Caribe, Antillas Mayores | La antigua casa de Bob Marley es hoy un museo dedicado a él, y la ciudad es considerada la cuna del reggae. |
 | Port-au-Prince | [Q34261](https://www.wikidata.org/wiki/Q34261) Puerto Príncipe | 987.310 hab. (2015) · 36 km² · 98 m | Mar Caribe, La Española, Antillas Mayores | Su nombre recuerda al barco francés Le Prince, que fondeó en su bahía a comienzos del siglo XVIII. |
 | Nassau | [Q2467](https://www.wikidata.org/wiki/Q2467) Nasáu | 227.940 hab. (2025) · 207 km² · 34 m |  | A comienzos del siglo XVIII fue refugio de piratas como Barbanegra, y su nombre honra al rey Guillermo III de Orange-Nassau. |
 | Punta Arenas | [Q51599](https://www.wikidata.org/wiki/Q51599) Punta Arenas | 123.403 hab. (2017) · 38 km² · 34 m | Patagonia, Estrecho de Magallanes | En su plaza hay un monumento a Magallanes, y la tradición dice que quien toca el pie del indígena volverá a la ciudad. |
@@ -280,7 +280,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Australia | [Q408](https://www.wikidata.org/wiki/Q408) Australia | 27.614.411 hab. (2025) · 8.148.250 km² · capital Canberra · idioma inglés | Ópera de Sídney, Puente de la Bahía de Sídney, Uluru (Ayers Rock) | Tiene la mayor población de camellos salvajes del mundo, descendientes de los traídos en el siglo XIX para cruzar el desierto. |
 | Austria | [Q40](https://www.wikidata.org/wiki/Q40) Austria | 8.979.894 hab. (2022) · 83.879 km² · capital Viena · idioma alemán, lengua austríaca de signos | Palacio de Schönbrunn, Lago de Constanza | En Viena funciona el zoológico más antiguo del mundo que sigue abierto: el de Schönbrunn, fundado en 1752. |
 | Azerbaijan | [Q227](https://www.wikidata.org/wiki/Q227) Azerbaiyán | 10.180.770 hab. (2023) · 86.600 km² · capital Bakú · idioma azerí, lengua de signos azerbaiyana |  | Lo llaman la tierra del fuego: en Yanar Dag una ladera arde sin parar gracias al gas natural que sale del suelo. |
-| Bahamas | [Q778](https://www.wikidata.org/wiki/Q778) Bahamas | 399.440 hab. (2023) · 13.878 km² · capital Nasáu · idioma inglés |  | En el cayo Big Major, en Exuma, viven cerdos que nadan hasta los botes de los visitantes. |
+| Bahamas | [Q778](https://www.wikidata.org/wiki/Q778) Bahamas | 399.440 hab. (2023) · 13.878 km² · capital Nasáu · idioma inglés | Estrecho de Florida | En el cayo Big Major, en Exuma, viven cerdos que nadan hasta los botes de los visitantes. |
 | Bangladesh | [Q902](https://www.wikidata.org/wiki/Q902) Bangladés | 175.686.899 hab. (2025) · 147.570 km² · capital Daca · idioma bengalí | Sundarbans, Delta del Ganges | El Día Internacional de la Lengua Materna, el 21 de febrero, recuerda un movimiento de 1952 en defensa del idioma bengalí. |
 | Belarus | [Q184](https://www.wikidata.org/wiki/Q184) Bielorrusia | 9.056.080 hab. (2026) · 207.600 km² · capital Minsk · idioma ruso, bielorruso |  | Allí está parte del bosque de Białowieża, un bosque primigenio donde vive en libertad el bisonte europeo. |
 | Belgium | [Q31](https://www.wikidata.org/wiki/Q31) Bélgica | 11.825.551 hab. (2025) · 30.688 km² · capital Bruselas · idioma francés, alemán, neerlandés | Atomium, Campanario de Brujas | El saxofón lo inventó el belga Adolphe Sax, que lo patentó en 1846. |
@@ -307,13 +307,13 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Costa Rica | [Q800](https://www.wikidata.org/wiki/Q800) Costa Rica | 5.265.575 hab. (2024) · 51.180 km² · capital San José · idioma español | Teatro Nacional de Costa Rica, Volcán Arenal | Las esferas de piedra del Diquís, talladas por pueblos precolombinos, son casi perfectas y algunas pesan varias toneladas. |
 | Côte d'Ivoire | [Q1008](https://www.wikidata.org/wiki/Q1008) Costa de Marfil | 31.165.654 hab. (2023) · 322.463 km² · capital Yamusukro · idioma francés | Golfo de Guinea | Es el mayor productor de cacao del mundo: de sus granos sale buena parte del chocolate que se consume. |
 | Croatia | [Q224](https://www.wikidata.org/wiki/Q224) Croacia | 3.871.833 hab. (2021) · 56.594 km² · capital Zagreb · idioma croata | Murallas de Dubrovnik, Alpes Dináricos | La corbata viene de los pañuelos que usaban los soldados croatas en el siglo XVII; en francés se llamó cravate. |
-| Cuba | [Q241](https://www.wikidata.org/wiki/Q241) Cuba | 10.985.974 hab. (2023) · 109.884 km² · capital La Habana · idioma español | Capitolio de La Habana, Antillas Mayores | Allí vive el zunzuncito o colibrí abeja, el ave más pequeña del mundo: mide unos 5 centímetros. |
+| Cuba | [Q241](https://www.wikidata.org/wiki/Q241) Cuba | 10.985.974 hab. (2023) · 109.884 km² · capital La Habana · idioma español | Capitolio de La Habana, Malecón de La Habana, Antillas Mayores | Allí vive el zunzuncito o colibrí abeja, el ave más pequeña del mundo: mide unos 5 centímetros. |
 | Cyprus | [Q229](https://www.wikidata.org/wiki/Q229) Chipre | 1.344.976 hab. (2023) · 9.242 km² · capital Nicosia · idioma turco, griego |  | La palabra cobre viene del latín cuprum, por sus antiguas minas: los romanos lo llamaban metal de Chipre. |
 | Czechia | [Q213](https://www.wikidata.org/wiki/Q213) República Checa | 10.909.500 hab. (2025) · 78.871 km² · capital Praga · idioma checo | Puente de Carlos, Castillo de Praga | La palabra robot nació en R.U.R., una obra de teatro del escritor checo Karel Čapek estrenada en 1921. |
 | Dem. Rep. Congo | [Q974](https://www.wikidata.org/wiki/Q974) República Democrática del Congo | 105.789.731 hab. (2023) · 2.344.858 km² · capital Kinsasa · idioma francés | Río Congo, Lago Tanganica, Cuenca del Congo | Es el único país donde viven los bonobos, simios que comparten casi el 99 % de su ADN con los humanos. |
 | Denmark | [Q35](https://www.wikidata.org/wiki/Q35) Dinamarca | 5.822.863 hab. (2020) · 42.925 km² · capital Copenhague · idioma danés | La Sirenita, Puente de Öresund, Jutlandia | La empresa LEGO se fundó allí en 1932; su nombre viene de leg godt, que en danés significa juega bien. |
 | Djibouti | [Q977](https://www.wikidata.org/wiki/Q977) Yibuti | 1.000.000 hab. (2026) · 23.200 km² · capital Ciudad de Yibuti · idioma francés, árabe |  | Entre noviembre y febrero, tiburones ballena se reúnen en el golfo de Tadjoura y se puede nadar junto a ellos. |
-| Dominican Rep. | [Q786](https://www.wikidata.org/wiki/Q786) República Dominicana | 10.760.028 hab. (2022) · 48.671 km² · capital Santo Domingo · idioma español | Alcázar de Colón, La Española | El larimar, una piedra semipreciosa de color azul celeste, solo se ha encontrado en este país. |
+| Dominican Rep. | [Q786](https://www.wikidata.org/wiki/Q786) República Dominicana | 10.760.028 hab. (2022) · 48.671 km² · capital Santo Domingo · idioma español | Alcázar de Colón, Catedral Primada de América, La Española | El larimar, una piedra semipreciosa de color azul celeste, solo se ha encontrado en este país. |
 | Ecuador | [Q736](https://www.wikidata.org/wiki/Q736) Ecuador | 16.938.986 hab. (2022) · 257.204 km² · capital Quito · idioma español, shuar, quichua norteño | Mitad del Mundo, Ingapirca, Chimborazo | Los famosos sombreros de Panamá en realidad se tejen en Ecuador con paja toquilla. |
 | Egypt | [Q79](https://www.wikidata.org/wiki/Q79) Egipto | 114.500.000 hab. (2026) · 1.010.408 km² · capital El Cairo · idioma árabe | Pirámides de Giza, Abu Simbel, Delta del Nilo | La Gran Pirámide de Guiza fue la construcción más alta hecha por humanos durante unos 3.800 años. |
 | El Salvador | [Q792](https://www.wikidata.org/wiki/Q792) El Salvador | 6.029.976 hab. (2024) · 21.041 km² · capital San Salvador · idioma español | Joya de Cerén | Su plato típico son las pupusas, tortillas rellenas de queso, frijol o chicharrón, que tienen su propio día nacional en noviembre. |
@@ -335,7 +335,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Guinea | [Q1006](https://www.wikidata.org/wiki/Q1006) Guinea | 17.521.167 hab. (2025) · 245.857 km² · capital Conakri · idioma francés, languages of Guinea |  | Tiene las mayores reservas de bauxita del mundo, el mineral del que se obtiene el aluminio. |
 | Guinea-Bissau | [Q1007](https://www.wikidata.org/wiki/Q1007) Guinea-Bisáu | 1.861.283 hab. (2017) · 36.125 km² · capital Bisáu · idioma portugués |  | En el archipiélago de las Bijagós viven hipopótamos que se bañan en agua salada y nadan entre las islas. |
 | Guyana | [Q734](https://www.wikidata.org/wiki/Q734) Guyana | 878.674 hab. (2022) · 214.970 km² · capital Georgetown · idioma inglés |  | Las cataratas Kaieteur tienen una caída libre de 226 metros, unas cuatro veces la altura de las del Niágara. |
-| Haiti | [Q790](https://www.wikidata.org/wiki/Q790) Haití | 10.981.229 hab. (2017) · 27.750 km² · capital Puerto Príncipe · idioma francés, criollo haitiano | Ciudadela Laferrière | La Ciudadela Laferrière, levantada en una montaña a inicios del siglo XIX, es una de las mayores fortalezas de América. |
+| Haiti | [Q790](https://www.wikidata.org/wiki/Q790) Haití | 10.981.229 hab. (2017) · 27.750 km² · capital Puerto Príncipe · idioma francés, criollo haitiano | Ciudadela Laferrière, Palacio Sans-Souci, Isla de la Gonâve | La Ciudadela Laferrière, levantada en una montaña a inicios del siglo XIX, es una de las mayores fortalezas de América. |
 | Honduras | [Q783](https://www.wikidata.org/wiki/Q783) Honduras | 11.002.356 hab. (2025) · 112.492 km² · capital Tegucigalpa · idioma español | Copán | En Copán está la Escalinata de los Jeroglíficos, con el texto maya tallado más largo que se conoce. |
 | Hungary | [Q28](https://www.wikidata.org/wiki/Q28) Hungría | 9.489.000 hab. (2025) · 93.030 km² · capital Budapest · idioma húngaro | Parlamento de Budapest | El cubo de Rubik lo inventó en 1974 el profesor húngaro Ernő Rubik. |
 | Iceland | [Q189](https://www.wikidata.org/wiki/Q189) Islandia | 376.248 hab. (2022) · 103.004 km² · capital Reikiavik · idioma islandés | Hallgrímskirkja, Glaciar Vatnajökull | Su parlamento, el Althing, se fundó en el año 930 y es uno de los más antiguos del mundo. |
@@ -346,7 +346,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Ireland | [Q27](https://www.wikidata.org/wiki/Q27) Irlanda | 5.149.139 hab. (2022) · 69.797 km² · capital Dublín · idioma inglés, irlandés | Newgrange | Halloween tiene su origen en Samhain, una antigua fiesta celta que marcaba el fin de la cosecha. |
 | Israel | [Q801](https://www.wikidata.org/wiki/Q801) Israel | 9.840.000 hab. (2023) · 20.770 km² · capital Jerusalén · idioma hebreo | Cúpula de la Roca, Muro de las Lamentaciones, Río Jordán | El riego por goteo moderno se desarrolló allí en los años 60 y hoy ahorra agua en cultivos de todo el mundo. |
 | Italy | [Q38](https://www.wikidata.org/wiki/Q38) Italia | 58.850.717 hab. (2023) · 302.068 km² · capital Roma · idioma italiano | Coliseo, Torre de Pisa, Mar Adriático | La ópera nació en Florencia hacia 1600, y muchos de los términos musicales que usamos son italianos. |
-| Jamaica | [Q766](https://www.wikidata.org/wiki/Q766) Jamaica | 2.734.093 hab. (2019) · 10.992 km² · capital Kingston · idioma criollo jamaicano, inglés |  | Allí nació el reggae a fines de los años 60, y en 2018 la UNESCO lo declaró patrimonio cultural inmaterial. |
+| Jamaica | [Q766](https://www.wikidata.org/wiki/Q766) Jamaica | 2.734.093 hab. (2019) · 10.992 km² · capital Kingston · idioma criollo jamaicano, inglés | Museo Bob Marley, Rose Hall, Montañas Azules | Allí nació el reggae a fines de los años 60, y en 2018 la UNESCO lo declaró patrimonio cultural inmaterial. |
 | Japan | [Q17](https://www.wikidata.org/wiki/Q17) Japón | 123.802.000 hab. (2024) · 377.974 km² · capital Tokio · idioma japonés | Torre de Tokio, Castillo de Himeji, Monte Fuji | Su tren bala, el Shinkansen, empezó a funcionar en 1964, justo antes de los Juegos Olímpicos de Tokio. |
 | Jordan | [Q810](https://www.wikidata.org/wiki/Q810) Jordania | 11.300.000 hab. (2026) · 89.341 km² · capital Amán · idioma árabe | Petra, Mar Muerto, Desierto del Néguev | Petra, la ciudad tallada en roca rosada por los nabateos, es una de las siete nuevas maravillas del mundo. |
 | Kazakhstan | [Q232](https://www.wikidata.org/wiki/Q232) Kazajistán | 20.139.914 hab. (2024) · 2.724.900 km² · capital Astaná · idioma ruso, kazajo | Mar Caspio, Mar de Aral, Lago Baljash | Desde el cosmódromo de Baikonur despegó Yuri Gagarin en 1961, en el primer viaje de un ser humano al espacio. |
@@ -438,7 +438,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Zambia | [Q953](https://www.wikidata.org/wiki/Q953) Zambia | 19.610.769 hab. (2022) · 752.618 km² · capital Lusaka · idioma inglés |  | Cada año, entre octubre y diciembre, unos 10 millones de murciélagos frugívoros se reúnen en el parque Kasanka. |
 | Zimbabwe | [Q954](https://www.wikidata.org/wiki/Q954) Zimbabue | 15.178.979 hab. (2022) · 390.757 km² · capital Harare · idioma chitonga, setsuana, tsonga | Gran Zimbabue, Cataratas Victoria | Su nombre viene del Gran Zimbabue, una ciudad medieval de piedra; en shona, zimbabwe significa casas de piedra. |
 
-## Lugares geográficos (408)
+## Lugares geográficos (428)
 
 | Lugar | Wikidata | Cifras | Cerca | Dato curioso |
 |---|---|---|---|---|
@@ -809,6 +809,26 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Llanura del Ganges | [Q192305](https://www.wikidata.org/wiki/Q192305) Llanura Indo-Gangética |  |  | Allí está Varanasi, a orillas del Ganges, considerada una de las ciudades habitadas sin interrupción más antiguas del mundo. |
 | Everglades | [Q597281](https://www.wikidata.org/wiki/Q597281) Everglades |  |  | Es el único lugar del mundo donde conviven aligátores y cocodrilos, y se le apoda el río de hierba. |
 | Valle de la Muerte | [Q118388](https://www.wikidata.org/wiki/Q118388) Valle de la Muerte | 7.770 km² |  | Lo bautizaron así unos buscadores de oro en 1849, y en 1913 marcó 56,7 °C, la temperatura más alta medida en la Tierra. |
+| Estrecho de Florida | [Q232912](https://www.wikidata.org/wiki/Q232912) Estrecho de Florida | 650 km |  | Separa Cuba de los cayos de Florida por unos 150 km y por él sale la corriente del Golfo hacia el Atlántico. |
+| Canal de Yucatán | [Q193260](https://www.wikidata.org/wiki/Q193260) Canal de Yucatán |  |  | Une el golfo de México con el mar Caribe entre Cuba y la península de Yucatán; mide unos 200 km de ancho. |
+| Paso de los Vientos | [Q140265](https://www.wikidata.org/wiki/Q140265) Paso de los Vientos |  |  | Separa Cuba de Haití por unos 80 km y es la ruta directa de los barcos entre la costa este de EE. UU. y el canal de Panamá. |
+| Canal de la Mona | [Q1418401](https://www.wikidata.org/wiki/Q1418401) Canal de la Mona |  |  | Separa La Española de Puerto Rico; en medio está la isla de Mona, una reserva natural sin habitantes permanentes. |
+| Bahía de Cochinos | [Q208508](https://www.wikidata.org/wiki/Q208508) Bahía de Cochinos |  |  | En 1961 fue el escenario de la fallida invasión de exiliados cubanos apoyada por EE. UU., que en Cuba llaman Playa Girón. |
+| Bahía de Guantánamo | [Q208035](https://www.wikidata.org/wiki/Q208035) bahía de Guantánamo |  |  | Desde 1903 EE. UU. tiene allí una base naval arrendada, la más antigua que mantiene fuera de su territorio. |
+| Lago Enriquillo | [Q1464758](https://www.wikidata.org/wiki/Q1464758) Lago Enriquillo | 375 km² · 40 km |  | Está unos 40 m bajo el nivel del mar, el punto más bajo del Caribe, y en sus orillas viven cocodrilos americanos e iguanas. |
+| Río Yaque del Norte | [Q776071](https://www.wikidata.org/wiki/Q776071) río Yaque del Norte | 296 km |  | Es el río más largo de República Dominicana: nace cerca del Pico Duarte y desemboca junto a Montecristi, en el Atlántico. |
+| Pico Duarte | [Q783742](https://www.wikidata.org/wiki/Q783742) Pico Duarte | 3.101 m |  | Con unos 3.100 m es la montaña más alta del Caribe; lleva el nombre de Juan Pablo Duarte, padre de la patria dominicana. |
+| Pico Turquino | [Q1145743](https://www.wikidata.org/wiki/Q1145743) Pico Turquino | 1.974 m |  | Es el techo de Cuba, con unos 1.970 m, y en su cima hay un busto de José Martí. |
+| Sierra Maestra | [Q654527](https://www.wikidata.org/wiki/Q654527) Sierra Maestra | 240 km |  | Es la cordillera más alta de Cuba; desde sus montañas Fidel Castro dirigió la guerrilla entre 1956 y 1958. |
+| Montañas Azules | [Q885808](https://www.wikidata.org/wiki/Q885808) Blue Mountains | 39 km |  | Allí se cultiva el café Blue Mountain, uno de los más caros del mundo; su pico más alto supera los 2.200 m. |
+| Isla de la Juventud | [Q115027](https://www.wikidata.org/wiki/Q115027) Isla de la Juventud | 2.419 km² · 70 km |  | Es la segunda isla más grande de Cuba; antes se llamaba Isla de Pinos y se dice que inspiró La isla del tesoro. |
+| Isla de la Gonâve | [Q268282](https://www.wikidata.org/wiki/Q268282) Isla de la Guanaba | 743 km² · 56 km |  | Es la isla más grande de Haití y está en medio del golfo de la Gonâve, frente a Puerto Príncipe. |
+| Isla Saona | [Q1339113](https://www.wikidata.org/wiki/Q1339113) Isla Saona | 110 km² · 25 km |  | Forma parte del Parque Nacional del Este y es famosa por sus playas de arena blanca y sus piscinas naturales. |
+| Isla de Vieques | [Q737624](https://www.wikidata.org/wiki/Q737624) Vieques | 136 km² · 33 km |  | Tiene Puerto Mosquito, una de las bahías bioluminiscentes más brillantes del mundo; la Marina de EE. UU. la usó hasta 2003. |
+| Península de Samaná | [Q2279055](https://www.wikidata.org/wiki/Q2279055) Península de Samaná | 1.400 km² |  | Entre enero y marzo llegan a su bahía miles de ballenas jorobadas para aparearse y tener sus crías. |
+| El Yunque | [Q2375961](https://www.wikidata.org/wiki/Q2375961) Bosque nacional El Yunque | 113 km² |  | Es el único bosque lluvioso tropical de los bosques nacionales de EE. UU. y hogar del coquí, la ranita símbolo de Puerto Rico. |
+| Valle de Viñales | [Q48108](https://www.wikidata.org/wiki/Q48108) Valle de Viñales | UNESCO |  | Es Patrimonio de la Humanidad: sus mogotes, colinas de piedra caliza redondeadas, rodean campos de tabaco. |
+| Cataratas del río Dunn | [Q1266226](https://www.wikidata.org/wiki/Q1266226) Cascadas del Río Dunn | 55 m de caída |  | Sus cascadas bajan en escalones de piedra caliza hasta el mar y los visitantes las suben a pie, tomados de la mano. |
 | Cordillera Occidental | [Q8463325](https://www.wikidata.org/wiki/Q8463325) Cordillera Occidental | 2.200 km |  | Frena las nubes cargadas de humedad del Pacífico, y por eso sus laderas occidentales están entre las más lluviosas del planeta. |
 | Cordillera Central | [Q143982](https://www.wikidata.org/wiki/Q143982) Cordillera Central | 129.737 km² · 1.023 km |  | En sus laderas está buena parte del Eje Cafetero, y la coronan volcanes nevados como el del Ruiz y el de Santa Isabel. |
 | Cordillera Oriental | [Q4794486](https://www.wikidata.org/wiki/Q4794486) Cordillera Oriental | 1.800 km |  | En su altiplano floreció la cultura muisca, conocida por su orfebrería y por la sal que extraía en Zipaquirá y Nemocón. |
@@ -851,7 +871,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Isla de Salamanca | [Q3593411](https://www.wikidata.org/wiki/Q3593411) Isla de Salamanca |  |  | Es un Vía Parque, pues una carretera la atraviesa entre manglares, y alberga cientos de especies de aves. |
 | Lago Calima | [Q3133513](https://www.wikidata.org/wiki/Q3133513) Embalse del Calima | 20 km² |  | Es un embalse artificial de los años sesenta cuyos vientos constantes lo han hecho famoso para el windsurf y el kitesurf. |
 
-## Monumentos (241)
+## Monumentos (254)
 
 | Lugar | Wikidata | Cifras | Cerca | Dato curioso |
 |---|---|---|---|---|
@@ -911,7 +931,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Castillo de San Felipe de Barajas | [Q91110](https://www.wikidata.org/wiki/Q91110) Castillo San Felipe | desde 1536 · UNESCO | Torre del Reloj de Cartagena, Iglesia de San Pedro Claver | Se considera la mayor fortaleza que construyó España en América, y bajo sus murallas se esconde una red de túneles. |
 | Cerro de Monserrate | [Q152073](https://www.wikidata.org/wiki/Q152073) Monserrate |  | Museo del Oro, Plaza de Bolívar de Bogotá | A su cima se puede subir a pie, en funicular, que funciona desde 1929, o en teleférico, que opera desde 1955. |
 | Casa Rosada | [Q478926](https://www.wikidata.org/wiki/Q478926) Casa Rosada | desde 1898 · estilo neoclasicismo | Obelisco de Buenos Aires, Río de la Plata | Hay varias teorías sobre su color; una dice que se pintaba con cal mezclada con sangre de vaca para protegerla de la humedad. |
-| Capitolio de La Habana | [Q1352908](https://www.wikidata.org/wiki/Q1352908) Capitolio Nacional de Cuba | desde 1929 · estilo neoclasicismo | Antillas Mayores | Terminado en 1929, guarda bajo su cúpula una réplica de diamante que marca el kilómetro cero de las carreteras del país. |
+| Capitolio de La Habana | [Q1352908](https://www.wikidata.org/wiki/Q1352908) Capitolio Nacional de Cuba | desde 1929 · estilo neoclasicismo | Malecón de La Habana, Castillo del Morro (La Habana) | Terminado en 1929, guarda bajo su cúpula una réplica de diamante que marca el kilómetro cero de las carreteras del país. |
 | Tikal | [Q181172](https://www.wikidata.org/wiki/Q181172) Tikal | cultura cultura maya · UNESCO | Península de Yucatán | Sus templos aparecen en la película Star Wars de 1977 como la base rebelde de la luna Yavin 4. |
 | Líneas de Nazca | [Q2620036](https://www.wikidata.org/wiki/Q2620036) Líneas de Nazca | desde 199 a. C. · cultura Cultura del Perú · UNESCO | Cordillera de los Andes | Se hicieron retirando las piedras rojizas de la superficie para dejar ver el suelo claro; el clima seco las ha conservado. |
 | Mont Saint-Michel | [Q20892](https://www.wikidata.org/wiki/Q20892) Monte Saint-Michel |  | Canal de la Mancha, Bretaña | Con la marea alta queda rodeado por el mar; las mareas de su bahía están entre las más fuertes de Europa. |
@@ -1045,8 +1065,21 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Joya de Cerén | [Q27985](https://www.wikidata.org/wiki/Q27985) Joya de Cerén | cultura cultura maya · UNESCO |  | Una erupción volcánica la cubrió de ceniza hacia el año 600 y la conservó tan bien que la llaman la Pompeya de América. |
 | Teatro Nacional de Costa Rica | [Q1138822](https://www.wikidata.org/wiki/Q1138822) Teatro Nacional de Costa Rica | desde 1897 · estilo neoclasicismo |  | Se financió con un impuesto a la exportación de café y se inauguró en 1897 con la ópera Fausto de Gounod. |
 | Castillo San Cristóbal | [Q3748608](https://www.wikidata.org/wiki/Q3748608) Castillo San Cristóbal | UNESCO | Castillo San Felipe del Morro, Antillas Mayores | Es la mayor fortificación construida por España en América y se terminó en 1783 para proteger la ciudad de ataques por tierra. |
-| Ciudadela Laferrière | [Q206194](https://www.wikidata.org/wiki/Q206194) Citadelle Laferrière | desde 1820 · UNESCO | La Española, Antillas Mayores | La mandó levantar Henri Christophe tras la independencia, en lo alto de una montaña, y aún guarda decenas de cañones. |
-| Alcázar de Colón | [Q668772](https://www.wikidata.org/wiki/Q668772) Alcázar de Colón | desde 1511 · UNESCO | Mar Caribe, La Española | Fue la residencia de Diego Colón, hijo de Cristóbal Colón, y se construyó hacia 1510 con piedra coralina. |
+| Ciudadela Laferrière | [Q206194](https://www.wikidata.org/wiki/Q206194) Citadelle Laferrière | desde 1820 · UNESCO | Palacio Sans-Souci, La Española | La mandó levantar Henri Christophe tras la independencia, en lo alto de una montaña, y aún guarda decenas de cañones. |
+| Alcázar de Colón | [Q668772](https://www.wikidata.org/wiki/Q668772) Alcázar de Colón | desde 1511 · UNESCO | Catedral Primada de América, Faro a Colón | Fue la residencia de Diego Colón, hijo de Cristóbal Colón, y se construyó hacia 1510 con piedra coralina. |
+| Malecón de La Habana | [Q12597](https://www.wikidata.org/wiki/Q12597) Malecón habanero |  | Capitolio de La Habana, Castillo del Morro (La Habana) | Recorre unos 8 km de la costa de La Habana y es el lugar favorito de los habaneros para pasear y ver el atardecer. |
+| Castillo del Morro (La Habana) | [Q635199](https://www.wikidata.org/wiki/Q635199) Castillo de los Tres Reyes del Morro | UNESCO | Capitolio de La Habana, Malecón de La Habana | El castillo de los Tres Reyes del Morro custodia desde fines del siglo XVI la entrada de la bahía de La Habana. |
+| Plaza de la Revolución | [Q2099152](https://www.wikidata.org/wiki/Q2099152) Plaza de la Revolución |  | Capitolio de La Habana, Malecón de La Habana | Tiene el memorial a José Martí y el rostro del Che Guevara en la fachada del Ministerio del Interior; allí hablaba Fidel Castro. |
+| Catedral de La Habana | [Q15043487](https://www.wikidata.org/wiki/Q15043487) Catedral de La Habana | desde 1777 · estilo arquitectura barroca | Capitolio de La Habana, Castillo del Morro (La Habana) | Terminada en 1777, su fachada barroca de piedra coralina es asimétrica: una de sus torres es más ancha que la otra. |
+| Plaza Mayor de Trinidad | [Q7203621](https://www.wikidata.org/wiki/Q7203621) Plaza Mayor de Trinidad |  | Mar Caribe, Antillas Mayores | Trinidad, fundada en 1514, conserva calles de piedra y casas coloniales; con el Valle de los Ingenios es Patrimonio de la Humanidad. |
+| Castillo de San Pedro de la Roca | [Q910189](https://www.wikidata.org/wiki/Q910189) Castillo de San Pedro de la Roca | UNESCO | Mar Caribe, Antillas Mayores | Esta fortaleza del siglo XVII protege la bahía de Santiago de Cuba y es Patrimonio de la Humanidad desde 1997. |
+| Catedral Primada de América | [Q4868419](https://www.wikidata.org/wiki/Q4868419) Catedral Primada de América | 16 m de caída · desde 1514 · estilo arquitectura gótica · UNESCO | Alcázar de Colón, Faro a Colón | Es la catedral más antigua de América: se terminó hacia 1540 en la Ciudad Colonial de Santo Domingo. |
+| Faro a Colón | [Q2983646](https://www.wikidata.org/wiki/Q2983646) Faro a Colón | desde 1992 | Alcázar de Colón, Catedral Primada de América | Este enorme monumento en forma de cruz se inauguró en 1992, dice guardar los restos de Colón y proyecta una cruz de luz en el cielo. |
+| Basílica de Higüey | [Q4868422](https://www.wikidata.org/wiki/Q4868422) Basílica Catedral y Santuario Nacional de Nuestra Señora de la Altagracia | desde 1970 · estilo brutalismo | La Española, Antillas Mayores | Su gran arco de concreto se consagró en 1971; cada 21 de enero, día de la Virgen de la Altagracia, recibe a miles de peregrinos. |
+| Palacio Sans-Souci | [Q930795](https://www.wikidata.org/wiki/Q930795) Parque nacional Histórico | desde 1813 · UNESCO | Ciudadela Laferrière, La Española | Fue el palacio del rey Henri Christophe, terminado en 1813; un terremoto lo dejó en ruinas en 1842. |
+| Museo Bob Marley | [Q650517](https://www.wikidata.org/wiki/Q650517) Museo Bob Marley | desde 1986 | Mar Caribe, Antillas Mayores | Ocupa la casa de Kingston donde vivió y grabó Bob Marley; allí sufrió un atentado en 1976. |
+| Rose Hall | [Q3699493](https://www.wikidata.org/wiki/Q3699493) Rose Hall | desde 1770 | Mar Caribe, Antillas Mayores | Esta mansión georgiana de 1770, cerca de Montego Bay, es famosa por la leyenda de Annie Palmer, la «bruja blanca». |
+| Observatorio de Arecibo | [Q102327045](https://www.wikidata.org/wiki/Q102327045) Observatorio de Arecibo | desde 1963 | Antillas Mayores, Puerto Rico | Su radiotelescopio de 305 m fue el más grande del mundo durante 53 años, hasta que colapsó en 2020. |
 | Chan Chan | [Q277540](https://www.wikidata.org/wiki/Q277540) Chan Chan | desde 850 · cultura Cultura chimú · UNESCO | Cordillera de los Andes | Fue la capital del reino chimú y la mayor ciudad de barro de la América precolombina, con muros decorados con peces y aves. |
 | Kuélap | [Q1361820](https://www.wikidata.org/wiki/Q1361820) Kuélap | cultura Cultura chachapoyas | Cordillera de los Andes, Amazonia | La construyeron los chachapoyas con murallas de hasta 20 metros, y desde 2017 se llega en teleférico. |
 | Caral | [Q219279](https://www.wikidata.org/wiki/Q219279)  | UNESCO | Cordillera de los Andes | Con unos 5.000 años, se considera la ciudad más antigua de América, contemporánea de las pirámides de Egipto. |
@@ -1644,22 +1677,22 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Yuscarán | [Q1729098](https://www.wikidata.org/wiki/Q1729098) Yuscarán | 14.144 hab. (2013) · 332 km² · 1.007 m |  |  |
 | La Palma | [Q1798993](https://www.wikidata.org/wiki/Q1798993) La Palma | 4.205 hab. · 4 m | Tapón del Darién |  |
 | El Porvenir | [Q1018577](https://www.wikidata.org/wiki/Q1018577) Gaigirgordub |  | Mar Caribe, Istmo de Panamá |  |
-| Havana | [Q1563](https://www.wikidata.org/wiki/Q1563) La Habana | 2.492.618 hab. (2022) · 728 km² · 59 m | Capitolio de La Habana, Antillas Mayores |  |
-| Santo Domingo | [Q34820](https://www.wikidata.org/wiki/Q34820) Santo Domingo | 2.201.941 hab. (2025) · 1.302 km² · 14 m | Alcázar de Colón, La Española, Antillas Mayores |  |
+| Havana | [Q1563](https://www.wikidata.org/wiki/Q1563) La Habana | 2.492.618 hab. (2022) · 728 km² · 59 m | Capitolio de La Habana, Malecón de La Habana, Estrecho de Florida |  |
+| Santo Domingo | [Q34820](https://www.wikidata.org/wiki/Q34820) Santo Domingo | 2.201.941 hab. (2025) · 1.302 km² · 14 m | Catedral Primada de América, Alcázar de Colón, La Española |  |
 | Port-au-Prince | [Q34261](https://www.wikidata.org/wiki/Q34261) Puerto Príncipe | 987.310 hab. (2015) · 36 km² · 98 m | Mar Caribe, La Española, Antillas Mayores |  |
-| Kingston | [Q34692](https://www.wikidata.org/wiki/Q34692) Kingston | 937.700 hab. (2025) · 22 km² · 9 m | Mar Caribe, Antillas Mayores |  |
+| Kingston | [Q34692](https://www.wikidata.org/wiki/Q34692) Kingston | 937.700 hab. (2025) · 22 km² · 9 m | Museo Bob Marley, Mar Caribe, Antillas Mayores |  |
 | San Juan | [Q41211](https://www.wikidata.org/wiki/Q41211) San Juan | 342.259 hab. (2020) · 120 km² · 34 m | Castillo San Felipe del Morro, Castillo San Cristóbal, Antillas Mayores |  |
-| Santiago | [Q42763](https://www.wikidata.org/wiki/Q42763) Santiago de los Caballeros | 1.343.423 hab. (2021) · 612 km² · 175 m | La Española, Antillas Mayores |  |
-| Santiago de Cuba | [Q117040](https://www.wikidata.org/wiki/Q117040) Santiago de Cuba | 506.037 hab. (2012) · 1.032 km² · 82 m | Mar Caribe, Antillas Mayores |  |
-| Spanish Town | [Q846939](https://www.wikidata.org/wiki/Q846939) Spanish Town | 131.056 hab. (2001) | Mar Caribe, Antillas Mayores |  |
+| Santiago | [Q42763](https://www.wikidata.org/wiki/Q42763) Santiago de los Caballeros | 1.343.423 hab. (2021) · 612 km² · 175 m | La Española, Antillas Mayores, Río Yaque del Norte |  |
+| Santiago de Cuba | [Q117040](https://www.wikidata.org/wiki/Q117040) Santiago de Cuba | 506.037 hab. (2012) · 1.032 km² · 82 m | Castillo de San Pedro de la Roca, Mar Caribe, Antillas Mayores |  |
+| Spanish Town | [Q846939](https://www.wikidata.org/wiki/Q846939) Spanish Town | 131.056 hab. (2001) | Museo Bob Marley, Mar Caribe, Antillas Mayores |  |
 | Camagüey | [Q115329](https://www.wikidata.org/wiki/Q115329) Camagüey | 321.992 hab. (2011) · 1.106 km² · 5 m | Antillas Mayores |  |
 | Holguín | [Q244154](https://www.wikidata.org/wiki/Q244154) Holguín | 350.191 hab. (2014) · 656 km² · 146 m | Antillas Mayores |  |
 | Mayagüez | [Q632727](https://www.wikidata.org/wiki/Q632727) Mayagüez | 73.077 hab. (2020) · 60 km² · 21 m | Mar Caribe, Antillas Mayores, Puerto Rico |  |
-| Cap-Haïtien | [Q216835](https://www.wikidata.org/wiki/Q216835) Cabo Haitiano | 190.289 hab. (2013) · 54 km² · 0 m | Ciudadela Laferrière, La Española, Antillas Mayores |  |
+| Cap-Haïtien | [Q216835](https://www.wikidata.org/wiki/Q216835) Cabo Haitiano | 190.289 hab. (2013) · 54 km² · 0 m | Palacio Sans-Souci, Ciudadela Laferrière, La Española |  |
 | Guantánamo | [Q185156](https://www.wikidata.org/wiki/Q185156) Guantánamo | 228.436 hab. (2012) · 741 km² · 46 m | Antillas Mayores |  |
 | Santa Clara | [Q211590](https://www.wikidata.org/wiki/Q211590) Santa Clara | 247.436 hab. (2020) · 514 km² · 125 m | Antillas Mayores |  |
 | San Pedro de Macorís | [Q680596](https://www.wikidata.org/wiki/Q680596) San Pedro de Macorís | 217.141 hab. (2015) · 152 km² · 4 m | Mar Caribe, La Española, Antillas Mayores |  |
-| La Romana | [Q40508](https://www.wikidata.org/wiki/Q40508) La Romana | 139.238 hab. (2022) · 272 km² · 10 m | Mar Caribe, La Española, Antillas Mayores |  |
+| La Romana | [Q40508](https://www.wikidata.org/wiki/Q40508) La Romana | 139.238 hab. (2022) · 272 km² · 10 m | Basílica de Higüey, Mar Caribe, La Española |  |
 | Las Tunas | [Q115527](https://www.wikidata.org/wiki/Q115527) Las Tunas | 202.105 hab. (2012) · 891 km² · 90 m | Antillas Mayores |  |
 | Bayamo | [Q115382](https://www.wikidata.org/wiki/Q115382) Bayamo | 235.107 hab. (2012) · 918 km² · 55 m | Antillas Mayores |  |
 | Pinar del Rio | [Q244139](https://www.wikidata.org/wiki/Q244139) Pinar del Río | 188.614 hab. (2012) · 691 km² · 61 m | Antillas Mayores |  |
@@ -1668,25 +1701,25 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Gonaïves | [Q852550](https://www.wikidata.org/wiki/Q852550) Les Gonaïves | 356.324 hab. (2015) · 574 km² · 6 m | Mar Caribe, La Española, Antillas Mayores |  |
 | La Vega | [Q538953](https://www.wikidata.org/wiki/Q538953) La Vega | 282.055 hab. (2022) · 642 km² · 100 m | La Española, Antillas Mayores |  |
 | Ponce | [Q864024](https://www.wikidata.org/wiki/Q864024) Ponce | 137.491 hab. (2020) · 119 km² · 10 m | Mar Caribe, Antillas Mayores, Puerto Rico |  |
-| San Cristóbal | [Q373759](https://www.wikidata.org/wiki/Q373759) San Cristóbal | 232.769 hab. (2010) · 227 km² · 33 m | Alcázar de Colón, La Española, Antillas Mayores |  |
+| San Cristóbal | [Q373759](https://www.wikidata.org/wiki/Q373759) San Cristóbal | 232.769 hab. (2010) · 227 km² · 33 m | Catedral Primada de América, Alcázar de Colón, La Española |  |
 | San Francisco de Macorís | [Q681999](https://www.wikidata.org/wiki/Q681999) San Francisco de Macorís | 188.118 hab. (2010) · 760 km² · 110 m | La Española, Antillas Mayores |  |
 | Matanzas | [Q272471](https://www.wikidata.org/wiki/Q272471) Matanzas | 151.624 hab. (2012) · 317 km² · 20 m | Antillas Mayores |  |
 | Ciego de Ávila | [Q115465](https://www.wikidata.org/wiki/Q115465) Ciego de Ávila | 143.449 hab. (2010) · 445 km² · 55 m | Antillas Mayores |  |
 | May Pen | [Q1677434](https://www.wikidata.org/wiki/Q1677434) May Pen |  | Mar Caribe, Antillas Mayores |  |
 | Manzanillo | [Q115403](https://www.wikidata.org/wiki/Q115403) Manzanillo | 150.999 hab. (2005) · 498 km² · 25 m | Antillas Mayores |  |
 | Sancti Spíritus | [Q845720](https://www.wikidata.org/wiki/Q845720) Sancti Spíritus | 138.504 hab. (2012) · 1.151 km² · 75 m | Antillas Mayores |  |
-| Montego Bay | [Q637555](https://www.wikidata.org/wiki/Q637555) Bahía Montego | 123.994 hab. (2015) | Mar Caribe, Antillas Mayores |  |
-| Higuey | [Q1020261](https://www.wikidata.org/wiki/Q1020261) Higüey | 251.243 hab. (2010) · 2.029 km² · 106 m | La Española, Antillas Mayores |  |
+| Montego Bay | [Q637555](https://www.wikidata.org/wiki/Q637555) Bahía Montego | 123.994 hab. (2015) | Rose Hall, Mar Caribe, Antillas Mayores |  |
+| Higuey | [Q1020261](https://www.wikidata.org/wiki/Q1020261) Higüey | 251.243 hab. (2010) · 2.029 km² · 106 m | Basílica de Higüey, La Española, Antillas Mayores |  |
 | Puerto Plata | [Q988413](https://www.wikidata.org/wiki/Q988413) Puerto Plata | 338.339 hab. (2022) · 503 km² · 8 m | La Española, Antillas Mayores |  |
-| Palma Soriano | [Q742835](https://www.wikidata.org/wiki/Q742835) Palma Soriano | 119.740 hab. · 846 km² · 150 m | Antillas Mayores |  |
-| Half Way Tree | [Q1423367](https://www.wikidata.org/wiki/Q1423367) Half Way Tree |  | Mar Caribe, Antillas Mayores |  |
+| Palma Soriano | [Q742835](https://www.wikidata.org/wiki/Q742835) Palma Soriano | 119.740 hab. · 846 km² · 150 m | Castillo de San Pedro de la Roca, Antillas Mayores |  |
+| Half Way Tree | [Q1423367](https://www.wikidata.org/wiki/Q1423367) Half Way Tree |  | Museo Bob Marley, Mar Caribe, Antillas Mayores |  |
 | Barahona | [Q958586](https://www.wikidata.org/wiki/Q958586) Santa Cruz de Barahona | 138.159 hab. (2012) · 169 km² · 10 m | Mar Caribe, La Española, Antillas Mayores |  |
 | Bonao | [Q2306136](https://www.wikidata.org/wiki/Q2306136) Bonao | 158.034 hab. (2012) · 678 km² · 173 m | La Española, Antillas Mayores |  |
 | San Juan | [Q2430320](https://www.wikidata.org/wiki/Q2430320) San Juan | 169.032 hab. (2012) · 1.876 km² · 415 m | La Española, Antillas Mayores |  |
 | Baní | [Q1902349](https://www.wikidata.org/wiki/Q1902349) Baní | 145.595 hab. (2014) · 741 km² · 61 m | Mar Caribe, La Española, Antillas Mayores |  |
 | Moca | [Q1241374](https://www.wikidata.org/wiki/Q1241374) Moca | 94.981 hab. (2010) · 341 km² · 183 m | La Española, Antillas Mayores |  |
 | Azua | [Q1836680](https://www.wikidata.org/wiki/Q1836680) Municipio de Azua | 103.276 hab. (2022) · 416 km² · 83 m | La Española, Antillas Mayores |  |
-| Mao | [Q692560](https://www.wikidata.org/wiki/Q692560) Mao | 76.863 hab. (2010) · 424 km² · 78 m | La Española, Antillas Mayores |  |
+| Mao | [Q692560](https://www.wikidata.org/wiki/Q692560) Mao | 76.863 hab. (2010) · 424 km² · 78 m | La Española, Antillas Mayores, Río Yaque del Norte |  |
 | Mandeville | [Q1807660](https://www.wikidata.org/wiki/Q1807660) Mandeville | 48.317 hab. (2010) · 628 m | Mar Caribe, Antillas Mayores |  |
 | Salcedo | [Q1023951](https://www.wikidata.org/wiki/Q1023951) Salcedo | 39.557 hab. (2010) · 191 km² · 196 m | La Española, Antillas Mayores |  |
 | Comendador | [Q617647](https://www.wikidata.org/wiki/Q617647) Comendador | 25.924 hab. (2010) · 256 km² · 395 m | La Española, Antillas Mayores |  |
@@ -1701,19 +1734,19 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Nueva Gerona | [Q833946](https://www.wikidata.org/wiki/Q833946) Nueva Gerona | 45.577 hab. (2019) · 17 m | Mar Caribe, Antillas Mayores |  |
 | El Seibo | [Q2420339](https://www.wikidata.org/wiki/Q2420339) El Seibo | 97.144 hab. (2012) · 1.345 km² · 117 m | La Española, Antillas Mayores |  |
 | Hinche | [Q993851](https://www.wikidata.org/wiki/Q993851) Hincha | 120.867 hab. (2015) · 588 km² · 228 m | La Española, Antillas Mayores |  |
-| Monte Cristi | [Q2130701](https://www.wikidata.org/wiki/Q2130701) Monte Cristi | 24.674 hab. (2010) · 517 km² · 16 m | La Española, Antillas Mayores |  |
+| Monte Cristi | [Q2130701](https://www.wikidata.org/wiki/Q2130701) Monte Cristi | 24.674 hab. (2010) · 517 km² · 16 m | La Española, Antillas Mayores, Río Yaque del Norte |  |
 | Dajabón | [Q1969407](https://www.wikidata.org/wiki/Q1969407) Dajabón | 28.071 hab. (2010) · 261 km² · 66 m | La Española, Antillas Mayores |  |
 | Sabaneta | [Q2021983](https://www.wikidata.org/wiki/Q2021983) San Ignacio de Sabaneta | 98.453 hab. (2012) · 804 km² · 124 m | La Española, Antillas Mayores |  |
 | Monte Plata | [Q634487](https://www.wikidata.org/wiki/Q634487) Monte Plata | 46.723 hab. (2010) · 631 km² · 56 m | La Española, Antillas Mayores |  |
 | Port Antonio | [Q162782](https://www.wikidata.org/wiki/Q162782) Port Antonio | 14.816 hab. (2011) · 20 m | Mar Caribe, Antillas Mayores |  |
-| Saint Ann's Bay | [Q630692](https://www.wikidata.org/wiki/Q630692) Saint Ann's Bay | 13.671 hab. (2009) | Mar Caribe, Antillas Mayores |  |
+| Saint Ann's Bay | [Q630692](https://www.wikidata.org/wiki/Q630692) Saint Ann's Bay | 13.671 hab. (2009) | Mar Caribe, Antillas Mayores, Cataratas del río Dunn |  |
 | Port Morant | [Q7230807](https://www.wikidata.org/wiki/Q7230807) Port Morant |  | Mar Caribe, Antillas Mayores |  |
 | Fort-Liberté | [Q983788](https://www.wikidata.org/wiki/Q983788) Fuerte Libertad | 34.434 hab. (2015) · 240 km² | La Española, Antillas Mayores |  |
 | Samaná | [Q579950](https://www.wikidata.org/wiki/Q579950) Samaná | 108.179 hab. (2012) · 412 km² · 5 m | La Española, Antillas Mayores |  |
 | Pedernales | [Q2628384](https://www.wikidata.org/wiki/Q2628384) Pedernales | 24.291 hab. (2010) · 1.275 km² · 10 m | La Española, Antillas Mayores |  |
 | Port Maria | [Q265115](https://www.wikidata.org/wiki/Q265115) Port Maria |  | Mar Caribe, Antillas Mayores |  |
-| Falmouth | [Q1394786](https://www.wikidata.org/wiki/Q1394786) Falmouth |  | Mar Caribe, Antillas Mayores |  |
-| Jimaní | [Q1409818](https://www.wikidata.org/wiki/Q1409818) Jimaní | 16.510 hab. (2010) · 547 km² · 31 m | La Española, Antillas Mayores |  |
+| Falmouth | [Q1394786](https://www.wikidata.org/wiki/Q1394786) Falmouth |  | Rose Hall, Mar Caribe, Antillas Mayores |  |
+| Jimaní | [Q1409818](https://www.wikidata.org/wiki/Q1409818) Jimaní | 16.510 hab. (2010) · 547 km² · 31 m | La Española, Antillas Mayores, Lago Enriquillo |  |
 | Lucea | [Q1632220](https://www.wikidata.org/wiki/Q1632220) Lucea | 6.002 hab. | Mar Caribe, Antillas Mayores |  |
 | Black River | [Q880512](https://www.wikidata.org/wiki/Q880512) Black River | 4.261 hab. (2009) | Mar Caribe, Antillas Mayores |  |
 
@@ -2016,16 +2049,16 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Centro | [Q844528](https://www.wikidata.org/wiki/Q844528) Centro (Haití) | 3.487 km² |  |  |
 | La Estrelleta | [Q1137545](https://www.wikidata.org/wiki/Q1137545) Elías Piña | 64.615 hab. (2022) · 1.395 km² | Comendador |  |
 | Independencia | [Q1424401](https://www.wikidata.org/wiki/Q1424401) Independencia | 60.692 hab. (2022) · 2.007 km² |  |  |
-| Oeste | [Q1434621](https://www.wikidata.org/wiki/Q1434621) Oeste | 4.983 km² | Port-au-Prince |  |
+| Oeste | [Q1434621](https://www.wikidata.org/wiki/Q1434621) Oeste | 4.983 km² | Isla de la Gonâve, Port-au-Prince |  |
 | Sureste | [Q936717](https://www.wikidata.org/wiki/Q936717) Sureste | 2.034 km² |  |  |
 | Pedernales | [Q1352533](https://www.wikidata.org/wiki/Q1352533) Pedernales | 34.375 hab. (2022) · 2.081 km² |  |  |
 | Guantánamo | [Q115319](https://www.wikidata.org/wiki/Q115319) provincia de Guantánamo | 502.226 hab. (2021) · 6.164 km² |  |  |
 | Sur | [Q936704](https://www.wikidata.org/wiki/Q936704) Sur | 2.654 km² |  |  |
 | Grand’Anse | [Q913231](https://www.wikidata.org/wiki/Q913231) Grand’Anse | 1.912 km² |  |  |
 | Noroeste | [Q608361](https://www.wikidata.org/wiki/Q608361) Noroeste | 2.103 km² |  |  |
-| Puerto Rico | [Q1183](https://www.wikidata.org/wiki/Q1183) Puerto Rico | 3.285.874 hab. (2020) · 9.104 km² | Castillo San Cristóbal, San Juan, Mayagüez |  |
-| La Altagracia | [Q1323353](https://www.wikidata.org/wiki/Q1323353) La Altagracia | 446.060 hab. (2022) · 2.998 km² |  |  |
-| Parroquia de Saint Ann | [Q1326284](https://www.wikidata.org/wiki/Q1326284) Parroquia de Saint Ann | 175.310 hab. (2022) · 1.213 km² |  |  |
+| Puerto Rico | [Q1183](https://www.wikidata.org/wiki/Q1183) Puerto Rico | 3.285.874 hab. (2020) · 9.104 km² | Castillo San Cristóbal, Observatorio de Arecibo, Isla de Vieques |  |
+| La Altagracia | [Q1323353](https://www.wikidata.org/wiki/Q1323353) La Altagracia | 446.060 hab. (2022) · 2.998 km² | Basílica de Higüey, Isla Saona |  |
+| Parroquia de Saint Ann | [Q1326284](https://www.wikidata.org/wiki/Q1326284) Parroquia de Saint Ann | 175.310 hab. (2022) · 1.213 km² | Cataratas del río Dunn |  |
 | Parroquia de Trelawny | [Q1123340](https://www.wikidata.org/wiki/Q1123340) Parroquia de Trelawny | 77.427 hab. (2022) · 874 km² |  |  |
 | Parroquia de Saint James | [Q1421939](https://www.wikidata.org/wiki/Q1421939) Parroquia de Saint James | 188.656 hab. (2022) · 595 km² |  |  |
 | Parroquia de Hanover | [Q1131779](https://www.wikidata.org/wiki/Q1131779) Parroquia de Hanover | 69.780 hab. (2022) · 430 km² |  |  |
@@ -2034,43 +2067,43 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Parroquia de Manchester | [Q920496](https://www.wikidata.org/wiki/Q920496) Parroquia de Manchester | 193.694 hab. (2022) · 830 km² |  |  |
 | Parroquia de Clarendon | [Q1095557](https://www.wikidata.org/wiki/Q1095557) Parroquia de Clarendon | 258.643 hab. (2022) · 1.196 km² |  |  |
 | Parroquia de Saint Catherine | [Q1473663](https://www.wikidata.org/wiki/Q1473663) Parroquia de Saint Catherine | 542.763 hab. (2022) · 1.192 km² |  |  |
-| Parroquia de Saint Andrew | [Q2212935](https://www.wikidata.org/wiki/Q2212935) Parroquia de Saint Andrew | 583.718 hab. (2022) · 455 km² |  |  |
+| Parroquia de Saint Andrew | [Q2212935](https://www.wikidata.org/wiki/Q2212935) Parroquia de Saint Andrew | 583.718 hab. (2022) · 455 km² | Museo Bob Marley |  |
 | Parroquia de Kingston | [Q1473680](https://www.wikidata.org/wiki/Q1473680) Parroquia de Kingston | 89.186 hab. (2022) · 25 km² | Kingston |  |
 | Parroquia de Saint Thomas | [Q1422332](https://www.wikidata.org/wiki/Q1422332) Parroquia de Saint Thomas | 94.485 hab. (2022) · 743 km² |  |  |
-| Parroquia de Portland | [Q125148](https://www.wikidata.org/wiki/Q125148) Parroquia de Portland | 84.972 hab. (2022) · 814 km² |  |  |
+| Parroquia de Portland | [Q125148](https://www.wikidata.org/wiki/Q125148) Parroquia de Portland | 84.972 hab. (2022) · 814 km² | Montañas Azules |  |
 | Parroquia de Saint Mary | [Q633565](https://www.wikidata.org/wiki/Q633565) Parroquia de Saint Mary | 116.498 hab. (2022) · 610 km² |  |  |
 | El Seibo | [Q1774831](https://www.wikidata.org/wiki/Q1774831) El Seibo | 99.168 hab. (2022) · 1.788 km² |  |  |
 | Hato Mayor | [Q937217](https://www.wikidata.org/wiki/Q937217) Hato Mayor | 100.134 hab. (2022) · 1.319 km² |  |  |
-| Samaná | [Q1145487](https://www.wikidata.org/wiki/Q1145487) Samaná | 111.990 hab. (2022) · 863 km² |  |  |
+| Samaná | [Q1145487](https://www.wikidata.org/wiki/Q1145487) Samaná | 111.990 hab. (2022) · 863 km² | Península de Samaná |  |
 | María Trinidad Sánchez | [Q1949656](https://www.wikidata.org/wiki/Q1949656) María Trinidad Sánchez | 156.633 hab. (2022) · 1.207 km² |  |  |
 | Espaillat | [Q530231](https://www.wikidata.org/wiki/Q530231) Espaillat | 233.636 hab. (2022) · 843 km² |  |  |
 | Puerto Plata | [Q693487](https://www.wikidata.org/wiki/Q693487) Puerto Plata | 388.354 hab. (2022) · 1.806 km² |  |  |
-| Norte | [Q943932](https://www.wikidata.org/wiki/Q943932) Norte | 2.115 km² | Ciudadela Laferrière |  |
+| Norte | [Q943932](https://www.wikidata.org/wiki/Q943932) Norte | 2.115 km² | Ciudadela Laferrière, Palacio Sans-Souci |  |
 | Artibonito | [Q844024](https://www.wikidata.org/wiki/Q844024) Artibonito | 4.987 km² |  |  |
 | Nippes | [Q125232](https://www.wikidata.org/wiki/Q125232) Nippes | 1.268 km² |  |  |
 | Barahona | [Q1137551](https://www.wikidata.org/wiki/Q1137551) Barahona | 226.898 hab. (2024) · 1.666 km² |  |  |
 | Azua | [Q794239](https://www.wikidata.org/wiki/Q794239) Provincia de Azua | 236.478 hab. (2022) · 2.686 km² |  |  |
 | Peravia | [Q1331932](https://www.wikidata.org/wiki/Q1331932) Peravia | 209.372 hab. (2022) · 785 km² |  |  |
 | San Cristóbal | [Q1366107](https://www.wikidata.org/wiki/Q1366107) San Cristóbal | 688.828 hab. (2022) · 1.241 km² |  |  |
-| Santo Domingo | [Q1352536](https://www.wikidata.org/wiki/Q1352536) Provincia Santo Domingo | 2.769.589 hab. (2022) · 1.302 km² |  |  |
-| Nacional | [Q2499228](https://www.wikidata.org/wiki/Q2499228) Distrito Nacional | 1.029.110 hab. (2022) · 92 km² | Alcázar de Colón, Santo Domingo |  |
+| Santo Domingo | [Q1352536](https://www.wikidata.org/wiki/Q1352536) Provincia Santo Domingo | 2.769.589 hab. (2022) · 1.302 km² | Faro a Colón |  |
+| Nacional | [Q2499228](https://www.wikidata.org/wiki/Q2499228) Distrito Nacional | 1.029.110 hab. (2022) · 92 km² | Alcázar de Colón, Catedral Primada de América, Santo Domingo |  |
 | San Pedro de Macorís | [Q1366119](https://www.wikidata.org/wiki/Q1366119) San Pedro de Macorís | 337.145 hab. (2022) · 1.254 km² |  |  |
 | La Romana | [Q1140742](https://www.wikidata.org/wiki/Q1140742) La Romana | 287.915 hab. (2022) · 652 km² |  |  |
 | Camagüey | [Q215147](https://www.wikidata.org/wiki/Q215147) Provincia de Camagüey | 756.064 hab. (2022) · 15.414 km² |  |  |
 | Ciego de Ávila | [Q220692](https://www.wikidata.org/wiki/Q220692) Provincia de Ciego de Ávila | 422.576 hab. (2010) · 6.947 km² |  |  |
 | Holguín | [Q115302](https://www.wikidata.org/wiki/Q115302) Provincia de Holguín | 1.037.161 hab. (2010) · 9.210 km² |  |  |
-| Isla de la Juventud | [Q115027](https://www.wikidata.org/wiki/Q115027) Isla de la Juventud | 84.263 hab. (2012) · 2.419 km² |  |  |
-| Sancti Spíritus | [Q115441](https://www.wikidata.org/wiki/Q115441) Provincia de Sancti Spíritus | 150.000 hab. (2025) · 6.780 km² |  |  |
+| Isla de la Juventud | [Q115027](https://www.wikidata.org/wiki/Q115027) Isla de la Juventud | 84.263 hab. (2012) · 2.419 km² | Isla de la Juventud |  |
+| Sancti Spíritus | [Q115441](https://www.wikidata.org/wiki/Q115441) Provincia de Sancti Spíritus | 150.000 hab. (2025) · 6.780 km² | Plaza Mayor de Trinidad |  |
 | Villa Clara | [Q115434](https://www.wikidata.org/wiki/Q115434) Provincia de Villa Clara | 803.562 hab. (2010) · 8.413 km² |  |  |
 | Matanzas | [Q115438](https://www.wikidata.org/wiki/Q115438) provincia de Matanzas | 690.113 hab. (2010) · 11.798 km² |  |  |
 | Las Tunas | [Q115334](https://www.wikidata.org/wiki/Q115334) Provincia de Las Tunas | 532.645 hab. (2012) · 6.595 km² |  |  |
 | Mayabeque | [Q115310](https://www.wikidata.org/wiki/Q115310) provincia de Mayabeque | 380.274 hab. (2011) · 3.733 km² |  |  |
-| La Habana | [Q1563](https://www.wikidata.org/wiki/Q1563) La Habana | 2.492.618 hab. (2022) · 728 km² | Capitolio de La Habana, Havana |  |
+| La Habana | [Q1563](https://www.wikidata.org/wiki/Q1563) La Habana | 2.492.618 hab. (2022) · 728 km² | Capitolio de La Habana, Malecón de La Habana, Havana |  |
 | Artemisa | [Q115325](https://www.wikidata.org/wiki/Q115325) Provincia de Artemisa | 512.819 hab. (2022) · 4.004 km² |  |  |
-| Pinar del Río | [Q115497](https://www.wikidata.org/wiki/Q115497) Provincia de Pinar del Río | 575.545 hab. (2022) · 8.885 km² |  |  |
+| Pinar del Río | [Q115497](https://www.wikidata.org/wiki/Q115497) Provincia de Pinar del Río | 575.545 hab. (2022) · 8.885 km² | Valle de Viñales |  |
 | Cienfuegos | [Q115444](https://www.wikidata.org/wiki/Q115444) Provincia de Cienfuegos | 404.228 hab. (2012) · 4.187 km² |  |  |
-| Granma | [Q115046](https://www.wikidata.org/wiki/Q115046) provincia de Granma | 835.675 hab. (2010) · 8.377 km² | Bayamo |  |
-| Santiago de Cuba | [Q234200](https://www.wikidata.org/wiki/Q234200) Provincia de Santiago de Cuba | 1.047.015 hab. (2010) · 6.234 km² | Palma Soriano |  |
+| Granma | [Q115046](https://www.wikidata.org/wiki/Q115046) provincia de Granma | 835.675 hab. (2010) · 8.377 km² | Sierra Maestra, Bayamo |  |
+| Santiago de Cuba | [Q234200](https://www.wikidata.org/wiki/Q234200) Provincia de Santiago de Cuba | 1.047.015 hab. (2010) · 6.234 km² | Pico Turquino, Palma Soriano |  |
 | Valverde | [Q1774848](https://www.wikidata.org/wiki/Q1774848) Valverde | 183.738 hab. (2022) · 823 km² |  |  |
 | Santiago Rodríguez | [Q2021942](https://www.wikidata.org/wiki/Q2021942) Santiago Rodríguez | 64.635 hab. (2022) · 1.148 km² |  |  |
 | La Vega | [Q594405](https://www.wikidata.org/wiki/Q594405) La Vega | 442.720 hab. (2022) · 2.292 km² |  |  |
@@ -2078,7 +2111,7 @@ revisión**: si alguno está mal, se corrige en el JSON de datos curiosos y se v
 | Duarte | [Q1262745](https://www.wikidata.org/wiki/Q1262745) Duarte | 308.353 hab. (2022) · 1.649 km² |  |  |
 | Santiago | [Q1772983](https://www.wikidata.org/wiki/Q1772983) Provincia de Santiago (República Dominicana) | 1.000.087 hab. (2023) · 2.806 km² |  |  |
 | Bahoruco | [Q807079](https://www.wikidata.org/wiki/Q807079) Bahoruco | 108.717 hab. (2022) · 1.285 km² |  |  |
-| San Juan | [Q2001793](https://www.wikidata.org/wiki/Q2001793) Provincia de San Juan | 244.668 hab. (2022) · 3.364 km² |  |  |
+| San Juan | [Q2001793](https://www.wikidata.org/wiki/Q2001793) Provincia de San Juan | 244.668 hab. (2022) · 3.364 km² | Pico Duarte |  |
 | Monseñor Nouel | [Q1295496](https://www.wikidata.org/wiki/Q1295496) Monseñor Nouel | 195.547 hab. (2022) · 992 km² |  |  |
 | Sánchez Ramírez | [Q1836903](https://www.wikidata.org/wiki/Q1836903) Sánchez Ramírez | 162.638 hab. (2022) · 1.186 km² |  |  |
 | San José de Ocoa | [Q1424391](https://www.wikidata.org/wiki/Q1424391) San José de Ocoa | 69.081 hab. (2022) · 853 km² |  |  |

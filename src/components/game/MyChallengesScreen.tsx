@@ -19,6 +19,11 @@ interface MyChallengesScreenProps {
 type Filter = 'all' | 'pending' | 'done';
 const PENDING: ChallengeState[] = ['to_accept', 'to_play', 'waiting'];
 
+/** "13 banderas" / "13 lugares nuevos"…: la cantidad según la categoría del reto (revancha por aceptar = nuevas) */
+const COUNT_SUFFIX: Record<string, string> = { flags: 'Flags', features: 'Features', monuments: 'Monuments', divisions: 'Divisions' };
+const countKey = (category: string | undefined, fresh: boolean) =>
+  `${fresh ? 'mc_new' : 'chc_n'}${COUNT_SUFFIX[category ?? ''] ?? 'Cities'}` as 'chc_nCities';
+
 /**
  * Bandeja "Mis retos" (maquetas Mis_Retos y Mis_Retos_Vacio): filtros con contadores, una tarjeta por reto.
  * Sin ningún reto se usa la maqueta del vacío: subtítulo propio, filtros con ícono y tarjeta grande con los dos
@@ -160,7 +165,7 @@ function ChallengeCard({ item, onOpen }: { item: MyChallenge; onOpen: () => void
           <h3 className="min-w-0 font-extrabold text-lg sm:text-xl leading-tight break-words">{title}</h3>
           <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap ${c.pillCls}`}>{c.pill}</span>
         </div>
-        <p className="text-xs sm:text-sm text-foreground/80 truncate flex items-center gap-1.5"><GlobeGlyph /> {t(`mode_${item.mode}` as never)} · {t(`home_diff${item.difficulty.charAt(0).toUpperCase()}${item.difficulty.slice(1)}` as never)} · {item.is_rematch && item.state === 'to_accept' ? t('mc_newCities', { n: item.rounds_total }) : t('chc_nCities', { n: item.rounds_total })}</p>
+        <p className="text-xs sm:text-sm text-foreground/80 truncate flex items-center gap-1.5"><GlobeGlyph /> {t(`mode_${item.mode}` as never)} · {t(`home_diff${item.difficulty.charAt(0).toUpperCase()}${item.difficulty.slice(1)}` as never)} · {t(countKey(item.category, item.is_rematch && item.state === 'to_accept'), { n: item.rounds_total })}</p>
         {/* En pantallas angostas el botón baja a su propia línea (el texto no cabe junto a él) */}
         <div className="flex flex-col gap-2 mt-1 min-[420px]:flex-row min-[420px]:items-end min-[420px]:justify-between">
           <p className="min-w-0 text-xs sm:text-sm text-foreground/80 flex items-start gap-1.5"><InfoGlyph /> <span>{result ? <span className="font-bold text-foreground">{result} · {item.my_score!.toLocaleString(appNumberLocale())} – {item.rival_score!.toLocaleString(appNumberLocale())}</span> : c.info}</span></p>
