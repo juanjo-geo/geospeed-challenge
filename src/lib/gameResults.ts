@@ -92,6 +92,8 @@ function toPayload(input: SaveGameInput, clientId: string): Json {
     daily_no: input.dailyNo ?? null,
     category: input.category ?? 'cities',
     quiz_code: input.quizCode ?? null,
+    // Fase 11: terminada sin señal → cuenta para el progreso, no para los rankings
+    offline: typeof navigator !== 'undefined' && navigator.onLine === false,
     // Puntaje v2 (Temporada 1): el servidor recalcula cada ronda desde el clic, la ciudad y el tiempo
     scoring_version: SCORING_VERSION,
     rounds: input.rounds.map(r => ({

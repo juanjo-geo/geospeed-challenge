@@ -20,6 +20,8 @@ export interface FeatureFlags {
   world_challenge_event: boolean;
   /** D8: el duelo en vivo queda oculto al lanzar los retos asincrónicos */
   live_duel_enabled: boolean;
+  /** Fase 11: jugar sin conexión es de Pro (false = para todos, sin publicar una versión) */
+  offline_pro_only: boolean;
   ab_group: 'control' | 'variant_a' | 'variant_b';
 }
 
@@ -41,6 +43,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   enable_onboarding: true,
   world_challenge_event: false, // activar durante Mundial/Copa para destacar el modo
   live_duel_enabled: false,
+  offline_pro_only: true,
   ab_group: 'control', // overridden per-user below
 };
 

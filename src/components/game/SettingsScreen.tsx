@@ -21,6 +21,8 @@ interface SettingsScreenProps {
   onBack: () => void;
   /** Abre ¿Cómo jugar? */
   onHowToPlay: () => void;
+  /** Fase 11: Descargas (jugar sin conexión) */
+  onDownloads?: () => void;
 }
 
 /** Cada idioma se describe en su propia lengua (así lo reconoce quien no entiende el actual) */
@@ -34,7 +36,7 @@ const LANG_FLAG_COUNTRY: Record<Locale, string> = { es: 'España', en: 'Reino Un
  * En computador: Preferencias a la izquierda y el resto en una columna a la derecha.
  * Las preferencias viven en src/lib/prefs.ts; la música en useBackgroundMusic (clave histórica).
  */
-export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenProps) {
+export default function SettingsScreen({ onBack, onHowToPlay, onDownloads }: SettingsScreenProps) {
   const { t, locale, setLocale } = useI18n();
   const { user, displayName, signOut, isAnonymous } = useAuth();
   const { colorblind, toggleColorblind } = useA11y();
@@ -121,6 +123,7 @@ export default function SettingsScreen({ onBack, onHowToPlay }: SettingsScreenPr
 
             <Section title={t('settings_help')}>
               <LinkRow icon="help" label={t('settings_howToPlay')} onClick={() => { playButtonTap(); onHowToPlay(); }} />
+              {onDownloads && <LinkRow icon="download" label={t('dl_title')} onClick={() => { playButtonTap(); onDownloads(); }} />}
               <LinkRow icon="chat" label={t('settings_support')} onClick={() => go('/support')} />
             </Section>
 
@@ -230,12 +233,13 @@ function LinkRow({ icon, label, onClick, danger = false }: { icon: SettingIconNa
   );
 }
 
-type SettingIconName = 'music' | 'sound' | 'vibrate' | 'motion' | 'eye' | 'globe' | 'help' | 'chat' | 'shield' | 'doc' | 'logout' | 'user' | 'userPlus' | 'trash';
+type SettingIconName = 'music' | 'sound' | 'vibrate' | 'motion' | 'eye' | 'globe' | 'help' | 'chat' | 'shield' | 'doc' | 'logout' | 'user' | 'userPlus' | 'trash' | 'download';
 
 /** Íconos de línea turquesa de la maqueta */
 function SettingIcon({ name, className }: { name: SettingIconName; className: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {name === 'download' && <><path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 19.5h14" /></>}
       {name === 'music' && <><path d="M9 18V5l11-2v13" /><circle cx="6.5" cy="18" r="2.5" fill="currentColor" /><circle cx="17.5" cy="16" r="2.5" fill="currentColor" /></>}
       {name === 'sound' && <><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" /></>}
       {name === 'vibrate' && <><rect x="8" y="3.5" width="8" height="17" rx="2" /><path d="M4.5 8.5 3 10l1.5 1.5L3 13l1.5 1.5M19.5 8.5 21 10l-1.5 1.5L21 13l-1.5 1.5" /></>}

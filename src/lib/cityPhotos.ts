@@ -5,10 +5,11 @@
  * 797 de las 825 ciudades del juego tienen foto; las demás (sin imagen libre) siguen usando la del país.
  */
 import { CITY_PHOTO_IDS } from '@/data/cityPhotoIds';
+import { photoUrl } from '@/lib/assetUrl';
 
 export const hasCityPhoto = (id: string | null | undefined): id is string => !!id && CITY_PHOTO_IDS.has(id);
 /** Una sola medida (640 px): sirve para la tarjeta de respuesta y para la revisión */
-export const cityPhotoUrl = (id: string) => `/cities/${id.replace(/:/g, '-')}.webp`;
+export const cityPhotoUrl = (id: string) => photoUrl(`/cities/${id.replace(/:/g, '-')}.webp`);
 
 /** Descarga una foto antes de que haga falta (la tarjeta de respuesta sale unos segundos después) */
 export function preloadPhoto(url: string | null | undefined): void {
@@ -21,4 +22,4 @@ export function preloadPhoto(url: string | null | undefined): void {
 export interface CityPhotoCredit { id: string; name: string; author: string | null; source: string | null; license: string | null; licenseUrl: string | null; url: string | null }
 let credits: Promise<CityPhotoCredit[]> | null = null;
 export const fetchCityPhotoCredits = (): Promise<CityPhotoCredit[]> =>
-  (credits ??= fetch('/cities/credits.json').then((r) => (r.ok ? r.json() : [])).catch(() => []));
+  (credits ??= fetch(photoUrl('/cities/credits.json')).then((r) => (r.ok ? r.json() : [])).catch(() => []));

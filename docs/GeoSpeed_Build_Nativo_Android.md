@@ -36,15 +36,20 @@ npm install @capacitor/android
 ## FASE 2 — Compilar la web y agregar Android
 
 ```bash
-npm run build              # genera la carpeta dist/ (la web compilada)
+npm run build:native       # genera dist/ SIN las fotos (paquete base ≤ 30 MB, Fase 11)
 npx cap add android        # crea la carpeta android/ (proyecto nativo)
 npx cap sync android       # copia dist/ dentro del proyecto Android
 ```
 
 Tras esto tendrás una carpeta `android/` nueva. Cada vez que cambies el código web, repites:
 ```bash
-npm run build && npx cap sync android
+npm run build:native && npx cap sync android
 ```
+
+> **Fase 11 (juego sin conexión):** `build:native` = `vite build` + `scripts/strip-native-photos.mjs`, que saca de
+> `dist/` las fotos de países, ciudades y monumentos (~80 MB) y falla si el paquete pasa de 30 MB. En la app esas
+> fotos se piden al sitio publicado (`src/lib/assetUrl.ts`): con señal se ven igual; sin señal no aparecen (el juego
+> funciona completo). **No uses `npm run build` para la app**: metería las fotos en el AAB.
 
 ---
 
