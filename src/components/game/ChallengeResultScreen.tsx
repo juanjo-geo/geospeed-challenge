@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { itemTitleAuto, itemSubtitleAuto, kindFromPlaceId, itemPhotoUrl } from '@/lib/catalog';
 import { type ChallengeDetail, type ChallengeRound, challengeLink } from '@/lib/challenges';
-import { type GameMode, type MapBounds } from '@/data/cities';
+import { type City, type Difficulty, type GameMode, type MapBounds } from '@/data/cities';
 import { useFeatureShapes, usePackShapes } from '@/hooks/useFeatureShapes';
 import { formatDistance } from '@/lib/gameUtils';
 import { itemHint, useCityTips } from '@/lib/cityHints';
@@ -19,6 +19,8 @@ import CityReviewScreen from './CityReviewScreen';
 import { type RoundResult } from './GameScreen';
 import { appNumberLocale, formatNumber } from '@/lib/format';
 import { PinIcon, StopwatchIcon, HomeIcon, ChevronIcon, ArrowRightIcon, LegendPin } from '@/components/ui/icons';
+
+const PlaceStoryModal = lazy(() => import('./PlaceStoryModal'));
 
 interface ChallengeResultScreenProps {
   detail: ChallengeDetail;
@@ -387,6 +389,8 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
   }, [row.city, featureShapes, packShapes]);
   useCityTips();
   const hint = itemHint(row.city, locale === 'en' ? 'en' : 'es');
+  const [storyOpen, setStoryOpen] = useState(false);
+  useEffect(() => { setStoryOpen(false); }, [row.city]);
   const mp = row.me?.points ?? 0, rp = row.rv?.points ?? 0;
   const who = mp > rp ? 'me' : rp > mp ? 'rival' : 'tie';
 
@@ -432,6 +436,13 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
           <div className="rounded-2xl border border-border bg-muted/20 p-2.5 short:p-2">
             <p className="font-black text-sm short:text-xs">🧭 {t('review_toRemember')}</p>
             <p className="text-xs sm:text-sm short:text-[11px] text-muted-foreground leading-snug mt-0.5">{hint}</p>
+            <button
+              type="button"
+              onClick={() => { playButtonTap(); setStoryOpen(true); }}
+              className="mt-1.5 w-full rounded-lg border border-accent/50 bg-accent/10 text-accent font-bold py-1.5 short:py-1 text-xs sm:text-sm hover:bg-accent/20 transition-colors"
+            >
+              🔎 {t('story_more', { name: itemTitleAuto(row.city) })} ›
+            </button>
           </div>
         </aside>
       </div>
@@ -443,6 +454,7 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
           {index >= total - 1 ? `${t('review_finish')} ✓` : `${t('review_next')} →`}
         </button>
       </div>
+      {storyOpen && <Suspense fallback={null}><PlaceStoryModal item={{ ...row.city, difficulty: detail.difficulty as Difficulty } as City} source="review" onClose={() => setStoryOpen(false)} /></Suspense>}
     </div>
   );
 }

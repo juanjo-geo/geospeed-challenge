@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
+import { mundialStoryItem } from '@/lib/placeStory';
 import { getMapBounds, type City, type Difficulty } from '@/data/cities';
 import { getPlayersByDifficulty, type Player } from '@/data/players';
 import {
@@ -41,6 +42,7 @@ import { countryDisplayName, countryIso } from '@/lib/flags';
 import { preloadCountryPhoto } from '@/lib/countryPhotos';
 import { factIdOf, getPlaceFact, keyFact, usePlaceFacts } from '@/lib/placeFacts';
 import { appNumberLocale } from '@/lib/format';
+const PlaceStoryModal = lazy(() => import('./PlaceStoryModal'));
 
 const MAX_TIME = 15;
 const TOTAL_ROUNDS = 13;
@@ -159,6 +161,10 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsOpenRef = useRef(false);
   settingsOpenRef.current = settingsOpen;
+  // Reseña del país del futbolista ("Ver más"): pausa el avance automático, como los ajustes
+  const [storyItem, setStoryItem] = useState<City | null>(null);
+  const storyOpenRef = useRef(false);
+  storyOpenRef.current = !!storyItem;
   useEffect(() => { setMascotState('idle'); }, [roundIdx]);
 
   const roundStartRef = useRef(0);
@@ -451,7 +457,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     setAutoAdvance(AUTO_ADVANCE_SECONDS);
     const id = setInterval(() => {
       setAutoAdvance((prev) => {
-        if (settingsOpenRef.current) return prev; // en pausa con los ajustes abiertos
+        if (settingsOpenRef.current || storyOpenRef.current) return prev; // en pausa con los ajustes o la reseña abiertos
         if (prev <= 1) {
           clearInterval(id);
           setTimeout(() => advanceRef.current(), 0);
@@ -630,6 +636,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     timeLabel: `${fmtSecs(lastRound.timeExact ?? lastRound.timeUsed)} s`,
     natural: true,
     fact: placeFacts ? keyFact({ ...lastRound.city, id: undefined, kind: 'flag' }, placeFacts[factIdOf({ ...lastRound.city, id: undefined }) ?? ''] ?? null, t as never, locale) : null,
+    onMore: mundialStoryItem(lastRound.city.country) ? () => setStoryItem(mundialStoryItem(lastRound.city.country)) : undefined,
   } : null;
 
   return (
@@ -866,6 +873,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
       </div>
 
       {settingsOpen && <InGameSettings musicMuted={musicMuted} onToggleMusic={onToggleMusic} onClose={() => setSettingsOpen(false)} />}
+      {storyItem && <Suspense fallback={null}><PlaceStoryModal item={storyItem} source="card" onClose={() => setStoryItem(null)} /></Suspense>}
     </div>
   );
 }

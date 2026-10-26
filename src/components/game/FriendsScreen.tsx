@@ -3,6 +3,7 @@ import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode, type Ca
 import { MODE_CONFIG, isPackMode, type Difficulty, type GameMode } from '@/data/cities';
 import { createChallenge, normalizeCode, isValidCode, ChallengeError, type Challenge } from '@/lib/challenges';
 import { getFlag } from '@/lib/featureFlags';
+import { isRoomPin, roomsEnabled } from '@/lib/rooms';
 import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -26,13 +27,17 @@ interface FriendsScreenProps {
   onSignIn: () => void;
   /** Duelo en vivo (oculto tras el flag live_duel_enabled, D8) */
   onLiveDuel?: () => void;
+  /** Sala en vivo (hasta 20 jugadores): crear una */
+  onLiveRoom?: () => void;
+  /** Sala en vivo: el cuadro de código recibió un PIN de 6 números */
+  onOpenRoomPin?: (pin: string) => void;
 }
 
 /**
  * "Jugar con amigos" (maqueta Amigos_Asincronico_APROBADA_v2): dos exploradores con el globo y la insignia
  * "Reto entre amigos", crear un reto (región y dificultad en las mismas hojas del Inicio) o unirse con código.
  */
-export default function FriendsScreen({ initialMode, initialDifficulty, initialCategory = 'cities', onBack, onCreated, onOpenCode, onSignIn, onLiveDuel }: FriendsScreenProps) {
+export default function FriendsScreen({ initialMode, initialDifficulty, initialCategory = 'cities', onBack, onCreated, onOpenCode, onSignIn, onLiveDuel, onLiveRoom, onOpenRoomPin }: FriendsScreenProps) {
   const { t } = useI18n();
   const [mode, setMode] = useState<GameMode>(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty>(initialDifficulty);
@@ -77,8 +82,12 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
   })), [t, mode]);
   const categoryLabel = t(CATEGORY_KEY[category] as never);
 
-  const normalized = normalizeCode(code);
-  const canJoin = isValidCode(normalized);
+  const showRooms = !!onLiveRoom && roomsEnabled(getFlag('live_rooms_enabled'));
+  // 6 números = PIN de una sala en vivo; si no, código de reto (5 caracteres)
+  const digits = code.replace(/\D/g, '');
+  const isPin = showRooms && !!onOpenRoomPin && /^\d+$/.test(code) && code.length === 6 && isRoomPin(digits);
+  const normalized = isPin ? digits : normalizeCode(code);
+  const canJoin = isPin || isValidCode(normalized);
   const showLiveDuel = !!onLiveDuel && getFlag('live_duel_enabled');
 
   return (
@@ -141,19 +150,19 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
                 <p className="text-sm sm:text-base text-foreground/80">{t('friends_joinDesc')}</p>
               </div>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); if (canJoin) { playButtonTap(); onOpenCode(normalized); } }} className="flex flex-col gap-3 mt-auto">
+            <form onSubmit={(e) => { e.preventDefault(); if (canJoin) { playButtonTap(); if (isPin) onOpenRoomPin?.(normalized); else onOpenCode(normalized); } }} className="flex flex-col gap-3 mt-auto">
               <label className="relative">
                 <span className="sr-only">{t('friends_codePlaceholder')}</span>
                 <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/60" />
                 <input
                   value={code}
-                  onChange={(e) => setCode(normalizeCode(e.target.value))}
-                  placeholder={t('friends_codePlaceholder')}
+                  onChange={(e) => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); setCode(showRooms && /^\d+$/.test(v) ? v.slice(0, 6) : normalizeCode(v)); }}
+                  placeholder={showRooms && onOpenRoomPin ? t('friends_codeOrPin') : t('friends_codePlaceholder')}
                   inputMode="text"
                   autoCapitalize="characters"
                   autoComplete="off"
                   spellCheck={false}
-                  maxLength={7}
+                  maxLength={8}
                   className="w-full rounded-2xl border-2 border-foreground/20 bg-background/50 pl-11 pr-3 py-3.5 font-extrabold text-lg tracking-[0.35em] uppercase placeholder:tracking-normal placeholder:normal-case placeholder:font-medium placeholder:text-base placeholder:text-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </label>
@@ -164,6 +173,20 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
             </form>
           </section>
         </div>
+
+        {/* ── Sala en vivo: hasta 20 jugadores al mismo tiempo ── */}
+        {showRooms && (
+          <section className="mt-4 rounded-3xl border-2 border-primary/60 bg-card/80 p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 shadow-[0_0_24px_hsl(var(--primary)/0.15)]">
+            <span className="text-5xl sm:text-6xl shrink-0" aria-hidden>📡</span>
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <h2 className="text-[min(5.6vw,1.5rem)] sm:text-3xl font-extrabold leading-tight">{t('room_cardLead')} <span className="text-primary">{t('room_cardTail')}</span></h2>
+              <p className="text-sm sm:text-base text-foreground/80">{t('room_cardDesc')}</p>
+            </div>
+            <button onClick={() => { playButtonTap(); onLiveRoom?.(); }} className="btn3d shrink-0 w-full sm:w-auto rounded-2xl px-6 py-3 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
+              {t('room_cardCta')}
+            </button>
+          </section>
+        )}
 
         <div className="mt-4 flex items-start justify-center gap-3 text-left max-w-xl mx-auto">
           <InfoIcon className="w-7 h-7 text-accent mt-0.5" />

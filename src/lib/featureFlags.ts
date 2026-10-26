@@ -22,6 +22,8 @@ export interface FeatureFlags {
   live_duel_enabled: boolean;
   /** Fase 11: jugar sin conexión es de Pro (false = para todos, sin publicar una versión) */
   offline_pro_only: boolean;
+  /** Sala en vivo (hasta 20 jugadores): oculta hasta terminar sus bloques; en desarrollo siempre visible */
+  live_rooms_enabled: boolean;
   ab_group: 'control' | 'variant_a' | 'variant_b';
 }
 
@@ -44,6 +46,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   world_challenge_event: false, // activar durante Mundial/Copa para destacar el modo
   live_duel_enabled: false,
   offline_pro_only: true,
+  live_rooms_enabled: false,
   ab_group: 'control', // overridden per-user below
 };
 
