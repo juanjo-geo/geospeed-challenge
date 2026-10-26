@@ -105,8 +105,16 @@ export const FRAME_STYLE: Record<string, { ring: string; glow: string }> = {
   bronze: { ring: 'hsl(28 62% 52%)', glow: 'hsl(28 70% 50% / 0.55)' },
   silver: { ring: 'hsl(210 14% 78%)', glow: 'hsl(210 30% 85% / 0.55)' },
   gold: { ring: 'hsl(45 95% 58%)', glow: 'hsl(45 100% 55% / 0.7)' },
+  // Fase 9: marcos de los logros (src/lib/progression.ts FRAMES)
+  medal: { ring: 'hsl(174 72% 52%)', glow: 'hsl(174 80% 50% / 0.6)' },
+  flame: { ring: 'hsl(18 95% 56%)', glow: 'hsl(22 100% 55% / 0.65)' },
+  globe: { ring: 'hsl(199 89% 62%)', glow: 'hsl(199 95% 60% / 0.6)' },
+  sniper: { ring: 'hsl(330 80% 64%)', glow: 'hsl(330 90% 62% / 0.6)' },
+  sprint: { ring: 'hsl(265 80% 70%)', glow: 'hsl(265 90% 68% / 0.6)' },
 };
-export const TITLE_KEY: Record<string, string> = { viajero: 'title_viajero', leyenda: 'title_leyenda' };
+/** Nombre de cada título (racha del diario y logros de la Fase 9): clave `title_<id>` */
+const TITLE_IDS = ['viajero', 'leyenda', 'medallista', 'veterano', 'francotirador', 'rayo', 'retador', 'ojeador', 'cartografo', 'trotamundos', 'memoria', 'abanderado', 'elite', 'incansable', 'sabio'];
+export const TITLE_KEY: Record<string, string> = Object.fromEntries(TITLE_IDS.map((id) => [id, `title_${id}`]));
 
 // ── Compartir (sin revelar las ciudades) ────────────────────────────────────
 /** Cuadritos: 🟩 acierto rápido (< 3 s) · 🟨 acierto lento · 🟥 fallo · ⬛ sin jugar (se acabó el tiempo) */

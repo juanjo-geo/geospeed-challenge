@@ -3,9 +3,11 @@ import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
+import { CosmeticsPicker } from './ProgressionScreens';
+import { earnedSet, useProgression } from '@/lib/progression';
 import {
-  fetchDailyStatus, getCachedDailyStatus, playedToday, setActiveCosmetics, DAILY_STATUS_EVENT,
-  STREAK_MILESTONES, FRAME_STYLE, TITLE_KEY, type DailyStatus,
+  fetchDailyStatus, getCachedDailyStatus, playedToday, DAILY_STATUS_EVENT,
+  STREAK_MILESTONES, type DailyStatus,
 } from '@/lib/dailyChallenge';
 import { gameDay } from '@/lib/gameDay';
 
@@ -26,7 +28,6 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
   const { t, locale } = useI18n();
   const [st, setSt] = useState<DailyStatus | null>(getCachedDailyStatus);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const dateLocale = locale === 'en' ? 'en-US' : 'es-CO';
 
   useEffect(() => {
@@ -62,15 +63,8 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
   const monthLabel = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1);
 
   const refillDays = st?.freeze_refill_on ? Math.max(0, Math.round((Date.parse(`${st.freeze_refill_on}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000)) : null;
-  const titles = STREAK_MILESTONES.filter((m) => m.title);
-  const frames = STREAK_MILESTONES.filter((m) => m.frame);
-
-  const equip = async (title: string | null, frame: string | null) => {
-    playButtonTap();
-    setSaving(true);
-    await setActiveCosmetics(title, frame);
-    setSaving(false);
-  };
+  // Título y marco: el selector compartido con Logros (racha del diario + logros de la Fase 9)
+  const progression = useProgression();
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center game-bg overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6">
@@ -161,41 +155,11 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
         <section className="mt-4 rounded-3xl border-2 border-accent/30 bg-card/60 p-4">
           <h2 className="font-extrabold text-lg">{t('streak_showOff')}</h2>
           <p className="text-xs text-muted-foreground mb-2">{t('streak_showOffDesc')}</p>
-          <p className="text-sm font-bold mb-1">{t('streak_titleLabel')}</p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <ChoiceChip active={!st?.active_title} disabled={saving} onClick={() => equip(null, st?.active_frame ?? null)} label={t('streak_none')} />
-            {titles.map((m) => (
-              <ChoiceChip key={m.title} active={st?.active_title === m.title} disabled={saving || !earned.has(m.badge)} locked={!earned.has(m.badge)} onClick={() => equip(m.title!, st?.active_frame ?? null)} label={t(TITLE_KEY[m.title!] as never)} />
-            ))}
-          </div>
-          <p className="text-sm font-bold mb-1">{t('streak_frameLabel')}</p>
-          <div className="flex flex-wrap gap-2">
-            <ChoiceChip active={!st?.active_frame} disabled={saving} onClick={() => equip(st?.active_title ?? null, null)} label={t('streak_none')} />
-            {frames.map((m) => (
-              <ChoiceChip key={m.frame} active={st?.active_frame === m.frame} disabled={saving || !earned.has(m.badge)} locked={!earned.has(m.badge)} onClick={() => equip(st?.active_title ?? null, m.frame!)}
-                label={t(`frame_${m.frame}` as never)} swatch={FRAME_STYLE[m.frame!].ring} />
-            ))}
-          </div>
+          <CosmeticsPicker earned={earnedSet(progression)} st={st} />
         </section>
 
         {!loading && !st && <p className="mt-4 text-center text-sm text-muted-foreground">{t('streak_noSession')}</p>}
       </div>
     </div>
-  );
-}
-
-function ChoiceChip({ label, active, disabled, locked, onClick, swatch }: { label: string; active: boolean; disabled?: boolean; locked?: boolean; onClick: () => void; swatch?: string }) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-full border-2 px-3 py-1 text-sm font-bold inline-flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed ${active ? 'border-primary bg-primary/15 text-primary' : 'border-foreground/20 text-foreground/80 hover:border-accent/60'} ${locked ? 'opacity-50' : ''}`}
-    >
-      {swatch && <span className="w-3.5 h-3.5 rounded-full border-2" style={{ borderColor: swatch, boxShadow: `0 0 6px ${swatch}` }} aria-hidden />}
-      {locked && <span aria-hidden>🔒</span>}
-      {label}
-    </button>
   );
 }

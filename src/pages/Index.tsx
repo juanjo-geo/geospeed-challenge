@@ -127,6 +127,8 @@ const TrainingSetupScreen = lazyWithReload(() => import('@/components/game/Train
 const TrainingRepeatScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingRepeatScreen })));
 const TrainingResultScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingResultScreen })));
 const MemoryScreen = lazyWithReload(() => import('@/components/game/MemoryScreen'));
+const MedalsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.MedalsScreen })));
+const AchievementsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.AchievementsScreen })));
 const SprintScreen = lazyWithReload(() => import('@/components/game/SprintScreen'));
 const SprintSearchScreen = lazyWithReload(() => import('@/components/game/SprintFlowScreens').then(m => ({ default: m.SprintSearchScreen })));
 const SprintResultScreen = lazyWithReload(() => import('@/components/game/SprintFlowScreens').then(m => ({ default: m.SprintResultScreen })));
@@ -175,7 +177,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -194,7 +196,7 @@ interface TrainingRun {
 }
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -985,7 +987,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     phase === 'home' || phase === 'daily-intro' || phase === 'more-modes' || phase === 'howto' || phase === 'training-setup' || phase === 'training-result' || phase === 'sprint' || phase === 'sprint-result' ? 'home'
     : phase === 'store' ? 'store'
     : phase === 'battlepass' ? 'pass'
-    : phase === 'history' || phase === 'ranking' || phase === 'memory' ? 'progress'
+    : phase === 'history' || phase === 'ranking' || phase === 'memory' || phase === 'medals' || phase === 'achievements' ? 'progress'
     : phase === 'profile' ? (profileTab === 'history' ? 'progress' : 'profile')
     : null;
   const handleNav = useCallback((tab: NavTab) => {
@@ -1045,6 +1047,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     startTrainingRun('review', cities, { mode: 'world', difficulty: 'basic', size: cities.length, clock: false, category: categoryOf(cities) });
   }, [startTrainingRun]);
   const handleOpenMemory = useCallback(() => { setPhase('memory'); scrollAppToTop(); }, []);
+  const handleOpenMedals = useCallback(() => { setPhase('medals'); scrollAppToTop(); }, []);
+  const handleOpenAchievements = useCallback(() => { setPhase('achievements'); scrollAppToTop(); }, []);
 
   const handleSpeedDemon = useCallback(() => {
     unlockAudio();
@@ -1238,7 +1242,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'profile') {
-      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} onMyChallenges={handleMyChallenges} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} />;
+      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} onMyChallenges={handleMyChallenges} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onOpenMedals={handleOpenMedals} onOpenAchievements={handleOpenAchievements} />;
     }
 
     if (phase === 'history') {
@@ -1285,6 +1289,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
     if (phase === 'memory') {
       return <MemoryScreen onBack={handleGoHome} onReview={handleStartReview} onTrain={handleStartTraining} />;
+    }
+    if (phase === 'medals') {
+      // Tocar una casilla deja ese mapa elegido en el Inicio (la hoja de Inicio respeta los candados por nivel)
+      return <MedalsScreen onBack={handleGoHome} onPickMap={() => { handleGoHome(); toast(t('medals_picked')); }} />;
+    }
+    if (phase === 'achievements') {
+      return <AchievementsScreen onBack={handleGoHome} />;
     }
     if (phase === 'sprint') {
       return <SprintScreen onBack={handleGoHome} onFind={handleSprintFind} onOpenStore={handleOpenStore} onCreateAccount={() => navigate('/auth')} onPlay={handleGoHome} />;

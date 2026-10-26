@@ -39,7 +39,8 @@ export default function DailyResultPanel({ result, status, invite, playerName, i
 
   // Las insignias nuevas se celebran una vez
   useEffect(() => {
-    const ids = (status?.badges ?? []).filter((b) => !b.seen).map((b) => b.id);
+    // Solo las de la racha: los logros de la Fase 9 los celebra ProgressUnlocks
+    const ids = (status?.badges ?? []).filter((b) => !b.seen && milestoneOf(b.id)).map((b) => b.id);
     if (ids.length) markBadgesSeen(ids);
   }, [status]);
 

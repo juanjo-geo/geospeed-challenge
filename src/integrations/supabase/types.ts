@@ -511,6 +511,10 @@ export type Database = {
         Args: { p_item: string }
         Returns: boolean
       }
+      my_progression: {
+        Args: Record<string, never>
+        Returns: Json
+      }
       my_memory: {
         Args: Record<string, never>
         Returns: {

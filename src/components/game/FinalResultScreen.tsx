@@ -14,6 +14,7 @@ import { fireCelebration } from '@/lib/confetti';
 import { hapticCelebration } from '@/lib/haptics';
 import CityAnswersScreen from './CityAnswersScreen';
 import CityReviewScreen from './CityReviewScreen';
+import ProgressUnlocks from './ProgressUnlocks';
 import Mascot, { type MascotState } from './Mascot';
 import Wordmark from '@/components/ui/Wordmark';
 import { type GameMode } from '@/data/cities';
@@ -454,6 +455,7 @@ export default function FinalResultScreen({
         {/* ── Columna 2: ¿Lo intentamos de nuevo? ── */}
         <section className="rounded-3xl border-2 border-accent/30 bg-card/85 backdrop-blur-sm p-4 sm:p-6 animate-fade-in-up animation-delay-100 flex flex-col">
           {topPanel}
+          <ProgressUnlocks />
           <h2 className="text-xl sm:text-[1.75rem] font-extrabold text-center mb-4">{t('final_tryAgainTitle')}</h2>
 
           {onViewChallenge ? (

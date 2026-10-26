@@ -17,6 +17,7 @@ import { lazy, Suspense } from 'react';
 const AutoDemo = lazy(() => import('./AutoDemo'));
 import Mascot from './Mascot';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
+import { MEDAL_RULE, medalKey, medalMap, useProgression } from '@/lib/progression';
 import { AccountButton, SettingsButton } from './HeaderActions';
 import { playButtonTap } from '@/lib/sounds';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -25,7 +26,7 @@ import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
 import SprintHomeCard from './SprintHomeCard';
-import { REGION_ART, DIFF_ART, REGION_FLAG, regionGroup, packGroups } from '@/lib/selectionArt';
+import { REGION_ART, DIFF_ART, REGION_FLAG, regionGroup, packGroups, REGION_UNLOCK_LEVEL, DIFF_UNLOCK_LEVEL } from '@/lib/selectionArt';
 import { canPlayPack, isPackTrial, isProPack } from '@/lib/packAccess';
 
 interface HomeScreenProps {
@@ -54,25 +55,25 @@ interface HomeScreenProps {
 
 /** Dificultades: clave de datos, emoji y nivel de desbloqueo (D12: candado visible). */
 const DIFF_CONFIG: { key: Difficulty; emoji: string; art: [string, string?]; unlockLevel: number }[] = [
-  { key: 'basic',  ...DIFF_ART.basic,  unlockLevel: 1 },
-  { key: 'easy',   ...DIFF_ART.easy,   unlockLevel: 2 },
-  { key: 'medium', ...DIFF_ART.medium, unlockLevel: 4 },
-  { key: 'hard',   ...DIFF_ART.hard,   unlockLevel: 6 },
+  { key: 'basic',  ...DIFF_ART.basic,  unlockLevel: DIFF_UNLOCK_LEVEL.basic },
+  { key: 'easy',   ...DIFF_ART.easy,   unlockLevel: DIFF_UNLOCK_LEVEL.easy },
+  { key: 'medium', ...DIFF_ART.medium, unlockLevel: DIFF_UNLOCK_LEVEL.medium },
+  { key: 'hard',   ...DIFF_ART.hard,   unlockLevel: DIFF_UNLOCK_LEVEL.hard },
 ];
 
 /** Regiones: emoji y nivel de desbloqueo. */
 const MODE_UNLOCK: Record<GameMode, { level: number; emoji: string; art: [string, string?] }> = {
-  world:    { level: 1, ...REGION_ART.world },
-  europe:   { level: 2, ...REGION_ART.europe },
-  asia:     { level: 3, ...REGION_ART.asia },
-  americas: { level: 4, ...REGION_ART.americas },
-  africa:   { level: 5, ...REGION_ART.africa },
-  colombia: { level: 1, ...REGION_ART.colombia }, // pack gratis (Fase 7a)
+  world:    { level: REGION_UNLOCK_LEVEL.world, ...REGION_ART.world },
+  europe:   { level: REGION_UNLOCK_LEVEL.europe, ...REGION_ART.europe },
+  asia:     { level: REGION_UNLOCK_LEVEL.asia, ...REGION_ART.asia },
+  americas: { level: REGION_UNLOCK_LEVEL.americas, ...REGION_ART.americas },
+  africa:   { level: REGION_UNLOCK_LEVEL.africa, ...REGION_ART.africa },
+  colombia: { level: REGION_UNLOCK_LEVEL.colombia, ...REGION_ART.colombia }, // pack gratis (Fase 7a)
   // Packs Pro (Fase 7b): sin nivel; sin Pro, una partida de prueba al día (src/lib/packAccess.ts)
-  andes:    { level: 1, ...REGION_ART.andes },
-  conosur:  { level: 1, ...REGION_ART.conosur },
-  mexcam:   { level: 1, ...REGION_ART.mexcam },
-  caribe:   { level: 1, ...REGION_ART.caribe },
+  andes:    { level: REGION_UNLOCK_LEVEL.andes, ...REGION_ART.andes },
+  conosur:  { level: REGION_UNLOCK_LEVEL.conosur, ...REGION_ART.conosur },
+  mexcam:   { level: REGION_UNLOCK_LEVEL.mexcam, ...REGION_ART.mexcam },
+  caribe:   { level: REGION_UNLOCK_LEVEL.caribe, ...REGION_ART.caribe },
 };
 
 const CLASSIC_ROUNDS = 13;
@@ -205,6 +206,13 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
   const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
+  // Fase 9: la medalla de este mapa y lo que falta para la siguiente
+  const progression = useProgression();
+  const medalNow = medalMap(progression).get(medalKey(selectedMode, selectedDifficulty, selectedCategory));
+  const medalLine = !progression ? null
+    : !medalNow || medalNow.medal === 0 ? t('home_medalNone', { n: MEDAL_RULE.rounds })
+    : medalNow.medal === 3 ? t('home_medalGold', { hits: medalNow.hits })
+    : t(medalNow.medal === 2 ? 'home_medalSilver' : 'home_medalBronze', { hits: medalNow.hits, need: medalNow.medal === 2 ? MEDAL_RULE.goldHits : MEDAL_RULE.silverHits });
   const citiesInfo = t(selectedCategory === 'flags' ? 'home_flagsInfo' : selectedCategory === 'features' ? 'home_featuresInfo' : selectedCategory === 'monuments' ? 'home_monumentsInfo' : selectedCategory === 'divisions' ? (isProPack(selectedMode) ? 'home_divisionsProInfo' : 'home_divisionsInfo') : 'home_citiesInfo', { cities: CLASSIC_ROUNDS, seconds: CLASSIC_SECONDS });
   const categoryOptions: SelectorOption<Category>[] = useMemo(() => categoriesForMode(selectedMode).map(c => ({
     key: c, emoji: CATEGORY_ART[c].emoji, art: CATEGORY_ART[c].art, label: t(categoryLabelKey(c, selectedMode) as never), desc: t((c === 'cities' && isPackMode(selectedMode) ? 'cat_citiesPackDesc' : c === 'divisions' && isProPack(selectedMode) ? 'cat_divisionsProDesc' : `${CATEGORY_KEY[c]}Desc`) as never),
@@ -341,6 +349,7 @@ export default function HomeScreen({ onStartGame, onMultiplayer, onTimeAttack, o
             </div>
           </div>
           <p className="text-center text-[11px] sm:text-sm text-muted-foreground mt-2 mb-2 sm:mt-3 sm:mb-3">{citiesInfo}</p>
+          {medalLine && <p className="text-center text-[11px] sm:text-sm font-semibold -mt-1 mb-2 sm:mb-3 text-foreground/85">{medalLine}</p>}
           <button
             onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode, selectedCategory); }}
             className="btn3d lg:mt-auto w-full flex items-center justify-center gap-3 py-3 sm:py-4 rounded-2xl font-black text-lg sm:text-2xl tracking-wide text-primary-foreground animate-pulse-glow-subtle"
