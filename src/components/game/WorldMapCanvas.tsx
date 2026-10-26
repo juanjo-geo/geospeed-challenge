@@ -719,17 +719,9 @@ export default function WorldMapCanvas({
     // Cancel any previous animation
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
-    if (!userClick || !correctLocation) {
-      // Static render
-      canvas.width = dimensions.w * dpr;
-      canvas.height = dimensions.h * dpr;
-      canvas.style.width = `${dimensions.w}px`;
-      canvas.style.height = `${dimensions.h}px`;
-      ctx.scale(dpr, dpr);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
-      // Editor de quizzes: disponibles en turquesa tenue, elegidos en amarillo con borde
+    // Puntos sueltos: editor de quizzes (disponibles en turquesa tenue, elegidos en amarillo con borde) y, con una
+    // respuesta en pantalla, los toques de los demás jugadores de la sala en vivo
+    const paintMarkers = () => {
       for (const m of markers ?? []) {
         const x = lonToX(m.lon), y = latToY(m.lat);
         ctx.beginPath();
@@ -740,6 +732,19 @@ export default function WorldMapCanvas({
         ctx.strokeStyle = BRAND.navyDeep;
         ctx.stroke();
       }
+    };
+
+    if (!userClick || !correctLocation) {
+      // Static render
+      canvas.width = dimensions.w * dpr;
+      canvas.height = dimensions.h * dpr;
+      canvas.style.width = `${dimensions.w}px`;
+      canvas.style.height = `${dimensions.h}px`;
+      ctx.scale(dpr, dpr);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
+      paintMarkers();
       lineProgressRef.current = 0;
       return;
     }
@@ -882,6 +887,7 @@ export default function WorldMapCanvas({
       canvas.style.height = `${dimensions.h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (offscreenRef.current) ctx.drawImage(offscreenRef.current, 0, 0, dimensions.w, dimensions.h);
+      paintMarkers();
 
       if (countryLabels.length) {
         ctx.textAlign = 'center';
