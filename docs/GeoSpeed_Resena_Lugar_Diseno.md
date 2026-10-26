@@ -1,6 +1,6 @@
 # GeoSpeed · Reseña del lugar ("Ver más") — plan para aprobar
 
-2026-10-26. Estado: **propuesta**, sin código. Se programa cuando JuanJo apruebe las decisiones de la sección 7.
+2026-10-26. Estado: **decisiones tomadas** (sección 7), sin código. Se programa por bloques con el visto bueno de JuanJo.
 
 ## 1. El problema y la idea
 
@@ -120,6 +120,10 @@ R1 se puede publicar sola y ya aporta. R2 y R3 llenan la ventana a medida que av
 - Eventos `place_story_open` (categoría, desde la tarjeta o desde la revisión) y `place_story_practice`.
 
 ## 7. Decisiones para JuanJo
+
+**Decidido por JuanJo el 2026-10-26:** RS-D1 miniaturas de Wikimedia pedidas al abrir; RS-D2 textos propios basados en
+Wikipedia para los 1.281 lugares (mundo + Colombia); RS-D3 el enlace va donde la tarjeta espera (en Caos, Sprint y Sala
+solo en la revisión final); RS-D4 gratis para todos. RS-D5 queda como se recomienda.
 
 | # | Decisión | Recomendación |
 |---|---|---|
