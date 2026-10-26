@@ -132,6 +132,9 @@ const QuizEditorScreen = lazyWithReload(() => import('@/components/game/QuizScre
 const QuizIntroScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizIntroScreen })));
 const QuizResultPanel = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizResultPanel })));
 const DownloadsScreen = lazyWithReload(() => import('@/components/game/DownloadsScreen'));
+const RoomCreateScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomCreateScreen })));
+const RoomJoinScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomJoinScreen })));
+const RoomScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomScreen })));
 const MedalsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.MedalsScreen })));
 const AchievementsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.AchievementsScreen })));
 const SprintScreen = lazyWithReload(() => import('@/components/game/SprintScreen'));
@@ -187,7 +190,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads' | 'room-create' | 'room-join' | 'room';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -206,7 +209,7 @@ interface TrainingRun {
 }
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro', 'downloads'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro', 'downloads', 'room-create', 'room-join'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -251,7 +254,7 @@ const difficultyLabelsEs: Record<Difficulty, string> = {
 };
 
 export interface DeepLinkProps {
-  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' | 'quiz' };
+  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' | 'quiz' | 'sala' };
 }
 
 const Index = ({ deepLink }: DeepLinkProps = {}) => {
@@ -333,7 +336,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     };
   }, []);
   const isMobile = useIsMobile();
-  const routeParams = useParams<{ date?: string; seed?: string; code?: string; n?: string }>();
+  const routeParams = useParams<{ date?: string; seed?: string; code?: string; n?: string; pin?: string }>();
+  // Sala en vivo (bloque S2): PIN por abrir y sala en la que estoy
+  const [roomPin, setRoomPin] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
   const { user, isAnonymous: isAnonymousUser, displayName: authDisplayName } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('splash');
@@ -984,6 +990,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setPhase('countdown');
   }, []);
   const handleViewChallenge = useCallback(() => { setActiveChallenge(null); setPhase('challenge'); scrollAppToTop(); }, []);
+  const handleLiveRoom = useCallback(() => { if (offlineBlocked('online')) return; setPhase('room-create'); scrollAppToTop(); }, [offlineBlocked]);
+  const handleOpenRoomPin = useCallback((pin: string) => { if (offlineBlocked('online')) return; setRoomPin(pin); setPhase('room-join'); scrollAppToTop(); }, [offlineBlocked]);
+  const handleRoomEntered = useCallback((s: { id: string }) => { setRoomId(s.id); setPhase('room'); }, []);
   const handleMyChallenges = useCallback(() => { if (offlineBlocked('online')) return; setActiveChallenge(null); setPhase('my-challenges'); scrollAppToTop(); }, [offlineBlocked]);
   const handleOpenMyChallenge = useCallback((item: MyChallenge) => { setChallengeSource({ type: 'code', code: item.code }); setPhase('challenge'); scrollAppToTop(); }, []);
   const [rematchBusy, setRematchBusy] = useState(false);
@@ -1301,6 +1310,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       setQuizReturn('home');
       setPhase('quiz-intro');
       trackEvent('quiz_link_open', {});
+      navigate('/', { replace: true });
+    } else if (deepLink.type === 'sala' && routeParams.pin) {
+      // /sala/123456 → unirse a la sala en vivo (invitados también; el PIN se valida en el servidor)
+      setRoomPin(routeParams.pin.replace(/\D/g, '').slice(0, 6));
+      setPhase('room-join');
+      trackEvent('room_link_open', {});
       navigate('/', { replace: true });
     } else if (deepLink.type === 'reto' && routeParams.code) {
       // /reto/ABC12 → invitación al reto (D3: el código se valida en el servidor)
@@ -1622,8 +1637,33 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onOpenCode={handleOpenChallengeCode}
           onSignIn={() => navigate('/auth')}
           onLiveDuel={handleMultiplayer}
+          onLiveRoom={handleLiveRoom}
+          onOpenRoomPin={handleOpenRoomPin}
         />
       );
+    }
+
+    if (phase === 'room-create') {
+      return (
+        <RoomCreateScreen
+          initialMode={gameMode}
+          initialDifficulty={difficulty}
+          initialCategory={gameCategory}
+          isRegistered={!!user && !isAnonymousUser}
+          defaultName={authDisplayName || ''}
+          onBack={handleFriends}
+          onCreated={handleRoomEntered}
+          onSignIn={() => navigate('/auth')}
+        />
+      );
+    }
+
+    if (phase === 'room-join' && roomPin) {
+      return <RoomJoinScreen pin={roomPin} defaultName={user && !isAnonymousUser ? authDisplayName || '' : ''} onBack={handleGoHome} onJoined={handleRoomEntered} />;
+    }
+
+    if (phase === 'room' && roomId) {
+      return <RoomScreen roomId={roomId} onExit={handleGoHome} />;
     }
 
     if (phase === 'challenge' && challengeSource) {
