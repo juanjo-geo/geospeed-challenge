@@ -8,6 +8,7 @@ import { factIdOf, factRows, nearNames, usePlaceFacts, usePlaceTrivia } from '@/
 import { itemHint, useCityTips } from '@/lib/cityHints';
 import { isReviewable, practicePlace } from '@/lib/itemMemory';
 import { storySlides, useSlideCredits, type PhotoCreditInfo, type StorySlide } from '@/lib/placeStory';
+import { useGallery } from '@/lib/placeGallery';
 import { prefersReducedMotion } from '@/lib/prefs';
 import { trackEvent } from '@/lib/analytics';
 import Flag from '@/components/ui/Flag';
@@ -44,7 +45,8 @@ export default function PlaceStoryModal({ item, source, onClose }: PlaceStoryMod
   const near = nearNames(fact, locale);
   const countries = isFeature(item) ? (item.isos ?? []).map((iso) => isoName(iso, locale)) : [];
   const hint = itemHint(item, lang);
-  const slides = useMemo(() => storySlides(item, fact, locale), [item, fact, locale]);
+  const gallery = useGallery(id);
+  const slides = useMemo(() => storySlides(item, fact, locale, gallery), [item, fact, locale, gallery]);
   const credits = useSlideCredits(slides);
   const canPractice = !!id && isReviewable(item);
   const name = itemTitle(item, locale);
@@ -210,8 +212,10 @@ function Carousel({ slides, credits }: { slides: StorySlide[]; credits: Record<s
             <figure key={s.url} className="relative shrink-0 w-full h-full snap-center" aria-label={t('story_photoOf', { n: i + 1, total: shown.length })}>
               <img
                 src={s.url}
+                srcSet={s.srcSet}
+                sizes={s.srcSet ? '(max-width: 640px) 92vw, 500px' : undefined}
                 alt={s.caption}
-                loading={i === 0 ? 'eager' : 'lazy'}
+                loading={i <= 1 ? 'eager' : 'lazy'} // la segunda ya lista para deslizar; el resto, al acercarse (datos móviles)
                 decoding="async"
                 className="w-full h-full object-cover"
                 onError={() => setFailed((f) => [...f, s.url])}
