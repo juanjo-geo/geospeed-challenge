@@ -222,6 +222,7 @@ function gameInfo(item: HistoryItem, t: T): { icon: string; name: string; diff: 
     case 'daily': return { icon: '📅', name: `${t('home_dailyCard' as never)} · ${region}`, diff };
     case 'challenge': return { icon: '⚔️', name: `${t('ch_countdownLabel' as never)} · ${region}${flags}`, diff };
     case 'training': return { icon: '🎯', name: `${t('game_training' as never)} · ${region}${flags}`, diff };
+    case 'room': return { icon: '📡', name: `${t('room_historyName' as never)} · ${region}${flags}`, diff };
     default: return item.category && item.category !== 'cities' ? { icon: CATEGORY_ART[item.category].emoji, name: `${t(CATEGORY_KEY[item.category] as never)} · ${region}`, diff } : { icon: globe, name: region, diff };
   }
 }
