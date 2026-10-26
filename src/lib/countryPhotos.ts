@@ -32,7 +32,11 @@ export function hasCountryPhoto(country: string | null | undefined): boolean {
 }
 
 export function countryPhotoUrl(country: string | null | undefined, size: PhotoSize = 'lg'): string | null {
-  const iso = countryIso(country);
+  return countryPhotoUrlByIso(countryIso(country), size);
+}
+
+/** Lo mismo con el código ISO (banderas, países que toca un lugar geográfico) */
+export function countryPhotoUrlByIso(iso: string | null | undefined, size: PhotoSize = 'lg'): string | null {
   if (!iso || !PHOTO_ISOS.has(iso)) return null;
   return photoUrl(`/countries/${iso}${size === 'sm' ? '-sm' : ''}.webp`);
 }

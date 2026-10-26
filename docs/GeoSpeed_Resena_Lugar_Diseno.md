@@ -1,6 +1,6 @@
 # GeoSpeed · Reseña del lugar ("Ver más") — plan para aprobar
 
-2026-10-26. Estado: **decisiones tomadas** (sección 7), sin código. Se programa por bloques con el visto bueno de JuanJo.
+2026-10-26. Estado: **decisiones tomadas** (sección 7); **R1 hecho** (la ventana con el contenido que ya existe). Siguen R2 (fotos de Wikipedia) y R3 (textos).
 
 ## 1. El problema y la idea
 

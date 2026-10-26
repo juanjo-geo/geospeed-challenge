@@ -1761,7 +1761,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           {...(isSpeedDemon ? { maxTimeOverride: 5, totalRoundsOverride: 30 } : {})}
           {...(isTraining && trainingRun ? { citiesOverride: trainingRun.cities, totalRoundsOverride: trainingRun.cities.length, noClock: !trainingRun.clock } : {})}
           {...(activeQuiz && quizCities ? { citiesOverride: quizCities, totalRoundsOverride: quizCities.length, noClock: !activeQuiz.settings.clock, fixedSpeed: !activeQuiz.settings.clock, continueOnTimeout: activeQuiz.settings.clock, hudLabel: `🧩 ${activeQuiz.name}` } : {})}
-          {...(sprintMatch ? { citiesOverride: sprintCitiesToGame(sprintMatch), totalRoundsOverride: sprintMatch.cities.length || SPRINT_ROUNDS, maxTimeOverride: SPRINT_SECONDS, ghost: sprintGhost(sprintMatch), onExit: handleSprintExit, exitConfirm: t('sprint_exitConfirm'), hudLabel: '⚡ Sprint' } : {})}
+          {...(sprintMatch ? { citiesOverride: sprintCitiesToGame(sprintMatch), totalRoundsOverride: sprintMatch.cities.length || SPRINT_ROUNDS, maxTimeOverride: SPRINT_SECONDS, ghost: sprintGhost(sprintMatch), onExit: handleSprintExit, exitConfirm: t('sprint_exitConfirm'), hudLabel: '⚡ Sprint', noStory: true } : {})}
           {...(activeChallenge
             ? { citiesOverride: challengeCitiesToGame(activeChallenge), totalRoundsOverride: activeChallenge.rounds_total, maxTimeOverride: activeChallenge.seconds_per_round, ghost: challengeGhost?.id === activeChallenge.id ? challengeGhost.ghost : null }
             : revengeCities ? { citiesOverride: revengeCities, totalRoundsOverride: revengeCities.length } : replayCities ? { citiesOverride: replayCities, totalRoundsOverride: replayCities.length } : {})}

@@ -37,6 +37,8 @@ interface RoundFeedbackCardProps {
   hidePoints?: boolean;
   /** Dato clave de la ficha del lugar (Fase 8): "2,6 millones de habitantes", "Capital: Bogotá"… */
   fact?: string | null;
+  /** Reseña del lugar ("Ver más sobre X"): abre la ventana; sin esto no hay enlace (Caos, Sprint) */
+  onMore?: () => void;
 }
 
 /**
@@ -44,7 +46,7 @@ interface RoundFeedbackCardProps {
  * mascota + frase · ciudad · +puntos · Distancia / Tiempo · "Ver cálculo" · SIGUIENTE · "Avanza en N s".
  * Puntaje v2: el combo y el desglose (cercanía × rapidez × combo × dificultad) salen del propio resultado.
  */
-export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel, extra, hidePoints = false, fact }: RoundFeedbackCardProps) {
+export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMsg, autoAdvanceTimer, onNext, timeLabel, size = 'md', natural = false, quick = false, title, subtitle, phraseColor: phraseColorProp, firstTile, baseLabel, extra, hidePoints = false, fact, onMore }: RoundFeedbackCardProps) {
   const { t, locale } = useI18n();
   const [showCalc, setShowCalc] = useState(false);
   const lg = size === 'lg';
@@ -82,6 +84,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
               <h3 className="font-extrabold text-2xl mt-2 leading-tight">{heading}</h3>
               <p className="text-muted-foreground text-base font-semibold"><Flag country={result.city.country} className="w-5 inline-block align-[-3px] mr-1.5" />{subheading}</p>
               {fact && <p className="text-accent text-sm font-bold mt-0.5">📋 {fact}</p>}
+              {onMore && <MoreLink name={heading} onClick={onMore} lg />}
             </div>
           </div>
           {(comboLine || nearMissMsg) && (
@@ -121,6 +124,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
           </h3>
           <p className="text-muted-foreground font-semibold text-xs sm:text-sm [@media(max-height:420px)]:hidden"><Flag country={result.city.country} className="w-4 inline-block align-[-2px] mr-1" />{subheading}</p>
           {fact && <p className="text-accent font-bold text-[11px] sm:text-xs leading-tight">📋 {fact}</p>}
+          {onMore && <MoreLink name={heading} onClick={onMore} />}
           {!hidePoints && (
             <p className="font-extrabold text-primary text-3xl sm:text-4xl [@media(max-height:420px)]:text-xl leading-tight mt-0.5" style={{ textShadow: '0 0 14px hsl(var(--primary)/0.4)' }}>
               +{result.totalPoints.toLocaleString(numberLocale)} {t('game_pointsWord')}
@@ -167,6 +171,23 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
       </button>
       {!quick && <p className={`text-center text-muted-foreground ${lg ? 'text-sm' : 'text-[11px] sm:text-xs [@media(max-height:420px)]:hidden'}`}>{t('game_advanceIn', { seconds: autoAdvanceTimer })}</p>}
     </div>
+  );
+}
+
+/** "🔎 Ver más sobre Medellín ›" (en pantallas bajas solo "Ver más ›") */
+function MoreLink({ name, onClick, lg = false }: { name: string; onClick: () => void; lg?: boolean }) {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 rounded-full border border-accent/50 bg-accent/10 text-accent font-bold hover:bg-accent/20 transition-colors max-w-full ${lg ? 'mt-2 px-3 py-1 text-sm' : 'mt-1 px-2.5 py-0.5 text-[11px] sm:text-xs [@media(max-height:420px)]:mt-0.5'}`}
+    >
+      <span aria-hidden>🔎</span>
+      <span className={`truncate ${lg ? '' : '[@media(max-height:420px)]:hidden'}`}>{t('story_more', { name })}</span>
+      {!lg && <span className="hidden [@media(max-height:420px)]:inline">{t('story_moreShort')}</span>}
+      <span aria-hidden>›</span>
+    </button>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import type { ChallengeGhost } from '@/lib/challenges';
 import { GhostSideCard, GhostChip, GhostPulse, GhostCompare } from './GhostRace';
 import TrainingTip from './TrainingTip';
@@ -30,6 +30,7 @@ import { useI18n } from '@/i18n';
 import { getEquipped } from '@/lib/cosmetics';
 import Wordmark from '@/components/ui/Wordmark';
 import RoundFeedbackCard from './RoundFeedbackCard';
+const PlaceStoryModal = lazy(() => import('./PlaceStoryModal'));
 import { HudIconButton, InGameSettings } from './GameHud';
 import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming';
 import FitToBox from '@/components/ui/FitToBox';
@@ -119,6 +120,8 @@ interface GameScreenProps {
   exitConfirm?: string;
   /** Rótulo del modo en el HUD en vez de "región · dificultad" (Sprint) */
   hudLabel?: string;
+  /** Sin el enlace "Ver más" de la reseña en la tarjeta (Sprint: es una carrera) */
+  noStory?: boolean;
   /** Qué se ubica (Fase 6): ciudades o banderas. Los ítems inyectados (citiesOverride) mandan por su `kind`. */
   category?: Category;
 }
@@ -158,7 +161,7 @@ export function getRoundFeedback(distance: number, palette?: ReturnType<typeof u
   return { emoji: '😬', phrase: t?.('game_veryFar') ?? 'Muy lejos', color: p?.bad.tw ?? 'text-red-500' };
 }
 
-export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false, exitConfirm, hudLabel, category = 'cities', fixedSpeed = false, continueOnTimeout = false }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGameOver, seed, isTraining = false, maxTimeOverride, totalRoundsOverride, citiesOverride, onExit, musicMuted, onToggleMusic, ghost, noClock = false, exitConfirm, hudLabel, noStory = false, category = 'cities', fixedSpeed = false, continueOnTimeout = false }: GameScreenProps) {
   const { t, locale } = useI18n();
   const layoutMode = useGameLayoutMode();
   const { palette } = useA11y();
@@ -206,6 +209,10 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsOpenRef = useRef(false);
   settingsOpenRef.current = settingsOpen;
+  // Reseña del lugar abierta desde la tarjeta: pausa el avance automático, como los ajustes
+  const [storyItem, setStoryItem] = useState<City | null>(null);
+  const storyOpenRef = useRef(false);
+  storyOpenRef.current = !!storyItem;
   // Tamaño del área del mapa (para encuadrar la respuesta junto a la tarjeta)
   const mapAreaRef = useRef<HTMLDivElement>(null);
   const [mapArea, setMapArea] = useState({ w: 0, h: 0 });
@@ -350,7 +357,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     setAutoAdvanceTimer(AUTO_ADVANCE_SECONDS);
     const interval = setInterval(() => {
       setAutoAdvanceTimer(prev => {
-        if (settingsOpenRef.current) return prev; // en pausa con los ajustes abiertos
+        if (settingsOpenRef.current || storyOpenRef.current) return prev; // en pausa con los ajustes o la reseña abiertos
         if (prev <= 1) {
           clearInterval(interval);
           advanceRound();
@@ -380,13 +387,13 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   // Keyboard shortcuts (desktop)
   useKeyboardShortcuts({
-    'Space': () => { if (isWaiting && showPopup) advanceRound(); },
-    'Enter': () => { if (isWaiting && showPopup) advanceRound(); },
+    'Space': () => { if (isWaiting && showPopup && !storyItem) advanceRound(); },
+    'Enter': () => { if (isWaiting && showPopup && !storyItem) advanceRound(); },
   }, true);
 
   // Gamepad support
   const gamepadState = useGamepad((action) => {
-    if (action === 'advance' && isWaiting && showPopup) advanceRound();
+    if (action === 'advance' && isWaiting && showPopup && !storyOpenRef.current) advanceRound();
     if (action === 'confirm' && !isWaiting && currentCity) {
       // Confirm at map center when using gamepad (no crosshair cursor yet)
       // Future: use gamepad right-stick crosshair position
@@ -623,6 +630,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     />
   ) : undefined;
   const cardExtra = ghostCompare ?? (isTraining && lastResult ? <TrainingTip city={lastResult.city} /> : undefined);
+  const openStory = useCallback(() => { if (lastResult) setStoryItem(lastResult.city); }, [lastResult]);
   const cardFact = useMemo(() => (lastResult && placeFacts ? keyFact(lastResult.city, placeFacts[factIdOf(lastResult.city) ?? ''] ?? null, t as never, locale) : null), [lastResult, placeFacts, t, locale]);
   const isTimerCritical = timeLeft <= 3 && !isWaiting;
   const isTimerUrgent = timeLeft <= 5 && !isWaiting;
@@ -980,6 +988,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               subtitle={itemSubtitle(lastResult.city, locale)}
               hidePoints={isTraining}
               fact={cardFact}
+              onMore={noStory ? undefined : openStory}
             />
             </FitToBox>
           </div>
@@ -1014,12 +1023,14 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               subtitle={itemSubtitle(lastResult.city, locale)}
               hidePoints={isTraining}
               fact={cardFact}
+              onMore={noStory ? undefined : openStory}
               />
             </FitToBox>
           </div>
         )}
       </div>
       {settingsOpen && <InGameSettings musicMuted={musicMuted} onToggleMusic={onToggleMusic} onClose={() => setSettingsOpen(false)} />}
+      {storyItem && <Suspense fallback={null}><PlaceStoryModal item={storyItem} source="card" onClose={() => setStoryItem(null)} /></Suspense>}
     </div>
   );
 }
