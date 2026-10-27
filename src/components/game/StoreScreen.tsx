@@ -288,7 +288,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               {paymentProviderKind === 'mercadopago' && (
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-3 max-w-xl mx-auto">{t('store_webCurrencyNote')}</p>
               )}
-              <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-3 pb-4">{t('store_paymentNote')}</p>
+              {/* AUD03: en la web Pro mensual/anual son pagos únicos; solo en Google Play hay suscripción que cancelar */}
+              <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-3 pb-4">{t(paymentProviderKind === 'mercadopago' ? 'store_paymentNoteWeb' : 'store_paymentNote')}</p>
             </div>
           </div>
         </div>

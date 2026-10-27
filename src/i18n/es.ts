@@ -144,9 +144,6 @@ const es = {
   final_home: 'Volver al menú',
   final_share: 'Compartir resultado',
   final_sharing: 'Compartiendo...',
-  final_enterInitials: 'Tus iniciales (3 letras)',
-  final_saveScore: 'Guardar',
-  final_saved: '¡Guardado!',
   final_roundBreakdown: 'Desglose por rondas',
   final_level: 'Nivel',
   final_xpGained: '+{xp} XP esta partida',
@@ -224,7 +221,8 @@ const es = {
   ref_more: '🎯 {remaining} más → +{lives} vidas{bonus}',
   bp_tabPass: '🎖️ Pase de Batalla',
   bp_tabCollection: '🎒 Colección',
-  bp_level: 'Nivel',
+  bp_passName: 'Pase de Batalla',
+  bp_level: 'Nivel del pase',
   bp_max: '¡MAX!',
   bp_season: 'Temporada',
   bp_totalXp: 'XP total',
@@ -342,7 +340,8 @@ const es = {
   store_activeSubscription: 'Suscripción activa',
   store_livesPacks: 'Paquetes de vidas',
   store_instantRecharge: 'Recarga instantánea',
-  store_paymentNote: 'Los pagos se procesan de forma segura. Puedes cancelar tu suscripción en cualquier momento.',
+  store_paymentNote: 'Los pagos se procesan de forma segura. Las suscripciones de Google Play se renuevan solas y se cancelan cuando quieras desde Google Play.',
+  store_paymentNoteWeb: 'Los pagos se procesan de forma segura con Mercado Pago. Pro mensual dura 30 días y Pro anual 365 días desde el pago; no se renuevan solos y no hay nada que cancelar.',
   store_webCurrencyNote: 'Precios en dólares (US$). Mercado Pago cobra el equivalente en pesos colombianos (COP) y tu banco lo convierte a tu moneda. En la web, Pro mensual y anual son pagos únicos: no se renuevan solos.',
 
   // ── Spectator ──
@@ -353,6 +352,7 @@ const es = {
   spectator_round: 'Ronda',
 
   // ── Countdown ──
+  countdown_timeoutRule: '⏱ Si se acaba el tiempo en una ronda, termina la partida.',
   countdown_ready: 'Localiza las ciudades lo más rápido posible',
   countdown_go: '¡A jugar!',
 
@@ -530,7 +530,6 @@ const es = {
   ta_retry: 'REINTENTAR ⚡',
 
   // ── Resultados: textos que estaban sueltos ──
-  final_top10: '🏆 ¡Entraste al Top 10!',
   final_nudgeTitle: '🔒 ¿Quieres guardar tu progreso?',
   final_nudgeDesc: 'Regístrate para conservar tus puntuaciones, nivel y badges en todos tus dispositivos.',
   final_nudgeCta: 'CREAR CUENTA GRATIS',
@@ -563,6 +562,7 @@ const es = {
   home_nextAdventureTail: 'aventura',
   home_region: 'Región',
   home_difficultyLabel: 'Dificultad',
+  home_timeoutRule: 'si se acaba el tiempo, termina la partida',
   home_citiesInfo: '{cities} ciudades · {seconds} s por ciudad',
   home_dailyCard: 'Desafío diario',
   home_dailyCardDesc: 'Mismas ciudades para todos',
@@ -650,6 +650,8 @@ const es = {
   final_avgSpeed: 'Rapidez promedio',
   final_maxCombo: 'Combo máximo',
   final_bestRound: 'Mejor ronda',
+  final_noAnswers: 'Sin respuestas',
+  final_rankLine: 'Tu puesto en el ranking ({board}): {pos}.º de {total}',
   final_detail: 'Detalle por ronda',
   final_tryAgainTitle: '¿Lo intentamos de nuevo?',
   final_repeat: 'REPETIR ESTAS CIUDADES',
@@ -666,11 +668,8 @@ const es = {
   final_duelWin: '🏆 ¡Ganaste el duelo!',
   final_duelTie: '🤝 ¡Empate!',
   final_duelLose: '😤 El retador te superó',
-  final_top3: '¡Estás en el Top {pos} del ranking!',
-  final_beatPct: 'Superaste al {pct}% de los jugadores',
-  final_keepPracticing: '¡Sigue practicando para subir en el ranking!',
   // ── Partida v2 (F2 bloque 3) ──
-  game_whereIs: '¿Dónde está?',
+  game_whereIsLead: '¿Dónde está',
   game_whereIsCity: '¿Dónde está {city}?',
   game_tapToAnswer: 'Toca el mapa para responder',
   game_clickToAnswer: 'Haz clic en el mapa para responder',
@@ -1446,7 +1445,8 @@ const es = {
   ch_noSameTime: 'No necesitan jugar al mismo tiempo.',
   ch_rematchSaved: 'Tu revancha queda guardada.',
   ch_playRematch: 'JUGAR MI REVANCHA',
-  home_dailyRollover: 'Cambia a las {time}',
+  home_dailyRollover: 'Nuevo en {time}',
+  daily_newIn: 'Nuevo desafío en {time} (a las {clock}, tu hora).',
   profile_streak: 'Racha: {n} días seguidos',
   profile_rankingDesc: 'Consulta la clasificación',
   hist_title: 'Historial de partidas',

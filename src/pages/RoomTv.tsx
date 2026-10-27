@@ -187,8 +187,8 @@ function TvRound({ state, phase, round, closesAt, opensAt, now, locale }: { stat
         {item && isFlag(item) && <Flag country={item.name} className="w-[9vw] shrink-0 rounded-lg shadow-lg" />}
         {photo && <img src={photo} alt="" className="h-[11vh] aspect-[4/3] object-cover rounded-xl shrink-0" />}
         <p className="min-w-0 flex-1 leading-tight">
-          <span className="block text-[clamp(0.9rem,1.5vw,1.8rem)] text-muted-foreground font-bold">{item && isFlag(item) ? t('flag_whichCountry') : t('game_whereIs')}</span>
-          <span className="block font-black text-[clamp(1.6rem,3.6vw,4.4rem)] truncate">{item ? (isFlag(item) && phase === 'question' ? '' : itemTitle(item, locale)) : '…'}</span>
+          <span className="block text-[clamp(0.9rem,1.5vw,1.8rem)] text-muted-foreground font-bold">{item && isFlag(item) ? t('flag_whichCountry') : t('game_whereIsLead')}</span>
+          <span className="block font-black text-[clamp(1.6rem,3.6vw,4.4rem)] truncate">{item ? (isFlag(item) ? (phase === 'question' ? '' : itemTitle(item, locale)) : `${itemTitle(item, locale)}?`) : '…'}</span>
         </p>
         {phase === 'question' ? (
           <span className={`shrink-0 font-black tabular-nums text-[clamp(2rem,5vw,6rem)] leading-none ${secsLeft <= 3 ? 'text-destructive animate-pulse' : 'text-primary'}`}>{secsLeft}</span>

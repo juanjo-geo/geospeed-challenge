@@ -205,8 +205,8 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
           {item && isFlag(item) && <Flag country={item.name} className="w-10 sm:w-14 shrink-0 rounded shadow" />}
           {item && isMonument(item) && itemPhotoUrl(item, 'sm') && <img src={itemPhotoUrl(item, 'sm')!} alt="" className="w-10 h-8 sm:w-14 sm:h-10 object-cover rounded-md shrink-0" />}
           <p className="min-w-0 leading-tight">
-            <span className="block text-[10px] sm:text-xs text-muted-foreground font-semibold">{item && isFlag(item) ? t('flag_whichCountry') : t('game_whereIs')}</span>
-            <span className="block font-black text-base sm:text-xl truncate">{item ? (isFlag(item) && tl.phase === 'question' ? '' : itemTitle(item, locale)) : '…'}</span>
+            <span className="block text-[10px] sm:text-xs text-muted-foreground font-semibold">{item && isFlag(item) ? t('flag_whichCountry') : t('game_whereIsLead')}</span>
+            <span className="block font-black text-base sm:text-xl truncate">{item ? (isFlag(item) ? (tl.phase === 'question' ? '' : itemTitle(item, locale)) : `${itemTitle(item, locale)}?`) : '…'}</span>
           </p>
         </div>
         <div className="shrink-0 flex flex-col items-end gap-0.5 min-w-[4.5rem]">

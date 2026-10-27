@@ -146,6 +146,24 @@ interface WorldMapCanvasProps {
   markers?: { lat: number; lon: number; on: boolean }[] | null;
 }
 
+/** Nombres del mapa base en inglés (AUD05: en inglés salían en español). La clave es el texto en español, con sus
+ *  saltos de línea. */
+const MAP_LABELS_EN: Record<string, string> = {
+  'AMÉRICA\nDEL NORTE': 'NORTH\nAMERICA', 'AMÉRICA\nDEL SUR': 'SOUTH\nAMERICA', 'AMÉRICA\nCENTRAL': 'CENTRAL\nAMERICA',
+  'EUROPA': 'EUROPE', 'ÁFRICA': 'AFRICA', 'ASIA': 'ASIA',
+  'OCEANÍA': 'OCEANIA', 'ANTÁRTIDA': 'ANTARCTICA', 'OCÉANO PACÍFICO': 'PACIFIC OCEAN',
+  'OCÉANO ATLÁNTICO': 'ATLANTIC OCEAN', 'OCÉANO ÍNDICO': 'INDIAN OCEAN', 'OCÉANO ÁRTICO': 'ARCTIC OCEAN',
+  'OCÉANO AUSTRAL': 'SOUTHERN OCEAN', 'OCÉANO\nATLÁNTICO': 'ATLANTIC\nOCEAN', 'OCÉANO\nPACÍFICO': 'PACIFIC\nOCEAN',
+  'OCÉANO\nÍNDICO': 'INDIAN\nOCEAN', 'MAR\nMEDITERRÁNEO': 'MEDITERRANEAN\nSEA', 'MAR DEL\nNORTE': 'NORTH\nSEA',
+  'MAR\nBÁLTICO': 'BALTIC\nSEA', 'MAR\nNEGRO': 'BLACK\nSEA', 'MAR\nARÁBIGO': 'ARABIAN\nSEA',
+  'MAR DE\nCHINA': 'SOUTH CHINA\nSEA', 'MAR DE\nJAPÓN': 'SEA OF\nJAPAN', 'GOLFO\nPÉRSICO': 'PERSIAN\nGULF',
+  'ÁFRICA\nDEL NORTE': 'NORTH\nAFRICA', 'ÁFRICA\nOCCIDENTAL': 'WEST\nAFRICA', 'ÁFRICA\nORIENTAL': 'EAST\nAFRICA',
+  'ÁFRICA\nCENTRAL': 'CENTRAL\nAFRICA', 'ÁFRICA\nAUSTRAL': 'SOUTHERN\nAFRICA', 'MAR\nROJO': 'RED\nSEA',
+  'MAR CARIBE': 'CARIBBEAN SEA', 'MAR\nCARIBE': 'CARIBBEAN\nSEA', 'PERÚ': 'PERU',
+  'BRASIL': 'BRAZIL', 'PANAMÁ': 'PANAMA',
+};
+const mapLabel = (name: string, locale: string) => (locale === 'en' ? MAP_LABELS_EN[name] ?? name : name);
+
 export default function WorldMapCanvas({
   onMapClick,
   clickDisabled = false,
@@ -543,7 +561,7 @@ export default function WorldMapCanvas({
       if (neon && italic) ctx.letterSpacing = '0.12em';
       for (const l of labels) {
         const p = geoToPixel(l.lon, l.lat);
-        const lines = l.name.split('\n');
+        const lines = mapLabel(l.name, locale).split('\n');
         // Dentro del lienzo: en los bordes ("OCÉANO AUSTRAL" sobre el límite sur, el Pacífico del lado
         // derecho) el texto salía cortado. Lo que queda del todo fuera de la vista no se dibuja.
         const blockW = Math.max(...lines.map((line) => ctx.measureText(line).width));
@@ -623,9 +641,10 @@ export default function WorldMapCanvas({
         { name: 'BRASIL', lat: -2.2, lon: -68.1 }, { name: 'PANAMÁ', lat: 8.55, lon: -80.6 },
       ]) {
         const p = geoToPixel(l.lon, l.lat);
-        const tw = ctx.measureText(l.name).width;
+        const name = mapLabel(l.name, locale);
+        const tw = ctx.measureText(name).width;
         if (p.x + tw / 2 < 0 || p.x - tw / 2 > w || p.y < 0 || p.y > h) continue;
-        ctx.fillText(l.name, Math.min(Math.max(p.x, tw / 2 + 6), w - tw / 2 - 6), p.y);
+        ctx.fillText(name, Math.min(Math.max(p.x, tw / 2 + 6), w - tw / 2 - 6), p.y);
       }
     } else if (gameMode === 'americas') {
       drawLabels([
@@ -664,7 +683,7 @@ export default function WorldMapCanvas({
       }
       // sin fallback emoji: evita ver el "balón antiguo"; el PNG carga en milisegundos
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, highlightContinent, highlightCountry, highlightShape, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView, packOn, packShapes, packInfo]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, highlightContinent, highlightCountry, highlightShape, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView, packOn, packShapes, packInfo, locale]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.

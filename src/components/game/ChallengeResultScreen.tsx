@@ -184,7 +184,7 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
             <div className="h-px bg-border my-3" />
             <div className="grid grid-cols-2 gap-2.5">
               <Tile icon={<PinIcon className="w-8 h-8 text-accent" />} label={t('final_cities')} value={`${mine?.rounds.length ?? 0} / ${detail.rounds_total}`} />
-              <Tile icon={<RouteIcon className="w-8 h-8 text-accent" />} label={t('final_avgDist')} value={formatDistance(avgDistance(mine?.rounds ?? []))} />
+              <Tile icon={<RouteIcon className="w-8 h-8 text-accent" />} label={t('final_avgDist')} value={mine?.rounds?.length ? formatDistance(avgDistance(mine.rounds)) : t('final_noAnswers')} />
             </div>
           </Card>
         ) : (
@@ -238,7 +238,7 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
                   <thead><tr><th /><th className="text-primary font-bold pb-1">{t('ch_you')}</th><th className="text-accent font-bold pb-1 truncate max-w-[6rem]">{rivalName}</th></tr></thead>
                   <tbody>
                     <tr><td className="py-2 pl-1 border-t border-l border-foreground/15 rounded-tl-xl"><span className="flex items-center gap-2"><PinIcon className="w-6 h-6 text-accent" /> {t('final_cities')}</span></td><td className="text-center font-extrabold border-t border-l border-foreground/15">{mine!.rounds.length} / {detail.rounds_total}</td><td className="text-center font-extrabold border-t border-l border-r border-foreground/15 rounded-tr-xl">{rival!.rounds.length} / {detail.rounds_total}</td></tr>
-                    <tr><td className="py-2 pl-1 border-t border-b border-l border-foreground/15 rounded-bl-xl"><span className="flex items-center gap-2"><RouteIcon className="w-6 h-6 text-accent" /> {t('final_avgDist')}</span></td><td className="text-center font-extrabold border-t border-b border-l border-foreground/15">{formatDistance(avgDistance(mine!.rounds))}</td><td className="text-center font-extrabold border border-foreground/15 rounded-br-xl">{formatDistance(avgDistance(rival!.rounds))}</td></tr>
+                    <tr><td className="py-2 pl-1 border-t border-b border-l border-foreground/15 rounded-bl-xl"><span className="flex items-center gap-2"><RouteIcon className="w-6 h-6 text-accent" /> {t('final_avgDist')}</span></td><td className="text-center font-extrabold border-t border-b border-l border-foreground/15">{mine!.rounds.length ? formatDistance(avgDistance(mine!.rounds)) : t('final_noAnswers')}</td><td className="text-center font-extrabold border border-foreground/15 rounded-br-xl">{rival!.rounds.length ? formatDistance(avgDistance(rival!.rounds)) : t('final_noAnswers')}</td></tr>
                   </tbody>
                 </table>
                 <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground/80"><InfoIcon className="w-5 h-5 text-accent" /> {t('chr_sameForBoth')}</p>

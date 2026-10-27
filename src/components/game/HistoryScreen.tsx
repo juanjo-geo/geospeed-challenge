@@ -271,7 +271,7 @@ function useRowData(item: HistoryItem, locale: string) {
   const when = d ? fmtDate(d, locale) : null;
   const g = gameInfo(item, t as T);
   const cities = item.gameType === 'timeattack' ? String(item.roundsPlayed) : `${item.roundsPlayed} / ${item.roundsTotal}`;
-  const dist = item.gameType === 'mundial' || item.avgDistanceKm == null ? '—' : formatDistance(item.avgDistanceKm);
+  const dist = item.gameType === 'mundial' || item.avgDistanceKm == null ? '—' : item.roundsPlayed === 0 ? t('final_noAnswers') : formatDistance(item.avgDistanceKm);
   return { t, when, g, cities, dist };
 }
 

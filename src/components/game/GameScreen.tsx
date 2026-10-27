@@ -705,7 +705,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
           {/* ¿Dónde está? */}
           <div className="w-full shrink-0 rounded-2xl border-2 border-accent/50 bg-background/40 px-[5cqi] py-[5.5cqi] text-center">
-            <p className="text-[8.6cqi] font-bold leading-none mb-[2.5cqi]" id="city-label">{isFlag(currentCity) ? t('flag_whichCountry') : t('game_whereIs')}</p>
+            <p className="text-[8.6cqi] font-bold leading-none mb-[2.5cqi]" id="city-label">{isFlag(currentCity) ? t('flag_whichCountry') : t('game_whereIsLead')}</p>
             {isFlag(currentCity) ? (
               <img src={itemFlagUrl(currentCity) ?? ''} alt="" aria-labelledby="city-label" className="mx-auto w-full max-w-[320px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
             ) : (
@@ -719,7 +719,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none', textShadow: '0 2px 10px hsl(var(--primary) / 0.25)' }}
               aria-labelledby="city-label"
             >
-              {itemTitle(currentCity, locale)}
+              {itemTitle(currentCity, locale)}?
             </p>
             </>
             )}
@@ -831,7 +831,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
                 {isFlag(currentCity)
                   ? <><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" /><span className="align-middle">{t('flag_whichCountry')}</span></>
-                  : <>{isMonument(currentCity) && itemPhotoUrl(currentCity, 'sm') && <img src={itemPhotoUrl(currentCity, 'sm') ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" />}<span className="align-middle">{t('game_whereIs')} <span className="text-primary">{itemTitle(currentCity, locale)}</span></span>{currentCity.ftype && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
+                  : <>{isMonument(currentCity) && itemPhotoUrl(currentCity, 'sm') && <img src={itemPhotoUrl(currentCity, 'sm') ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" />}<span className="align-middle">{t('game_whereIsLead')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>?</span>{currentCity.ftype && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
                 {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {isSpecial(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>}
               </div>
             </div>

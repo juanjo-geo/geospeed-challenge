@@ -588,6 +588,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
     return (
       <FinalResultScreen
         variant="mundial"
+        rankBoard={navigator.onLine ? { mode: 'mundial', difficulty, gameType: null, category: 'cities' } : null}
         musicMuted={musicMuted}
         onToggleMusic={onToggleMusic}
         rounds={asRounds}
