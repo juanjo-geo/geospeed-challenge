@@ -1,6 +1,6 @@
 # GeoSpeed · Reseña del lugar ("Ver más") — plan para aprobar
 
-2026-10-26. Estado: **decisiones tomadas** (sección 7); **R1 hecho** (la ventana con el contenido que ya existe) y **R2 hecho** (galería de Wikimedia Commons: 1.806 lugares con 2 a 4 fotos, 5.433 fotos; revisión en `docs/R2_Galeria_fotos.md`). Sigue R3 (textos).
+2026-10-26. Estado: **decisiones tomadas** (sección 7); **R1 hecho** (la ventana con el contenido que ya existe) y **R2 hecho** (galería de Wikimedia Commons: 1.806 lugares con 2 a 4 fotos, 5.433 fotos; revisión en `docs/R2_Galeria_fotos.md`) y **R3 hecho** (dos párrafos propios en español e inglés para los 1.281 lugares del mundo y del pack Colombia, "Lo curioso" y "Para conocer", con enlace al artículo de Wikipedia; revisión en `docs/R3_Resenas_textos.md`). Queda R4 (medición).
 
 ## 1. El problema y la idea
 

@@ -29,6 +29,8 @@ export interface FeatureSpec {
   point?: [number, number];
   /** Región del juego; si falta se calcula por el punto representativo (mares: siempre explícita) */
   region?: GameMode | null;
+  /** Países que toca (para la pista); si falta se calculan sobre el mapa 1:110m, que falla en puntos junto a una frontera */
+  isos?: string[];
   /** Packs de país (Fase 7) en los que aparece, con su nivel ahí (p. ej. el Magdalena es Turista en Colombia) */
   packs?: Partial<Record<PackId, Difficulty>>;
   /** Solo en sus packs, nunca en Mundo ni en los continentes (lugares conocidos solo localmente) */
@@ -401,7 +403,8 @@ export const FEATURES: FeatureSpec[] = [
 
   // ── Cataratas, cañones, valles, llanuras, deltas y regiones ───────────────
   f('niagara', 'waterfall', 'easy', 'Cataratas del Niágara', 'Niagara Falls', P('Niagara Falls')),
-  f('iguazu', 'waterfall', 'easy', 'Cataratas del Iguazú', 'Iguazu Falls', P('Iguazu Falls')),
+  // El punto de Natural Earth cae 20 km al oeste, en Paraguay: Garganta del Diablo
+  f('iguazu', 'waterfall', 'easy', 'Cataratas del Iguazú', 'Iguazu Falls', undefined, { ...pt(-25.695, -54.437), isos: ['AR', 'BR'] }),
   f('victoria-cataratas', 'waterfall', 'easy', 'Cataratas Victoria', 'Victoria Falls', P('Victoria Falls')),
   f('salto-angel', 'waterfall', 'medium', 'Salto Ángel', 'Angel Falls', P('Salto Angel')),
   f('gran-canon', 'canyon', 'easy', 'Gran Cañón', 'Grand Canyon', G('Grand Canyon')),
@@ -485,7 +488,7 @@ export const FEATURES: FeatureSpec[] = [
     f('tequendama', 'waterfall', 'easy', 'Salto del Tequendama', 'Tequendama Falls', undefined, pt(4.577, -74.292)),
     f('gorgona', 'island', 'easy', 'Isla Gorgona', 'Gorgona Island', undefined, pt(2.97, -78.18)),
     f('chiribiquete', 'park', 'medium', 'Parque Chiribiquete', 'Chiribiquete National Park', undefined, pt(0.60, -72.60)),
-    f('amacayacu', 'park', 'medium', 'Parque Amacayacu', 'Amacayacu National Park', undefined, pt(-3.60, -70.20)),
+    f('amacayacu', 'park', 'medium', 'Parque Amacayacu', 'Amacayacu National Park', undefined, { ...pt(-3.60, -70.20), isos: ['CO'] }),
     f('macarena', 'range', 'medium', 'Serranía de La Macarena', 'Serranía de la Macarena', undefined, pt(2.70, -73.90)),
     f('la-cocha', 'lake', 'medium', 'Laguna de La Cocha', 'La Cocha Lake', undefined, pt(1.07, -77.15)),
     f('purace', 'volcano', 'medium', 'Volcán Puracé', 'Puracé Volcano', undefined, pt(2.32, -76.40)),

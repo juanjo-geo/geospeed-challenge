@@ -196,7 +196,7 @@ function resolve_(spec) {
         const [lon, lat] = found[0].geometry.coordinates;
         return { point: [lat, lon] };
       }
-      const rings = [], lines = [];
+      let rings = [], lines = [];
       for (const ft of found) {
         const g = ft.geometry;
         if (g.type === 'Polygon') rings.push(g.coordinates[0]);
@@ -204,6 +204,9 @@ function resolve_(spec) {
         else if (g.type === 'LineString') lines.push(g.coordinates);
         else if (g.type === 'MultiLineString') for (const l of g.coordinates) lines.push(l);
       }
+      // El recuadro filtra también cada tramo: Natural Earth junta ríos homónimos en una sola entrada (el Colorado de
+      // EE. UU. traía el de Argentina)
+      if (ne.bbox) { rings = rings.filter((r) => inBBox(r, ne.bbox)); lines = lines.filter((l) => inBBox(l, ne.bbox)); }
       const tol = TOL[ne.ds];
       if (rings.length) {
         let rs = rings.map((r) => clean(simplify(r, tol), true)).filter((r) => r.length >= 4);
@@ -252,7 +255,7 @@ for (const spec of FEATURES) {
     if (c) counts.set(c.name, (counts.get(c.name) ?? 0) + 1);
   }
   const touched = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
-  const isos = touched.map((n) => iso.get(n)).filter(Boolean).slice(0, 5);
+  const isos = spec.isos ?? touched.map((n) => iso.get(n)).filter(Boolean).slice(0, 5);
   let region = spec.region;
   if (region === undefined) {
     const c = countryAt(lon, lat) ?? nearestCountry(lon, lat, 4);
