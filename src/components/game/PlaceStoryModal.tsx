@@ -9,6 +9,7 @@ import { itemHint, useCityTips } from '@/lib/cityHints';
 import { isReviewable, practicePlace } from '@/lib/itemMemory';
 import { storySlides, useSlideCredits, type PhotoCreditInfo, type StorySlide } from '@/lib/placeStory';
 import { useGallery } from '@/lib/placeGallery';
+import { usePlaceStory } from '@/lib/placeStories';
 import { prefersReducedMotion } from '@/lib/prefs';
 import { trackEvent } from '@/lib/analytics';
 import Flag from '@/components/ui/Flag';
@@ -46,6 +47,7 @@ export default function PlaceStoryModal({ item, source, onClose }: PlaceStoryMod
   const countries = isFeature(item) ? (item.isos ?? []).map((iso) => isoName(iso, locale)) : [];
   const hint = itemHint(item, lang);
   const gallery = useGallery(id);
+  const story = usePlaceStory(id, locale);
   const slides = useMemo(() => storySlides(item, fact, locale, gallery), [item, fact, locale, gallery]);
   const credits = useSlideCredits(slides);
   const canPractice = !!id && isReviewable(item);
@@ -112,6 +114,18 @@ export default function PlaceStoryModal({ item, source, onClose }: PlaceStoryMod
               </div>
             )}
             {fact?.unesco && <p className="self-start rounded-full border border-primary/60 text-primary px-2.5 py-0.5 text-xs font-bold">🏛️ {t('fact_unesco')}</p>}
+            {story && (
+              <>
+                <section>
+                  <h3 className="font-black text-accent text-sm sm:text-base short:text-xs">✨ {t('story_curious')}</h3>
+                  <p className="leading-snug mt-0.5">{story.curious}</p>
+                </section>
+                <section>
+                  <h3 className="font-black text-accent text-sm sm:text-base short:text-xs">🗺️ {t('story_visit')}</h3>
+                  <p className="leading-snug mt-0.5">{story.visit}</p>
+                </section>
+              </>
+            )}
             {curious && (
               <section>
                 <h3 className="font-black text-accent text-sm sm:text-base short:text-xs">💡 {t('fact_curious')}</h3>
@@ -154,7 +168,10 @@ export default function PlaceStoryModal({ item, source, onClose }: PlaceStoryMod
               </button>
             </div>
             {practice === 'error' && <p className="text-destructive text-center text-xs">{t('fact_practiceFail')}</p>}
-            <p className="text-[10px] sm:text-xs text-muted-foreground text-center">{t('story_sources')}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground text-center">
+              {t('story_sources')}
+              {story?.wikipediaUrl && <> · <a href={story.wikipediaUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">{t('story_basedOn')}</a></>}
+            </p>
           </div>
         </div>
       </div>

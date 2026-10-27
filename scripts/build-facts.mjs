@@ -40,6 +40,9 @@ const QID_OVERRIDES = {
   'mon:san-basilio': 'Q129846',
   'feat:denali': 'Q130018', 'feat:cervino': 'Q1374', 'feat:canarias': 'Q5813', 'feat:malvinas': 'Q9648',
   'feat:cordillera-central': 'Q143982', 'feat:krakatoa': 'Q82613',
+  // la búsqueda por nombre daba las cordilleras de Perú y un pueblo de Eritrea
+  'feat:cordillera-occidental': 'Q278057', 'feat:cordillera-oriental': 'Q143014', 'feat:sahel': 'Q66065',
+  'mon:palenque': 'Q181427', 'mon:tulum': 'Q725883', // eran los municipios, no las ruinas
   'ci:mx-tlaxcala': 'Q689987', 'ci:mx-mazatlan': 'Q40194', 'co:san-agustin': null,
   'ci:py-general-eugenio-alejandrino-garay': 'Q2409529',
   'div:pa-comarca-ngabe-bugle': 'Q1129783', 'div:cr-puntarenas': 'Q502170', 'div:do-la-estrelleta': 'Q1137545',
