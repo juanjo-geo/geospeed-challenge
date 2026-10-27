@@ -1716,7 +1716,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onOpenGroup={handleConquestGroup}
           onPractice={(iso, target) => { setConqPractice({ iso, target }); setPhase('conq-practice'); }}
           onStart={(iso) => { setConqMission({ iso, attemptId: null, requestId: crypto.randomUUID() }); setPhase('conq-play'); }}
-          onResume={(attemptId) => { setConqMission({ iso: null, attemptId, requestId: crypto.randomUUID() }); setPhase('conq-play'); }} />
+          onResume={(attemptId) => { setConqMission({ iso: null, attemptId, requestId: crypto.randomUUID() }); setPhase('conq-play'); }}
+          onOpenTitles={() => { setPhase('achievements'); scrollAppToTop(); }} />
       );
     }
     if (phase === 'conq-practice' && conqSeasonId && conqPractice) {

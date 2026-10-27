@@ -1,8 +1,8 @@
 /**
  * Conquista el mapa (docs/GeoSpeed_Conquista_Plan.md): cliente de las funciones del servidor
  * (supabase/migrations/20261108120000_conquest.sql). C3: grupos, invitaciones y sala de espera. C4: tablero, ficha del
- * territorio y práctica. C5: la misión oficial (el servidor abre cada ronda y mide el tiempo) y su resultado. El cierre de
- * temporada y la actividad llegan en C6.
+ * territorio y práctica. C5: la misión oficial (el servidor abre cada ronda y mide el tiempo) y su resultado. C6: actividad
+ * del grupo, clasificación de la temporada, cierre e historial.
  *
  * Solo con cuenta registrada (decisión CQ-D1): sin sesión, o con una de invitado, las llamadas responden
  * `account_required` sin tocar el servidor (la vista previa de una invitación sí funciona sin sesión).
@@ -15,6 +15,7 @@
  *    'retired' | 'free'.
  *  · `__mockConqReserve(iso, min)` simula que alguien juega por ese país; `__mockConqUse(iso)` gasta una misión mía ahí.
  *  · Las misiones simuladas usan las 5 primeras ciudades del banco como paquete oficial y el reloj real.
+ *  · `__mockConqEndSeason()` cierra ya la temporada en curso (clasificación final, campeón y sala de la siguiente).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,6 +82,19 @@ export interface ConqAttempt {
   owner_at_start: string | null; defense_at_start: number; threshold: number; seconds: number; server_now: string;
   territory: { owner_id: string | null; retired: boolean; defense: number; version: number };
   rounds: ConqRound[];
+}
+
+/** Actividad del grupo (conq_activity): lo privado (capturas fallidas, misiones vencidas) solo lo ve quien jugó */
+export type ConqEventType = 'season_start' | 'join' | 'captured' | 'failed' | 'conquered' | 'defended' | 'tie' | 'expired' | 'season_close';
+export interface ConqEvent {
+  id: number; type: ConqEventType; country: string | null; actor_id: string | null; prev_owner: string | null; new_owner: string | null;
+  score: number | null; defense: number | null; at: string; can_recover: boolean;
+}
+/** Clasificación (conq_standings): en vivo o la del cierre, premios y temporadas anteriores del grupo */
+export interface ConqSeasonStandings {
+  final: boolean; server_now: string; ends_at: string | null; data_version: number; standings: ConqStanding[];
+  awards: { user_id: string; rank: number; award: string }[];
+  history: { season_id: string; number: number; closed_at: string; champions: (string | null)[] }[];
 }
 
 /** Ciudad de práctica: del banco del país, fuera del paquete oficial (el servidor no revela las oficiales) */
@@ -245,6 +259,22 @@ export async function fetchPracticeSet(seasonId: string, iso: string): Promise<C
   return (await rpc<ConqPracticeCity[] | null>('conq_practice_set', { p_season: seasonId, p_iso: iso })) ?? [];
 }
 
+// ── Actividad y temporada ────────────────────────────────────────────────────────────────────────────────
+export async function fetchActivity(seasonId: string, mine = false, before: number | null = null, limit = 30): Promise<ConqEvent[]> {
+  if (mockEnabled()) return mock.activity(seasonId, mine, before, limit);
+  return (await rpc<{ events: ConqEvent[] }>('conq_activity', { p_season: seasonId, p_mine: mine, p_before: before, p_limit: limit })).events ?? [];
+}
+export async function markSeen(seasonId: string, eventId: number): Promise<void> {
+  if (mockEnabled()) return mock.seen(seasonId, eventId);
+  await rpc('conq_mark_seen', { p_season: seasonId, p_event_id: eventId });
+}
+export async function fetchStandings(seasonId: string): Promise<ConqSeasonStandings> {
+  if (mockEnabled()) return mock.standings(seasonId);
+  return rpc<ConqSeasonStandings>('conq_standings', { p_season: seasonId });
+}
+/** Campeones de una clasificación final: puesto 1 con al menos un territorio (los empates comparten el premio) */
+export const championsOf = (st: ConqStanding[]) => st.filter((x) => x.rank === 1 && x.territories > 0);
+
 // ── Misión oficial ───────────────────────────────────────────────────────────────────────────────────────
 export async function startAttempt(seasonId: string, iso: string, requestId: string): Promise<ConqAttempt> {
   if (mockEnabled()) return mock.attemptStart(seasonId, iso, requestId);
@@ -378,7 +408,9 @@ interface MockAttempt {
 interface MockSeason {
   id: string; number: number; status: ConqSeasonStatus; confirms: string[]; started_at: number | null; ends_at: number | null;
   roster?: ConqPlayer[]; terr?: Record<string, MockTerr>; used?: { iso: string; at: number; attempt?: string }[]; attempts?: MockAttempt[];
+  events?: MockEvent[]; seen?: number; final?: { standings: ConqStanding[]; territories: ConqTerritory[] };
 }
+interface MockEvent { id: number; type: ConqEventType; country: string | null; actor: string | null; prev: string | null; next: string | null; score: number | null; defense: number | null; at: number; attempt?: string }
 interface MockGroup { id: string; name: string; status: 'active' | 'archived'; admin: string; code: string; members: MockMember[]; seasons: MockSeason[] }
 const ME = 'me';
 const MOCK_KEY = 'geospeed_mock_conquest_db';
@@ -396,7 +428,10 @@ function mockView(g: MockGroup): ConqGroup {
   // Una temporada simulada vencida se cierra sola y abre la sala de la siguiente
   const act = activeOf(g);
   if (act && act.ends_at && now >= act.ends_at) {
+    for (const a of act.attempts ?? []) mockTouchAttempt(act, a);
+    act.final = { standings: mockStandings(g, act), territories: mockTerrList(act, act.ends_at) };
     act.status = 'closed';
+    mockEvent(act, { type: 'season_close', country: null, actor: null, at: act.ends_at });
     g.seasons.push({ id: crypto.randomUUID(), number: act.number + 1, status: 'lobby', confirms: [g.admin], started_at: null, ends_at: null });
   }
   const season = activeOf(g) ?? lobbyOf(g);
@@ -406,7 +441,7 @@ function mockView(g: MockGroup): ConqGroup {
     server_now: new Date(now).toISOString(), muted: g.members.find((m) => m.user_id === ME)?.muted ?? null,
     members: g.members.map((m) => ({ user_id: m.user_id, name: m.name, avatar: m.avatar, role: m.role, me: m.user_id === ME, confirmed: !!season && season.confirms.includes(m.user_id) })),
     season: season ? { id: season.id, number: season.number, status: season.status, started_at: season.started_at ? new Date(season.started_at).toISOString() : null, ends_at: season.ends_at ? new Date(season.ends_at).toISOString() : null, rules: CONQ_RULES_V1, in_roster: season.confirms.includes(ME) } : null,
-    last_closed: last ? { id: last.id, number: last.number, closed_at: new Date(last.ends_at ?? now).toISOString(), champions: [g.members[0]?.name ?? null] } : null,
+    last_closed: last ? { id: last.id, number: last.number, closed_at: new Date(last.ends_at ?? now).toISOString(), champions: championsOf(last.final?.standings ?? []).map((x) => x.name) } : null,
   };
 }
 const mockGet = (id: string) => {
@@ -500,6 +535,7 @@ const mock = {
     if (confirmed.length < CONQ_MIN_PLAYERS) throw new ConqError('not_enough_players');
     s.status = 'active'; s.started_at = Date.now(); s.ends_at = Date.now() + 7 * 86_400_000;
     s.roster = confirmed.map((m, i) => ({ user_id: m.user_id, name: m.name, avatar: m.avatar, slot: i }));
+    mockEvent(s, { type: 'season_start', country: null, actor: ME });
     mockSave(db); return mockView(g);
   },
   async map(seasonId: string): Promise<ConqMap> {
@@ -507,15 +543,14 @@ const mock = {
     const { db, g, s } = mockSeason(seasonId);
     mockView(g); mockSave(db);
     const now = Date.now();
-    const terr = mockTerr(s);
-    const territories: ConqTerritory[] = MOCK_CATALOG.map((iso) => ({ iso, owner_id: terr[iso].owner, retired: terr[iso].retired, defense: terr[iso].defense,
-      version: terr[iso].version, captured_at: terr[iso].captured_at ? new Date(terr[iso].captured_at!).toISOString() : null,
-      reserved_until: terr[iso].reserved_until && terr[iso].reserved_until! > now ? new Date(terr[iso].reserved_until!).toISOString() : null }));
+    const closed = s.status === 'closed';
+    const territories = closed && s.final ? s.final.territories : mockTerrList(s, now);
     return {
       season: { id: s.id, group_id: g.id, number: s.number, status: s.status, started_at: s.started_at ? new Date(s.started_at).toISOString() : null,
         ends_at: s.ends_at ? new Date(s.ends_at).toISOString() : null, rules: CONQ_RULES_V1, catalog: MOCK_CATALOG },
       server_now: new Date(now).toISOString(), data_version: territories.reduce((a, x) => a + x.version, 0),
-      players: mockRoster(g, s), territories, standings: mockStandings(g, s), final: s.status === 'closed', me: mockMe(s), unread: 0, my_id: ME,
+      players: mockRoster(g, s), territories, standings: closed && s.final ? s.final.standings : mockStandings(g, s), final: closed, me: mockMe(s),
+      unread: (s.events ?? []).filter((e) => e.actor !== ME && ['conquered', 'captured', 'join', 'season_start'].includes(e.type) && e.id > (s.seen ?? 0)).length, my_id: ME,
     };
   },
   async territory(seasonId: string, iso: string): Promise<ConqTerritoryDetail> {
@@ -620,6 +655,36 @@ const mock = {
     mockSave(db);
     return mockAttemptJson(s, a);
   },
+  async activity(seasonId: string, mine: boolean, before: number | null, limit: number): Promise<ConqEvent[]> {
+    await wait();
+    const { g, s } = mockSeason(seasonId);
+    mockView(g);
+    const terr = mockTerr(s);
+    return [...(s.events ?? [])].reverse()
+      .filter((e) => (e.type !== 'failed' && e.type !== 'expired') || e.actor === ME)
+      .filter((e) => !mine || e.actor === ME || e.prev === ME || e.next === ME)
+      .filter((e) => before == null || e.id < before)
+      .slice(0, limit)
+      .map((e) => ({ id: e.id, type: e.type, country: e.country, actor_id: e.actor, prev_owner: e.prev, new_owner: e.next, score: e.score, defense: e.defense,
+        at: new Date(e.at).toISOString(), can_recover: e.type === 'conquered' && e.prev === ME && s.status === 'active' && terr[e.country ?? '']?.owner !== ME }));
+  },
+  async seen(seasonId: string, eventId: number): Promise<void> {
+    await wait();
+    const { db, s } = mockSeason(seasonId);
+    s.seen = Math.max(s.seen ?? 0, eventId);
+    mockSave(db);
+  },
+  async standings(seasonId: string): Promise<ConqSeasonStandings> {
+    await wait();
+    const { db, g, s } = mockSeason(seasonId);
+    mockView(g); mockSave(db);
+    const closed = s.status === 'closed';
+    const st = closed && s.final ? s.final.standings : mockStandings(g, s);
+    const history = g.seasons.filter((x) => x.status === 'closed').sort((a, b) => b.number - a.number)
+      .map((x) => ({ season_id: x.id, number: x.number, closed_at: new Date(x.ends_at ?? Date.now()).toISOString(), champions: championsOf(x.final?.standings ?? []).map((c) => c.name) }));
+    return { final: closed, server_now: new Date().toISOString(), ends_at: s.ends_at ? new Date(s.ends_at).toISOString() : null,
+      data_version: (s.events ?? []).length, standings: st, awards: closed ? championsOf(st).map((c) => ({ user_id: c.user_id, rank: 1, award: 'champion' })) : [], history };
+  },
   async practice(seasonId: string, iso: string): Promise<ConqPracticeCity[]> {
     await wait();
     mockSeason(seasonId);
@@ -642,6 +707,18 @@ function mockSeason(seasonId: string) {
     }
   }
   throw new ConqError('not_member');
+}
+/** Eventos simulados con id creciente (como conq_events) */
+function mockEvent(s: MockSeason, e: Partial<MockEvent> & { type: ConqEventType }) {
+  s.events ??= [];
+  const id = (s.events[s.events.length - 1]?.id ?? 0) + 1;
+  s.events.push({ id, country: null, actor: null, prev: null, next: null, score: null, defense: null, at: Date.now(), ...e });
+}
+function mockTerrList(s: MockSeason, now: number): ConqTerritory[] {
+  const terr = mockTerr(s);
+  return MOCK_CATALOG.map((iso) => ({ iso, owner_id: terr[iso].owner, retired: terr[iso].retired, defense: terr[iso].defense,
+    version: terr[iso].version, captured_at: terr[iso].captured_at ? new Date(terr[iso].captured_at!).toISOString() : null,
+    reserved_until: terr[iso].reserved_until && terr[iso].reserved_until! > now ? new Date(terr[iso].reserved_until!).toISOString() : null }));
 }
 function mockTerr(s: MockSeason): Record<string, MockTerr> {
   s.terr ??= {};
@@ -685,13 +762,16 @@ function mockFinalize(s: MockSeason, a: MockAttempt, doneAt: number) {
   if (doneAt > a.expires_at || t.reserved_by !== a.id || t.version !== a.version_at_start) {
     Object.assign(a, { status: 'expired', outcome: 'expired', total, finished_at: Math.min(doneAt, a.expires_at) });
     mockRelease(s, a);
+    mockEvent(s, { type: 'expired', country: a.iso, actor: ME, score: total, at: Math.min(doneAt, a.expires_at), attempt: a.id });
     return;
   }
   const outcome: ConqOutcome = !t.owner && !t.retired ? (total >= CONQ_RULES_V1.threshold ? 'captured' : 'failed')
     : total > t.defense ? 'conquered' : total === t.defense ? 'tie' : 'defended';
+  const prev = t.owner, mark = t.defense;
   if (outcome === 'captured' || outcome === 'conquered') Object.assign(t, { owner: ME, retired: false, defense: total, captured_at: doneAt });
   Object.assign(t, { version: t.version + 1, reserved_by: null, reserved_until: null });
   Object.assign(a, { status: 'completed', outcome, total, finished_at: doneAt });
+  mockEvent(s, { type: outcome, country: a.iso, actor: ME, prev, next: outcome === 'captured' || outcome === 'conquered' ? ME : prev, score: total, defense: mark, at: doneAt, attempt: a.id });
 }
 function mockTouchAttempt(s: MockSeason, a: MockAttempt) {
   if (a.status !== 'active') return;
@@ -711,6 +791,7 @@ function mockTouchAttempt(s: MockSeason, a: MockAttempt) {
   if (now >= a.expires_at) {
     Object.assign(a, { status: 'expired', outcome: 'expired', total: a.rounds.reduce((x, r) => x + r.points, 0), finished_at: a.expires_at });
     mockRelease(s, a);
+    mockEvent(s, { type: 'expired', country: a.iso, actor: ME, score: a.total, at: a.expires_at, attempt: a.id });
   }
 }
 function mockAttemptJson(s: MockSeason, a: MockAttempt): ConqAttempt {
@@ -788,7 +869,17 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     if (!t) return 'país fuera del catálogo';
     const roster = mockRoster(a.g, a.s);
     const owner = who === 'me' ? ME : who === 'free' || who === 'retired' ? null : typeof who === 'number' ? roster[who]?.user_id ?? null : roster.find((p) => p.user_id !== ME)?.user_id ?? null;
+    const prev = t.owner, prevMark = t.defense;
     Object.assign(t, { owner, retired: who === 'retired', defense: who === 'free' ? 0 : defense, version: t.version + 1, captured_at: Date.now() });
+    if (owner) mockEvent(a.s, { type: prev ? 'conquered' : 'captured', country: iso.toUpperCase(), actor: owner, prev, next: owner, score: defense, defense: prevMark });
+    mockSave(a.db);
+    return 'ok';
+  };
+  w.__mockConqEndSeason = () => {
+    const a = activeMock();
+    if (!a) return 'sin temporada en curso';
+    a.s.ends_at = Date.now() - 1000;
+    mockView(a.g);
     mockSave(a.db);
     return 'ok';
   };

@@ -113,7 +113,7 @@ export const FRAME_STYLE: Record<string, { ring: string; glow: string }> = {
   sprint: { ring: 'hsl(265 80% 70%)', glow: 'hsl(265 90% 68% / 0.6)' },
 };
 /** Nombre de cada título (racha del diario y logros de la Fase 9): clave `title_<id>` */
-const TITLE_IDS = ['viajero', 'leyenda', 'medallista', 'veterano', 'francotirador', 'rayo', 'retador', 'ojeador', 'cartografo', 'trotamundos', 'memoria', 'abanderado', 'elite', 'incansable', 'sabio'];
+const TITLE_IDS = ['viajero', 'leyenda', 'medallista', 'veterano', 'francotirador', 'rayo', 'retador', 'ojeador', 'cartografo', 'trotamundos', 'memoria', 'abanderado', 'elite', 'incansable', 'sabio', 'conquistador'];
 export const TITLE_KEY: Record<string, string> = Object.fromEntries(TITLE_IDS.map((id) => [id, `title_${id}`]));
 
 // ── Compartir (sin revelar las ciudades) ────────────────────────────────────
