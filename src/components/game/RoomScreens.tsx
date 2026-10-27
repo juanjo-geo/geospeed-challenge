@@ -401,7 +401,7 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center game-bg overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6">
+    <div className="min-h-[100dvh] flex flex-col items-center game-bg px-3 pt-4 sm:px-4 sm:pt-6 md:px-6">
       <div className="w-full max-w-5xl animate-fade-in-up flex flex-col gap-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
         <div className="flex items-center gap-3">
           <button onClick={leave} className="rounded-full border-2 border-accent/60 w-11 h-11 flex items-center justify-center hover:bg-accent/15 shrink-0" aria-label={host ? t('room_cancel') : t('room_leave')}>
@@ -467,8 +467,11 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
         </div>
 
         {error && <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm text-center" role="alert">{errText(error)}</p>}
+        {/* Barra fija abajo: con el QR, la tarjeta del PIN llena la pantalla y el botón quedaba fuera de la vista.
+            A la derecha deja libre el botón flotante de música (bajo md) */}
         {host ? (
-          <div className="flex flex-col items-center gap-2">
+          <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 pl-3 sm:pl-4 md:px-6 pr-[60px] pt-3 flex flex-col items-center gap-1.5 bg-gradient-to-t from-background via-background/95 to-transparent"
+            style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
             <button onClick={() => { playButtonTap(); trackEvent('room_start', { players: state.player_count }); void run(() => startRoom(state.id)); }} disabled={!enough || busy}
               className="btn3d w-full max-w-xl rounded-2xl py-4 short:py-2.5 font-black text-xl text-primary-foreground disabled:opacity-50" style={{ background: 'var(--grad-cta)' }}>
               {busy ? '⏳' : '▶'} {t('room_start')}
@@ -476,7 +479,8 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
             <p className="text-sm text-muted-foreground text-center">{enough ? t('room_startHint') : t('room_needTwo')}</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-center">
+          <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 pl-3 sm:pl-4 md:px-6 pr-[60px] pt-3 flex flex-col items-center gap-1.5 text-center bg-gradient-to-t from-background via-background/95 to-transparent"
+            style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
             <p className="font-bold text-lg animate-pulse">⏳ {t('room_waitingHost', { name: state.host_name ?? '' })}</p>
             <button onClick={leave} className="text-sm text-muted-foreground underline hover:text-foreground">{t('room_leave')}</button>
           </div>
