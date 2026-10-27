@@ -19,7 +19,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { conquestBetaOn } from '@/lib/conquestBeta';
+import { conquestBetaOn, enableConquestBeta } from '@/lib/conquestBeta';
 import { cityById } from '@/lib/itemMemory';
 import { CONQUEST_COUNTRIES } from '@/data/conquestCatalog';
 
@@ -197,24 +197,28 @@ async function rpc<T>(fn: string, args: Record<string, unknown>, needsAccount = 
 }
 
 export async function createGroup(name: string, requestId: string): Promise<ConqGroup> {
-  if (mockEnabled()) return mock.create(name);
-  return rpc<ConqGroup>('conq_group_create', { p_name: name.trim(), p_request_id: requestId });
+  const g = mockEnabled() ? await mock.create(name) : await rpc<ConqGroup>('conq_group_create', { p_name: name.trim(), p_request_id: requestId });
+  enableConquestBeta();
+  return g;
 }
 export async function previewInvite(code: string): Promise<ConqPreview> {
   if (mockEnabled()) return mock.preview(code);
   return rpc<ConqPreview>('conq_invite_preview', { p_code: code }, false);
 }
 export async function acceptInvite(code: string): Promise<ConqGroup> {
-  if (mockEnabled()) return mock.accept(code);
-  return rpc<ConqGroup>('conq_invite_accept', { p_code: code });
+  const g = mockEnabled() ? await mock.accept(code) : await rpc<ConqGroup>('conq_invite_accept', { p_code: code });
+  // Quien entra a un grupo ve Conquista en este teléfono aunque siga oculta para los demás (C7)
+  enableConquestBeta();
+  return g;
 }
 export async function fetchGroup(id: string): Promise<ConqGroup> {
   if (mockEnabled()) return mock.state(id);
   return rpc<ConqGroup>('conq_group_state', { p_group: id });
 }
 export async function fetchMyGroups(): Promise<ConqGroupSummary[]> {
-  if (mockEnabled()) return mock.mine();
-  return (await rpc<{ groups: ConqGroupSummary[] }>('my_conq_groups', {})).groups ?? [];
+  const groups = mockEnabled() ? await mock.mine() : (await rpc<{ groups: ConqGroupSummary[] }>('my_conq_groups', {})).groups ?? [];
+  if (groups.length) enableConquestBeta();
+  return groups;
 }
 export async function regenerateInvite(id: string): Promise<ConqGroup> {
   if (mockEnabled()) return mock.regenerate(id);

@@ -78,7 +78,7 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
   useEffect(() => {
     if (!map) return;
     const playing = map.season.status === 'active' && !!map.me?.in_roster;
-    void syncConquestReminders([{ seasonId: map.season.id, groupId: map.season.group_id, endsAt: map.season.ends_at, active: map.season.status === 'active', inRoster: !!map.me?.in_roster }]);
+    void syncConquestReminders([{ seasonId: map.season.id, groupId: map.season.group_id, endsAt: map.season.ends_at, active: map.season.status === 'active', inRoster: !!map.me?.in_roster, timeScale: map.season.rules?.time_scale }]);
     if (playing) void askConquestPermissionOnce();
   }, [remind]); // eslint-disable-line react-hooks/exhaustive-deps
   const mapBox = useRef<HTMLDivElement>(null);

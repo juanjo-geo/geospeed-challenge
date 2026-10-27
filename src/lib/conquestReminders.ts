@@ -5,6 +5,7 @@
  *   cerrada. El permiso se pide una sola vez, al abrir el tablero de una temporada en la que participo.
  * - Web: el aviso local de notifications.ts (solo sale con la página abierta en segundo plano y con permiso).
  * Silenciar el grupo los quita. Se vuelven a sincronizar al ver mis grupos, la sala y el tablero.
+ * En una temporada acelerada de QA (`time_scale`) los plazos se aceleran igual: con 144, "24 h antes" = 10 min antes.
  */
 import { Capacitor } from '@capacitor/core';
 import { cancelConquestReminders, scheduleConquestReminder } from './notifications';
@@ -18,15 +19,31 @@ export interface ReminderSeason {
   inRoster: boolean;
   /** Si no se sabe aquí (lista de grupos, tablero), se usa lo último que dijo la sala */
   muted?: boolean | null;
+  /** Factor de QA de la temporada; la lista de grupos no lo trae y usa lo último que dijeron la sala o el tablero */
+  timeScale?: number | null;
 }
 
 export const REMINDER_HOURS = [24, 1] as const;
 const MUTED_KEY = 'geospeed_conq_muted';
 const ASKED_KEY = 'geospeed_conq_notif_asked';
+const SCALE_KEY = 'geospeed_conq_scale';
 
 /** Avisos que todavía no pasaron para un cierre dado */
-export function reminderTimes(endsAt: number, now = Date.now()): { h: number; at: number }[] {
-  return REMINDER_HOURS.map((h) => ({ h, at: endsAt - h * 3_600_000 })).filter((x) => x.at > now);
+export function reminderTimes(endsAt: number, now = Date.now(), timeScale = 1): { h: number; at: number }[] {
+  const k = Math.max(1, timeScale || 1);
+  return REMINDER_HOURS.map((h) => ({ h, at: endsAt - (h * 3_600_000) / k })).filter((x) => x.at > now);
+}
+
+function scaleMap(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(SCALE_KEY) || '{}'); } catch { return {}; }
+}
+/** Guarda el factor de las temporadas aceleradas (solo las de QA; las normales no ocupan espacio) */
+function rememberScale(seasonId: string, scale: number): void {
+  try {
+    const m = scaleMap();
+    if (scale > 1) m[seasonId] = scale; else if (m[seasonId]) delete m[seasonId]; else return;
+    localStorage.setItem(SCALE_KEY, JSON.stringify(m));
+  } catch { /* sin almacenamiento */ }
 }
 
 /** Id numérico estable por temporada y plazo (las notificaciones nativas piden enteros) */
@@ -54,10 +71,12 @@ function texts(h: number) {
 /** Programa o quita los avisos de cada temporada según si sigue en curso, si juego en ella y si silencié el grupo */
 export async function syncConquestReminders(list: ReminderSeason[]): Promise<void> {
   const muted = mutedMap();
+  const scales = scaleMap();
   const now = Date.now();
   const plan = list.map((s) => {
+    if (s.timeScale != null) rememberScale(s.seasonId, s.timeScale);
     const off = !s.active || !s.inRoster || (s.muted ?? muted[s.groupId] ?? false) || !s.endsAt;
-    return { s, times: off ? [] : reminderTimes(Date.parse(s.endsAt!), now) };
+    return { s, times: off ? [] : reminderTimes(Date.parse(s.endsAt!), now, s.timeScale ?? scales[s.seasonId] ?? 1) };
   });
   if (!isNative()) {
     for (const { s, times } of plan) {

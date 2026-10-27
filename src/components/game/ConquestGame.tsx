@@ -7,6 +7,8 @@ import {
   fetchPracticeSet, forgetActiveMission, openRound, rememberActiveMission, startAttempt,
   type ConqAttempt, type ConqErrorCode, type ConqMap, type ConqPracticeCity, type ConqRound,
 } from '@/lib/conquest';
+import { conquestBetaOn } from '@/lib/conquestBeta';
+import { netAverage, reportMissionNet, type NetSample, type NetSummary } from '@/lib/conquestNet';
 import { badgePoint, conqCountryName, countryBounds, missionLayer, myStanding, playerStyles, sheetLayer } from '@/lib/conquestMap';
 import { haversineKm } from '@/lib/flagScoring';
 import { formatDistance } from '@/lib/gameUtils';
@@ -402,6 +404,12 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
   const countdownAt = useRef(0);
   const revealAt = useRef(0);
   const lastSync = useRef(0);
+  // Medición de la red (C7): cuándo apareció la pregunta en este teléfono, cuánto tardó en llegar y cuándo toqué
+  const shownAt = useRef<number | null>(null);
+  const openRtt = useRef(0);
+  const tapAt = useRef(0);
+  const samples = useRef<NetSample[]>([]);
+  const [net, setNet] = useState<NetSummary | null>(null);
 
   useEffect(() => { const id = setInterval(() => setNow(conqServerNow()), 100); return () => clearInterval(id); }, []);
 
@@ -424,6 +432,7 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
    *  Entre dos rondas se vuelve a mostrar la última respuesta, con SIGUIENTE (la siguiente no se abre sola sin verla) */
   const route = useCallback((a: ConqAttempt) => {
     setAttempt(a);
+    shownAt.current = null;
     if (a.status !== 'active') { setView('result'); return; }
     rememberActiveMission({ attemptId: a.id, seasonId: a.season_id, iso: a.country });
     const cur = currentRound(a);
@@ -452,13 +461,19 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
     const a = attemptRef.current;
     if (!a || busy.current) return;
     busy.current = true;
+    const t0 = performance.now();
     try {
       const res = await withRetry(() => openRound(a.id, n));
       setAttempt(res);
       const r = res.rounds.find((x) => x.idx === n);
+      shownAt.current = null;
       if (res.status !== 'active') setView('result');
       else if (r?.closed) reveal(r);
-      else { setIdx(n); setView('question'); if (n === 1) playGo(); }
+      else {
+        shownAt.current = performance.now();
+        openRtt.current = shownAt.current - t0;
+        setIdx(n); setView('question'); if (n === 1) playGo();
+      }
     } catch (e) {
       fail(e, () => void open(n));
     } finally {
@@ -495,6 +510,12 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
       const res = await withRetry(() => answerRound(a.id, n, lat, lon));
       setAttempt(res);
       const r = res.rounds.find((x) => x.idx === n);
+      const ans = r?.answer;
+      if (shownAt.current != null && ans?.lat != null && ans.time_s != null && !samples.current.some((x) => x.idx === n)) {
+        samples.current.push({ idx: n, openRttMs: openRtt.current, thinkMs: tapAt.current - shownAt.current, answerRttMs: performance.now() - tapAt.current,
+          serverS: Number(ans.time_s), km: ans.distance_km != null ? Number(ans.distance_km) : null });
+      }
+      shownAt.current = null;
       if (r?.closed) reveal(r);
       else if (res.status !== 'active') setView('result');
     } catch (e) {
@@ -510,6 +531,7 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
 
   const onMapClick = useCallback((lat: number, lon: number) => {
     if (view !== 'question' || pending || !round?.opened_at || busy.current) return;
+    tapAt.current = performance.now();
     playClick();
     setPending({ lat, lon });
     void send(round.idx, lat, lon);
@@ -556,6 +578,10 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [view, sync]);
 
+  useEffect(() => {
+    if (view === 'result' && attempt && attempt.status !== 'active' && samples.current.length) setNet(reportMissionNet(attempt.id, attempt.country, samples.current, attempt.seconds));
+  }, [view, attempt]);
+
   const iso = attempt?.country ?? isoProp ?? '';
   const country = conqCountryName(iso, locale);
   const exit = async () => {
@@ -588,7 +614,7 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
   const markers = useMemo(() => (pending ? [{ lat: pending.lat, lon: pending.lon, on: true }] : null), [pending]);
 
   if (view === 'result' && attempt) {
-    return <MissionResult attempt={attempt} seasonId={seasonId} onBoard={() => { playButtonTap(); onExit(); }} />;
+    return <MissionResult attempt={attempt} seasonId={seasonId} net={net} onBoard={() => { playButtonTap(); onExit(); }} />;
   }
   if (view === 'starting' || !attempt) {
     if (view === 'error') return <MissionError text={errText(err)} onRetry={retryRef.current} onBack={onExit} />;
@@ -649,7 +675,7 @@ function MissionError({ text, onRetry, onBack }: { text: string; onRetry: (() =>
 }
 
 // ═══════════════════════════════════════ P4 Resultado ═══════════════════════════════════════
-function MissionResult({ attempt, seasonId, onBoard }: { attempt: ConqAttempt; seasonId: string; onBoard: () => void }) {
+function MissionResult({ attempt, seasonId, net, onBoard }: { attempt: ConqAttempt; seasonId: string; net: NetSummary | null; onBoard: () => void }) {
   const { t, locale } = useI18n();
   const [map, setMap] = useState<ConqMap | null>(null);
   const [review, setReview] = useState<number | null>(null);
@@ -767,9 +793,27 @@ function MissionResult({ attempt, seasonId, onBoard }: { attempt: ConqAttempt; s
                 })}
               </ol>
             )}
+            {net && (conquestBetaOn() || import.meta.env.DEV) && <NetPanel net={net} />}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Solo en los teléfonos de prueba (`?conquista=beta`): cuánto le sumó la red al tiempo que contó el servidor */
+function NetPanel({ net }: { net: NetSummary }) {
+  const { t } = useI18n();
+  const avg = useMemo(() => netAverage(), []);
+  const s = (ms: number) => (ms / 1000).toLocaleString(appNumberLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (
+    <div className="rounded-2xl border border-dashed border-accent/50 bg-card/60 px-3 py-2 text-sm">
+      <p className="font-black text-accent">📶 {t('cq_netTitle')}</p>
+      <p>{t('cq_netDelay', { s: s(net.avgDelayMs), max: s(net.maxDelayMs), n: net.rounds })}</p>
+      <p>{t('cq_netRtt', { ms: fmtN(net.avgRttMs) })}</p>
+      <p>{t('cq_netLost', { n: fmtN(net.lostPoints) })}</p>
+      {avg && avg.missions > 1 && <p className="text-muted-foreground">{t('cq_netAverage', { n: avg.missions, s: s(avg.avgDelayMs), pts: fmtN(avg.lostPoints) })}</p>}
+      <p className="text-xs text-muted-foreground mt-1">{t('cq_netNote')}</p>
     </div>
   );
 }

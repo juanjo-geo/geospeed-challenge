@@ -287,7 +287,7 @@ export function ConquestLobbyScreen({ groupId, onBack, onOpenMap }: ConquestLobb
   useEffect(() => {
     if (!group?.season) return;
     rememberMuted(group.id, !!group.muted);
-    void syncConquestReminders([{ seasonId: group.season.id, groupId: group.id, endsAt: group.season.ends_at, active: group.season.status === 'active', inRoster: group.season.in_roster, muted: group.muted }]);
+    void syncConquestReminders([{ seasonId: group.season.id, groupId: group.id, endsAt: group.season.ends_at, active: group.season.status === 'active', inRoster: group.season.in_roster, muted: group.muted, timeScale: group.season.rules?.time_scale }]);
   }, [remindKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<ConqErrorCode | null>(null);
