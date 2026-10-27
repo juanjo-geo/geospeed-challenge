@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/i18n';
-import type { City, MapBounds } from '@/data/cities';
+import { getMapBounds, type City } from '@/data/cities';
 import { correctPinLabel, isFlag, isMonument, itemPhotoUrl, itemSubtitle, itemTitle, usesShapeFile } from '@/lib/catalog';
 import { cityById } from '@/lib/itemMemory';
 import { countryDistance } from '@/lib/flagScoring';
@@ -8,6 +8,7 @@ import { featureDistance } from '@/lib/featureScoring';
 import { useFeatureShapes, usePackShapes } from '@/hooks/useFeatureShapes';
 import { useIsPortraitMobile } from '@/hooks/use-mobile';
 import { formatDistance } from '@/lib/gameUtils';
+import { frameAnswer } from '@/lib/mapFraming';
 import { appNumberLocale } from '@/lib/format';
 import { playBad, playButtonTap, playClick, playCountdown, playGo, playGood, playMedium, playPerfect, playTick, playTimeExpired } from '@/lib/sounds';
 import { RoomError, answerRoom, roomTimeline, serverNow, type RoomAnswerResult, type RoomState } from '@/lib/rooms';
@@ -26,18 +27,9 @@ interface RoomGameProps {
 /** Mi respuesta de una ronda: el toque y, cuando el servidor contesta, mis puntos */
 interface MyAnswer { lat: number; lon: number; time: number; result: RoomAnswerResult | null; late?: boolean }
 
-/** Marco de la revelación: el lugar correcto, mi toque (siempre) y los toques cercanos de los demás (los muy lejanos no achican el mapa) */
-function revealBounds(correct: { lat: number; lon: number }, others: { lat: number; lon: number }[], mine: { lat: number; lon: number } | null): MapBounds | null {
-  const near = others.filter((p) => Math.abs(p.lat - correct.lat) < 35 && Math.abs(p.lon - correct.lon) < 50);
-  const all = [correct, ...near, ...(mine ? [mine] : [])];
-  const lats = all.map((p) => p.lat), lons = all.map((p) => p.lon);
-  const latMin = Math.min(...lats), latMax = Math.max(...lats), lonMin = Math.min(...lons), lonMax = Math.max(...lons);
-  if (lonMax - lonMin > 150 || latMax - latMin > 90) return null;
-  const pad = Math.max(3, Math.max(latMax - latMin, lonMax - lonMin) * 0.35);
-  const cLat = (latMin + latMax) / 2, cLon = (lonMin + lonMax) / 2;
-  const hLat = Math.max((latMax - latMin) / 2 + pad, 6), hLon = Math.max((lonMax - lonMin) / 2 + pad, 10);
-  return { latMin: Math.max(-62, cLat - hLat), latMax: Math.min(85, cLat + hLat), lonMin: Math.max(-180, cLon - hLon), lonMax: Math.min(180, cLon + hLon) };
-}
+/** Toques de los demás cercanos al lugar correcto: entran en el encuadre (los muy lejanos no achican el mapa) */
+const nearOthers = (correct: { lat: number; lon: number }, others: { lat: number; lon: number }[]) =>
+  others.filter((p) => Math.abs(p.lat - correct.lat) < 35 && Math.abs(p.lon - correct.lon) < 50);
 
 /**
  * Partida de la sala en vivo (bloque S3): la ronda la marca el reloj del servidor (`roomTimeline` con `serverNow`),
@@ -134,7 +126,10 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
     }
     return { lat: item.lat, lon: item.lon, inside: false };
   }, [revealed, item, myAns]);
-  const others = useMemo(() => (revealed ? (state.reveal?.clicks ?? []).filter((c) => !c.me) : []), [revealed, state.reveal]);
+  // Cada consulta trae objetos nuevos aunque los toques sean los mismos: se recuerdan por contenido para que el mapa no
+  // reinicie la animación de la línea a mitad de camino (se veía cortada y a saltos)
+  const othersKey = revealed ? (state.reveal?.clicks ?? []).filter((c) => !c.me).map((c) => `${c.slot}:${c.lat.toFixed(4)},${c.lon.toFixed(4)}`).join('|') : '';
+  const others = useMemo(() => (revealed ? (state.reveal?.clicks ?? []).filter((c) => !c.me) : []), [revealed, othersKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const userClick = useMemo(() => (revealed && myAns ? { lat: myAns.lat, lon: myAns.lon } : null), [revealed, myAns]);
   const correct = useMemo(() => (revealed && target && myAns ? { lat: target.lat, lon: target.lon } : null), [revealed, target, myAns]);
   const markers = useMemo(() => {
@@ -145,7 +140,29 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
     }
     return myAns && tl.phase === 'question' ? [{ lat: myAns.lat, lon: myAns.lon, on: true }] : null;
   }, [revealed, others, myAns, item, tl.phase]);
-  const bounds = useMemo(() => (revealed && item ? revealBounds({ lat: item.lat, lon: item.lon }, others, myAns ?? null) : null), [revealed, item, others, myAns]);
+  // Encuadre como en el Clásico: mi toque, el lugar y los toques cercanos, dejando libre lo que tapa la tarjeta lateral
+  const mapBox = useRef<HTMLDivElement>(null);
+  const [mapArea, setMapArea] = useState({ w: 0, h: 0 });
+  // El mapa no existe durante la cuenta regresiva: se mide cuando aparece
+  const mapShown = tl.phase !== 'countdown';
+  useEffect(() => {
+    const el = mapBox.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setMapArea({ w: Math.round(e.contentRect.width), h: Math.round(e.contentRect.height) }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mapShown]);
+  // La tarjeta mide clamp(15rem, 34vw, 22rem) y va a 8 px del borde
+  const cover = useMemo(() => {
+    if (!mapArea.w) return null;
+    const card = Math.min(352, Math.max(240, window.innerWidth * 0.34)) + 16;
+    return { right: Math.min(0.6, card / mapArea.w) };
+  }, [mapArea.w]);
+  const bounds = useMemo(() => {
+    if (!revealed || !item || !cover || !target) return null;
+    const correctPt = { lat: target.lat, lon: target.lon };
+    return frameAnswer(myAns ?? correctPt, correctPt, mapArea.w, mapArea.h, cover, getMapBounds(s.mode), nearOthers(correctPt, others));
+  }, [revealed, item, cover, target, myAns, mapArea.w, mapArea.h, s.mode, others]);
   const pinLabels = useMemo(() => (item ? { you: t('game_yourAnswer'), correct: correctPinLabel({ city: item, inside: target?.inside }, t as never, itemTitle(item, locale)) } : null), [item, target, t, locale]);
 
   // Puesto: cambio frente a la ronda anterior
@@ -220,7 +237,7 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
       </header>
       {tl.phase === 'question' && <div className="shrink-0 h-1.5 bg-muted/50"><div className={`h-full transition-[width] duration-200 ${secsLeft <= 3 ? 'bg-destructive' : 'bg-accent'}`} style={{ width: `${timeFrac * 100}%` }} /></div>}
 
-      <div className="relative flex-1 min-h-0">
+      <div ref={mapBox} className="relative flex-1 min-h-0">
         <WorldMapCanvas
           onMapClick={onMapClick}
           clickDisabled={!clickable}
@@ -234,7 +251,7 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
           highlightShape={highlightShape}
           markers={markers}
           showZoomControls={tl.phase === 'question'}
-          labelAvoid={revealed ? { right: 0.36 } : null}
+          labelAvoid={revealed ? cover : null}
         />
 
         {/* Pregunta abierta: aviso para tocar o "respuesta enviada" con el contador */}
