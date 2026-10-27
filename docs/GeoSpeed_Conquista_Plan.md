@@ -1,6 +1,6 @@
 # GeoSpeed · Conquista el mapa — revisión y plan por fases
 
-2026-10-26. Estado: **plan aprobado; decisiones CQ-D1–D4 tomadas por JuanJo el 2026-10-26** (sección 7). **C0 hecha** (registro por hallazgo en `docs/GeoSpeed_Auditoria_C0.md`). Siguiente: C1 (banco de ciudades). Fuente: `docs/GeoSpeed_Conquista_Especificacion_v1.1.md` (transcripción del
+2026-10-26. Estado: **plan aprobado; decisiones CQ-D1–D4 tomadas por JuanJo el 2026-10-26** (sección 7). **C0 hecha** (registro por hallazgo en `docs/GeoSpeed_Auditoria_C0.md`). **C1 hecha** (banco en `docs/Conquista_C1_Ciudades.md`, pendiente de la aprobación de JuanJo). **C2 hecha** (migración `20261108120000_conquest.sql` sin aplicar; suite `npm run test:conquest-sql`, 85 comprobaciones). **C3 hecha** (grupos, invitación y sala de espera; oculto tras `conquest_enabled`, `?conquista=beta`). Siguiente: C4 (tablero y ficha). Fuente: `docs/GeoSpeed_Conquista_Especificacion_v1.1.md` (transcripción del
 .docx de JuanJo) y las maquetas `docs/maquetas/conquista/`. Este documento revisa la especificación contra el código
 actual, verifica la auditoría del juego público (AUD01–AUD08) y propone cómo construirlo por fases. Las reglas aprobadas
 en la especificación no se vuelven a discutir; solo se piden las decisiones que la especificación no cubre o que el
@@ -205,3 +205,31 @@ nombre de "Jugador retirado"; AUD07 con mínimo de 5 partidas; AUD06 solo explic
   conquista ajena puede verse con unos segundos de retraso. La reserva impide que dos personas jueguen el mismo país a la vez.
 - **Sin push:** sin Firebase/VAPID nadie se entera fuera del juego de que perdió un país; afecta la tensión del modo.
 - **Concurrencia y cierre:** son la parte con más casos borde; por eso C2 va con su suite completa antes de la interfaz.
+
+## 9. Contrato del servidor (fase C2)
+
+Migración `supabase/migrations/20261108120000_conquest.sql` (se aplica en el SQL Editor; idempotente) y suite
+`npm run test:conquest-sql` (PGlite, reloj simulado, 85 comprobaciones de los criterios CA01–CA26).
+
+| Función (cliente con cuenta registrada) | Qué hace |
+|---|---|
+| `conq_group_create(nombre, clave)` | Crea el grupo (3–30, filtro de palabras), el admin y la sala de la temporada 1. Máx. 3 grupos activos por cuenta, 10 creados por día |
+| `conq_invite_preview(código)` | Vista previa (también sin sesión): nombre, admin, cupos, estado `open · full · season_active · member` |
+| `conq_invite_accept(código)` | Entra con acción explícita; cupo atómico (bloqueo del grupo), idempotente, 30 intentos por día |
+| `conq_group_state(grupo)` · `my_conq_groups()` | Sala / lista de mis grupos (código solo para el admin, confirmaciones, temporada, último cierre, no leídos) |
+| `conq_invite_regenerate` · `conq_member_remove` · `conq_group_leave` · `conq_group_cancel` · `conq_confirm` · `conq_mute` | Administración entre temporadas; salir/quitar/cancelar se rechazan con temporada activa |
+| `conq_season_start(grupo)` | Admin, 2–5 confirmados, catálogo completo; congela plantilla y reglas, genera paquetes (5 de 12, primero las que no salieron en la temporada anterior) y los 10 territorios |
+| `conq_map(temporada)` · `conq_territory(temporada, país)` | Tablero (territorios, plantilla, clasificación en vivo o final, misiones restantes, renovación, versión de datos) y ficha (dueño, marca, reserva, tipo captura/ataque/recuperar, `can_start` + motivo) |
+| `conq_attempt_start(temporada, país, clave)` | Reserva exclusiva de 3 min (o hasta el cierre), cupos y espera; idempotente por clave |
+| `conq_round_open(intento, n)` · `conq_round_answer(intento, n, lat, lon)` | Una pregunta a la vez (sin coordenadas); respuesta con tiempo del servidor, puntos y revelación; la quinta resuelve la misión |
+| `conq_attempt_abandon` · `conq_attempt_state` | Abandono expreso / recuperar el mismo intento tras recargar |
+| `conq_activity` · `conq_mark_seen` · `conq_standings` · `conq_practice_set` | Actividad (privado solo para quien jugó, `can_recover`), no leídos, clasificación con historial, práctica fuera del paquete |
+| `conq_close_due()` (pg_cron) | Cierra las temporadas vencidas: instantánea única, insignia `conq_champion` (título "Conquistador") y sala de la siguiente |
+
+Códigos de error estables (`conq_*`): `account_required`, `name_invalid`, `group_limit`, `rate_limited`, `invite_invalid`,
+`season_active`, `group_full`, `not_member`, `not_admin`, `not_allowed`, `not_enough_players`, `catalog_incomplete`,
+`season_closed`, `not_in_roster`, `season_ending`, `attempt_active`, `country_invalid`, `reserved`, `own_territory`,
+`daily_limit`, `country_limit`, `cooldown`, `attempt_unavailable`, `round_invalid`, `coord_invalid`.
+
+Pasos de JuanJo: pegar la migración en el SQL Editor y programar el cierre:
+`select cron.schedule('conquest-close', '*/5 * * * *', $$select public.conq_close_due()$$);`

@@ -9,6 +9,7 @@
  * (src/lib/flagScoring.ts, src/lib/featureScoring.ts); el pack Colombia se elige en Región.
  */
 import { CITY_NAMES_EN } from '@/data/cityNamesEn';
+import { CONQUEST_CITIES } from '@/data/conquestCatalog';
 import { getRandomCities, getCitiesByMode, isPackMode, type City, type Difficulty, type GameMode } from '@/data/cities';
 import { FLAG_ITEMS } from '@/data/flagCatalog';
 import { FEATURE_ITEMS } from '@/data/featureCatalog';
@@ -187,7 +188,7 @@ export function catalogItem(id: string | null | undefined): City | undefined {
   if (!id) return undefined;
   if (!catalogIndex) {
     catalogIndex = new Map();
-    for (const list of [FLAG_ITEMS, FEATURE_ITEMS, LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS, PRO_PACK_CITIES, PRO_PACK_DIVISIONS]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
+    for (const list of [FLAG_ITEMS, FEATURE_ITEMS, LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS, PRO_PACK_CITIES, PRO_PACK_DIVISIONS, CONQUEST_CITIES]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
   }
   return catalogIndex.get(id);
 }
@@ -204,6 +205,8 @@ export function kindFromPlaceId(placeId: string | null | undefined): Partial<Cit
   if (placeId.startsWith('mon:')) return it ? { id: placeId, kind: 'monument', nameEn: it.nameEn, city: it.city, photo: it.photo, region: it.region } : { id: placeId, kind: 'monument' };
   if (placeId.startsWith('div:')) return it ? { id: placeId, kind: 'division', geom: 'area', ftype: it.ftype, nameEn: it.nameEn, capital: it.capital, nb: it.nb, region: it.region } : { id: placeId, kind: 'division', geom: 'area' };
   if (placeId.startsWith('co:') || placeId.startsWith('ci:')) return it ? { id: placeId, admin: it.admin, isCapital: it.isCapital, region: it.region } : { id: placeId };
+  // Ciudades del banco de Conquista que no estaban en el juego (fase C1)
+  if (placeId.startsWith('cq:')) return it ? { id: placeId, kind: 'city', nameEn: it.nameEn, iso: it.iso } : { id: placeId, kind: 'city' };
   return { id: placeId };
 }
 
@@ -213,7 +216,7 @@ export const itemTitle = (item: Pick<City, 'name' | 'kind' | 'nameEn' | 'id'>, l
   isFlag(item) ? countryDisplayName(item.name, locale)
     : locale !== 'en' ? item.name
     : (isFeature(item) || isMonument(item) || isDivision(item)) ? item.nameEn || item.name
-    : (item.id && CITY_NAMES_EN[item.id]) || item.name;
+    : (item.id && CITY_NAMES_EN[item.id]) || item.nameEn || item.name;
 
 /**
  * Segunda línea: el país de la ciudad (o "departamento · país" en un pack), el continente de la bandera,

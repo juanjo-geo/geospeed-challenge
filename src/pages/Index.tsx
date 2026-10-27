@@ -133,9 +133,13 @@ const QuizIntroScreen = lazyWithReload(() => import('@/components/game/QuizScree
 const QuizResultPanel = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizResultPanel })));
 const DownloadsScreen = lazyWithReload(() => import('@/components/game/DownloadsScreen'));
 import { noteRoomsBetaParam } from '@/lib/roomsBeta';
+import { noteConquestBetaParam } from '@/lib/conquestBeta';
 const RoomCreateScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomCreateScreen })));
 const RoomJoinScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomJoinScreen })));
 const RoomScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomScreen })));
+const ConquestHomeScreen = lazyWithReload(() => import('@/components/game/ConquestScreens').then(m => ({ default: m.ConquestHomeScreen })));
+const ConquestInviteScreen = lazyWithReload(() => import('@/components/game/ConquestScreens').then(m => ({ default: m.ConquestInviteScreen })));
+const ConquestLobbyScreen = lazyWithReload(() => import('@/components/game/ConquestScreens').then(m => ({ default: m.ConquestLobbyScreen })));
 const MedalsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.MedalsScreen })));
 const AchievementsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.AchievementsScreen })));
 const SprintScreen = lazyWithReload(() => import('@/components/game/SprintScreen'));
@@ -191,7 +195,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads' | 'room-create' | 'room-join' | 'room';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads' | 'room-create' | 'room-join' | 'room' | 'conq-home' | 'conq-invite' | 'conq-group';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -210,7 +214,7 @@ interface TrainingRun {
 }
 
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
-const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro', 'downloads', 'room-create', 'room-join'];
+const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro', 'downloads', 'room-create', 'room-join', 'conq-home', 'conq-invite', 'conq-group'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing'];
 
@@ -255,7 +259,7 @@ const difficultyLabelsEs: Record<Difficulty, string> = {
 };
 
 export interface DeepLinkProps {
-  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' | 'quiz' | 'sala' };
+  deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' | 'quiz' | 'sala' | 'conquista' };
 }
 
 const Index = ({ deepLink }: DeepLinkProps = {}) => {
@@ -341,6 +345,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Sala en vivo (bloque S2): PIN por abrir y sala en la que estoy
   const [roomPin, setRoomPin] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
+  // Conquista el mapa (fase C3): código de una invitación y grupo abierto
+  const [conqCode, setConqCode] = useState<string | null>(null);
+  const [conqGroupId, setConqGroupId] = useState<string | null>(null);
   const { user, isAnonymous: isAnonymousUser, displayName: authDisplayName } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('splash');
@@ -994,6 +1001,9 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleLiveRoom = useCallback(() => { if (offlineBlocked('online')) return; setPhase('room-create'); scrollAppToTop(); }, [offlineBlocked]);
   const handleOpenRoomPin = useCallback((pin: string) => { if (offlineBlocked('online')) return; setRoomPin(pin); setPhase('room-join'); scrollAppToTop(); }, [offlineBlocked]);
   const handleRoomEntered = useCallback((s: { id: string }) => { setRoomId(s.id); setPhase('room'); }, []);
+  const handleConquest = useCallback(() => { if (offlineBlocked('online')) return; setPhase('conq-home'); scrollAppToTop(); }, [offlineBlocked]);
+  const handleConquestCode = useCallback((code: string) => { if (offlineBlocked('online')) return; setConqCode(code); setPhase('conq-invite'); scrollAppToTop(); }, [offlineBlocked]);
+  const handleConquestGroup = useCallback((id: string) => { setConqGroupId(id); setPhase('conq-group'); scrollAppToTop(); }, []);
   const handleMyChallenges = useCallback(() => { if (offlineBlocked('online')) return; setActiveChallenge(null); setPhase('my-challenges'); scrollAppToTop(); }, [offlineBlocked]);
   const handleOpenMyChallenge = useCallback((item: MyChallenge) => { setChallengeSource({ type: 'code', code: item.code }); setPhase('challenge'); scrollAppToTop(); }, []);
   const [rematchBusy, setRematchBusy] = useState(false);
@@ -1238,6 +1248,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     noteRoomsBetaParam(window.location.search); // sala en vivo: ?salas=beta la activa en este teléfono
+    noteConquestBetaParam(window.location.search); // Conquista: ?conquista=beta la activa en este teléfono
     // Old format: /?ch=123&d=easy&m=world&s=5000
     const ch = params.get('ch');
     // New format: /challenge/123?d=easy&m=world&s=5000
@@ -1312,6 +1323,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       setQuizReturn('home');
       setPhase('quiz-intro');
       trackEvent('quiz_link_open', {});
+      navigate('/', { replace: true });
+    } else if (deepLink.type === 'conquista') {
+      // /conquista/ABC234 → invitación a un grupo (entrar exige cuenta; la vista previa no) · /conquista → Conquista
+      const code = (routeParams.code ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+      if (code.length === 6) { setConqCode(code); setPhase('conq-invite'); trackEvent('conq_link_open', {}); }
+      else setPhase('conq-home');
       navigate('/', { replace: true });
     } else if (deepLink.type === 'sala' && routeParams.pin) {
       // /sala/123456 → unirse a la sala en vivo (invitados también; el PIN se valida en el servidor)
@@ -1419,7 +1436,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'more-modes') {
-      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} onSprint={handleOpenSprint} onQuizzes={handleOpenQuizzes} />;
+      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} onSprint={handleOpenSprint} onQuizzes={handleOpenQuizzes} onConquest={handleConquest} />;
     }
     if (phase === 'quizzes') {
       return <MyQuizzesScreen onBack={handleGoHome} onCreate={handleCreateQuiz} onEdit={handleEditQuiz} onOpen={(code) => handleOpenQuiz(code, 'quizzes')} onPlay={startQuizRun} onOpenStore={handleOpenStore} />;
@@ -1643,6 +1660,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onLiveDuel={handleMultiplayer}
           onLiveRoom={handleLiveRoom}
           onOpenRoomPin={handleOpenRoomPin}
+          onConquest={handleConquest}
+          onOpenConquestCode={handleConquestCode}
         />
       );
     }
@@ -1668,6 +1687,18 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
     if (phase === 'room' && roomId) {
       return <RoomScreen roomId={roomId} onExit={handleGoHome} />;
+    }
+
+    // Conquista el mapa (fase C3): crear o unirse, invitación y sala de espera; el tablero llega en C4
+    const conqSignIn = (code?: string | null) => navigate(`/auth?next=${encodeURIComponent(code ? `/conquista/${code}` : '/conquista')}`);
+    if (phase === 'conq-home') {
+      return <ConquestHomeScreen isRegistered={!!user && !isAnonymousUser} onBack={handleGoHome} onSignIn={() => conqSignIn()} onOpenGroup={handleConquestGroup} onOpenCode={handleConquestCode} />;
+    }
+    if (phase === 'conq-invite' && conqCode) {
+      return <ConquestInviteScreen code={conqCode} isRegistered={!!user && !isAnonymousUser} onBack={handleConquest} onSignIn={() => conqSignIn(conqCode)} onJoined={handleConquestGroup} />;
+    }
+    if (phase === 'conq-group' && conqGroupId) {
+      return <ConquestLobbyScreen groupId={conqGroupId} onBack={handleConquest} onOpenMap={() => toast(t('cq_mapSoon'))} />;
     }
 
     if (phase === 'challenge' && challengeSource) {
