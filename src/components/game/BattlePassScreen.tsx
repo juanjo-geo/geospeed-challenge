@@ -272,7 +272,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
 
                   {!unlocked && cosmetic.source.startsWith('battlepass') && (
                     <p className="text-[9px] text-center mt-2 text-muted-foreground">
-                      🎖️ Battle Pass {cosmetic.source === 'battlepass_premium' ? '(Pro)' : ''}
+                      🎖️ {tr('bp_passName')}{cosmetic.source === 'battlepass_premium' ? ' (Pro)' : ''}
                     </p>
                   )}
                 </div>
@@ -286,7 +286,8 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
   );
 }
 
-/** Small pill showing a reward cosmetic */
+/** Recompensa de un nivel: siempre con su ícono y su nombre (AUD02: antes las no reclamadas salían como ❓ / ???);
+ *  las de niveles aún no alcanzados van atenuadas y con candado */
 function RewardPill({ cosmetic, reached, claimed, label, isPremium }: {
   cosmetic: Cosmetic;
   reached: boolean;
@@ -297,10 +298,10 @@ function RewardPill({ cosmetic, reached, claimed, label, isPremium }: {
   const { locale } = useI18n();
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-sm">{claimed ? cosmetic.emoji : '❓'}</span>
+      <span className={`text-sm ${claimed ? '' : 'opacity-60 grayscale-[40%]'}`}>{cosmetic.emoji}</span>
       <div className="min-w-0">
-        <p className={`text-[10px] font-bold truncate ${claimed ? 'text-foreground' : 'text-muted-foreground/50'}`}>
-          {claimed ? tCosmeticName(cosmetic.id, cosmetic.name, locale) : '???'}
+        <p className={`text-[10px] font-bold truncate ${claimed ? 'text-foreground' : 'text-muted-foreground'}`}>
+          {!reached && <span aria-hidden>🔒 </span>}{tCosmeticName(cosmetic.id, cosmetic.name, locale)}
         </p>
         <span
           className="text-[7px] font-bold px-1 py-0.5 rounded"

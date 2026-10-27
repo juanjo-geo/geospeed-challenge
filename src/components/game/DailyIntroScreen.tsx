@@ -6,7 +6,7 @@ import { formatNumber } from '@/lib/format';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon } from '@/components/ui/icons';
 import Mascot from './Mascot';
-import { gameDay, dailyNumber, nextRollover, dailyBestKey } from '@/lib/gameDay';
+import { gameDay, dailyNumber, nextRollover, dailyBestKey, timeUntilRollover } from '@/lib/gameDay';
 import { fetchDailyStatus, getCachedDailyStatus, playedToday, DAILY_STATUS_EVENT, type DailyInvite, type DailyStatus } from '@/lib/dailyChallenge';
 import { requestOpenStreak } from './StreakChip';
 const SplashGlobe = lazy(() => import('./SplashGlobe'));
@@ -108,7 +108,7 @@ export default function DailyIntroScreen({ onBack, onPlay, invite = null }: Dail
               <InfoIcon className="w-5 h-5 text-accent mt-0.5" />
               <p>
                 {t('daily_reveal')}
-                <span className="block text-xs text-foreground/70">{t('home_dailyRollover', { time: rollover })}</span>
+                <span className="block text-xs text-foreground/70">{t('daily_newIn', { time: timeUntilRollover(now), clock: rollover })}</span>
               </p>
             </div>
           </section>

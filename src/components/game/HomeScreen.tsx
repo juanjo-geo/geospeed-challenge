@@ -10,7 +10,7 @@ import { checkStreak, claimDailyReward, getUnclaimedChestToday, skipTodayChest, 
 import { homeInterruptionShown, markHomeInterruption } from '@/lib/interruptions';
 import EnergyBar from './EnergyBar';
 import StreakChip from './StreakChip';
-import { nextRollover } from '@/lib/gameDay';
+import { timeUntilRollover } from '@/lib/gameDay';
 import { getCachedDailyStatus, playedToday, todayDailyNo, DAILY_STATUS_EVENT, type DailyStatus } from '@/lib/dailyChallenge';
 import { lazy, Suspense } from 'react';
 // La demo dibuja el mapa (polígonos pesados): se carga aparte para que el inicio pinte antes
@@ -148,7 +148,7 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
   const [streakDismissed, setStreakDismissed] = useState(false);
   const [dailyPlayers, setDailyPlayers] = useState<number>(0);
   // El diario cambia a medianoche de Colombia para todos (Fase 2); se muestra la hora local equivalente
-  const dailyRolloverTime = nextRollover().toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-CO', { hour: '2-digit', minute: '2-digit' });
+  const dailyRolloverTime = timeUntilRollover();
   // Racha del diario (servidor, en caché): la tarjeta dice si ya se jugó hoy
   const [dailySt, setDailySt] = useState<DailyStatus | null>(getCachedDailyStatus);
   useEffect(() => {
@@ -373,7 +373,7 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
               <Dropdown label={t('home_difficultyLabel')} emoji={difficultyEmoji} value={difficultyName} onClick={() => { playButtonTap(); setSheet('difficulty'); }} />
             </div>
           </div>
-          <p className="text-center text-[11px] sm:text-sm text-muted-foreground mt-2 mb-2 sm:mt-3 sm:mb-3">{citiesInfo}</p>
+          <p className="text-center text-[11px] sm:text-sm text-muted-foreground mt-2 mb-2 sm:mt-3 sm:mb-3">{citiesInfo}<span className="hidden sm:inline"> · {t('home_timeoutRule')}</span></p>
           {medalLine && <p className="text-center text-[11px] sm:text-sm font-semibold -mt-1 mb-2 sm:mb-3 text-foreground/85">{medalLine}</p>}
           <button
             onClick={() => { playButtonTap(); onStartGame(selectedDifficulty, selectedMode, selectedCategory); }}

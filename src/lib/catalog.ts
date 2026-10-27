@@ -8,6 +8,7 @@
  * el Sprint siguen con ciudades del mundo); banderas, lugares y departamentos se puntúan por distancia al contorno
  * (src/lib/flagScoring.ts, src/lib/featureScoring.ts); el pack Colombia se elige en Región.
  */
+import { CITY_NAMES_EN } from '@/data/cityNamesEn';
 import { getRandomCities, getCitiesByMode, isPackMode, type City, type Difficulty, type GameMode } from '@/data/cities';
 import { FLAG_ITEMS } from '@/data/flagCatalog';
 import { FEATURE_ITEMS } from '@/data/featureCatalog';
@@ -206,9 +207,13 @@ export function kindFromPlaceId(placeId: string | null | undefined): Partial<Cit
   return { id: placeId };
 }
 
-/** Nombre a mostrar: el de la ciudad, el país en el idioma del juego para una bandera, o el lugar/monumento/departamento (ES/EN) */
-export const itemTitle = (item: Pick<City, 'name' | 'kind' | 'nameEn'>, locale: string): string =>
-  isFlag(item) ? countryDisplayName(item.name, locale) : (isFeature(item) || isMonument(item) || isDivision(item)) && locale === 'en' && item.nameEn ? item.nameEn : item.name;
+/** Nombre a mostrar: el de la ciudad (en inglés si cambia, AUD05), el país en el idioma del juego para una bandera, o el
+ *  lugar/monumento/departamento (ES/EN) */
+export const itemTitle = (item: Pick<City, 'name' | 'kind' | 'nameEn' | 'id'>, locale: string): string =>
+  isFlag(item) ? countryDisplayName(item.name, locale)
+    : locale !== 'en' ? item.name
+    : (isFeature(item) || isMonument(item) || isDivision(item)) ? item.nameEn || item.name
+    : (item.id && CITY_NAMES_EN[item.id]) || item.name;
 
 /**
  * Segunda línea: el país de la ciudad (o "departamento · país" en un pack), el continente de la bandera,
@@ -222,12 +227,12 @@ export const itemSubtitle = (item: Pick<City, 'country' | 'kind' | 'lat' | 'lon'
   if (isFeature(item)) return `${featureTypeLabel(item.ftype, lang)} · ${continentName(item.lat, item.lon, lang)}`;
   if (isMonument(item)) return item.city && item.city !== country ? `${item.city} · ${country}` : country;
   if (item.admin && item.admin !== item.country) return `${item.admin} · ${country}`;
-  return item.country;
+  return country;
 };
 
 const appLang = () => (typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'es');
 /** Igual que itemTitle / itemSubtitle con el idioma del juego (<html lang>, que I18nProvider mantiene al día) */
-export const itemTitleAuto = (item: Pick<City, 'name' | 'kind' | 'nameEn'>) => itemTitle(item, appLang());
+export const itemTitleAuto = (item: Pick<City, 'name' | 'kind' | 'nameEn' | 'id'>) => itemTitle(item, appLang());
 export const itemSubtitleAuto = (item: Pick<City, 'country' | 'kind' | 'lat' | 'lon' | 'ftype' | 'city' | 'admin'>) => itemSubtitle(item, appLang());
 
 /** Imagen de la bandera de un ítem (banderas: por ISO; ciudades, monumentos y departamentos: la de su país; lugares: ninguna) */

@@ -19,6 +19,7 @@ import { isAdAvailable } from './adSystem';
 import { getEnergy } from './energySystem';
 import { isPro } from './premiumSystem';
 import { trackEvent } from './analytics';
+import { getPlayerStats } from './gameUtils';
 
 const STORAGE_KEY = 'geospeed_frustration';
 
@@ -51,6 +52,8 @@ const MIN_OFFER_INTERVAL_MS = 90_000; // 90s between offers (no spam)
 /** Reglas de interrupciones (2026-10-19): como máximo una oferta por día (fecha local) */
 const OFFER_DAY_KEY = 'geospeed_offer_day';
 const MAX_OFFERS_PER_SESSION = 4;
+/** AUD07: un jugador nuevo no ve ofertas pagadas hasta que haya jugado unas partidas y entienda el juego */
+export const MIN_GAMES_FOR_PAID_OFFERS = 5;
 
 function getState(): FrustrationState {
   try {
@@ -161,9 +164,11 @@ export function getContextualOffer(): FrustrationOffer | null {
   if (level === 'none') return null;
 
   const energy = getEnergy();
+  // Jugador nuevo: solo la opción gratis (video), nunca una compra
+  const paidAllowed = getPlayerStats().gamesPlayed >= MIN_GAMES_FOR_PAID_OFFERS;
 
   // Priority 1: Zero lives — most urgent conversion moment
-  if (energy.lives === 0) {
+  if (paidAllowed && energy.lives === 0) {
     trackEvent('frustration_offer', { type: 'lives_pack', level, lives: 0 });
     return {
       type: 'lives_pack',
@@ -178,7 +183,7 @@ export function getContextualOffer(): FrustrationOffer | null {
   }
 
   // Priority 2: Extreme frustration — Pro upsell
-  if (level === 'extreme' || (level === 'high' && state.consecutiveBadGames >= 3)) {
+  if (paidAllowed && (level === 'extreme' || (level === 'high' && state.consecutiveBadGames >= 3))) {
     trackEvent('frustration_offer', { type: 'pro_upsell', level, bad_games: state.consecutiveBadGames });
     return {
       type: 'pro_upsell',
@@ -208,7 +213,7 @@ export function getContextualOffer(): FrustrationOffer | null {
   }
 
   // Priority 4: Mild frustration after timeout — encouragement + subtle upsell
-  if (state.lastGameReason === 'timeout' && state.consecutiveBadGames >= 2) {
+  if (paidAllowed && state.lastGameReason === 'timeout' && state.consecutiveBadGames >= 2) {
     trackEvent('frustration_offer', { type: 'lives_pack', level, reason: 'timeout_streak' });
     return {
       type: 'lives_pack',

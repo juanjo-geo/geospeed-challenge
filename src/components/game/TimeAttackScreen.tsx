@@ -22,7 +22,7 @@ import RoundFeedbackCard from './RoundFeedbackCard';
 import FitToBox from '@/components/ui/FitToBox';
 import { frameAnswer, feedbackCover } from '@/lib/mapFraming';
 import { preloadPhoto } from '@/lib/cityPhotos';
-import { itemPhotoUrl } from '@/lib/catalog';
+import { itemPhotoUrl, itemTitle } from '@/lib/catalog';
 import { factIdOf, keyFact, usePlaceFacts } from '@/lib/placeFacts';
 
 const GLOBAL_TIME = 60;
@@ -300,7 +300,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-red-400">{t('ta_timeAttack')}</span>
-              <span className="text-sm font-black truncate">📍 {currentCity.name}</span>
+              <span className="text-sm font-black truncate">📍 {itemTitle(currentCity, locale)}</span>
             </div>
             <span className="font-mono font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
               <CountUp value={score} />
@@ -339,13 +339,13 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
           {/* ── Ciudad a encontrar ── */}
           <div className="w-full shrink-0 mb-2 rounded-xl px-[6.7cqi] py-[5.4cqi] border border-primary/25 bg-primary/10 text-center">
             <p className="text-[10cqi] font-semibold text-foreground/70 leading-none mb-1.5">
-              {t('game_whereIs')}
+              {t('game_whereIsLead')}
             </p>
             <p
               className="text-[15.5cqi] font-black leading-tight text-center"
               style={{ color: 'hsl(var(--primary))', wordBreak: 'break-word', hyphens: 'none' }}
             >
-              {currentCity.name}
+              {itemTitle(currentCity, locale)}?
             </p>
           </div>
 
@@ -417,7 +417,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
             </div>
             <div className="flex-1 min-w-0 flex justify-center">
               <div className="max-w-full truncate rounded-full border border-accent/40 px-3 py-1 text-sm font-black backdrop-blur-md" style={pillStyle}>
-                {t('game_whereIs')} <span className="text-primary">{currentCity.name}</span>
+                {t('game_whereIsLead')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>?
               </div>
             </div>
             {onToggleMusic && (

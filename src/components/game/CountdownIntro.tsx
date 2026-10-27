@@ -8,6 +8,8 @@ interface CountdownIntroProps {
   count: number;
   /** Etiqueta superior (ej. "Clásico · Mundo · Turista"). Opcional. */
   label?: string;
+  /** Regla que conviene recordar antes de empezar (AUD06: en el Clásico, agotar el tiempo termina la partida) */
+  ruleHint?: string;
   /** Cancelar y volver al inicio (maqueta Cuenta_Regresiva_APROBADA_v1). Opcional. */
   onCancel?: () => void;
   /** false mientras el conteo está detenido (aviso de girar el teléfono): el anillo y el número entran al arrancar */
@@ -25,7 +27,7 @@ const TICKS = [-45, 45, 135, 225];
  * entra cuando aparece el primer número, no antes.
  * Es solo presentación: el temporizador (3→2→1→0) lo maneja cada modo y va pasando el valor por `count`.
  */
-export default function CountdownIntro({ count, label, onCancel, running = true }: CountdownIntroProps) {
+export default function CountdownIntro({ count, label, ruleHint, onCancel, running = true }: CountdownIntroProps) {
   const { t } = useI18n();
   const isGo = count <= 0;
   // "Clásico · Mundo · Turista": la región (parte central) va en amarillo
@@ -105,6 +107,9 @@ export default function CountdownIntro({ count, label, onCancel, running = true 
         <p className="mt-[3dvh] font-semibold text-foreground/90 text-[min(4.4vw,4.2dvh,1.3rem)] text-center px-6 animate-fade-in">
           {t('countdown_ready')}
         </p>
+        {ruleHint && (
+          <p className="mt-1 text-center px-6 text-[min(3.6vw,3.4dvh,1rem)] font-semibold text-primary animate-fade-in">{ruleHint}</p>
+        )}
       </div>
 
       {onCancel && (

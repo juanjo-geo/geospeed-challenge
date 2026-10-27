@@ -40,5 +40,12 @@ export function nextRollover(at: Date = new Date()): Date {
   return next;
 }
 
+/** Cuánto falta para el próximo diario, "3 h 20 min" / "45 min" (AUD08: una cuenta regresiva no depende de la zona horaria) */
+export function timeUntilRollover(at: Date = new Date()): string {
+  const mins = Math.max(1, Math.ceil((nextRollover(at).getTime() - at.getTime()) / 60_000));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h > 0 ? `${h} h${m ? ` ${m} min` : ''}` : `${m} min`;
+}
+
 /** Clave local del mejor puntaje del diario de hoy (también la usa el Inicio y los niveles) */
 export const dailyBestKey = (day: string = gameDay()) => `geospeed_daily_${day}`;

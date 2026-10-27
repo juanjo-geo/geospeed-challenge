@@ -1495,6 +1495,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         <CountdownIntro
           count={countdown}
           label={activeQuiz ? `🧩 ${activeQuiz.name}` : sprintMatch ? `⚡ Sprint · vs ${sprintMatch.opponent.name}` : activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
+          ruleHint={!isTraining && !activeQuiz ? t('countdown_timeoutRule') : undefined}
           onCancel={handleCancelCountdown}
           running={!showRotateOverlay}
         />
@@ -1614,6 +1615,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
           variant="timeattack"
+          rankBoard={gameMode === 'world' && !isOffline() ? { mode: 'world', difficulty, gameType: 'timeattack', category: 'cities' } : null}
           rounds={taResult.rounds}
           totalScore={taResult.totalScore}
           difficulty={difficulty}
@@ -1823,6 +1825,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           noOffers={isTraining || !!activeQuiz}
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
+          rankBoard={!isTraining && !activeQuiz && !activeChallenge && !sprintMatch && challengeSeed === null && !isSpeedDemon && !isOffline()
+            ? { mode: gameMode, difficulty, gameType: null, category: gameCategory } : null}
           rounds={finalRounds}
           totalScore={finalScore}
           difficulty={difficulty}

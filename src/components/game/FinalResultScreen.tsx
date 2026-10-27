@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
-import { itemTitleAuto } from '@/lib/catalog';
+import { itemTitleAuto, type Category } from '@/lib/catalog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { type RoundResult } from './GameScreen';
 import CountUp from '@/components/ui/CountUp';
-import { formatDistance, qualifiesForLeaderboard, addToLeaderboard, updatePlayerStats, getPlayerStats, getLeaderboard } from '@/lib/gameUtils';
+import { formatDistance, updatePlayerStats, getPlayerStats } from '@/lib/gameUtils';
+import { fetchMyRank } from '@/lib/gameResults';
 import { isPro } from '@/lib/premiumSystem';
 import { playVictory, playLevelUp, playRevengeActivate, playShareSuccess, playButtonTap, playGameOver } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
@@ -67,6 +68,9 @@ interface FinalResultScreenProps {
   /** Música: botón de sonido del encabezado (maqueta) */
   musicMuted?: boolean;
   onToggleMusic?: () => void;
+  /** Tabla del ranking en la que cuenta esta partida (la misma que muestra la pantalla Ranking); sin ella no se
+   *  anuncia puesto (entrenamiento, quizzes, retos, Imposible, sin conexión) */
+  rankBoard?: { mode: string; difficulty: string; gameType: string | null; category: Category } | null;
 }
 
 type Outcome = 'record' | 'timeout' | 'complete';
@@ -98,20 +102,17 @@ export default function FinalResultScreen({
   musicMuted,
   onToggleMusic,
   topPanel,
+  rankBoard = null,
 }: FinalResultScreenProps) {
   const { user, displayName: authName, isAnonymous } = useAuth();
   const { t, locale } = useI18n();
   const numberLocale = locale === 'en' ? 'en-US' : 'es-CO';
   const fmt = (n: number) => n.toLocaleString(numberLocale);
-  const [initials, setInitials] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [qualifies, setQualifies] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [previousBest, setPreviousBest] = useState(0);
   const [sharing, setSharing] = useState(false);
   const [sharingVideo, setSharingVideo] = useState(false);
-  const [rankPosition, setRankPosition] = useState<number | null>(null);
-  const [rankTotal, setRankTotal] = useState<number>(0);
+  /** Puesto en el ranking del servidor (Temporada 1, misma región, dificultad y categoría que la pantalla Ranking) */
+  const [myRank, setMyRank] = useState<{ rank: number; total: number } | null>(null);
   const [frustrationOffer, setFrustrationOffer] = useState<FrustrationOffer | null>(null);
   /** Repaso: listado "Tus respuestas por ciudad" o revisión de una ciudad */
   const [review, setReview] = useState<{ view: 'list' | 'city'; idx: number } | null>(null);
@@ -122,9 +123,6 @@ export default function FinalResultScreen({
   // Pistas escritas a mano para la revisión por ciudad: se descargan mientras el jugador ve el resultado
   // Pistas y ficha del lugar (Fase 8) para la revisión por ciudad: se descargan mientras se ve el resultado
   useEffect(() => { loadCityTips(); loadPlaceFacts(); loadPlaceTrivia(); }, []);
-  useEffect(() => {
-    if (authName && authName.length >= 3) setInitials(authName.substring(0, 3).toUpperCase());
-  }, [authName]);
 
   const distances = rounds.map(r => r.distance);
   const avgDistance = distances.length > 0 ? distances.reduce((a, b) => a + b, 0) / distances.length : 0;
@@ -134,21 +132,6 @@ export default function FinalResultScreen({
   const avgSpeed = rounds.length ? rounds.reduce((s, r) => s + r.multiplier, 0) / rounds.length : 0;
   const maxCombo = rounds.reduce((m, r) => Math.max(m, r.combo ?? 0), 0);
   const maxComboMult = rounds.reduce((m, r) => Math.max(m, r.comboMult ?? 1), 1);
-
-  const handleSave = async () => {
-    if (initials.length !== 3 || saving) return;
-    setSaving(true);
-    await addToLeaderboard({
-      initials: initials.toUpperCase(),
-      score: totalScore,
-      difficulty,
-      mode,
-      date: new Date().toISOString().split('T')[0],
-      user_id: user?.id,
-    });
-    setSaved(true);
-    setSaving(false);
-  };
 
   // Récord: supera el mejor previo (una primera partida no cuenta como récord). Aplica también en timeout.
   const isNewRecord = totalScore > previousBest && previousBest > 0;
@@ -161,8 +144,6 @@ export default function FinalResultScreen({
     const prevXp = calculateXP();
     // 60s de Caos nunca contó en stats (su escala de puntos inflaría el récord global)
     if (variant !== 'timeattack') updatePlayerStats(totalScore, countDistancesInStats ? distances : []);
-    // El ranking de ciudades no mezcla 60s de Caos (otra escala de puntos)
-    if (variant !== 'timeattack') qualifiesForLeaderboard(totalScore, mode, difficulty).then(setQualifies);
     const record = totalScore > prevBest && prevBest > 0;
     if (record) {
       playVictory();
@@ -177,12 +158,6 @@ export default function FinalResultScreen({
     const levelResult = checkLevelUp(prevXp, newXp);
     if (levelResult.leveled) setTimeout(() => playLevelUp(), reason === 'complete' ? 900 : 400);
 
-    if (variant !== 'timeattack') getLeaderboard(mode).then(board => {
-      setRankTotal(board.length);
-      const pos = board.findIndex(e => totalScore >= e.score);
-      setRankPosition(pos === -1 ? board.length + 1 : pos + 1);
-    });
-
     recordGameResult({ score: totalScore, avgDistance, reason });
     // Oferta (reglas 2026-10-19): nunca tras una buena partida (récord, o el Clásico completado) ni tras
     // el entrenamiento; máximo una al día (frustrationDetector) y no por debajo de la revisión de ciudades.
@@ -196,6 +171,20 @@ export default function FinalResultScreen({
     const avgD = Math.round(distances.reduce((a, b) => a + b, 0) / Math.max(1, distances.length));
     announce(t('sr_announceGameOver', { score: totalScore.toLocaleString(appNumberLocale()), rounds: rounds.length, avg: avgD }), 'assertive');
     return () => clearTimeout(offerTimer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Puesto en el ranking (AUD01): el mismo cálculo que la pantalla Ranking, leído después de que la partida se guarde
+  // (2,5 s y otra vez a los 6 s por si la red tardó). Antes salía de la tabla vieja, solo por región.
+  useEffect(() => {
+    if (!rankBoard) return;
+    let alive = true;
+    const read = () => fetchMyRank(rankBoard.mode, rankBoard.difficulty, 'all', rankBoard.gameType, 't1', rankBoard.category)
+      .then((r) => { if (alive && r?.rank) setMyRank({ rank: r.rank, total: r.totalPlayers }); })
+      .catch(() => {});
+    const a = setTimeout(read, 2500);
+    const b = setTimeout(read, 6000);
+    return () => { alive = false; clearTimeout(a); clearTimeout(b); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -215,14 +204,16 @@ export default function FinalResultScreen({
     : (t(`mode_${mode}` as never) || mode);
   // Mapa de fondo de la imagen/video compartido: Mundial no tiene bounds propios
   const shareMode = mode === 'mundial' ? 'world' : mode;
+  // Sin ninguna ciudad respondida la distancia media no es "0 m" (parecería precisión perfecta)
+  const avgDistText = rounds.length ? formatDistance(avgDistance) : t('final_noAnswers');
   const statTiles = tiles ?? (variant === 'timeattack'
     ? [
         { emoji: '🏙️', label: t('final_citiesCount'), value: String(rounds.length) },
-        { emoji: '📍', label: t('final_avgDist'), value: formatDistance(avgDistance) },
+        { emoji: '📍', label: t('final_avgDist'), value: avgDistText },
       ]
     : [
         { emoji: '🏙️', label: t('final_cities'), value: `${rounds.length} / ${totalRounds}` },
-        { emoji: '📍', label: t('final_avgDist'), value: formatDistance(avgDistance) },
+        { emoji: '📍', label: t('final_avgDist'), value: avgDistText },
       ]);
   const diffLabel = variant === 'mundial'
     ? `${BALL_EMOJI} ${t(`wc_diff_${difficulty}` as never)}`
@@ -232,7 +223,7 @@ export default function FinalResultScreen({
     playShareSuccess();
     setSharing(true);
     await shareResult({
-      playerName: authName || initials || 'Jugador',
+      playerName: authName || 'Jugador',
       score: totalScore,
       mode: shareMode,
       difficulty,
@@ -250,7 +241,7 @@ export default function FinalResultScreen({
     setSharingVideo(true);
     try {
       const success = await shareVideo({
-        playerName: authName || initials || 'Jugador',
+        playerName: authName || 'Jugador',
         totalScore,
         mode: shareMode,
         difficulty,
@@ -393,13 +384,9 @@ export default function FinalResultScreen({
             </button>
           )}
 
-          {rankPosition !== null && rankTotal > 0 && (
-            <p className="text-center text-xs text-muted-foreground mt-2.5">
-              {rankPosition <= 3
-                ? `${rankPosition === 1 ? '👑' : rankPosition === 2 ? '🥈' : '🥉'} ${t('final_top3', { pos: rankPosition })}`
-                : rankPosition <= rankTotal
-                ? `📊 ${t('final_beatPct', { pct: Math.round(((rankTotal - rankPosition + 1) / rankTotal) * 100) })}`
-                : `📈 ${t('final_keepPracticing')}`}
+          {myRank && (
+            <p className="text-center text-xs text-muted-foreground mt-2.5 animate-fade-in" role="status">
+              {myRank.rank <= 3 ? (myRank.rank === 1 ? '👑' : myRank.rank === 2 ? '🥈' : '🥉') : '🏆'} {t('final_rankLine', { board: `${modeLabel} · ${diffLabel}`, pos: myRank.rank, total: myRank.total })}
             </p>
           )}
 
@@ -424,32 +411,6 @@ export default function FinalResultScreen({
             </div>
           )}
 
-          {/* Iniciales para el ranking */}
-          {qualifies && !saved && (
-            <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-center">
-              <p className="text-xs sm:text-sm mb-2 text-primary font-bold">{t('final_top10')} {t('final_enterInitials')}</p>
-              <div className="flex justify-center items-center gap-2">
-                <input
-                  type="text"
-                  maxLength={3}
-                  value={initials}
-                  onChange={e => setInitials(e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase())}
-                  className="w-24 text-center text-xl font-bold bg-muted border border-border rounded-xl p-2 uppercase tracking-[0.3em]"
-                  placeholder="___"
-                  aria-label={t('final_enterInitials')}
-                />
-                <button
-                  onClick={handleSave}
-                  disabled={initials.length !== 3 || saving}
-                  className="btn3d px-5 py-2.5 rounded-xl font-black text-sm text-primary-foreground disabled:opacity-40"
-                  style={{ background: 'var(--grad-cta)' }}
-                >
-                  {saving ? t('final_saved') : t('final_saveScore')}
-                </button>
-              </div>
-            </div>
-          )}
-          {saved && <p className="text-center text-xs sm:text-sm mt-3 text-accent font-bold" role="status">✅ {t('final_saved')}</p>}
         </section>
 
         {/* ── Columna 2: ¿Lo intentamos de nuevo? ── */}
