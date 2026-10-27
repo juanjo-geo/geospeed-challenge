@@ -142,6 +142,7 @@ const ConquestInviteScreen = lazyWithReload(() => import('@/components/game/Conq
 const ConquestLobbyScreen = lazyWithReload(() => import('@/components/game/ConquestScreens').then(m => ({ default: m.ConquestLobbyScreen })));
 const ConquestBoardScreen = lazyWithReload(() => import('@/components/game/ConquestBoard').then(m => ({ default: m.ConquestBoardScreen })));
 const ConquestPractice = lazyWithReload(() => import('@/components/game/ConquestGame'));
+const ConquestMission = lazyWithReload(() => import('@/components/game/ConquestGame').then(m => ({ default: m.ConquestMission })));
 const MedalsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.MedalsScreen })));
 const AchievementsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.AchievementsScreen })));
 const SprintScreen = lazyWithReload(() => import('@/components/game/SprintScreen'));
@@ -197,7 +198,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads' | 'room-create' | 'room-join' | 'room' | 'conq-home' | 'conq-invite' | 'conq-group' | 'conq-map' | 'conq-practice';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads' | 'room-create' | 'room-join' | 'room' | 'conq-home' | 'conq-invite' | 'conq-group' | 'conq-map' | 'conq-practice' | 'conq-play';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -218,7 +219,7 @@ interface TrainingRun {
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
 const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro', 'downloads', 'room-create', 'room-join', 'conq-home', 'conq-invite', 'conq-group', 'conq-map'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
-const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing', 'conq-practice'];
+const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing', 'conq-practice', 'conq-play'];
 
 // Mismas ciudades para todos: semilla del día de juego (medianoche de Colombia, src/lib/gameDay.ts)
 function getDailySeed(): number {
@@ -354,6 +355,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [conqSeasonId, setConqSeasonId] = useState<string | null>(null);
   const [conqSheetIso, setConqSheetIso] = useState<string | null>(null);
   const [conqPractice, setConqPractice] = useState<{ iso: string; target: import('@/components/game/ConquestBoard').PracticeTarget } | null>(null);
+  // Misión oficial (C5): nueva (país + clave de idempotencia) o retomada (intento)
+  const [conqMission, setConqMission] = useState<{ iso: string | null; attemptId: string | null; requestId: string } | null>(null);
   const { user, isAnonymous: isAnonymousUser, displayName: authDisplayName } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('splash');
@@ -1712,13 +1715,21 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onBack={(gid) => (gid ? handleConquestGroup(gid) : handleConquest())}
           onOpenGroup={handleConquestGroup}
           onPractice={(iso, target) => { setConqPractice({ iso, target }); setPhase('conq-practice'); }}
-          onStart={() => toast(t('cq_missionSoon'))} />
+          onStart={(iso) => { setConqMission({ iso, attemptId: null, requestId: crypto.randomUUID() }); setPhase('conq-play'); }}
+          onResume={(attemptId) => { setConqMission({ iso: null, attemptId, requestId: crypto.randomUUID() }); setPhase('conq-play'); }} />
       );
     }
     if (phase === 'conq-practice' && conqSeasonId && conqPractice) {
       return (
         <ConquestPractice seasonId={conqSeasonId} iso={conqPractice.iso} target={conqPractice.target} musicMuted={isMusicMuted} onToggleMusic={toggleMusic}
           onExit={() => { setConqSheetIso(conqPractice.iso); setPhase('conq-map'); scrollAppToTop(); }} />
+      );
+    }
+    if (phase === 'conq-play' && conqSeasonId && conqMission) {
+      return (
+        <ConquestMission key={conqMission.attemptId ?? conqMission.requestId} seasonId={conqSeasonId} iso={conqMission.iso} attemptId={conqMission.attemptId}
+          requestId={conqMission.requestId} musicMuted={isMusicMuted} onToggleMusic={toggleMusic}
+          onExit={() => { setConqSheetIso(null); setConqMission(null); setPhase('conq-map'); scrollAppToTop(); }} />
       );
     }
 

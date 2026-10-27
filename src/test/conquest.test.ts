@@ -1,5 +1,5 @@
 /** Conquista — fase C1 (banco de ciudades, encuadre, semilla del servidor) y fase C3 (cliente y simulador). */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { CONQUEST_COUNTRIES, CONQUEST_CITIES } from '@/data/conquestCatalog';
 import { CONQUEST_COUNTRIES_SPEC } from '@/data/conquestTiers';
@@ -7,7 +7,7 @@ import { worldCities, europeCities, asiaCities, americasCities, africaCities } f
 import { COLOMBIA_CITIES } from '@/data/colombiaCatalog';
 import { PRO_PACK_CITIES } from '@/data/proPackCatalog';
 import { catalogItem, kindFromPlaceId, itemTitle } from '@/lib/catalog';
-import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet } from '@/lib/conquest';
+import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet, startAttempt, openRound, answerRound, abandonAttempt, fetchAttempt, currentRound, answeredRounds, rememberActiveMission, activeMission, forgetActiveMission } from '@/lib/conquest';
 import { playerStyles, pickTerritory, boardLayer, missionLayer, ZONE_BOUNDS, conqCountry } from '@/lib/conquestMap';
 import { CONQ } from '@/lib/theme';
 
@@ -218,5 +218,101 @@ describe('Conquista: tablero y práctica (C4)', () => {
     expect(pr.every((c) => bank.slice(5).includes(c.id))).toBe(true);
     localStorage.removeItem('geospeed_mock_conquest');
     localStorage.removeItem('geospeed_mock_conquest_db');
+  });
+});
+
+describe('Conquista: misión oficial (C5)', () => {
+  const W = () => window as unknown as Record<string, (...a: unknown[]) => unknown>;
+  async function season() {
+    localStorage.setItem('geospeed_mock_conquest', '1');
+    localStorage.removeItem('geospeed_mock_conquest_db');
+    const g = await createGroup('Misiones', `r-${Math.random()}`);
+    W().__mockConqJoin(2);
+    return (await startSeason(g.id)).season!.id;
+  }
+  const cleanup = () => { localStorage.removeItem('geospeed_mock_conquest'); localStorage.removeItem('geospeed_mock_conquest_db'); vi.useRealTimers(); };
+
+  it('capturar: rondas una a una, el lugar llega al abrir, idempotente y el país cambia de dueño', async () => {
+    const sid = await season();
+    const a0 = await startAttempt(sid, 'BR', 'req-1');
+    expect(a0).toMatchObject({ status: 'active', kind: 'capture', country: 'BR' });
+    expect(a0.rounds.every((r) => r.place_id === null && r.correct === null)).toBe(true);
+    // Repetir el inicio con la misma clave no gasta otra misión
+    expect((await startAttempt(sid, 'BR', 'req-1')).id).toBe(a0.id);
+    expect((await fetchMap(sid)).me).toMatchObject({ missions_left: 4, active_attempt: a0.id });
+    await expect(openRound(a0.id, 2)).rejects.toMatchObject({ code: 'round_invalid' });
+    await expect(startAttempt(sid, 'PE', 'req-2')).rejects.toMatchObject({ code: 'attempt_active' });
+    let a = a0;
+    for (let i = 1; i <= 5; i++) {
+      a = await openRound(a.id, i);
+      const r = a.rounds[i - 1];
+      expect(r.place_id && r.deadline_at && !r.closed).toBeTruthy();
+      expect(currentRound(a)?.idx).toBe(i);
+      const c = (await import('@/lib/itemMemory')).cityById(r.place_id!)!;
+      a = await answerRound(a.id, i, c.lat, c.lon);
+      expect(a.rounds[i - 1]).toMatchObject({ closed: true, correct: { lat: c.lat, lon: c.lon } });
+      expect(a.rounds[i - 1].answer!.points).toBeGreaterThan(900);
+      // Reenviar la misma ronda devuelve lo ya aceptado
+      const again = await answerRound(a.id, i, 0, 0);
+      expect(again.rounds[i - 1].answer!.points).toBe(a.rounds[i - 1].answer!.points);
+    }
+    expect(a).toMatchObject({ status: 'completed', outcome: 'captured' });
+    expect(answeredRounds(a)).toBe(5);
+    const m = await fetchMap(sid);
+    expect(m.territories.find((x) => x.iso === 'BR')).toMatchObject({ owner_id: 'me', defense: a.total, reserved_until: null });
+    expect(m.me!.active_attempt).toBeNull();
+    cleanup();
+  });
+
+  it('abandonar libera el país sin cambiarlo; atacar y empatar conserva al dueño', async () => {
+    const sid = await season();
+    W().__mockConqOwn('PE', 'bot', 0);
+    const a = await startAttempt(sid, 'PE', 'req-a');
+    expect(a.kind).toBe('attack');
+    await openRound(a.id, 1);
+    const ab = await abandonAttempt(a.id);
+    expect(ab).toMatchObject({ status: 'abandoned', outcome: 'abandoned' });
+    const t = await fetchTerritory(sid, 'PE');
+    expect(t.reserved_until).toBeNull();
+    expect(t.owner_id).not.toBe('me');
+    // Empate: todas las rondas vencen (0 puntos) contra una marca de 0 → se queda el dueño
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 3_700_000); // pasa la hora de espera del país
+    const b = await startAttempt(sid, 'PE', 'req-b');
+    let x = b;
+    for (let i = 1; i <= 5; i++) {
+      x = await openRound(x.id, i);
+      vi.setSystemTime(Date.now() + 16_000);
+      x = await fetchAttempt(x.id);
+      expect(x.rounds[i - 1]).toMatchObject({ closed: true, answer: { points: 0, lat: null } });
+    }
+    expect(x).toMatchObject({ status: 'completed', outcome: 'tie', total: 0 });
+    cleanup();
+  });
+
+  it('sin abrir la primera pregunta en 30 s se anula (no gasta misión); la reserva vence a los 3 min', async () => {
+    const sid = await season();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    const v = await startAttempt(sid, 'CL', 'req-v');
+    vi.setSystemTime(Date.now() + 31_000);
+    expect(await fetchAttempt(v.id)).toMatchObject({ status: 'void', outcome: 'void' });
+    expect((await fetchMap(sid)).me!.missions_left).toBe(5);
+    const e = await startAttempt(sid, 'MX', 'req-e');
+    await openRound(e.id, 1);
+    vi.setSystemTime(Date.now() + 181_000);
+    expect(await fetchAttempt(e.id)).toMatchObject({ status: 'expired', outcome: 'expired' });
+    expect((await fetchTerritory(sid, 'MX')).reserved_until).toBeNull();
+    cleanup();
+  });
+
+  it('recuerda la misión en curso de este teléfono', () => {
+    forgetActiveMission();
+    expect(activeMission()).toBeNull();
+    rememberActiveMission({ attemptId: 'a1', seasonId: 's1', iso: 'PE' });
+    expect(activeMission()).toEqual({ attemptId: 'a1', seasonId: 's1', iso: 'PE' });
+    forgetActiveMission('otra');
+    expect(activeMission()?.attemptId).toBe('a1');
+    forgetActiveMission('a1');
+    expect(activeMission()).toBeNull();
   });
 });
