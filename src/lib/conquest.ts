@@ -1,7 +1,8 @@
 /**
  * Conquista el mapa (docs/GeoSpeed_Conquista_Plan.md): cliente de las funciones del servidor
  * (supabase/migrations/20261108120000_conquest.sql). C3: grupos, invitaciones y sala de espera. C4: tablero, ficha del
- * territorio y práctica. Las misiones oficiales y el cierre llegan en C5–C6.
+ * territorio y práctica. C5: la misión oficial (el servidor abre cada ronda y mide el tiempo) y su resultado. El cierre de
+ * temporada y la actividad llegan en C6.
  *
  * Solo con cuenta registrada (decisión CQ-D1): sin sesión, o con una de invitado, las llamadas responden
  * `account_required` sin tocar el servidor (la vista previa de una invitación sí funciona sin sesión).
@@ -13,6 +14,7 @@
  *  · `__mockConqOwn(iso, quien, marca)` da un territorio de la temporada en curso: quien = 'me' | 'bot' | n.º de puesto |
  *    'retired' | 'free'.
  *  · `__mockConqReserve(iso, min)` simula que alguien juega por ese país; `__mockConqUse(iso)` gasta una misión mía ahí.
+ *  · Las misiones simuladas usan las 5 primeras ciudades del banco como paquete oficial y el reloj real.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,6 +67,22 @@ export interface ConqTerritoryDetail {
   kind: ConqKind; threshold: number; rounds: number; seconds: number; can_start: boolean; reason: ConqBlock | null;
   cooldown_until: string | null; my_country_today: number; per_country_daily: number; me: ConqMe | null; server_now: string;
 }
+/** Misión oficial (conq_attempt_*): el lugar de cada ronda solo llega al abrirla y la ubicación correcta, al cerrarla */
+export type ConqAttemptStatus = 'active' | 'completed' | 'abandoned' | 'expired' | 'void';
+export type ConqOutcome = 'captured' | 'failed' | 'conquered' | 'defended' | 'tie' | 'abandoned' | 'expired' | 'void';
+export interface ConqRound {
+  idx: number; place_id: string | null; name: string | null; opened_at: string | null; deadline_at: string | null; closed: boolean;
+  answer: { lat: number | null; lon: number | null; time_s: number | null; distance_km: number | null; points: number } | null;
+  correct: { lat: number; lon: number } | null;
+}
+export interface ConqAttempt {
+  id: string; season_id: string; country: string; kind: ConqKind; status: ConqAttemptStatus; outcome: ConqOutcome | null;
+  started_at: string; first_open_deadline: string; expires_at: string; finished_at: string | null; total: number;
+  owner_at_start: string | null; defense_at_start: number; threshold: number; seconds: number; server_now: string;
+  territory: { owner_id: string | null; retired: boolean; defense: number; version: number };
+  rounds: ConqRound[];
+}
+
 /** Ciudad de práctica: del banco del país, fuera del paquete oficial (el servidor no revela las oficiales) */
 export interface ConqPracticeCity { id: string; name: string; lat: number; lon: number }
 
@@ -227,6 +245,43 @@ export async function fetchPracticeSet(seasonId: string, iso: string): Promise<C
   return (await rpc<ConqPracticeCity[] | null>('conq_practice_set', { p_season: seasonId, p_iso: iso })) ?? [];
 }
 
+// ── Misión oficial ───────────────────────────────────────────────────────────────────────────────────────
+export async function startAttempt(seasonId: string, iso: string, requestId: string): Promise<ConqAttempt> {
+  if (mockEnabled()) return mock.attemptStart(seasonId, iso, requestId);
+  return rpc<ConqAttempt>('conq_attempt_start', { p_season: seasonId, p_iso: iso, p_request_id: requestId });
+}
+export async function openRound(attemptId: string, idx: number): Promise<ConqAttempt> {
+  if (mockEnabled()) return mock.roundOpen(attemptId, idx);
+  return rpc<ConqAttempt>('conq_round_open', { p_attempt: attemptId, p_idx: idx });
+}
+export async function answerRound(attemptId: string, idx: number, lat: number, lon: number): Promise<ConqAttempt> {
+  if (mockEnabled()) return mock.roundAnswer(attemptId, idx, lat, lon);
+  return rpc<ConqAttempt>('conq_round_answer', { p_attempt: attemptId, p_idx: idx, p_lat: lat, p_lon: lon });
+}
+export async function abandonAttempt(attemptId: string): Promise<ConqAttempt> {
+  if (mockEnabled()) return mock.attemptAbandon(attemptId);
+  return rpc<ConqAttempt>('conq_attempt_abandon', { p_attempt: attemptId });
+}
+export async function fetchAttempt(attemptId: string): Promise<ConqAttempt> {
+  if (mockEnabled()) return mock.attemptState(attemptId);
+  return rpc<ConqAttempt>('conq_attempt_state', { p_attempt: attemptId });
+}
+/** Ronda en juego: la primera sin cerrar (null si ya se cerraron las cinco) */
+export const currentRound = (a: ConqAttempt): ConqRound | null => a.rounds.find((r) => !r.closed) ?? null;
+/** Ciudades respondidas (con un toque; las que vencieron sin respuesta no cuentan) */
+export const answeredRounds = (a: ConqAttempt) => a.rounds.filter((r) => r.closed && r.answer?.lat != null).length;
+
+/** Misión en curso de este teléfono (para volver a ella tras recargar o cerrar la app) */
+const ACTIVE_KEY = 'geospeed_conq_active';
+export interface ActiveMission { attemptId: string; seasonId: string; iso: string }
+export function rememberActiveMission(m: ActiveMission): void { try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(m)); } catch { /* sin almacenamiento */ } }
+export function forgetActiveMission(attemptId?: string): void {
+  try { if (!attemptId || activeMission()?.attemptId === attemptId) localStorage.removeItem(ACTIVE_KEY); } catch { /* sin almacenamiento */ }
+}
+export function activeMission(): ActiveMission | null {
+  try { const v = JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null'); return v?.attemptId ? v : null; } catch { return null; }
+}
+
 /** Repite `refresh` cada `every` ms con la pestaña visible y al volver a ella */
 function usePolling(key: string | null, every: number, refresh: () => Promise<void>) {
   useEffect(() => {
@@ -313,10 +368,16 @@ export function useConqGroup(id: string | null) {
 
 // ── Simulador de desarrollo ──────────────────────────────────────────────────────────────────────────────
 interface MockMember { user_id: string; name: string; avatar: string | null; role: 'admin' | 'member'; joined_at: number; muted: boolean }
-interface MockTerr { owner: string | null; retired: boolean; defense: number; version: number; reserved_until: number | null; captured_at: number | null }
+interface MockTerr { owner: string | null; retired: boolean; defense: number; version: number; reserved_until: number | null; captured_at: number | null; reserved_by?: string | null }
+interface MockRound { idx: number; place_id: string; opened_at: number | null; deadline_at: number | null; closed: boolean; lat: number | null; lon: number | null; time_s: number | null; km: number | null; points: number }
+interface MockAttempt {
+  id: string; iso: string; kind: ConqKind; status: ConqAttemptStatus; outcome: ConqOutcome | null; started_at: number; first_open_deadline: number;
+  expires_at: number; finished_at: number | null; total: number; owner_at_start: string | null; defense_at_start: number; version_at_start: number;
+  request_id: string; rounds: MockRound[];
+}
 interface MockSeason {
   id: string; number: number; status: ConqSeasonStatus; confirms: string[]; started_at: number | null; ends_at: number | null;
-  roster?: ConqPlayer[]; terr?: Record<string, MockTerr>; used?: { iso: string; at: number }[];
+  roster?: ConqPlayer[]; terr?: Record<string, MockTerr>; used?: { iso: string; at: number; attempt?: string }[]; attempts?: MockAttempt[];
 }
 interface MockGroup { id: string; name: string; status: 'active' | 'archived'; admin: string; code: string; members: MockMember[]; seasons: MockSeason[] }
 const ME = 'me';
@@ -475,6 +536,7 @@ const mock = {
       : s.ends_at && now >= s.ends_at - CONQ_RULES_V1.last_minutes_s * 1000 ? 'season_ending'
       : t.owner === ME ? 'own_territory'
       : t.reserved_until && t.reserved_until > now ? 'reserved'
+      : (s.attempts ?? []).some((a) => a.status === 'active') ? 'attempt_active'
       : mine.length >= CONQ_RULES_V1.daily_missions ? 'daily_limit'
       : here >= CONQ_RULES_V1.per_country_daily ? 'country_limit'
       : coolUntil > now ? 'cooldown' : null;
@@ -483,6 +545,80 @@ const mock = {
       kind: !t.owner && !t.retired ? 'capture' : 'attack', threshold: CONQ_RULES_V1.threshold, rounds: 5, seconds: 15,
       can_start: !reason, reason, cooldown_until: coolUntil > now ? new Date(coolUntil).toISOString() : null,
       my_country_today: here, per_country_daily: CONQ_RULES_V1.per_country_daily, me, server_now: new Date(now).toISOString() };
+  },
+  async attemptStart(seasonId: string, iso: string, requestId: string): Promise<ConqAttempt> {
+    await wait();
+    const { db, s } = mockSeason(seasonId);
+    const prev = (s.attempts ?? []).find((a) => a.request_id === requestId);
+    if (prev) { mockTouchAttempt(s, prev); mockSave(db); return mockAttemptJson(s, prev); }
+    for (const a of s.attempts ?? []) mockTouchAttempt(s, a);
+    mockSave(db);
+    const terr = await mock.territory(seasonId, iso);
+    if (terr.reason) throw new ConqError(terr.reason);
+    const db2 = mockDb();
+    const { s: s2 } = (() => { for (const g of Object.values(db2)) { const x = g.seasons.find((y) => y.id === seasonId); if (x) return { s: x }; } throw new ConqError('not_member'); })();
+    const t = mockTerr(s2)[iso.toUpperCase()];
+    const now = Date.now();
+    const ids = CONQUEST_COUNTRIES.find((c) => c.iso === iso.toUpperCase())?.cityIds.slice(0, 5) ?? [];
+    const a: MockAttempt = {
+      id: crypto.randomUUID(), iso: iso.toUpperCase(), kind: terr.kind, status: 'active', outcome: null, started_at: now,
+      first_open_deadline: now + 30_000, expires_at: Math.min(now + CONQ_RULES_V1.reservation_s * 1000, s2.ends_at ?? Infinity), finished_at: null, total: 0,
+      owner_at_start: t.owner, defense_at_start: t.defense, version_at_start: t.version, request_id: requestId,
+      rounds: ids.map((id, i) => ({ idx: i + 1, place_id: id, opened_at: null, deadline_at: null, closed: false, lat: null, lon: null, time_s: null, km: null, points: 0 })),
+    };
+    (s2.attempts ??= []).push(a);
+    (s2.used ??= []).push({ iso: a.iso, at: now, attempt: a.id });
+    Object.assign(t, { reserved_by: a.id, reserved_until: a.expires_at });
+    mockSave(db2);
+    return mockAttemptJson(s2, a);
+  },
+  async roundOpen(attemptId: string, idx: number): Promise<ConqAttempt> {
+    await wait();
+    const { db, s, a } = mockAttempt(attemptId);
+    mockTouchAttempt(s, a);
+    const r = a.rounds.find((x) => x.idx === idx);
+    if (!r) throw new ConqError('round_invalid');
+    if (a.status === 'active' && !r.opened_at) {
+      if (a.rounds.some((x) => x.idx < idx && !x.closed)) throw new ConqError('round_invalid');
+      r.opened_at = Date.now();
+      r.deadline_at = Math.min(r.opened_at + 15_000, a.expires_at);
+    }
+    mockSave(db);
+    return mockAttemptJson(s, a);
+  },
+  async roundAnswer(attemptId: string, idx: number, lat: number, lon: number): Promise<ConqAttempt> {
+    await wait();
+    const { db, s, a } = mockAttempt(attemptId);
+    const r = a.rounds.find((x) => x.idx === idx);
+    if (!r) throw new ConqError('round_invalid');
+    if (r.closed || a.status !== 'active') return mockAttemptJson(s, a);
+    if (!r.opened_at) throw new ConqError('round_invalid');
+    const now = Date.now();
+    if (now >= a.expires_at) { mockTouchAttempt(s, a); mockSave(db); return mockAttemptJson(s, a); }
+    const c = cityById(r.place_id);
+    const km = c ? haversine(lat, lon, c.lat, c.lon) : 0;
+    const t = Math.round((now - r.opened_at) / 10) / 100;
+    Object.assign(r, { lat, lon, time_s: t, km: Math.round(km * 10) / 10, points: now >= (r.deadline_at ?? 0) ? 0 : conqPoints(km, t), closed: true });
+    if (a.rounds.every((x) => x.closed)) mockFinalize(s, a, now);
+    mockSave(db);
+    return mockAttemptJson(s, a);
+  },
+  async attemptAbandon(attemptId: string): Promise<ConqAttempt> {
+    await wait();
+    const { db, s, a } = mockAttempt(attemptId);
+    if (a.status === 'active') {
+      Object.assign(a, { status: 'abandoned', outcome: 'abandoned', finished_at: Date.now(), total: a.rounds.reduce((x, r) => x + r.points, 0) });
+      mockRelease(s, a);
+    }
+    mockSave(db);
+    return mockAttemptJson(s, a);
+  },
+  async attemptState(attemptId: string): Promise<ConqAttempt> {
+    await wait();
+    const { db, s, a } = mockAttempt(attemptId);
+    mockTouchAttempt(s, a);
+    mockSave(db);
+    return mockAttemptJson(s, a);
   },
   async practice(seasonId: string, iso: string): Promise<ConqPracticeCity[]> {
     await wait();
@@ -525,13 +661,84 @@ function mockStandings(g: MockGroup, s: MockSeason): ConqStanding[] {
   for (const r of rows) r.rank = 1 + rows.filter((o) => o.territories > r.territories || (o.territories === r.territories && o.defense_sum > r.defense_sum)).length;
   return rows.sort((a, b) => a.rank - b.rank || (a.name ?? '').localeCompare(b.name ?? ''));
 }
+const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const a = Math.sin(rad(lat2 - lat1) / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(rad(lon2 - lon1) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(a)));
+};
+function mockAttempt(attemptId: string) {
+  const db = mockDb();
+  for (const g of Object.values(db)) for (const s of g.seasons) {
+    const a = (s.attempts ?? []).find((x) => x.id === attemptId);
+    if (a) return { db, s, a };
+  }
+  throw new ConqError('attempt_unavailable');
+}
+function mockRelease(s: MockSeason, a: MockAttempt) {
+  const t = mockTerr(s)[a.iso];
+  if (t.reserved_by === a.id) Object.assign(t, { reserved_by: null, reserved_until: null });
+}
+/** Como _conq_finalize: solo cambia el mapa si terminó dentro de la reserva y nadie tocó el país entretanto */
+function mockFinalize(s: MockSeason, a: MockAttempt, doneAt: number) {
+  const t = mockTerr(s)[a.iso];
+  const total = a.rounds.reduce((x, r) => x + r.points, 0);
+  if (doneAt > a.expires_at || t.reserved_by !== a.id || t.version !== a.version_at_start) {
+    Object.assign(a, { status: 'expired', outcome: 'expired', total, finished_at: Math.min(doneAt, a.expires_at) });
+    mockRelease(s, a);
+    return;
+  }
+  const outcome: ConqOutcome = !t.owner && !t.retired ? (total >= CONQ_RULES_V1.threshold ? 'captured' : 'failed')
+    : total > t.defense ? 'conquered' : total === t.defense ? 'tie' : 'defended';
+  if (outcome === 'captured' || outcome === 'conquered') Object.assign(t, { owner: ME, retired: false, defense: total, captured_at: doneAt });
+  Object.assign(t, { version: t.version + 1, reserved_by: null, reserved_until: null });
+  Object.assign(a, { status: 'completed', outcome, total, finished_at: doneAt });
+}
+function mockTouchAttempt(s: MockSeason, a: MockAttempt) {
+  if (a.status !== 'active') return;
+  const now = Date.now();
+  for (const r of a.rounds) if (r.opened_at && !r.closed && (r.deadline_at ?? 0) <= now) Object.assign(r, { closed: true, points: 0 });
+  if (a.rounds.every((r) => r.closed)) {
+    // Cuándo se cerró la última: la respuesta recibida o el vencimiento
+    mockFinalize(s, a, Math.max(...a.rounds.map((r) => (r.opened_at && r.time_s != null ? r.opened_at + r.time_s * 1000 : r.deadline_at ?? now))));
+    return;
+  }
+  if (!a.rounds.some((r) => r.opened_at) && now >= a.first_open_deadline) {
+    Object.assign(a, { status: 'void', outcome: 'void', finished_at: now });
+    s.used = (s.used ?? []).filter((u) => u.attempt !== a.id);
+    mockRelease(s, a);
+    return;
+  }
+  if (now >= a.expires_at) {
+    Object.assign(a, { status: 'expired', outcome: 'expired', total: a.rounds.reduce((x, r) => x + r.points, 0), finished_at: a.expires_at });
+    mockRelease(s, a);
+  }
+}
+function mockAttemptJson(s: MockSeason, a: MockAttempt): ConqAttempt {
+  const t = mockTerr(s)[a.iso];
+  const iso = (n: number | null) => (n == null ? null : new Date(n).toISOString());
+  return {
+    id: a.id, season_id: s.id, country: a.iso, kind: a.kind, status: a.status, outcome: a.outcome, started_at: iso(a.started_at)!,
+    first_open_deadline: iso(a.first_open_deadline)!, expires_at: iso(a.expires_at)!, finished_at: iso(a.finished_at),
+    total: a.status === 'active' ? a.rounds.reduce((x, r) => x + r.points, 0) : a.total, owner_at_start: a.owner_at_start,
+    defense_at_start: a.defense_at_start, threshold: CONQ_RULES_V1.threshold, seconds: 15, server_now: new Date().toISOString(),
+    territory: { owner_id: t.owner, retired: t.retired, defense: t.defense, version: t.version },
+    rounds: a.rounds.map((r) => {
+      const c = cityById(r.place_id);
+      return { idx: r.idx, place_id: r.opened_at ? r.place_id : null, name: r.opened_at ? c?.name ?? r.place_id : null,
+        opened_at: iso(r.opened_at), deadline_at: iso(r.deadline_at), closed: r.closed,
+        answer: r.closed ? { lat: r.lat, lon: r.lon, time_s: r.time_s, distance_km: r.km, points: r.points } : null,
+        correct: r.closed && c ? { lat: c.lat, lon: c.lon } : null };
+    }),
+  };
+}
 function mockMe(s: MockSeason): ConqMe | null {
   if (s.status !== 'active' || !s.started_at) return null;
   const now = Date.now();
   const day = Math.floor((now - s.started_at) / 86_400_000);
   const used = (s.used ?? []).filter((u) => Math.floor((u.at - s.started_at!) / 86_400_000) === day).length;
   return { missions_left: Math.max(0, CONQ_RULES_V1.daily_missions - used), missions_per_day: CONQ_RULES_V1.daily_missions,
-    next_reset_at: new Date(s.started_at + (day + 1) * 86_400_000).toISOString(), active_attempt: null,
+    next_reset_at: new Date(s.started_at + (day + 1) * 86_400_000).toISOString(),
+    active_attempt: (s.attempts ?? []).find((a) => { mockTouchAttempt(s, a); return a.status === 'active'; })?.id ?? null,
     in_roster: (s.roster ?? []).some((p) => p.user_id === ME) || s.confirms.includes(ME) };
 }
 

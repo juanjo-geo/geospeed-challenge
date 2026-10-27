@@ -3,7 +3,7 @@ import { useI18n } from '@/i18n';
 import { playButtonTap, playClick } from '@/lib/sounds';
 import { trackEvent } from '@/lib/analytics';
 import {
-  conqServerNow, formatTimeLeft, useConqMap, useConqTerritory,
+  activeMission, conqServerNow, formatTimeLeft, useConqMap, useConqTerritory,
   type ConqBlock, type ConqMap, type ConqTerritory, type ConqTerritoryDetail,
 } from '@/lib/conquest';
 import {
@@ -35,7 +35,10 @@ interface ConquestBoardScreenProps {
   onBack: (groupId: string | null) => void;
   onOpenGroup: (groupId: string) => void;
   onPractice: (iso: string, target: PracticeTarget) => void;
+  /** Misión oficial nueva en ese país (ya confirmada) */
   onStart: (iso: string) => void;
+  /** Retomar la misión en curso (la de este u otro teléfono) */
+  onResume: (attemptId: string) => void;
 }
 
 /** Fuerza un re-render cada `ms` (cuentas regresivas que dependen del reloj del servidor) */
@@ -48,7 +51,7 @@ const IsoFlag = ({ iso, className = 'w-7' }: { iso: string; className?: string }
   <img src={`/flags/${iso}.svg`} alt="" aria-hidden className={`aspect-[3/2] object-cover rounded-[3px] shadow-sm ring-1 ring-black/20 shrink-0 ${className}`} />
 );
 
-export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpenGroup, onPractice, onStart }: ConquestBoardScreenProps) {
+export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpenGroup, onPractice, onStart, onResume }: ConquestBoardScreenProps) {
   const { t } = useI18n();
   const errText = useErrText();
   const { map, error, refresh } = useConqMap(seasonId);
@@ -95,7 +98,7 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
     return (
       <TerritorySheet map={map} iso={sheet} styles={styles}
         onBack={() => { playButtonTap(); setSheet(null); void refresh(); }}
-        onPractice={onPractice} onStart={onStart} />
+        onPractice={onPractice} onStart={onStart} onResume={onResume} />
     );
   }
 
@@ -120,6 +123,10 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
 
       {map.final && <p className="rounded-2xl border border-primary/50 bg-primary/10 px-3 py-2 text-sm text-center font-bold">🏁 {t('cq_seasonOverBoard')}</p>}
       {active && map.me && !map.me.in_roster && <p className="rounded-2xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-center">{t('cq_notInRosterBoard')}</p>}
+      {/* Misión en curso (recarga, app cerrada, otro teléfono): el reloj del servidor sigue corriendo */}
+      {active && map.me?.active_attempt && (
+        <ActiveBanner attemptId={map.me.active_attempt} onResume={onResume} />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] items-start">
         {/* P1: mapa con dueños, zonas y leyenda (min-w-0: si no, el lienzo ensancha la columna de la cuadrícula) */}
@@ -174,6 +181,19 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
         </div>
       </div>
     </Page>
+  );
+}
+
+function ActiveBanner({ attemptId, onResume }: { attemptId: string; onResume: (id: string) => void }) {
+  const { t, locale } = useI18n();
+  const local = activeMission();
+  const where = local?.attemptId === attemptId ? conqCountryName(local.iso, locale) : null;
+  return (
+    <div className="rounded-2xl border-2 border-primary bg-primary/10 px-3 py-2.5 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left" role="status">
+      <span className="text-2xl" aria-hidden>⚔️</span>
+      <p className="min-w-0 flex-1 font-bold">{where ? t('cq_activeBannerIn', { country: where }) : t('cq_activeBanner')}</p>
+      <button onClick={() => { playButtonTap(); onResume(attemptId); }} className="btn3d shrink-0 rounded-xl px-4 py-2 font-black text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>{t('cq_continueMission')}</button>
+    </div>
   );
 }
 
@@ -281,9 +301,10 @@ interface TerritorySheetProps {
   onBack: () => void;
   onPractice: (iso: string, target: PracticeTarget) => void;
   onStart: (iso: string) => void;
+  onResume: (attemptId: string) => void;
 }
 
-function TerritorySheet({ map, iso, styles, onBack, onPractice, onStart }: TerritorySheetProps) {
+function TerritorySheet({ map, iso, styles, onBack, onPractice, onStart, onResume }: TerritorySheetProps) {
   const { t, locale } = useI18n();
   const errText = useErrText();
   const { detail, error } = useConqTerritory(map.season.id, iso);
@@ -316,6 +337,14 @@ function TerritorySheet({ map, iso, styles, onBack, onPractice, onStart }: Terri
     }
   };
   const ctaLabel = kind === 'recover' ? t('cq_startRecover') : kind === 'capture' ? t('cq_startCapture') : t('cq_startMission');
+  // Mi misión en curso (aquí o en otro país): el botón la retoma en vez de iniciar otra
+  const resumeId = me?.active_attempt && (reason === 'attempt_active' || reason === 'reserved') ? me.active_attempt : null;
+  const start = () => {
+    playButtonTap();
+    if (resumeId) { onResume(resumeId); return; }
+    if (!window.confirm(t('cq_startConfirm2', { country: name, n: me?.missions_left ?? 0, total: me?.missions_per_day ?? 5 }))) return;
+    onStart(iso);
+  };
 
   return (
     <Page wide>
@@ -382,9 +411,10 @@ function TerritorySheet({ map, iso, styles, onBack, onPractice, onStart }: Terri
             </Card>
           )}
           {error && <ErrorBox text={errText(error.code)} />}
-          {reason && (
+          {reason && !resumeId && (
             <p className="rounded-2xl border border-primary/50 bg-primary/10 px-3 py-2.5 text-sm sm:text-base text-center font-semibold" role="status">{why(reason)}</p>
           )}
+          {resumeId && <p className="rounded-2xl border border-primary/50 bg-primary/10 px-3 py-2.5 text-sm sm:text-base text-center font-semibold" role="status">{t('cq_activeBanner')}</p>}
           <p className="text-xs sm:text-sm text-muted-foreground text-center">{t('cq_practiceNote')}</p>
         </div>
       </div>
@@ -394,7 +424,7 @@ function TerritorySheet({ map, iso, styles, onBack, onPractice, onStart }: Terri
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
         {kind !== 'own' && (
           <div className="w-full max-w-xl">
-            <CtaButton onClick={() => { playButtonTap(); onStart(iso); }} disabled={!detail?.can_start}>⚔️ {ctaLabel}</CtaButton>
+            <CtaButton onClick={start} disabled={!detail?.can_start && !resumeId}>⚔️ {resumeId ? t('cq_continueMission') : ctaLabel}</CtaButton>
           </div>
         )}
         <button onClick={() => { playButtonTap(); trackEvent('conq_practice_open', { iso }); onPractice(iso, target); }}
