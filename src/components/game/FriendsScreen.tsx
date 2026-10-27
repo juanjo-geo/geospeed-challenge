@@ -90,9 +90,10 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
   // 6 números = PIN de una sala en vivo; si no, código de reto (5 caracteres)
   const digits = code.replace(/\D/g, '');
   const isPin = showRooms && !!onOpenRoomPin && /^\d+$/.test(code) && code.length === 6 && isRoomPin(digits);
-  // 6 caracteres con alguna letra = código de un grupo de Conquista
+  // 6 caracteres con alguna letra = código de un grupo de Conquista. Se acepta aunque Conquista siga oculta: el código
+  // es la invitación (así entra el grupo de prueba desde la app instalada) y no choca con retos (5) ni PIN (6 números)
   const showConquest = !!onConquest && conquestEnabled(getFlag('conquest_enabled'));
-  const isConq = showConquest && !!onOpenConquestCode && /[A-Z]/.test(code) && isConqCode(code);
+  const isConq = !!onOpenConquestCode && /[A-Z]/.test(code) && isConqCode(code);
   const normalized = isPin ? digits : isConq ? code : normalizeCode(code);
   const canJoin = isPin || isConq || isValidCode(normalized);
   const showLiveDuel = !!onLiveDuel && getFlag('live_duel_enabled');
@@ -163,7 +164,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
                 <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/60" />
                 <input
                   value={code}
-                  onChange={(e) => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); setCode((showRooms && /^\d+$/.test(v)) || showConquest ? v.slice(0, 6) : normalizeCode(v)); }}
+                  onChange={(e) => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); setCode((showRooms && /^\d+$/.test(v)) || onOpenConquestCode ? v.slice(0, 6) : normalizeCode(v)); }}
                   placeholder={showConquest ? t('friends_codeOrPinOrGroup') : showRooms && onOpenRoomPin ? t('friends_codeOrPin') : t('friends_codePlaceholder')}
                   inputMode="text"
                   autoCapitalize="characters"

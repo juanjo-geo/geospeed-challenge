@@ -10,6 +10,8 @@ import { catalogItem, kindFromPlaceId, itemTitle } from '@/lib/catalog';
 import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet, startAttempt, openRound, answerRound, abandonAttempt, fetchAttempt, currentRound, answeredRounds, rememberActiveMission, activeMission, forgetActiveMission, fetchActivity, markSeen, fetchStandings, championsOf, type ConqEvent } from '@/lib/conquest';
 import { playerStyles, pickTerritory, boardLayer, missionLayer, ZONE_BOUNDS, conqCountry, describeEvent, timeAgo } from '@/lib/conquestMap';
 import { reminderTimes, nativeReminderId } from '@/lib/conquestReminders';
+import { conquestBetaOn } from '@/lib/conquestBeta';
+import { roundDelayMs, lostPoints, summarizeNet, reportMissionNet, netLog, netAverage, type NetSample } from '@/lib/conquestNet';
 import { CONQ } from '@/lib/theme';
 
 const byId = new Map<string, { lat: number; lon: number; name: string }>();
@@ -398,5 +400,65 @@ describe('Conquista: actividad, temporada y cierre (C6)', () => {
     expect(lobby.last_closed?.champions).toHaveLength(1);
     localStorage.removeItem('geospeed_mock_conquest');
     localStorage.removeItem('geospeed_mock_conquest_db');
+  });
+});
+
+describe('Conquista: QA y red (C7)', () => {
+  const sample = (over: Partial<NetSample> = {}): NetSample => ({ idx: 1, openRttMs: 200, thinkMs: 4000, answerRttMs: 220, serverS: 4.3, km: 120, ...over });
+
+  it('el retraso es lo que el servidor contó de más y nunca es negativo', () => {
+    expect(roundDelayMs(sample())).toBe(300);
+    expect(roundDelayMs(sample({ serverS: 3.9 }))).toBe(0);
+  });
+
+  it('los puntos que costó la red salen de la fórmula de Conquista', () => {
+    expect(lostPoints(sample())).toBe(conqPoints(120, 4) - conqPoints(120, 4.3));
+    expect(lostPoints(sample({ km: null }))).toBe(0);
+    // Tocó a los 14,8 s en el teléfono, pero llegó después de los 15: el servidor da 0
+    expect(lostPoints(sample({ thinkMs: 14_800, serverS: 15.2 }))).toBe(conqPoints(120, 14.8));
+  });
+
+  it('resume la misión: promedio, máximo, ida y vuelta y puntos perdidos', () => {
+    expect(summarizeNet([])).toBeNull();
+    const s = summarizeNet([sample(), sample({ idx: 2, serverS: 4.9, openRttMs: 400, answerRttMs: 400 })])!;
+    expect(s).toMatchObject({ rounds: 2, avgDelayMs: 600, maxDelayMs: 900, avgRttMs: 305 });
+    expect(s.lostPoints).toBe(lostPoints(sample()) + lostPoints(sample({ serverS: 4.9 })));
+  });
+
+  it('cada misión se guarda y se envía una sola vez', () => {
+    localStorage.removeItem('geospeed_conq_net');
+    localStorage.removeItem('geospeed_conq_net_sent');
+    const gtag = vi.fn();
+    (window as unknown as { gtag: unknown }).gtag = gtag;
+    reportMissionNet('a1', 'CO', [sample()]);
+    reportMissionNet('a1', 'CO', [sample()]);
+    reportMissionNet('a2', 'PE', [sample({ serverS: 4.5 })]);
+    expect(netLog().map((r) => r.iso)).toEqual(['CO', 'PE']);
+    expect(netAverage()).toMatchObject({ missions: 2, avgDelayMs: 400 });
+    expect(gtag.mock.calls.filter((c) => c[1] === 'conq_latency')).toHaveLength(2);
+    delete (window as unknown as { gtag?: unknown }).gtag;
+    localStorage.removeItem('geospeed_conq_net');
+    localStorage.removeItem('geospeed_conq_net_sent');
+  });
+
+  it('entrar a un grupo activa Conquista en ese teléfono (el grupo de prueba la ve aunque siga oculta)', async () => {
+    localStorage.setItem('geospeed_mock_conquest', '1');
+    localStorage.removeItem('geospeed_mock_conquest_db');
+    localStorage.removeItem('geospeed_conquest_beta');
+    const code = (window as unknown as { __mockConqGroup: (n: number) => string }).__mockConqGroup(2);
+    expect(conquestBetaOn()).toBe(false);
+    await acceptInvite(code);
+    expect(conquestBetaOn()).toBe(true);
+    localStorage.removeItem('geospeed_conquest_beta');
+    localStorage.removeItem('geospeed_mock_conquest');
+    localStorage.removeItem('geospeed_mock_conquest_db');
+  });
+
+  it('en una temporada acelerada los recordatorios se aceleran igual', () => {
+    const ends = Date.parse('2026-11-08T20:00:00Z');
+    // Con 144 un día dura 10 minutos: "24 h antes" = 10 min antes y "1 h antes" = 25 s antes
+    expect(reminderTimes(ends, ends - 11 * 60_000, 144)).toEqual([{ h: 24, at: ends - 600_000 }, { h: 1, at: ends - 25_000 }]);
+    expect(reminderTimes(ends, ends - 60_000, 144).map((x) => x.h)).toEqual([1]);
+    expect(reminderTimes(ends, ends - 48 * 3_600_000, 0).map((x) => x.h)).toEqual([24, 1]);
   });
 });
