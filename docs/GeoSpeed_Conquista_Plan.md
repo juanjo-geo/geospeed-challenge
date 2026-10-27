@@ -1,6 +1,6 @@
 # GeoSpeed · Conquista el mapa — revisión y plan por fases
 
-2026-10-26. Estado: **plan para aprobar**. Fuente: `docs/GeoSpeed_Conquista_Especificacion_v1.1.md` (transcripción del
+2026-10-26. Estado: **plan aprobado; decisiones CQ-D1–D4 tomadas por JuanJo el 2026-10-26** (sección 7). Siguiente: C0. Fuente: `docs/GeoSpeed_Conquista_Especificacion_v1.1.md` (transcripción del
 .docx de JuanJo) y las maquetas `docs/maquetas/conquista/`. Este documento revisa la especificación contra el código
 actual, verifica la auditoría del juego público (AUD01–AUD08) y propone cómo construirlo por fases. Las reglas aprobadas
 en la especificación no se vuelven a discutir; solo se piden las decisiones que la especificación no cubre o que el
@@ -182,6 +182,9 @@ E5 ≈ C7. La diferencia es que propongo construir **todo el servidor en una sol
 en Sprint y Sala en vivo. C0 es independiente y puede salir primero; C1 (contenido) avanza en paralelo con C2.
 
 ## 7. Decisiones para JuanJo
+
+**Decidido por JuanJo el 2026-10-26:** CQ-D1 solo cuentas registradas; CQ-D2 banco de 12 ciudades por país; CQ-D3 sin push
+en la v1 (actividad en el juego + recordatorios locales); CQ-D4 primero C0 (auditoría), luego C1–C7.
 
 | ID | Pregunta | Propuesta |
 |---|---|---|
