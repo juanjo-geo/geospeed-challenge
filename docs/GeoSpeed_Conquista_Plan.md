@@ -1,6 +1,6 @@
 # GeoSpeed · Conquista el mapa — revisión y plan por fases
 
-2026-10-26. Estado: **plan aprobado; decisiones CQ-D1–D4 tomadas por JuanJo el 2026-10-26** (sección 7). **C0 hecha** (registro por hallazgo en `docs/GeoSpeed_Auditoria_C0.md`). Siguiente: C1 (banco de ciudades). Fuente: `docs/GeoSpeed_Conquista_Especificacion_v1.1.md` (transcripción del
+2026-10-26. Estado: **plan aprobado; decisiones CQ-D1–D4 tomadas por JuanJo el 2026-10-26** (sección 7). **C0 hecha** (registro por hallazgo en `docs/GeoSpeed_Auditoria_C0.md`). **C1 hecha** (banco en `docs/Conquista_C1_Ciudades.md`, pendiente de la aprobación de JuanJo). Siguiente: C2 (servidor). Fuente: `docs/GeoSpeed_Conquista_Especificacion_v1.1.md` (transcripción del
 .docx de JuanJo) y las maquetas `docs/maquetas/conquista/`. Este documento revisa la especificación contra el código
 actual, verifica la auditoría del juego público (AUD01–AUD08) y propone cómo construirlo por fases. Las reglas aprobadas
 en la especificación no se vuelven a discutir; solo se piden las decisiones que la especificación no cubre o que el
