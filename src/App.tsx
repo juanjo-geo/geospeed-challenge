@@ -46,6 +46,8 @@ const App = () => (
               <Route path="/q/:code" element={<Index deepLink={{ type: 'quiz' }} />} />
               <Route path="/sala/:pin/tv" element={<RoomTv />} />
               <Route path="/sala/:pin" element={<Index deepLink={{ type: 'sala' }} />} />
+              <Route path="/conquista" element={<Index deepLink={{ type: 'conquista' }} />} />
+              <Route path="/conquista/:code" element={<Index deepLink={{ type: 'conquista' }} />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* Borrar la cuenta desde la web (enlace que pide Google Play) */}

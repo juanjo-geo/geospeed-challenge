@@ -1,3 +1,4 @@
+import { conquestEnabled } from '@/lib/conquest';
 import { lazy, Suspense } from 'react';
 import { useI18n } from '@/i18n';
 import { useMemory, dueCount } from '@/lib/itemMemory';
@@ -21,6 +22,8 @@ interface MoreModesScreenProps {
   onSprint?: () => void;
   /** Fase 10: Mis quizzes */
   onQuizzes?: () => void;
+  /** Conquista el mapa (se muestra si el interruptor `conquest_enabled` o la prueba del teléfono lo permiten) */
+  onConquest?: () => void;
 }
 
 const IMPOSSIBLE_UNLOCK_LEVEL = 5;
@@ -30,14 +33,20 @@ const IMPOSSIBLE_UNLOCK_LEVEL = 5;
  * Tarjetas grandes con ilustración a la izquierda, etiqueta y flecha; cada una lleva a las reglas/selección
  * que ya tiene cada modo.
  */
-export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory, onSprint, onQuizzes }: MoreModesScreenProps) {
+export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory, onSprint, onQuizzes, onConquest }: MoreModesScreenProps) {
   const { t } = useI18n();
   const level = getPlayerLevel().level;
   const impossibleLocked = level < IMPOSSIBLE_UNLOCK_LEVEL;
   const wcEvent = Boolean(getFlag('world_challenge_event'));
   const due = dueCount(useMemory());
 
+  const showConquest = !!onConquest && conquestEnabled(getFlag('conquest_enabled'));
   const cards = [
+    ...(showConquest && onConquest ? [{
+      key: 'conquest', art: ['🚩', '🗺️'], title: t('cq_title'), desc: t('more_conquestDesc'), tag: t('more_conquestTag'),
+      ring: 'border-primary/70 shadow-[0_0_18px_hsl(var(--primary)/0.2)]', tagClass: 'border-primary text-primary',
+      onClick: onConquest, locked: false,
+    }] : []),
     ...(onSprint ? [{
       key: 'sprint', art: ['⚡', '🏆'], title: 'Sprint', desc: t('more_sprintDesc'), tag: t('more_sprintTag'),
       ring: 'border-primary/70 shadow-[0_0_18px_hsl(var(--primary)/0.2)]', tagClass: 'border-primary text-primary',

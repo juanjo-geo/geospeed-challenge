@@ -24,6 +24,8 @@ export interface FeatureFlags {
   offline_pro_only: boolean;
   /** Sala en vivo (hasta 20 jugadores): abierta a todos desde el 2026-10-26; el interruptor remoto en false la oculta */
   live_rooms_enabled: boolean;
+  /** Conquista el mapa: oculta hasta abrirla (`?conquista=beta` la activa en un teléfono para el grupo de prueba) */
+  conquest_enabled: boolean;
   ab_group: 'control' | 'variant_a' | 'variant_b';
 }
 
@@ -47,6 +49,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   live_duel_enabled: false,
   offline_pro_only: true,
   live_rooms_enabled: true,
+  conquest_enabled: false,
   ab_group: 'control', // overridden per-user below
 };
 
