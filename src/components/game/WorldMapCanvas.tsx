@@ -1,6 +1,6 @@
 import { prefersReducedMotion } from '@/lib/prefs';
 import { CONTINENT_COUNTRIES, getColorGroup } from '@/lib/mapContinents';
-import { BRAND_RGB, BRAND, rgba, MAP_CONTINENT_COLORS } from '@/lib/theme';
+import { BRAND_RGB, BRAND, rgba, MAP_CONTINENT_COLORS, CONQ } from '@/lib/theme';
 import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import { countries } from '@/data/countries';
 import { type GameMode, type MapBounds, getMapBounds, isPackMode } from '@/data/cities';
@@ -91,6 +91,54 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: { line: boolean; rings:
   ctx.restore();
 }
 
+/** Conquista: cómo se pinta un país del tablero (ver la prop `territories`) */
+export interface TerritoryFill {
+  /** Color del dueño; vacío = el color normal del mapa (el país de la misión) */
+  color?: string;
+  /** Trama encima del color: rivales distinguibles también en modo daltónico, jugador retirado */
+  pattern?: 'stripes' | 'dots' | 'cross' | null;
+  /** Solo se pintan las partes del país dentro de esta caja [lonMin, latMin, lonMax, latMax] (Francia sin la Guayana) */
+  box?: [number, number, number, number];
+}
+export interface TerritoryLayer {
+  /** ISO → relleno. Los países que no están aquí quedan apagados */
+  fills: Record<string, TerritoryFill>;
+  /** Inicial del dueño sobre el país (anillo con su color) */
+  badges?: { lat: number; lon: number; text: string; color: string }[];
+  /** País elegido (ISO): borde blanco grueso */
+  selected?: string | null;
+}
+type GeoBox = [number, number, number, number];
+const growBox = (b: GeoBox, m = 2): GeoBox => [b[0] - m, b[1] - m, b[2] + m, b[3] + m];
+const clipBox = (a: GeoBox, b: GeoBox): GeoBox | null => {
+  const r: GeoBox = [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])];
+  return r[0] < r[2] && r[1] < r[3] ? r : null;
+};
+const inGeoBox = (lon: number, lat: number, b: GeoBox) => lon >= b[0] && lon <= b[2] && lat >= b[1] && lat <= b[3];
+/** Mosaico de 10 px para las tramas (rayas diagonales, puntos o cuadrícula), en navy translúcido */
+const patternTiles = new Map<string, HTMLCanvasElement>();
+function territoryPattern(ctx: CanvasRenderingContext2D, kind: 'stripes' | 'dots' | 'cross'): CanvasPattern | null {
+  let tile = patternTiles.get(kind);
+  if (!tile) {
+    tile = document.createElement('canvas');
+    tile.width = tile.height = 10;
+    const g = tile.getContext('2d');
+    if (!g) return null;
+    g.strokeStyle = g.fillStyle = rgba(BRAND_RGB.navyDeep, 0.5);
+    g.lineWidth = 2;
+    if (kind === 'dots') {
+      g.beginPath(); g.arc(5, 5, 1.9, 0, Math.PI * 2); g.fill();
+    } else {
+      g.beginPath();
+      g.moveTo(0, 10); g.lineTo(10, 0); g.moveTo(-1, 1); g.lineTo(1, -1); g.moveTo(9, 11); g.lineTo(11, 9);
+      if (kind === 'cross') { g.moveTo(0, 0); g.lineTo(10, 10); g.moveTo(-1, 9); g.lineTo(1, 11); g.moveTo(9, -1); g.lineTo(11, 1); }
+      g.stroke();
+    }
+    patternTiles.set(kind, tile);
+  }
+  return ctx.createPattern(tile, 'repeat');
+}
+
 const PILL_FONT_SM = '700 11px Poppins, system-ui, sans-serif';
 const PILL_FONT = '700 12px Poppins, system-ui, sans-serif';
 const PILL_FONT_LG = '700 13px Poppins, system-ui, sans-serif';
@@ -144,6 +192,9 @@ interface WorldMapCanvasProps {
   highlightShape?: { line: boolean; rings: number[][][] } | null;
   /** Editor de quizzes (Fase 10): puntos de los lugares disponibles (on = elegido). Pasar memoizado. */
   markers?: { lat: number; lon: number; on: boolean }[] | null;
+  /** Conquista: tablero (país → color y trama del dueño, iniciales, país elegido) o el país de la misión resaltado.
+   *  Apaga los demás países y oculta los nombres de continentes. Pasar memoizado. */
+  territories?: TerritoryLayer | null;
 }
 
 /** Nombres del mapa base en inglés (AUD05: en inglés salían en español). La clave es el texto en español, con sus
@@ -188,6 +239,7 @@ export default function WorldMapCanvas({
   highlightCountry,
   highlightShape,
   markers,
+  territories,
 }: WorldMapCanvasProps) {
   const { t, locale } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -368,6 +420,7 @@ export default function WorldMapCanvas({
         } else {
           ctx.fillStyle = MAP_PALETTE[k % MAP_PALETTE.length];
         }
+        const base = ctx.fillStyle;
         ctx.beginPath();
         if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
         // En un pack, los países vecinos quedan atenuados para que resalte el país del pack
@@ -375,6 +428,25 @@ export default function WorldMapCanvas({
           ctx.fillStyle = rgba(BRAND_RGB.navyDeep, 0.42);
           ctx.beginPath();
           if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
+        }
+        // Conquista: lo que no es del tablero se apaga; cada territorio con el color (y la trama) de su dueño
+        if (territories) {
+          const f = territories.fills[countryIso(c.name) ?? countryIso(c.ref) ?? ''];
+          if (!f || f.box) {
+            ctx.fillStyle = CONQ.off;
+            ctx.beginPath();
+            if (traceCountry(ctx, c, X, Y, vis)) ctx.fill('evenodd');
+          }
+          const vb = f ? (f.box ? clipBox(vis, growBox(f.box)) : vis) : null;
+          if (f && vb) {
+            ctx.beginPath();
+            if (traceCountry(ctx, c, X, Y, vb)) {
+              ctx.fillStyle = f.color ?? base;
+              ctx.fill('evenodd');
+              const pat = f.pattern ? territoryPattern(ctx, f.pattern) : null;
+              if (pat) { ctx.fillStyle = pat; ctx.fill('evenodd'); }
+            }
+          }
         }
       }
       if (packOn && packShapes) drawPackOverlay(ctx, packShapes, gameMode, (lon, lat) => ({ x: X(lon), y: Y(lat) }));
@@ -390,6 +462,17 @@ export default function WorldMapCanvas({
       ctx.beginPath();
       traceArcs(ctx, detailMap, detailMap.borderArcs, X, Y, vis);
       ctx.stroke();
+      if (territories?.selected) {
+        const f = territories.fills[territories.selected];
+        const vb = f?.box ? clipBox(vis, growBox(f.box)) : vis;
+        for (const c of detailMap.countries) {
+          if (!vb || (countryIso(c.name) ?? countryIso(c.ref)) !== territories.selected) continue;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          if (traceCountry(ctx, c, X, Y, vb)) ctx.stroke();
+        }
+      }
       if (highlightCountry) {
         // País correcto de una bandera: relleno y borde turquesa (también sus islas y territorios con el mismo ref)
         for (const c of detailMap.countries) {
@@ -425,6 +508,10 @@ export default function WorldMapCanvas({
       } else {
         ctx.fillStyle = MAP_PALETTE[ci % MAP_PALETTE.length];
       }
+      const base = ctx.fillStyle;
+      // Conquista: relleno del dueño solo en las partes dentro de la caja del país; el resto, apagado
+      const tf = territories ? territories.fills[countryIso(country.name) ?? ''] : undefined;
+      const tbox = tf?.box ? growBox(tf.box) : null;
       for (const polygon of country.polygons) {
         ctx.beginPath();
         let hasVisiblePoint = false;
@@ -438,7 +525,12 @@ export default function WorldMapCanvas({
         }
         if (hasVisiblePoint) {
           ctx.closePath();
+          const own = !!tf && (!tbox || inGeoBox(polygon[0][0], polygon[0][1], tbox));
+          ctx.fillStyle = own ? tf!.color ?? base : base;
           ctx.fill();
+          if (territories && !own) { ctx.fillStyle = CONQ.off; ctx.fill(); }
+          const pat = own && tf!.pattern ? territoryPattern(ctx, tf!.pattern) : null;
+          if (pat) { ctx.fillStyle = pat; ctx.fill(); }
         }
       }
     }
@@ -460,6 +552,26 @@ export default function WorldMapCanvas({
           }
         }
         if (hasVisiblePoint) {
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (territories?.selected) {
+      const f = territories.fills[territories.selected];
+      const sbox = f?.box ? growBox(f.box) : null;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      for (const country of countries) {
+        if (countryIso(country.name) !== territories.selected) continue;
+        for (const polygon of country.polygons) {
+          if (sbox && !inGeoBox(polygon[0][0], polygon[0][1], sbox)) continue;
+          ctx.beginPath();
+          for (let i = 0; i < polygon.length; i++) {
+            const { x, y } = geoToPixel(polygon[i][0], polygon[i][1]);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
           ctx.closePath();
           ctx.stroke();
         }
@@ -579,7 +691,7 @@ export default function WorldMapCanvas({
     if (gameMode === 'world') {
       const fontSize = Math.max(10, Math.round(w / 78));
       // En la vista acercada de una respuesta no van los continentes: ahí se nombran los países
-      if (!(viewBounds && zoomedView)) drawLabels([
+      if (!(viewBounds && zoomedView) && !territories) drawLabels([
         { name: 'AMÉRICA\nDEL NORTE', lat: 45, lon: -100 },
         { name: 'AMÉRICA\nDEL SUR', lat: -15, lon: -58 },
         { name: 'EUROPA', lat: 54, lon: 15 },
@@ -659,6 +771,29 @@ export default function WorldMapCanvas({
       ], Math.max(10, Math.round(w / 70)), true);
     }
 
+    // Conquista: inicial del dueño sobre cada territorio (círculo navy con el anillo de su color)
+    if (territories?.badges?.length) {
+      const r = Math.max(10, Math.min(16, Math.round(Math.min(w, h) / 30)));
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `800 ${Math.round(r * 0.92)}px Poppins, system-ui, sans-serif`;
+      for (const b of territories.badges) {
+        const p = geoToPixel(b.lon, b.lat);
+        if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(BRAND_RGB.navyDeep, 0.9);
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = b.color;
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(b.text, p.x, p.y + 1);
+      }
+      ctx.restore();
+    }
+
     // Decoración del Pacífico sur — solo modo Mundial (balón o copa PNG; emoji de respaldo)
     if (fieldGreen) {
       const c0 = geoToPixel(-140, -36);
@@ -683,7 +818,7 @@ export default function WorldMapCanvas({
       }
       // sin fallback emoji: evita ver el "balón antiguo"; el PNG carga en milisegundos
     }
-  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, highlightContinent, highlightCountry, highlightShape, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView, packOn, packShapes, packInfo, locale]);
+  }, [gameMode, bounds, lonRange, latRange, theme, scale, offsetX, offsetY, highlightContinent, highlightCountry, highlightShape, fieldGreen, pacificDecor, decorReady, detailMap, visibleBox, viewBounds, zoomedView, packOn, packShapes, packInfo, locale, territories]);
 
   // Resize handler — observes the outer container and tracks its raw size.
   // The actual canvas dimensions (geo-ratio-correct) are derived from containerSize above.
