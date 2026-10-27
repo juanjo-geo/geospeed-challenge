@@ -236,6 +236,7 @@ export function CosmeticsPicker({ earned, st }: { earned: Set<string>; st: Daily
     const r = cosmeticRequirement(badge);
     if (!r) return '';
     if ('streakDays' in r) return t('ach_needStreak', { n: r.streakDays });
+    if ('conquest' in r) return t('ach_needConquest');
     return t('ach_needTier', { name: t(`ach_${r.def.id}` as never), tier: ['', '🥉', '🥈', '🥇'][r.tier] });
   };
   const equip = async (title: string | null, frame: string | null) => {

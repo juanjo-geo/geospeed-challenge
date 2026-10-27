@@ -13,6 +13,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
 import { PlayerFace } from './RoomParts';
 import { BackHome, Card, CtaButton, ErrorBox, Page, errCode, useErrText } from './ConquestParts';
+import { rememberMuted, syncConquestReminders } from '@/lib/conquestReminders';
 
 /**
  * Conquista el mapa — fase C3 (docs/GeoSpeed_Conquista_Plan.md): A1 Crear o unirse (con la lista de mis grupos),
@@ -81,7 +82,12 @@ export function ConquestHomeScreen({ isRegistered, onBack, onSignIn, onOpenGroup
   useEffect(() => {
     if (!canPlay) return;
     let alive = true;
-    fetchMyGroups().then((g) => { if (alive) setGroups(g); }).catch((e) => { if (alive) setListError(errCode(e)); });
+    fetchMyGroups().then((g) => {
+      if (!alive) return;
+      setGroups(g);
+      // Recordatorios del cierre de cada temporada en curso (C6)
+      void syncConquestReminders(g.filter((x) => x.season).map((x) => ({ seasonId: x.season!.id, groupId: x.id, endsAt: x.season!.ends_at, active: x.season!.status === 'active', inRoster: x.season!.in_roster })));
+    }).catch((e) => { if (alive) setListError(errCode(e)); });
     return () => { alive = false; };
   }, [canPlay]);
 
@@ -276,6 +282,13 @@ export function ConquestLobbyScreen({ groupId, onBack, onOpenMap }: ConquestLobb
   const { t } = useI18n();
   const errText = useErrText();
   const { group, setGroup, error } = useConqGroup(groupId);
+  // Silenciar quita los recordatorios del cierre; la sala es la que sabe si el grupo está silenciado
+  const remindKey = group?.season ? `${group.season.id}|${group.season.status}|${group.season.ends_at}|${group.season.in_roster}|${group.muted}` : '';
+  useEffect(() => {
+    if (!group?.season) return;
+    rememberMuted(group.id, !!group.muted);
+    void syncConquestReminders([{ seasonId: group.season.id, groupId: group.id, endsAt: group.season.ends_at, active: group.season.status === 'active', inRoster: group.season.in_roster, muted: group.muted }]);
+  }, [remindKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<ConqErrorCode | null>(null);
   const [copied, setCopied] = useState(false);
@@ -403,9 +416,12 @@ export function ConquestLobbyScreen({ groupId, onBack, onOpenMap }: ConquestLobb
             ))}
           </ul>
           {group.last_closed && (
-            <p className="mt-3 text-sm text-center text-foreground/80">🏆 {group.last_closed.champions.filter(Boolean).length
-              ? t('cq_lastChampion', { n: group.last_closed.number, names: group.last_closed.champions.filter(Boolean).join(', ') })
-              : t('cq_lastNoChampion', { n: group.last_closed.number })}</p>
+            <div className="mt-3 flex flex-col sm:flex-row items-center gap-2 rounded-2xl border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-center sm:text-left">
+              <p className="min-w-0 flex-1">🏆 {group.last_closed.champions.filter(Boolean).length
+                ? t('cq_lastChampion', { n: group.last_closed.number, names: group.last_closed.champions.filter(Boolean).join(', ') })
+                : t('cq_lastNoChampion', { n: group.last_closed.number })}</p>
+              <button onClick={() => { playButtonTap(); onOpenMap(group.last_closed!.id); }} className="shrink-0 rounded-xl border-2 border-primary px-3 py-1.5 font-black text-primary hover:bg-primary/10">{t('cq_seeClose')}</button>
+            </div>
           )}
         </Card>
 

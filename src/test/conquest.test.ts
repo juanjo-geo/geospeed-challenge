@@ -7,8 +7,9 @@ import { worldCities, europeCities, asiaCities, americasCities, africaCities } f
 import { COLOMBIA_CITIES } from '@/data/colombiaCatalog';
 import { PRO_PACK_CITIES } from '@/data/proPackCatalog';
 import { catalogItem, kindFromPlaceId, itemTitle } from '@/lib/catalog';
-import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet, startAttempt, openRound, answerRound, abandonAttempt, fetchAttempt, currentRound, answeredRounds, rememberActiveMission, activeMission, forgetActiveMission } from '@/lib/conquest';
-import { playerStyles, pickTerritory, boardLayer, missionLayer, ZONE_BOUNDS, conqCountry } from '@/lib/conquestMap';
+import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet, startAttempt, openRound, answerRound, abandonAttempt, fetchAttempt, currentRound, answeredRounds, rememberActiveMission, activeMission, forgetActiveMission, fetchActivity, markSeen, fetchStandings, championsOf, type ConqEvent } from '@/lib/conquest';
+import { playerStyles, pickTerritory, boardLayer, missionLayer, ZONE_BOUNDS, conqCountry, describeEvent, timeAgo } from '@/lib/conquestMap';
+import { reminderTimes, nativeReminderId } from '@/lib/conquestReminders';
 import { CONQ } from '@/lib/theme';
 
 const byId = new Map<string, { lat: number; lon: number; name: string }>();
@@ -314,5 +315,88 @@ describe('Conquista: misión oficial (C5)', () => {
     expect(activeMission()?.attemptId).toBe('a1');
     forgetActiveMission('a1');
     expect(activeMission()).toBeNull();
+  });
+});
+
+describe('Conquista: actividad, temporada y cierre (C6)', () => {
+  const ev = (p: Partial<ConqEvent>): ConqEvent => ({ id: 1, type: 'captured', country: 'PE', actor_id: null, prev_owner: null, new_owner: null, score: 3780, defense: 3420, at: new Date().toISOString(), can_recover: false, ...p });
+  const names: Record<string, string> = { me: 'Tú', p: 'Paola', g: 'Gerónimo' };
+  const d = (e: ConqEvent) => describeEvent(e, 'me', (id) => (id ? names[id] ?? 'Jugador retirado' : 'Jugador retirado'), 'Perú', 2000, (n) => String(n));
+
+  it('cada evento contado desde mi punto de vista', () => {
+    expect(d(ev({ type: 'captured', actor_id: 'me', new_owner: 'me' })).title[0]).toBe('cq_ev_capturedMe');
+    expect(d(ev({ type: 'captured', actor_id: 'p', new_owner: 'p' }))).toMatchObject({ title: ['cq_ev_captured', { actor: 'Paola', country: 'Perú' }], tone: 'other' });
+    // Me quitaron Perú: tono "perdido" (ahí va RECUPERAR)
+    expect(d(ev({ type: 'conquered', actor_id: 'p', prev_owner: 'me', new_owner: 'p' }))).toMatchObject({ title: ['cq_ev_lost', { actor: 'Paola' }], tone: 'lost' });
+    expect(d(ev({ type: 'conquered', actor_id: 'me', prev_owner: 'p', new_owner: 'me' }))).toMatchObject({ title: ['cq_ev_conqueredMe', {}], sub: ['cq_ev_subBeat', { name: 'Paola', score: '3780', mark: '3420' }] });
+    expect(d(ev({ type: 'conquered', actor_id: 'g', prev_owner: 'p', new_owner: 'g' })).title[0]).toBe('cq_ev_conquered');
+    // Defensa y empate: el dueño es new_owner, el atacante actor_id
+    expect(d(ev({ type: 'defended', actor_id: 'p', prev_owner: 'me', new_owner: 'me' }))).toMatchObject({ title: ['cq_ev_heldMe', { actor: 'Paola' }], tone: 'held' });
+    expect(d(ev({ type: 'defended', actor_id: 'me', prev_owner: 'p', new_owner: 'p' })).title[0]).toBe('cq_ev_attackFailed');
+    expect(d(ev({ type: 'tie', actor_id: 'g', prev_owner: 'me', new_owner: 'me' })).title[0]).toBe('cq_ev_tieMe');
+    expect(d(ev({ type: 'tie', actor_id: 'g', prev_owner: 'p', new_owner: 'p' }))).toMatchObject({ sub: ['cq_ev_subTieOwner', { name: 'Paola' }] });
+    expect(d(ev({ type: 'failed', actor_id: 'me', score: 1500 }))).toMatchObject({ sub: ['cq_ev_subOf', { score: '1500', threshold: '2000' }] });
+    expect(d(ev({ type: 'season_close', country: null })).tone).toBe('system');
+    // Un retirado no rompe el texto
+    expect(d(ev({ type: 'conquered', actor_id: 'x', prev_owner: 'p', new_owner: 'x' })).title[1].actor).toBe('Jugador retirado');
+  });
+
+  it('hace cuánto, en el idioma del juego', () => {
+    const now = Date.parse('2026-10-27T12:00:00Z');
+    expect(timeAgo('2026-10-27T11:50:00Z', now, 'es')).toBe('hace 10 minutos');
+    expect(timeAgo('2026-10-27T10:00:00Z', now, 'en')).toBe('2 hours ago');
+  });
+
+  it('recordatorios: 24 h y 1 h antes del cierre, solo los que no pasaron; ids estables', () => {
+    const ends = Date.parse('2026-11-03T12:00:00Z');
+    expect(reminderTimes(ends, ends - 48 * 3_600_000).map((x) => x.h)).toEqual([24, 1]);
+    expect(reminderTimes(ends, ends - 5 * 3_600_000).map((x) => x.h)).toEqual([1]);
+    expect(reminderTimes(ends, ends - 1000)).toEqual([]);
+    expect(nativeReminderId('abc', 24)).toBe(nativeReminderId('abc', 24));
+    expect(nativeReminderId('abc', 24) + 1).toBe(nativeReminderId('abc', 1));
+  });
+
+  it('campeones: puesto 1 con al menos un territorio; empates comparten', () => {
+    const row = (id: string, territories: number, rank: number) => ({ user_id: id, name: id, slot: 0, avatar: null, territories, defense_sum: 0, rank });
+    expect(championsOf([row('a', 2, 1), row('b', 2, 1), row('c', 1, 3)]).map((x) => x.user_id)).toEqual(['a', 'b']);
+    expect(championsOf([row('a', 0, 1), row('b', 0, 1)])).toEqual([]);
+  });
+
+  it('simulador: actividad con filtro, visto y cierre con campeón e historial', async () => {
+    localStorage.setItem('geospeed_mock_conquest', '1');
+    localStorage.removeItem('geospeed_mock_conquest_db');
+    const w = window as unknown as Record<string, (...a: unknown[]) => unknown>;
+    const g = await createGroup('Cierre', 'rc');
+    w.__mockConqJoin(2);
+    const sid = (await startSeason(g.id)).season!.id;
+    w.__mockConqOwn('PE', 'bot', 3420);
+    w.__mockConqOwn('CO', 'me', 2600);
+    const all = await fetchActivity(sid);
+    expect(all.map((e) => e.type)).toEqual(['captured', 'captured', 'season_start']);
+    expect((await fetchActivity(sid, true)).map((e) => e.country)).toEqual(['CO', null]);
+    expect((await fetchMap(sid)).unread).toBe(1);
+    await markSeen(sid, all[0].id);
+    expect((await fetchMap(sid)).unread).toBe(0);
+    // El bot me quita Colombia: puedo recuperarla
+    w.__mockConqOwn('CO', 'bot', 3000);
+    const lost = (await fetchActivity(sid))[0];
+    expect(lost).toMatchObject({ type: 'conquered', prev_owner: 'me', can_recover: true });
+    // Cierre: el bot gana con 2 territorios; queda la sala de la temporada 2
+    w.__mockConqEndSeason();
+    const st = await fetchStandings(sid);
+    expect(st.final).toBe(true);
+    expect(championsOf(st.standings).map((x) => x.territories)).toEqual([2]);
+    expect(st.awards).toHaveLength(1);
+    expect(st.history.map((h) => h.number)).toEqual([1]);
+    const m = await fetchMap(sid);
+    expect(m.final).toBe(true);
+    expect(m.me).toBeNull();
+    expect((await fetchActivity(sid))[0].type).toBe('season_close');
+    expect((await fetchActivity(sid)).some((e) => e.can_recover)).toBe(false);
+    const lobby = await fetchGroup(g.id);
+    expect(lobby.season).toMatchObject({ number: 2, status: 'lobby' });
+    expect(lobby.last_closed?.champions).toHaveLength(1);
+    localStorage.removeItem('geospeed_mock_conquest');
+    localStorage.removeItem('geospeed_mock_conquest_db');
   });
 });

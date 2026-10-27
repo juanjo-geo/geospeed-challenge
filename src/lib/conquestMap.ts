@@ -8,7 +8,7 @@ import { CONQUEST_COUNTRIES, type ConquestCountry } from '@/data/conquestCatalog
 import { FLAG_ITEMS } from '@/data/flagCatalog';
 import { countryDistance } from '@/lib/flagScoring';
 import type { MapBounds } from '@/data/cities';
-import type { ConqMap, ConqPlayer, ConqTerritory } from '@/lib/conquest';
+import type { ConqEvent, ConqMap, ConqPlayer, ConqTerritory } from '@/lib/conquest';
 import type { TerritoryLayer } from '@/components/game/WorldMapCanvas';
 
 export const conqCountry = (iso: string | null | undefined): ConquestCountry | undefined => CONQUEST_COUNTRIES.find((c) => c.iso === iso);
@@ -130,4 +130,57 @@ export function pickTerritory(lat: number, lon: number, maxKm = 120): string | n
 export function myStanding(map: ConqMap): { territories: number; rank: number; total: number } | null {
   const s = map.standings.find((x) => x.user_id === map.my_id);
   return s ? { territories: s.territories, rank: s.rank, total: map.standings.length } : null;
+}
+
+// ── Actividad (P5): una línea por evento, contada desde mi punto de vista ──────────────────────────────────
+type Txt = [key: string, vars: Record<string, string | number>];
+export interface EventLine {
+  title: Txt;
+  sub: Txt | null;
+  /** me = lo hice yo · lost = me quitaron un país · held = resistí un ataque · other = entre otros · system = temporada */
+  tone: 'me' | 'lost' | 'held' | 'other' | 'system';
+}
+/**
+ * Texto de un evento de conq_activity. `name` da el nombre de un jugador de la plantilla ("Jugador retirado" si ya no
+ * está), `fmt` formatea puntos. En una defensa o un empate el dueño es `new_owner` y el atacante `actor_id`.
+ */
+export function describeEvent(e: ConqEvent, myId: string | null, name: (id: string | null) => string, country: string, threshold: number, fmt: (n: number) => string): EventLine {
+  const actor = name(e.actor_id), prev = name(e.prev_owner), owner = name(e.new_owner);
+  const score = fmt(e.score ?? 0), mark = fmt(e.defense ?? 0);
+  const byMe = !!myId && e.actor_id === myId;
+  const mineBefore = !!myId && e.prev_owner === myId;
+  const iOwn = !!myId && e.new_owner === myId;
+  switch (e.type) {
+    case 'season_start': return { title: ['cq_ev_start', {}], sub: null, tone: 'system' };
+    case 'season_close': return { title: ['cq_ev_close', {}], sub: null, tone: 'system' };
+    case 'join': return { title: ['cq_ev_join', { actor }], sub: null, tone: 'system' };
+    case 'captured':
+      return byMe ? { title: ['cq_ev_capturedMe', { country }], sub: ['cq_ev_subMyMark', { score }], tone: 'me' }
+        : { title: ['cq_ev_captured', { actor, country }], sub: ['cq_ev_subMark', { score }], tone: 'other' };
+    case 'conquered':
+      if (byMe) return { title: ['cq_ev_conqueredMe', { country }], sub: ['cq_ev_subBeat', { name: prev, score, mark }], tone: 'me' };
+      if (mineBefore) return { title: ['cq_ev_lost', { actor, country }], sub: ['cq_ev_subLost', { score, mark }], tone: 'lost' };
+      return { title: ['cq_ev_conquered', { actor, country }], sub: ['cq_ev_subFrom', { name: prev, score }], tone: 'other' };
+    case 'defended':
+      if (iOwn) return { title: ['cq_ev_heldMe', { country, actor }], sub: ['cq_ev_subVs', { score, mark }], tone: 'held' };
+      if (byMe) return { title: ['cq_ev_attackFailed', { country }], sub: ['cq_ev_subVsOwner', { score, name: owner, mark }], tone: 'me' };
+      return { title: ['cq_ev_held', { name: owner, country }], sub: ['cq_ev_subAttacker', { actor, score, mark }], tone: 'other' };
+    case 'tie':
+      if (iOwn) return { title: ['cq_ev_tieMe', { country }], sub: ['cq_ev_subTieMe', { actor, mark }], tone: 'held' };
+      if (byMe) return { title: ['cq_ev_tieAttack', { country }], sub: ['cq_ev_subTieOwner', { name: owner, mark }], tone: 'me' };
+      return { title: ['cq_ev_tie', { country }], sub: ['cq_ev_subTieOwner', { name: owner, mark }], tone: 'other' };
+    case 'failed': return { title: ['cq_ev_failed', { country }], sub: ['cq_ev_subOf', { score, threshold: fmt(threshold) }], tone: 'me' };
+    case 'expired': return { title: ['cq_ev_expired', { country }], sub: ['cq_ev_subExpired', {}], tone: 'me' };
+    default: return { title: ['cq_ev_start', {}], sub: null, tone: 'system' };
+  }
+}
+
+/** "Hace 10 min" en el idioma del juego */
+export function timeAgo(iso: string, now: number, locale: string): string {
+  const s = Math.max(0, Math.round((now - Date.parse(iso)) / 1000));
+  const rtf = new Intl.RelativeTimeFormat(locale === 'en' ? 'en' : 'es', { numeric: 'auto' });
+  if (s < 60) return rtf.format(0, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86_400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86_400), 'day');
 }

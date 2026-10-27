@@ -3,27 +3,34 @@ import { useI18n } from '@/i18n';
 import { playButtonTap, playClick } from '@/lib/sounds';
 import { trackEvent } from '@/lib/analytics';
 import {
-  activeMission, conqServerNow, formatTimeLeft, useConqMap, useConqTerritory,
-  type ConqBlock, type ConqMap, type ConqTerritory, type ConqTerritoryDetail,
+  activeMission, championsOf, conqServerNow, fetchActivity, fetchStandings, formatTimeLeft, markSeen, useConqMap, useConqTerritory,
+  type ConqBlock, type ConqErrorCode, type ConqEvent, type ConqMap, type ConqSeasonStandings, type ConqTerritory, type ConqTerritoryDetail,
 } from '@/lib/conquest';
 import {
-  boardLayer, conqCountryName, countryBounds, myStanding, pickTerritory, playerStyles, sheetLayer, zoneOf,
+  boardLayer, conqCountryName, countryBounds, describeEvent, myStanding, pickTerritory, playerStyles, sheetLayer, timeAgo, zoneOf,
   ZONE_BOUNDS, type BoardZone, type PlayerStyle,
 } from '@/lib/conquestMap';
+import { askConquestPermissionOnce, syncConquestReminders } from '@/lib/conquestReminders';
+import { fireCelebration } from '@/lib/confetti';
+import { playShareSuccess, playVictory } from '@/lib/sounds';
 import { CONQUEST_COUNTRIES } from '@/data/conquestCatalog';
 import { CONQ } from '@/lib/theme';
 import { appNumberLocale } from '@/lib/format';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
 import WorldMapCanvas from './WorldMapCanvas';
-import { BackHome, Card, ConqFace, CtaButton, ErrorBox, Page, Swatch, useErrText } from './ConquestParts';
+import { BackHome, Card, ConqFace, CtaButton, ErrorBox, Page, Swatch, errCode, useErrText } from './ConquestParts';
 
 /**
  * Conquista el mapa — fase C4 (docs/GeoSpeed_Conquista_Plan.md): P1 tablero (mapa con el color de cada dueño, leyenda,
  * lista accesible con los mismos 10 países, cuenta regresiva, mis territorios, puesto y misiones de hoy) y P2 ficha del
- * territorio (dueño o libre, marca, misión, cupos, espera y por qué está bloqueado; practicar). El servidor decide todo:
- * aquí solo se muestra lo que responden conq_map y conq_territory.
+ * territorio (dueño o libre, marca, misión, cupos, espera y por qué está bloqueado; practicar). C6: pestañas Mapa ·
+ * Actividad (P5: conquistas y pérdidas con fecha, filtro "Míos", Recuperar) · Temporada (P6: clasificación en vivo o final
+ * con desempates, premio, campeón, historial y la próxima temporada desde la sala). El servidor decide todo: aquí solo se
+ * muestra lo que responden conq_map, conq_territory, conq_activity y conq_standings.
  */
+
+type BoardTab = 'map' | 'activity' | 'season';
 
 /** Lo que el jugador necesita para practicar: el país y qué habría que superar */
 export interface PracticeTarget { kind: 'capture' | 'attack' | 'own'; mark: number; ownerName: string | null }
@@ -39,6 +46,8 @@ interface ConquestBoardScreenProps {
   onStart: (iso: string) => void;
   /** Retomar la misión en curso (la de este u otro teléfono) */
   onResume: (attemptId: string) => void;
+  /** Elegir el título "Conquistador" (vitrina de logros) */
+  onOpenTitles?: () => void;
 }
 
 /** Fuerza un re-render cada `ms` (cuentas regresivas que dependen del reloj del servidor) */
@@ -51,17 +60,27 @@ const IsoFlag = ({ iso, className = 'w-7' }: { iso: string; className?: string }
   <img src={`/flags/${iso}.svg`} alt="" aria-hidden className={`aspect-[3/2] object-cover rounded-[3px] shadow-sm ring-1 ring-black/20 shrink-0 ${className}`} />
 );
 
-export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpenGroup, onPractice, onStart, onResume }: ConquestBoardScreenProps) {
+export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpenGroup, onPractice, onStart, onResume, onOpenTitles }: ConquestBoardScreenProps) {
   const { t } = useI18n();
   const errText = useErrText();
   const { map, error, refresh } = useConqMap(seasonId);
   const [selected, setSelected] = useState<string | null>(initialIso);
   const [sheet, setSheet] = useState<string | null>(initialIso);
   const [zone, setZone] = useState<BoardZone>(() => (initialIso ? zoneOf(initialIso) : typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'all' : 'america'));
+  // Pestaña elegida; mientras no se elija, una temporada cerrada abre en su clasificación final
+  const [tabPick, setTabPick] = useState<BoardTab | null>(null);
   useTick(30_000);
 
   const styles = useMemo(() => playerStyles(map?.players ?? [], map?.my_id ?? null), [map?.players, map?.my_id]);
   const layer = useMemo(() => (map ? boardLayer(map.territories, styles, selected) : null), [map, styles, selected]);
+  // Recordatorios 24 h y 1 h antes del cierre (y el permiso en la app instalada, una vez)
+  const remind = map ? `${map.season.id}|${map.season.status}|${map.season.ends_at}|${map.me?.in_roster ?? false}` : '';
+  useEffect(() => {
+    if (!map) return;
+    const playing = map.season.status === 'active' && !!map.me?.in_roster;
+    void syncConquestReminders([{ seasonId: map.season.id, groupId: map.season.group_id, endsAt: map.season.ends_at, active: map.season.status === 'active', inRoster: !!map.me?.in_roster }]);
+    if (playing) void askConquestPermissionOnce();
+  }, [remind]); // eslint-disable-line react-hooks/exhaustive-deps
   const mapBox = useRef<HTMLDivElement>(null);
   const onMapClick = useCallback((lat: number, lon: number) => {
     // Tolerancia ≈ 18 px a la escala de la zona (en "Todo" un píxel son decenas de km)
@@ -108,6 +127,12 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
   const sel = selected ? map.territories.find((x) => x.iso === selected) ?? null : null;
   const retiredOnBoard = map.territories.some((x) => x.retired);
   const legend = [...styles.values()].sort((a, b) => Number(b.me) - Number(a.me) || a.slot - b.slot);
+  const tab: BoardTab = tabPick ?? (map.final ? 'season' : 'map');
+  const tabs: { k: BoardTab; icon: string; label: string; badge?: number }[] = [
+    { k: 'map', icon: '🗺️', label: t('cq_tabMap') },
+    { k: 'activity', icon: '📣', label: t('cq_tabActivity'), badge: map.unread },
+    { k: 'season', icon: '🏆', label: t('cq_tabSeason') },
+  ];
 
   return (
     <Page wide>
@@ -128,7 +153,21 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
         <ActiveBanner attemptId={map.me.active_attempt} onResume={onResume} />
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] items-start">
+      {/* Mapa · Actividad · Temporada (como la barra de las maquetas, aquí arriba: abajo va la navegación del juego) */}
+      <div className="grid grid-cols-3 gap-1 rounded-2xl border-2 border-accent/40 bg-card/60 p-1" role="tablist" aria-label={t('cq_boardTitle')}>
+        {tabs.map((x) => (
+          <button key={x.k} role="tab" aria-selected={tab === x.k} onClick={() => { playButtonTap(); setTabPick(x.k); }}
+            className={`relative rounded-xl py-2 text-[13px] min-[400px]:text-sm sm:text-base font-black whitespace-nowrap transition-colors ${tab === x.k ? 'bg-primary text-primary-foreground' : 'text-foreground/85 hover:bg-accent/10'}`}>
+            <span aria-hidden>{x.icon}</span> {x.label}
+            {!!x.badge && x.badge > 0 && tab !== x.k && <span className="absolute -top-1.5 -right-1 min-w-[1.25rem] rounded-full bg-destructive text-white text-[11px] font-black px-1.5 py-0.5" aria-label={t('cq_unread', { n: x.badge })}>{x.badge}</span>}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'activity' && <ActivityPanel map={map} styles={styles} onRecover={openSheet} onSeen={refresh} />}
+      {tab === 'season' && <SeasonPanel map={map} styles={styles} onOpenGroup={() => onOpenGroup(groupId)} onOpenTitles={onOpenTitles} />}
+
+      {tab === 'map' && <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] items-start">
         {/* P1: mapa con dueños, zonas y leyenda (min-w-0: si no, el lienzo ensancha la columna de la cuadrícula) */}
         <div className="min-w-0 flex flex-col gap-2">
           <div ref={mapBox} className="relative rounded-3xl overflow-hidden border-2 border-accent/40 h-[clamp(16rem,52dvh,30rem)] short:h-[78dvh] lg:h-[min(66dvh,36rem)]" role="region" aria-label={t('cq_mapAria')}>
@@ -176,11 +215,230 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
               })}
             </ul>
           </Card>
+        </div>
+      </div>}
+    </Page>
+  );
+}
 
-          <Standings map={map} styles={styles} />
+// ═══════════════════════════════════════ P5 Actividad del grupo ═══════════════════════════════════════
+const PAGE = 30;
+function ActivityPanel({ map, styles, onRecover, onSeen }: { map: ConqMap; styles: Map<string, PlayerStyle>; onRecover: (iso: string) => void; onSeen: () => void }) {
+  const { t, locale } = useI18n();
+  const errText = useErrText();
+  const [mine, setMine] = useState(false);
+  const [events, setEvents] = useState<ConqEvent[] | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [err, setErr] = useState<ConqErrorCode | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sid = map.season.id;
+
+  const load = useCallback(async (before: number | null) => {
+    try {
+      const list = await fetchActivity(sid, mine, before, PAGE);
+      setEvents((cur) => (before == null ? list : [...(cur ?? []), ...list.filter((e) => !(cur ?? []).some((c) => c.id === e.id))]));
+      setHasMore(list.length === PAGE);
+      setErr(null);
+    } catch (e) {
+      setErr(errCode(e));
+    }
+  }, [sid, mine]);
+  // Al abrir, al cambiar el filtro y cada vez que el tablero trae algo nuevo
+  useEffect(() => { setEvents(null); void load(null); }, [load]);
+  useEffect(() => { if (events) void load(null); }, [map.data_version]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Lo más nuevo queda como visto (apaga el contador de la pestaña)
+  const top = events?.[0]?.id ?? 0;
+  useEffect(() => {
+    if (!top || mine) return;
+    markSeen(sid, top).then(onSeen).catch(() => {});
+  }, [top, mine, sid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const name = (id: string | null) => {
+    const p = id ? styles.get(id) : undefined;
+    return p?.me ? t('cq_you') : p?.name ?? t('cq_retired');
+  };
+  const fmt = (n: number) => n.toLocaleString(appNumberLocale());
+  const now = conqServerNow();
+  const TONE: Record<string, string> = {
+    lost: 'border-2 border-primary bg-primary/10', me: 'border border-primary/40 bg-card/80', held: 'border border-accent/60 bg-accent/10',
+    other: 'border border-accent/25 bg-card/70', system: 'border border-dashed border-accent/30 bg-background/30',
+  };
+
+  return (
+    <Card className="!p-3 sm:!p-4">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h2 className="font-extrabold text-lg">{t('cq_activityTitle')}</h2>
+        <div className="flex rounded-full border border-accent/40 p-0.5 text-xs font-bold" role="group" aria-label={t('cq_activityFilter')}>
+          {[false, true].map((m) => (
+            <button key={String(m)} onClick={() => { playButtonTap(); setMine(m); }} aria-pressed={mine === m}
+              className={`rounded-full px-3 py-1 ${mine === m ? 'bg-accent text-accent-foreground' : 'text-foreground/80'}`}>{m ? t('cq_activityMine') : t('cq_activityAll')}</button>
+          ))}
         </div>
       </div>
-    </Page>
+      {err && <ErrorBox text={errText(err)} />}
+      {!events ? <p className="py-6 text-center text-muted-foreground">{t('loading')}</p>
+        : events.length === 0 ? <p className="py-6 text-center text-foreground/80">{mine ? t('cq_activityEmptyMine') : t('cq_activityEmpty')}</p>
+        : (
+          <ol className="flex flex-col gap-2" aria-live="polite">
+            {events.map((e) => {
+              const country = e.country ? conqCountryName(e.country, locale) : '';
+              const line = describeEvent(e, map.my_id, name, country, map.season.rules.threshold ?? 2000, fmt);
+              return (
+                <li key={e.id} className={`rounded-2xl px-3 py-2.5 flex items-start gap-3 ${TONE[line.tone]}`}>
+                  {e.country ? <IsoFlag iso={e.country} className="w-9 mt-0.5" /> : <span className="text-2xl leading-none" aria-hidden>{e.type === 'season_close' ? '🏁' : '🚀'}</span>}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-bold leading-tight">{t(line.title[0] as never, line.title[1])}</span>
+                    {line.sub && <span className="block text-sm text-foreground/80">{t(line.sub[0] as never, line.sub[1])}</span>}
+                    <span className="block text-xs text-muted-foreground mt-0.5">🕒 {timeAgo(e.at, now, locale)}</span>
+                    {e.can_recover && e.country && (
+                      <button onClick={() => { trackEvent('conq_recover_tap', { iso: e.country }); onRecover(e.country!); }}
+                        className="btn3d mt-2 rounded-xl px-4 py-2 font-black text-sm uppercase text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
+                        {t('cq_recoverCta', { country })}
+                      </button>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      {hasMore && events && (
+        <button disabled={loadingMore} onClick={async () => { playButtonTap(); setLoadingMore(true); await load(events[events.length - 1]?.id ?? null); setLoadingMore(false); }}
+          className="mt-2 w-full rounded-2xl border-2 border-accent/50 py-2 font-bold text-accent hover:bg-accent/10">{loadingMore ? '…' : t('cq_loadMore')}</button>
+      )}
+    </Card>
+  );
+}
+
+// ═══════════════════════════════════════ P6 Temporada ═══════════════════════════════════════
+function SeasonPanel({ map, styles, onOpenGroup, onOpenTitles }: { map: ConqMap; styles: Map<string, PlayerStyle>; onOpenGroup: () => void; onOpenTitles?: () => void }) {
+  const { t, locale } = useI18n();
+  const errText = useErrText();
+  const [st, setSt] = useState<ConqSeasonStandings | null>(null);
+  const [err, setErr] = useState<ConqErrorCode | null>(null);
+  const sid = map.season.id;
+  useEffect(() => {
+    let alive = true;
+    fetchStandings(sid).then((x) => { if (alive) { setSt(x); setErr(null); } }).catch((e) => { if (alive) setErr(errCode(e)); });
+    return () => { alive = false; };
+  }, [sid, map.data_version, map.final]);
+
+  const final = st?.final ?? map.final;
+  const rows = st?.standings ?? map.standings;
+  const champs = final ? championsOf(rows) : [];
+  const meRow = rows.find((x) => x.user_id === map.my_id) ?? null;
+  const iWon = champs.some((c) => c.user_id === map.my_id);
+  const fmt = (n: number) => n.toLocaleString(appNumberLocale());
+  const dateFmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' }) : '');
+
+  // Celebración una sola vez por temporada ganada
+  useEffect(() => {
+    if (!final || !iWon) return;
+    const k = `geospeed_conq_champion_seen_${sid}`;
+    try { if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); } catch { /* sin almacenamiento */ }
+    playVictory();
+    fireCelebration();
+    trackEvent('conq_champion_view', {});
+  }, [final, iWon, sid]);
+
+  const share = async () => {
+    playButtonTap();
+    const text = iWon ? t('cq_shareChampion', { n: meRow?.territories ?? 0 }) : t('cq_shareSeason', { rank: t('cq_rankN', { n: meRow?.rank ?? 0 }), n: meRow?.territories ?? 0 });
+    const url = typeof window !== 'undefined' ? window.location.origin : 'https://geospeed-challenge.vercel.app';
+    try {
+      if ('share' in navigator) { await navigator.share({ text, url }); playShareSuccess(); trackEvent('conq_share_season', { method: 'native' }); return; }
+    } catch { return; }
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
+    trackEvent('conq_share_season', { method: 'whatsapp' });
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-start">
+      <div className="min-w-0 flex flex-col gap-3">
+        <Card className={final ? 'border-primary/70 shadow-[0_0_24px_hsl(var(--primary)/0.15)]' : ''}>
+          <h2 className="font-black text-2xl sm:text-3xl leading-tight">
+            {final ? t('cq_seasonDone', { n: map.season.number }) : t('cq_seasonLive', { n: map.season.number })}
+          </h2>
+          <p className="text-sm sm:text-base text-foreground/80">
+            {final ? t('cq_seasonClosedOn', { date: dateFmt(st?.ends_at ?? map.season.ends_at) }) : t('cq_endsIn', { time: left(map.season.ends_at) })}
+          </p>
+          {final && (
+            champs.length ? (
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-primary/50 bg-primary/10 px-3 py-3">
+                <span className="text-5xl" aria-hidden>🏆</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap gap-1.5 mb-1">{champs.map((c) => <ConqFace key={c.user_id} player={c} color={styles.get(c.user_id)?.color} />)}</span>
+                  <span className="block font-black text-lg leading-tight">{champs.map((c) => (c.user_id === map.my_id ? t('cq_you') : c.name ?? t('cq_retired'))).join(' · ')}</span>
+                  <span className="block text-sm text-primary font-bold">{t(champs.length > 1 ? 'cq_championsTie' : 'cq_championLine', { n: champs[0].territories })}</span>
+                </span>
+              </div>
+            ) : <p className="mt-3 rounded-2xl border border-accent/30 bg-background/40 px-3 py-3 text-sm">{t('cq_noChampion')}</p>
+          )}
+        </Card>
+
+        {/* Premio: insignia de campeón y título (sin vidas, compras ni XP) */}
+        {iWon ? (
+          <Card className="flex flex-wrap items-center gap-3 border-primary">
+            <span className="text-4xl" aria-hidden>🎖️</span>
+            <span className="min-w-0 flex-1 basis-48">
+              <span className="block font-extrabold">{t('cq_rewardTitle')}</span>
+              <span className="block text-sm text-foreground/85">{t('cq_rewardDesc')}</span>
+            </span>
+            {onOpenTitles && <button onClick={() => { playButtonTap(); onOpenTitles(); }} className="w-full sm:w-auto shrink-0 rounded-xl border-2 border-primary px-3 py-2 font-black text-sm text-primary hover:bg-primary/10">{t('cq_useTitle')}</button>}
+          </Card>
+        ) : !final && (
+          <p className="rounded-2xl border border-accent/30 bg-card/70 px-3 py-2.5 text-sm">🎖️ {t('cq_prizeLive')}</p>
+        )}
+
+        {final && (
+          <div className="flex flex-col gap-2">
+            <CtaButton onClick={() => { playButtonTap(); onOpenGroup(); }}>{t('cq_nextSeason')}</CtaButton>
+            {meRow && <button onClick={() => void share()} className="w-full rounded-2xl py-3 border-2 border-accent text-accent font-black hover:bg-accent/10">📤 {t('cq_shareSeasonCta')}</button>}
+            <p className="text-center text-xs text-muted-foreground">{t('cq_mapResets')}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0 flex flex-col gap-3">
+        {err && <ErrorBox text={errText(err)} />}
+        <Card className="!p-3 sm:!p-4">
+          <h2 className="font-extrabold text-base sm:text-lg">{final ? t('cq_standingsFinal') : t('cq_standingsLive')}</h2>
+          <p className="text-xs text-muted-foreground mb-2">{t('cq_standingsRule')}</p>
+          <div className="grid grid-cols-[2rem_minmax(0,1fr)_3.5rem_4.5rem] gap-x-2 px-2 pb-1 text-[11px] font-bold text-muted-foreground uppercase">
+            <span>#</span><span>{t('cq_colPlayer')}</span><span className="text-right">🚩</span><span className="text-right">{t('cq_colMarks')}</span>
+          </div>
+          <ol className="flex flex-col gap-1.5">
+            {rows.map((x) => {
+              const p = styles.get(x.user_id);
+              return (
+                <li key={x.user_id} className={`grid grid-cols-[2rem_minmax(0,1fr)_3.5rem_4.5rem] gap-x-2 items-center rounded-xl px-2 py-1.5 text-sm ${p?.me ? 'bg-primary/15 border border-primary/50' : 'bg-background/40'}`}>
+                  <span className={`text-center font-black ${x.rank === 1 ? 'text-primary' : 'text-muted-foreground'}`}>{x.rank}</span>
+                  <span className="min-w-0 flex items-center gap-2">
+                    <ConqFace player={{ avatar: x.avatar, slot: x.slot }} color={p?.color} />
+                    <span className="truncate font-semibold">{x.name ?? t('cq_retired')}{p?.me ? ` · ${t('cq_you')}` : ''}</span>
+                  </span>
+                  <span className="text-right font-black">{x.territories}</span>
+                  <span className="text-right text-xs text-muted-foreground tabular-nums">{fmt(x.defense_sum)}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </Card>
+        {!!st?.history.filter((h) => h.season_id !== sid).length && (
+          <Card className="!p-3 sm:!p-4">
+            <h2 className="font-extrabold text-base mb-2">{t('cq_historyTitle')}</h2>
+            <ul className="flex flex-col gap-1 text-sm">
+              {st.history.filter((h) => h.season_id !== sid).map((h) => (
+                <li key={h.season_id} className="flex items-center justify-between gap-2 rounded-xl bg-background/40 px-3 py-1.5">
+                  <span className="font-bold">{t('cq_historyRow', { n: h.number, date: dateFmt(h.closed_at) })}</span>
+                  <span className="truncate text-foreground/85">{h.champions.filter(Boolean).length ? `🏆 ${h.champions.filter(Boolean).join(', ')}` : t('cq_historyNone')}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -265,31 +523,6 @@ function TerritoryRow({ terr, styles, selected, onOpen }: { terr: ConqTerritory;
         <span aria-hidden className="text-lg text-foreground/60">›</span>
       </button>
     </li>
-  );
-}
-
-/** Clasificación (en vivo o final): territorios y, si empatan, la suma de marcas; los empates comparten puesto */
-function Standings({ map, styles }: { map: ConqMap; styles: Map<string, PlayerStyle> }) {
-  const { t } = useI18n();
-  const fmt = (n: number) => n.toLocaleString(appNumberLocale());
-  return (
-    <Card className="!p-3 sm:!p-4">
-      <h2 className="font-extrabold text-base sm:text-lg">{map.final ? t('cq_standingsFinal') : t('cq_standingsLive')}</h2>
-      <p className="text-xs text-muted-foreground mb-2">{t('cq_standingsRule')}</p>
-      <ol className="flex flex-col gap-1.5">
-        {map.standings.map((s) => {
-          const st = styles.get(s.user_id);
-          return (
-            <li key={s.user_id} className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm ${st?.me ? 'bg-primary/15 border border-primary/50' : 'bg-background/40'}`}>
-              <span className="w-8 text-center font-black text-muted-foreground">{t('cq_rankN', { n: s.rank })}</span>
-              <ConqFace player={{ avatar: s.avatar, slot: s.slot }} color={st?.color} />
-              <span className="min-w-0 flex-1 truncate font-semibold">{s.name ?? t('cq_retired')}{st?.me ? ` · ${t('cq_you')}` : ''}</span>
-              <span className="text-right text-xs leading-tight"><span className="block font-black text-sm">🚩 {s.territories}</span><span className="block text-muted-foreground">{fmt(s.defense_sum)}</span></span>
-            </li>
-          );
-        })}
-      </ol>
-    </Card>
   );
 }
 

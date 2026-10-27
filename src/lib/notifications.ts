@@ -7,6 +7,8 @@
 //   • Racha en peligro: MAÑANA a las 20:00, y solo si ese día todavía no se abrió el juego
 //     (antes se programaba para hoy justo después de jugar, así que siempre era falsa).
 //   • Vidas completas: cuando se llenan, y solo si siguen llenas al momento de avisar.
+//   • Conquista (C6): 24 h y 1 h antes del cierre de cada temporada en la que juego, salvo grupos silenciados
+//     (conquestReminders.ts los programa y los quita).
 // Son temporizadores de la página: solo pueden salir con la app abierta en segundo plano. Nunca se
 // muestran con el juego en pantalla y las atrasadas (más de 2 h) se descartan en vez de salir al abrir.
 // Textos en el idioma del juego; se arman al momento de mostrar.
@@ -124,7 +126,7 @@ export function showNotification(
 
 // ── Avisos programados ──
 
-type NotifKind = 'daily' | 'streak' | 'lives';
+type NotifKind = 'daily' | 'streak' | 'lives' | 'conquest';
 
 interface ScheduledNotif {
   id: string;
@@ -162,6 +164,7 @@ function texts(n: ScheduledNotif): { title: string; body: string } {
   switch (n.kind) {
     case 'streak': return { title: Number(n.params?.n) === 1 ? translate(dict, 'notif_streakTitleOne') : translate(dict, 'notif_streakTitle', n.params), body: translate(dict, 'notif_streakBody') };
     case 'lives': return { title: translate(dict, 'notif_livesTitle'), body: translate(dict, 'notif_livesBody') };
+    case 'conquest': return { title: translate(dict, Number(n.params?.h) === 1 ? 'notif_conqTitle1' : 'notif_conqTitle24', n.params), body: translate(dict, 'notif_conqBody') };
     default: return { title: translate(dict, 'notif_dailyTitle'), body: translate(dict, 'notif_dailyBody') };
   }
 }
@@ -214,6 +217,15 @@ export function cancelStreakWarning(): void {
 export function scheduleLivesRegenerated(regenMs: number): void {
   if (regenMs <= 0) return;
   schedule('lives-full', 'lives', new Date(Date.now() + regenMs));
+}
+
+/** Conquista: aviso local antes del cierre (id estable por temporada y plazo) */
+export function scheduleConquestReminder(id: string, at: Date, params: Record<string, string | number>): void {
+  schedule(id, 'conquest', at, params);
+}
+/** Quita los avisos de Conquista cuyo id cumple la condición */
+export function cancelConquestReminders(match: (id: string) => boolean): void {
+  saveSchedules(getSchedules().filter((n) => n.kind !== 'conquest' || !match(n.id)));
 }
 
 /** Initialize notification check loop (runs every 60s while app is open) */

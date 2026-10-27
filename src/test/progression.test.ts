@@ -8,6 +8,8 @@ import {
 import { FRAME_STYLE, TITLE_KEY } from '@/lib/dailyChallenge';
 
 const sql = readFileSync(join(__dirname, '../../supabase/migrations/20261102120000_progression.sql'), 'utf8');
+// La versión vigente de _cosmetic_badge es la última que la redefine (Conquista agregó el título "conquistador")
+const cosmeticSql = readFileSync(join(__dirname, '../../supabase/migrations/20261108120000_conquest.sql'), 'utf8');
 const stats = (o: Partial<Progression['stats']> = {}): Progression['stats'] => ({
   games: 0, perfects: 0, fast: 0, combo: 0, golds: 0, regions: 0, categories: 0, dominated: 0, flags: 0, challenges: 0, sprint: 0, mundial: 0, daily: 0, ...o,
 });
@@ -23,11 +25,11 @@ describe('progresión (Fase 9)', () => {
 
   it('cada título y marco pide la misma insignia que en el servidor, y tiene nombre y color', () => {
     for (const x of TITLES) {
-      expect(sql).toContain(`when '${x.id}' then '${x.badge}'`);
+      expect(cosmeticSql).toContain(`when '${x.id}' then '${x.badge}'`);
       expect(TITLE_KEY[x.id]).toBe(`title_${x.id}`);
     }
     for (const x of FRAMES) {
-      expect(sql).toContain(`when '${x.id}' then '${x.badge}'`);
+      expect(cosmeticSql).toContain(`when '${x.id}' then '${x.badge}'`);
       expect(FRAME_STYLE[x.id]).toBeTruthy();
     }
     // Los premios que anuncian los logros existen como título o marco
