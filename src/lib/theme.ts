@@ -90,3 +90,18 @@ export const MAP_CONTINENT_COLORS: Record<string, string[]> = {
   Oceania:      ['#4FA8E8', '#62B5EE', '#3F9BE0', '#79C1F2'], // azul cielo
   Ice:          ['#C9D6E2', '#D5E0EA', '#BFCDDB', '#DCE5EE'], // Antártida / Groenlandia
 };
+
+/**
+ * Conquista el mapa (tablero, leyenda y ficha): amarillo = mis territorios; hasta 4 rivales con color y trama
+ * distintos (la trama los separa también en modo daltónico); libres en pizarra; los de un jugador que borró su
+ * cuenta en gris con rayas.
+ */
+export const CONQ = {
+  me: BRAND.yellow,
+  rivals: [BRAND.turquoise, '#FF6FB5', '#A98BFF', '#4FA3FF'],
+  rivalPatterns: [null, 'stripes', 'dots', 'cross'] as const,
+  free: '#6B7A99',
+  retired: '#8A93A6',
+  /** Países que no están en juego: azul oscuro parejo (la geografía se lee por los bordes) */
+  off: '#172A45',
+} as const;

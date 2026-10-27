@@ -7,7 +7,9 @@ import { worldCities, europeCities, asiaCities, americasCities, africaCities } f
 import { COLOMBIA_CITIES } from '@/data/colombiaCatalog';
 import { PRO_PACK_CITIES } from '@/data/proPackCatalog';
 import { catalogItem, kindFromPlaceId, itemTitle } from '@/lib/catalog';
-import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError } from '@/lib/conquest';
+import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet } from '@/lib/conquest';
+import { playerStyles, pickTerritory, boardLayer, missionLayer, ZONE_BOUNDS, conqCountry } from '@/lib/conquestMap';
+import { CONQ } from '@/lib/theme';
 
 const byId = new Map<string, { lat: number; lon: number; name: string }>();
 for (const l of [worldCities, europeCities, asiaCities, americasCities, africaCities, COLOMBIA_CITIES, PRO_PACK_CITIES, CONQUEST_CITIES]) {
@@ -105,6 +107,115 @@ describe('Conquista: cliente', () => {
     expect(started.season?.status).toBe('active');
     expect(Date.parse(started.season!.ends_at!) - Date.parse(started.season!.started_at!)).toBe(7 * 86_400_000);
     await expect(leaveGroup(mine.id)).rejects.toBeInstanceOf(ConqError);
+    localStorage.removeItem('geospeed_mock_conquest');
+    localStorage.removeItem('geospeed_mock_conquest_db');
+  });
+});
+
+describe('Conquista: tablero y práctica (C4)', () => {
+  it('fórmula de la especificación v1.1 (casos de control)', () => {
+    expect(conqPoints(0, 0)).toBe(1000);
+    expect(conqPoints(0, 7.5)).toBe(750);
+    expect(conqPoints(500, 7.5)).toBe(276);
+    expect(conqPoints(120, 15)).toBe(0);
+    expect(conqPoints(120, 16)).toBe(0);
+    expect(conqPoints(null, 3)).toBe(0);
+    expect(5 * conqPoints(0, 7.5)).toBe(3750);
+    // Sin decimales raros: siempre un entero entre 0 y 1.000
+    for (let km = 0; km <= 3000; km += 137) for (let t = 0; t < 15; t += 1.3) {
+      const p = conqPoints(km, t);
+      expect(Number.isInteger(p) && p >= 0 && p <= 1000).toBe(true);
+    }
+  });
+
+  it('colores: amarillo yo; rivales con color y trama distintos; iniciales que no se repiten', () => {
+    const players = [
+      { user_id: 'a', name: 'Paola', avatar: null, slot: 0 },
+      { user_id: 'me', name: 'JuanJo', avatar: null, slot: 1 },
+      { user_id: 'b', name: 'Pedro', avatar: null, slot: 2 },
+      { user_id: 'c', name: 'Valentina', avatar: null, slot: 3 },
+      { user_id: 'd', name: null, avatar: null, slot: 4 },
+    ];
+    const st = playerStyles(players, 'me');
+    expect(st.get('me')).toMatchObject({ me: true, color: CONQ.me, pattern: null });
+    const rivals = ['a', 'b', 'c', 'd'].map((id) => st.get(id)!);
+    expect(new Set(rivals.map((r) => r.color)).size).toBe(4);
+    expect(new Set(rivals.map((r) => r.pattern)).size).toBe(4);
+    expect(rivals.every((r) => r.color !== CONQ.me)).toBe(true);
+    expect(st.get('a')!.initial).toBe('Pa');
+    expect(st.get('b')!.initial).toBe('Pe');
+    expect(st.get('c')!.initial).toBe('V');
+    expect(st.get('d')!.initial).toBe('?');
+  });
+
+  it('toque en el mapa: el país del tablero más cercano, nunca la Guayana como Francia', () => {
+    expect(pickTerritory(-12.05, -77.04)).toBe('PE'); // Lima
+    expect(pickTerritory(4.71, -74.07)).toBe('CO'); // Bogotá
+    expect(pickTerritory(-0.18, -78.47)).toBe('EC'); // Quito
+    expect(pickTerritory(40.42, -3.7)).toBe('ES');
+    expect(pickTerritory(48.86, 2.35)).toBe('FR');
+    expect(pickTerritory(41.9, 12.5)).toBe('IT');
+    expect(pickTerritory(19.43, -99.13)).toBe('MX');
+    expect(pickTerritory(-33.45, -70.67)).toBe('CL');
+    expect(pickTerritory(-1.0, -77.5)).toBe('EC');
+    expect(pickTerritory(4.9, -52.3)).not.toBe('FR'); // Cayena
+    expect(pickTerritory(10, -40)).toBeNull(); // Atlántico
+    expect(pickTerritory(51.5, -0.12)).toBeNull(); // Londres: fuera del tablero
+  });
+
+  it('capas: los 10 países pintados, iniciales solo de los que tienen dueño, Francia sin ultramar', () => {
+    const st = playerStyles([{ user_id: 'me', name: 'Yo', avatar: null, slot: 0 }, { user_id: 'x', name: 'Paola', avatar: null, slot: 1 }], 'me');
+    const terr = CONQUEST_COUNTRIES.map((c) => ({ iso: c.iso, owner_id: c.iso === 'PE' ? 'x' : c.iso === 'CO' ? 'me' : null, retired: c.iso === 'IT', defense: c.iso === 'PE' ? 3420 : 0, version: 0, captured_at: null, reserved_until: null }));
+    const layer = boardLayer(terr, st, 'PE');
+    expect(Object.keys(layer.fills)).toHaveLength(10);
+    expect(layer.fills.CO.color).toBe(CONQ.me);
+    expect(layer.fills.PE.color).toBe(CONQ.rivals[0]);
+    expect(layer.fills.IT).toMatchObject({ color: CONQ.retired, pattern: 'stripes' });
+    expect(layer.fills.BR.color).toBe(CONQ.free);
+    expect(layer.badges!.map((b) => b.text).sort()).toEqual(['P', 'Y']);
+    expect(layer.fills.FR.box![0]).toBeGreaterThan(-10); // la caja de Francia no llega a la Guayana (−54°)
+    expect(missionLayer('CL').fills.CL.color).toBeUndefined();
+    for (const c of CONQUEST_COUNTRIES) {
+      const z = c.iso === 'ES' || c.iso === 'FR' || c.iso === 'IT' ? ZONE_BOUNDS.europe : ZONE_BOUNDS.america;
+      expect(c.bounds[0] >= z.lonMin && c.bounds[2] <= z.lonMax && c.bounds[1] >= z.latMin && c.bounds[3] <= z.latMax).toBe(true);
+    }
+  });
+
+  it('simulador: tablero, ficha con sus bloqueos y práctica fuera del paquete', async () => {
+    localStorage.setItem('geospeed_mock_conquest', '1');
+    localStorage.removeItem('geospeed_mock_conquest_db');
+    const w = window as unknown as Record<string, (...a: unknown[]) => unknown>;
+    const g = await createGroup('Tablero', 'r2');
+    w.__mockConqJoin(2);
+    const started = await startSeason(g.id);
+    const sid = started.season!.id;
+    const map = await fetchMap(sid);
+    expect(map.territories).toHaveLength(10);
+    expect(map.players).toHaveLength(3);
+    expect(map.me).toMatchObject({ missions_left: 5, missions_per_day: 5 });
+    expect(map.standings.every((x) => x.rank === 1)).toBe(true);
+    // Un rival captura Perú con 3.420; yo tengo Colombia
+    w.__mockConqOwn('PE', 'bot', 3420);
+    w.__mockConqOwn('CO', 'me', 2600);
+    const m2 = await fetchMap(sid);
+    expect(m2.territories.find((x) => x.iso === 'PE')).toMatchObject({ defense: 3420 });
+    expect(m2.standings[0].territories).toBe(1);
+    expect((await fetchTerritory(sid, 'PE'))).toMatchObject({ kind: 'attack', can_start: true, reason: null });
+    expect((await fetchTerritory(sid, 'CO')).reason).toBe('own_territory');
+    expect((await fetchTerritory(sid, 'BR')).kind).toBe('capture');
+    // Dos misiones en Chile hoy: tope por país (y la espera de 1 h)
+    w.__mockConqUse('CL');
+    expect((await fetchTerritory(sid, 'CL')).reason).toBe('cooldown');
+    w.__mockConqUse('CL');
+    expect((await fetchTerritory(sid, 'CL')).reason).toBe('country_limit');
+    w.__mockConqReserve('AR', 2);
+    expect((await fetchTerritory(sid, 'AR')).reason).toBe('reserved');
+    expect((await fetchMap(sid)).me!.missions_left).toBe(3);
+    // Práctica: 5 ciudades del banco de Perú que no son del paquete simulado (las 5 primeras)
+    const pr = await fetchPracticeSet(sid, 'PE');
+    const bank = conqCountry('PE')!.cityIds;
+    expect(pr).toHaveLength(5);
+    expect(pr.every((c) => bank.slice(5).includes(c.id))).toBe(true);
     localStorage.removeItem('geospeed_mock_conquest');
     localStorage.removeItem('geospeed_mock_conquest_db');
   });

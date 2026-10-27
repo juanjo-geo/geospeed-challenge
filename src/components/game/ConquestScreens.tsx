@@ -1,49 +1,24 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
 import { playButtonTap, playShareSuccess } from '@/lib/sounds';
 import { trackEvent } from '@/lib/analytics';
 import {
-  CONQ_MAX_PLAYERS, CONQ_MIN_PLAYERS, CONQ_NAME_MIN, CONQ_NAME_MAX, CONQ_RULES_V1, ConqError, acceptInvite, cancelGroup, cleanGroupName,
+  CONQ_MAX_PLAYERS, CONQ_MIN_PLAYERS, CONQ_NAME_MIN, CONQ_NAME_MAX, CONQ_RULES_V1, acceptInvite, cancelGroup, cleanGroupName,
   conqServerNow, conquestLink, conquestMockEnabled, createGroup, fetchMyGroups, formatTimeLeft, isConqCode, leaveGroup, normalizeConqCode,
   previewInvite, regenerateInvite, removeMember, setMuted, setParticipation, startSeason, useConqGroup,
   type ConqErrorCode, type ConqGroup, type ConqGroupSummary, type ConqMember, type ConqPreview,
 } from '@/lib/conquest';
 import { appNumberLocale } from '@/lib/format';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { HomeIcon } from '@/components/ui/icons';
 import Mascot from './Mascot';
 import { PlayerFace } from './RoomParts';
+import { BackHome, Card, CtaButton, ErrorBox, Page, errCode, useErrText } from './ConquestParts';
 
 /**
  * Conquista el mapa — fase C3 (docs/GeoSpeed_Conquista_Plan.md): A1 Crear o unirse (con la lista de mis grupos),
  * la invitación por enlace o código y A2 Sala de espera. Las reglas son las aprobadas (especificación v1.1); el servidor
  * hace cumplir todo (cupos, plantilla congelada, quién inicia).
  */
-
-function useErrText() {
-  const { t } = useI18n();
-  return useCallback((code: ConqErrorCode | null | undefined) => (code ? t(`cq_err_${code}` as never) : ''), [t]);
-}
-const errCode = (e: unknown): ConqErrorCode => (e instanceof ConqError ? e.code : 'network');
-
-function Page({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
-  return (
-    <div className="min-h-[100dvh] flex flex-col items-center game-bg px-3 pt-4 sm:px-4 sm:pt-6 md:px-6">
-      <div className={`w-full ${wide ? 'max-w-5xl' : 'max-w-3xl'} animate-fade-in-up flex flex-col gap-4 pb-6`} style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-const Card = ({ children, className = '' }: { children: ReactNode; className?: string }) => (
-  <section className={`rounded-3xl border-2 border-accent/50 bg-card/80 p-4 sm:p-5 ${className}`}>{children}</section>
-);
-const ErrorBox = ({ text }: { text: string }) => (text ? <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm text-center" role="alert">{text}</p> : null);
-const CtaButton = ({ children, onClick, disabled = false, type = 'button' }: { children: ReactNode; onClick?: () => void; disabled?: boolean; type?: 'button' | 'submit' }) => (
-  <button type={type} onClick={onClick} disabled={disabled} className="btn3d w-full rounded-2xl py-3.5 short:py-2.5 font-black text-lg text-primary-foreground disabled:opacity-50" style={{ background: 'var(--grad-cta)' }}>
-    {children}
-  </button>
-);
 
 /** Las reglas aprobadas, en cinco líneas (se muestran antes de iniciar) */
 function RulesCard() {
@@ -507,14 +482,5 @@ export function ConquestLobbyScreen({ groupId, onBack, onOpenMap }: ConquestLobb
         </div>
       )}
     </Page>
-  );
-}
-
-function BackHome({ onClick }: { onClick: () => void }) {
-  const { t } = useI18n();
-  return (
-    <button onClick={() => { playButtonTap(); onClick(); }} className="mt-1 inline-flex items-center gap-2 rounded-2xl border-2 border-foreground/30 px-5 py-2.5 font-bold hover:bg-muted/50">
-      <HomeIcon className="w-5 h-5" /> {t('cq_back')}
-    </button>
   );
 }

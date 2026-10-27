@@ -1,7 +1,7 @@
 /**
  * Conquista el mapa (docs/GeoSpeed_Conquista_Plan.md): cliente de las funciones del servidor
- * (supabase/migrations/20261108120000_conquest.sql). Fase C3: grupos, invitaciones y sala de espera. El tablero, las
- * misiones y el cierre llegan en C4–C6.
+ * (supabase/migrations/20261108120000_conquest.sql). C3: grupos, invitaciones y sala de espera. C4: tablero, ficha del
+ * territorio y práctica. Las misiones oficiales y el cierre llegan en C5–C6.
  *
  * Solo con cuenta registrada (decisión CQ-D1): sin sesión, o con una de invitado, las llamadas responden
  * `account_required` sin tocar el servidor (la vista previa de una invitación sí funciona sin sesión).
@@ -10,10 +10,15 @@
  *  · `__mockConqJoin(n)` suma n personas falsas a mi grupo más reciente.
  *  · `__mockConqGroup(n)` crea un grupo de otra persona con n integrantes y devuelve su código (para probar unirse).
  *  · `__mockConqConfirm()` hace que todos confirmen la próxima temporada.
+ *  · `__mockConqOwn(iso, quien, marca)` da un territorio de la temporada en curso: quien = 'me' | 'bot' | n.º de puesto |
+ *    'retired' | 'free'.
+ *  · `__mockConqReserve(iso, min)` simula que alguien juega por ese país; `__mockConqUse(iso)` gasta una misión mía ahí.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { conquestBetaOn } from '@/lib/conquestBeta';
+import { cityById } from '@/lib/itemMemory';
+import { CONQUEST_COUNTRIES } from '@/data/conquestCatalog';
 
 // ── Tipos (lo que devuelve el servidor) ──────────────────────────────────────────────────────────────────
 export interface ConqRules {
@@ -37,6 +42,31 @@ export interface ConqGroupSummary {
   me: { territories: number; defense_sum: number; rank: number } | null;
   unread: number;
 }
+
+/** Tablero (conq_map): plantilla congelada, territorios, clasificación y mis cupos */
+export interface ConqPlayer { user_id: string; name: string | null; avatar: string | null; slot: number }
+export interface ConqTerritory {
+  iso: string; owner_id: string | null; retired: boolean; defense: number; version: number; captured_at: string | null; reserved_until: string | null;
+}
+export interface ConqStanding { user_id: string; name: string | null; slot: number; avatar: string | null; territories: number; defense_sum: number; rank: number }
+export interface ConqMe { missions_left: number; missions_per_day: number; next_reset_at: string; active_attempt: string | null; in_roster: boolean }
+export interface ConqMap {
+  season: { id: string; group_id: string; number: number; status: ConqSeasonStatus; started_at: string | null; ends_at: string | null; rules: ConqRules; catalog: string[] };
+  server_now: string; data_version: number; players: ConqPlayer[]; territories: ConqTerritory[]; standings: ConqStanding[];
+  final: boolean; me: ConqMe | null; unread: number;
+  /** Mi id (lo agrega el cliente desde la sesión: el servidor no lo repite) */
+  my_id: string | null;
+}
+/** Por qué no se puede iniciar una misión en un país (conq_territory.reason) */
+export type ConqBlock = 'season_closed' | 'not_in_roster' | 'season_ending' | 'own_territory' | 'reserved' | 'attempt_active' | 'daily_limit' | 'country_limit' | 'cooldown';
+export type ConqKind = 'capture' | 'attack' | 'recover';
+export interface ConqTerritoryDetail {
+  iso: string; owner_id: string | null; retired: boolean; defense: number; version: number; reserved_until: string | null;
+  kind: ConqKind; threshold: number; rounds: number; seconds: number; can_start: boolean; reason: ConqBlock | null;
+  cooldown_until: string | null; my_country_today: number; per_country_daily: number; me: ConqMe | null; server_now: string;
+}
+/** Ciudad de práctica: del banco del país, fuera del paquete oficial (el servidor no revela las oficiales) */
+export interface ConqPracticeCity { id: string; name: string; lat: number; lon: number }
 
 export const CONQ_MAX_PLAYERS = 5;
 export const CONQ_MIN_PLAYERS = 2;
@@ -84,6 +114,16 @@ function noteServerTime(serverNowIso: string | undefined, t0: number, t1: number
 /** Hora del servidor en ms (estimada en el teléfono) */
 export const conqServerNow = () => Date.now() + clockOffsetMs;
 
+/**
+ * Puntos de una ronda (especificación v1.1, igual que `_conq_points` en el servidor):
+ * redondear(1.000 × e^(−d/500) × (0,5 + 0,5 × (1 − t/15))), mitades hacia arriba; 0 sin respuesta o con t ≥ 15 s.
+ * El servidor calcula los oficiales; aquí sirve para la práctica.
+ */
+export function conqPoints(km: number | null | undefined, t: number | null | undefined, seconds = 15): number {
+  if (km == null || t == null || !Number.isFinite(km) || !Number.isFinite(t) || t >= seconds) return 0;
+  return Math.floor(1000 * Math.exp(-Math.max(0, km) / 500) * (0.5 + 0.5 * (1 - Math.max(t, 0) / seconds)) + 0.5);
+}
+
 /** "6 d 23 h" · "5 h 10 min" · "12 min" */
 export function formatTimeLeft(ms: number): string {
   const mins = Math.max(0, Math.ceil(ms / 60_000));
@@ -107,6 +147,11 @@ export function conquestEnabled(flag: boolean): boolean {
 async function registered(): Promise<boolean> {
   const { data: { session } } = await supabase.auth.getSession();
   return !!session && !session.user.is_anonymous;
+}
+
+async function sessionUserId(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user.id ?? null;
 }
 
 async function rpc<T>(fn: string, args: Record<string, unknown>, needsAccount = true): Promise<T> {
@@ -168,6 +213,75 @@ export async function startSeason(id: string): Promise<ConqGroup> {
   return rpc<ConqGroup>('conq_season_start', { p_group: id });
 }
 
+export async function fetchMap(seasonId: string): Promise<ConqMap> {
+  if (mockEnabled()) return mock.map(seasonId);
+  const [m, myId] = await Promise.all([rpc<Omit<ConqMap, 'my_id'>>('conq_map', { p_season: seasonId }), sessionUserId()]);
+  return { ...m, my_id: myId };
+}
+export async function fetchTerritory(seasonId: string, iso: string): Promise<ConqTerritoryDetail> {
+  if (mockEnabled()) return mock.territory(seasonId, iso);
+  return rpc<ConqTerritoryDetail>('conq_territory', { p_season: seasonId, p_iso: iso });
+}
+export async function fetchPracticeSet(seasonId: string, iso: string): Promise<ConqPracticeCity[]> {
+  if (mockEnabled()) return mock.practice(seasonId, iso);
+  return (await rpc<ConqPracticeCity[] | null>('conq_practice_set', { p_season: seasonId, p_iso: iso })) ?? [];
+}
+
+/** Repite `refresh` cada `every` ms con la pestaña visible y al volver a ella */
+function usePolling(key: string | null, every: number, refresh: () => Promise<void>) {
+  useEffect(() => {
+    if (!key) return;
+    const tick = () => { if (document.visibilityState === 'visible') void refresh(); };
+    const t = setInterval(tick, every);
+    document.addEventListener('visibilitychange', tick);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', tick); };
+  }, [key, every, refresh]);
+}
+
+/** Tablero de una temporada: consulta cada 20 s (las capturas de los demás aparecen solas) */
+export function useConqMap(seasonId: string | null) {
+  const [map, setMap] = useState<ConqMap | null>(null);
+  const [error, setError] = useState<ConqError | null>(null);
+  const idRef = useRef(seasonId);
+  idRef.current = seasonId;
+  const refresh = useCallback(async () => {
+    const k = idRef.current;
+    if (!k) return;
+    try {
+      const m = await fetchMap(k);
+      if (idRef.current === k) { setMap(m); setError(null); }
+    } catch (e) {
+      if (idRef.current === k) setError(e instanceof ConqError ? e : new ConqError('network'));
+    }
+  }, []);
+  useEffect(() => { setMap(null); setError(null); void refresh(); }, [seasonId, refresh]);
+  usePolling(seasonId, map?.final ? 120_000 : 20_000, refresh);
+  return { map, error, refresh };
+}
+
+/** Ficha de un territorio: consulta cada 15 s (reservas y esperas cambian solas) */
+export function useConqTerritory(seasonId: string | null, iso: string | null) {
+  const [detail, setDetail] = useState<ConqTerritoryDetail | null>(null);
+  const [error, setError] = useState<ConqError | null>(null);
+  const key = seasonId && iso ? `${seasonId}:${iso}` : null;
+  const keyRef = useRef(key);
+  keyRef.current = key;
+  const refresh = useCallback(async () => {
+    const k = keyRef.current;
+    if (!k) return;
+    const [sid, i] = k.split(':');
+    try {
+      const d = await fetchTerritory(sid, i);
+      if (keyRef.current === k) { setDetail(d); setError(null); }
+    } catch (e) {
+      if (keyRef.current === k) setError(e instanceof ConqError ? e : new ConqError('network'));
+    }
+  }, []);
+  useEffect(() => { setDetail(null); setError(null); void refresh(); }, [key, refresh]);
+  usePolling(key, 15_000, refresh);
+  return { detail, error, refresh };
+}
+
 /** Sala del grupo: consulta cada 5 s en la sala de espera (para ver quién entra) y cada 30 s con temporada en curso */
 export function useConqGroup(id: string | null) {
   const [group, setGroup] = useState<ConqGroup | null>(null);
@@ -199,7 +313,11 @@ export function useConqGroup(id: string | null) {
 
 // ── Simulador de desarrollo ──────────────────────────────────────────────────────────────────────────────
 interface MockMember { user_id: string; name: string; avatar: string | null; role: 'admin' | 'member'; joined_at: number; muted: boolean }
-interface MockSeason { id: string; number: number; status: ConqSeasonStatus; confirms: string[]; started_at: number | null; ends_at: number | null }
+interface MockTerr { owner: string | null; retired: boolean; defense: number; version: number; reserved_until: number | null; captured_at: number | null }
+interface MockSeason {
+  id: string; number: number; status: ConqSeasonStatus; confirms: string[]; started_at: number | null; ends_at: number | null;
+  roster?: ConqPlayer[]; terr?: Record<string, MockTerr>; used?: { iso: string; at: number }[];
+}
 interface MockGroup { id: string; name: string; status: 'active' | 'archived'; admin: string; code: string; members: MockMember[]; seasons: MockSeason[] }
 const ME = 'me';
 const MOCK_KEY = 'geospeed_mock_conquest_db';
@@ -320,9 +438,102 @@ const mock = {
     const confirmed = g.members.filter((m) => s.confirms.includes(m.user_id));
     if (confirmed.length < CONQ_MIN_PLAYERS) throw new ConqError('not_enough_players');
     s.status = 'active'; s.started_at = Date.now(); s.ends_at = Date.now() + 7 * 86_400_000;
+    s.roster = confirmed.map((m, i) => ({ user_id: m.user_id, name: m.name, avatar: m.avatar, slot: i }));
     mockSave(db); return mockView(g);
   },
+  async map(seasonId: string): Promise<ConqMap> {
+    await wait();
+    const { db, g, s } = mockSeason(seasonId);
+    mockView(g); mockSave(db);
+    const now = Date.now();
+    const terr = mockTerr(s);
+    const territories: ConqTerritory[] = MOCK_CATALOG.map((iso) => ({ iso, owner_id: terr[iso].owner, retired: terr[iso].retired, defense: terr[iso].defense,
+      version: terr[iso].version, captured_at: terr[iso].captured_at ? new Date(terr[iso].captured_at!).toISOString() : null,
+      reserved_until: terr[iso].reserved_until && terr[iso].reserved_until! > now ? new Date(terr[iso].reserved_until!).toISOString() : null }));
+    return {
+      season: { id: s.id, group_id: g.id, number: s.number, status: s.status, started_at: s.started_at ? new Date(s.started_at).toISOString() : null,
+        ends_at: s.ends_at ? new Date(s.ends_at).toISOString() : null, rules: CONQ_RULES_V1, catalog: MOCK_CATALOG },
+      server_now: new Date(now).toISOString(), data_version: territories.reduce((a, x) => a + x.version, 0),
+      players: mockRoster(g, s), territories, standings: mockStandings(g, s), final: s.status === 'closed', me: mockMe(s), unread: 0, my_id: ME,
+    };
+  },
+  async territory(seasonId: string, iso: string): Promise<ConqTerritoryDetail> {
+    await wait();
+    const { g, s } = mockSeason(seasonId);
+    const now = Date.now();
+    const t = mockTerr(s)[iso.toUpperCase()];
+    if (!t) throw new ConqError('country_invalid');
+    const me = mockMe(s);
+    const day = s.started_at ? Math.floor((now - s.started_at) / 86_400_000) : 0;
+    const mine = (s.used ?? []).filter((u) => s.started_at && Math.floor((u.at - s.started_at) / 86_400_000) === day);
+    const here = mine.filter((u) => u.iso === iso).length;
+    const last = Math.max(0, ...(s.used ?? []).filter((u) => u.iso === iso).map((u) => u.at));
+    const coolUntil = last ? last + CONQ_RULES_V1.cooldown_s * 1000 : 0;
+    const inRoster = mockRoster(g, s).some((p) => p.user_id === ME);
+    const reason: ConqBlock | null = s.status !== 'active' ? 'season_closed'
+      : !inRoster ? 'not_in_roster'
+      : s.ends_at && now >= s.ends_at - CONQ_RULES_V1.last_minutes_s * 1000 ? 'season_ending'
+      : t.owner === ME ? 'own_territory'
+      : t.reserved_until && t.reserved_until > now ? 'reserved'
+      : mine.length >= CONQ_RULES_V1.daily_missions ? 'daily_limit'
+      : here >= CONQ_RULES_V1.per_country_daily ? 'country_limit'
+      : coolUntil > now ? 'cooldown' : null;
+    return { iso: iso.toUpperCase(), owner_id: t.owner, retired: t.retired, defense: t.defense, version: t.version,
+      reserved_until: t.reserved_until && t.reserved_until > now ? new Date(t.reserved_until).toISOString() : null,
+      kind: !t.owner && !t.retired ? 'capture' : 'attack', threshold: CONQ_RULES_V1.threshold, rounds: 5, seconds: 15,
+      can_start: !reason, reason, cooldown_until: coolUntil > now ? new Date(coolUntil).toISOString() : null,
+      my_country_today: here, per_country_daily: CONQ_RULES_V1.per_country_daily, me, server_now: new Date(now).toISOString() };
+  },
+  async practice(seasonId: string, iso: string): Promise<ConqPracticeCity[]> {
+    await wait();
+    mockSeason(seasonId);
+    const ids = CONQUEST_COUNTRIES.find((c) => c.iso === iso.toUpperCase())?.cityIds ?? [];
+    // El "paquete oficial" simulado son las 5 primeras; la práctica sale de las otras 7
+    return ids.slice(5).sort(() => Math.random() - 0.5).slice(0, 5)
+      .map((id) => cityById(id)).filter((c): c is NonNullable<typeof c> => !!c)
+      .map((c) => ({ id: c.id ?? '', name: c.name, lat: c.lat, lon: c.lon }));
+  },
 };
+
+const MOCK_CATALOG = ['CO', 'PE', 'EC', 'CL', 'AR', 'BR', 'MX', 'ES', 'FR', 'IT'];
+function mockSeason(seasonId: string) {
+  const db = mockDb();
+  for (const g of Object.values(db)) {
+    const s = g.seasons.find((x) => x.id === seasonId);
+    if (s) {
+      if (!g.members.some((m) => m.user_id === ME)) throw new ConqError('not_member');
+      return { db, g, s };
+    }
+  }
+  throw new ConqError('not_member');
+}
+function mockTerr(s: MockSeason): Record<string, MockTerr> {
+  s.terr ??= {};
+  for (const iso of MOCK_CATALOG) s.terr[iso] ??= { owner: null, retired: false, defense: 0, version: 0, reserved_until: null, captured_at: null };
+  return s.terr;
+}
+/** Plantilla congelada (las temporadas simuladas viejas no la tenían: los confirmados) */
+function mockRoster(g: MockGroup, s: MockSeason): ConqPlayer[] {
+  return s.roster ?? g.members.filter((m) => s.confirms.includes(m.user_id)).map((m, i) => ({ user_id: m.user_id, name: m.name, avatar: m.avatar, slot: i }));
+}
+function mockStandings(g: MockGroup, s: MockSeason): ConqStanding[] {
+  const terr = mockTerr(s);
+  const rows = mockRoster(g, s).map((p) => {
+    const mine = Object.values(terr).filter((t) => t.owner === p.user_id);
+    return { ...p, territories: mine.length, defense_sum: mine.reduce((a, t) => a + t.defense, 0), rank: 1 };
+  });
+  for (const r of rows) r.rank = 1 + rows.filter((o) => o.territories > r.territories || (o.territories === r.territories && o.defense_sum > r.defense_sum)).length;
+  return rows.sort((a, b) => a.rank - b.rank || (a.name ?? '').localeCompare(b.name ?? ''));
+}
+function mockMe(s: MockSeason): ConqMe | null {
+  if (s.status !== 'active' || !s.started_at) return null;
+  const now = Date.now();
+  const day = Math.floor((now - s.started_at) / 86_400_000);
+  const used = (s.used ?? []).filter((u) => Math.floor((u.at - s.started_at!) / 86_400_000) === day).length;
+  return { missions_left: Math.max(0, CONQ_RULES_V1.daily_missions - used), missions_per_day: CONQ_RULES_V1.daily_missions,
+    next_reset_at: new Date(s.started_at + (day + 1) * 86_400_000).toISOString(), active_attempt: null,
+    in_roster: (s.roster ?? []).some((p) => p.user_id === ME) || s.confirms.includes(ME) };
+}
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   const w = window as unknown as Record<string, unknown>;
@@ -355,6 +566,37 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     const db = mockDb();
     for (const g of Object.values(db)) { const s = lobbyOf(g); if (s) s.confirms = g.members.map((m) => m.user_id); }
     mockSave(db);
+    return 'ok';
+  };
+  /** Temporada en curso más reciente de mis grupos */
+  const activeMock = () => {
+    const db = mockDb();
+    const g = Object.values(db).filter((x) => x.members.some((m) => m.user_id === ME) && activeOf(x)).sort((a, b) => (activeOf(b)!.started_at ?? 0) - (activeOf(a)!.started_at ?? 0))[0];
+    return g ? { db, g, s: activeOf(g)! } : null;
+  };
+  w.__mockConqOwn = (iso: string, who: string | number = 'bot', defense = 2400) => {
+    const a = activeMock();
+    if (!a) return 'sin temporada en curso';
+    const t = mockTerr(a.s)[iso.toUpperCase()];
+    if (!t) return 'país fuera del catálogo';
+    const roster = mockRoster(a.g, a.s);
+    const owner = who === 'me' ? ME : who === 'free' || who === 'retired' ? null : typeof who === 'number' ? roster[who]?.user_id ?? null : roster.find((p) => p.user_id !== ME)?.user_id ?? null;
+    Object.assign(t, { owner, retired: who === 'retired', defense: who === 'free' ? 0 : defense, version: t.version + 1, captured_at: Date.now() });
+    mockSave(a.db);
+    return 'ok';
+  };
+  w.__mockConqReserve = (iso: string, minutes = 3) => {
+    const a = activeMock();
+    if (!a) return 'sin temporada en curso';
+    mockTerr(a.s)[iso.toUpperCase()].reserved_until = Date.now() + minutes * 60_000;
+    mockSave(a.db);
+    return 'ok';
+  };
+  w.__mockConqUse = (iso: string) => {
+    const a = activeMock();
+    if (!a) return 'sin temporada en curso';
+    (a.s.used ??= []).push({ iso: iso.toUpperCase(), at: Date.now() });
+    mockSave(a.db);
     return 'ok';
   };
 }
