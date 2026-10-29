@@ -11,7 +11,7 @@
  * se mide al punto representativo y el servidor (que siempre tiene el contorno) corrige el puntaje al guardar.
  */
 import type { City } from '@/data/cities';
-import { shapeDistance, haversineKm, type CountryHit } from './flagScoring';
+import { shapeDistance, haversineKm, type CountryHit } from './shapeDistance';
 
 export type FeatureShape = { line: boolean; rings: number[][][]; tone?: number };
 export type FeatureShapes = Record<string, FeatureShape>;

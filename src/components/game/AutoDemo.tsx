@@ -115,6 +115,7 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = size.w;
     const h = size.h;
+    if (w <= 0 || h <= 0) return; // sin tamaño aún (el ResizeObserver lo pone enseguida)
 
     const mScale = Math.min(w / lonRange, h / latRange);
     const mOffX = (w - lonRange * mScale) / 2;
@@ -157,6 +158,58 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
       ctx.restore();
     };
 
+    // El mapa (océano + países) no cambia entre cuadros: se pinta una vez en un lienzo aparte y cada cuadro
+    // solo lo estampa. Antes se redibujaban los 177 países y se reasignaba el lienzo en cada cuadro.
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    const mapLayer = document.createElement('canvas');
+    mapLayer.width = w * dpr;
+    mapLayer.height = h * dpr;
+    const m = mapLayer.getContext('2d');
+    if (m) {
+      m.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Océano azul noche (como el mapa de la partida)
+      const ocean = m.createLinearGradient(0, 0, 0, h);
+      ocean.addColorStop(0, BRAND.navyDeep);
+      ocean.addColorStop(0.5, BRAND.navy);
+      ocean.addColorStop(1, BRAND.navyDeep);
+      m.fillStyle = ocean;
+      m.fillRect(0, 0, w, h);
+
+      // Países con el color de su continente (maqueta Inicio v2) y bordes blancos finos
+      m.strokeStyle = 'rgba(255,255,255,0.55)';
+      m.lineWidth = 0.5;
+      // Los 177 países se pintan en tandas de ~6 ms por cuadro: de una vez eran una tarea larga justo al
+      // montar el Inicio. La tarjeta aparece con un fundido, así que el relleno progresivo no se nota.
+      // (Si el efecto se rehace por un cambio de tamaño, la tanda vieja termina sola sobre su lienzo suelto.)
+      let ci = 0;
+      const paintSlice = () => {
+        const t0 = performance.now();
+        while (ci < countries.length && performance.now() - t0 < 6) {
+        const country = countries[ci];
+        const palette = MAP_CONTINENT_COLORS[getColorGroup(country.name)] ?? MAP_CONTINENT_COLORS.Ice;
+        m.fillStyle = palette[ci % palette.length];
+        for (const polygon of country.polygons) {
+          if (polygon.length < 4) continue;
+          m.beginPath();
+          let vis = false;
+          for (let i = 0; i < polygon.length; i++) {
+            const x = toX(polygon[i][0]);
+            const y = toY(polygon[i][1]);
+            if (i === 0) m.moveTo(x, y); else m.lineTo(x, y);
+            if (x >= -5 && x <= w + 5 && y >= -5 && y <= h + 5) vis = true;
+          }
+          if (vis) { m.closePath(); m.fill(); m.stroke(); }
+        }
+        ci++;
+        }
+        if (ci < countries.length) requestAnimationFrame(paintSlice);
+      };
+      paintSlice();
+    }
+
     const animate = (ts: number) => {
       if (!startTime) startTime = ts;
       const elapsed = (ts - startTime) % (CYCLE_MS * DEMO_CITIES.length);
@@ -164,40 +217,11 @@ export default function AutoDemo({ hideTagline = false }: { hideTagline?: boolea
       const cycleT = (elapsed % CYCLE_MS) / CYCLE_MS;
       const city = DEMO_CITIES[cityIdx];
 
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(mapLayer, 0, 0, w, h);
 
-      // Océano azul noche (como el mapa de la partida)
-      const ocean = ctx.createLinearGradient(0, 0, 0, h);
-      ocean.addColorStop(0, BRAND.navyDeep);
-      ocean.addColorStop(0.5, BRAND.navy);
-      ocean.addColorStop(1, BRAND.navyDeep);
-      ctx.fillStyle = ocean;
-      ctx.fillRect(0, 0, w, h);
-
-      // Países con el color de su continente (maqueta Inicio v2) y bordes blancos finos
-      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-      ctx.lineWidth = 0.5;
-      for (let ci = 0; ci < countries.length; ci++) {
-        const country = countries[ci];
-        const palette = MAP_CONTINENT_COLORS[getColorGroup(country.name)] ?? MAP_CONTINENT_COLORS.Ice;
-        ctx.fillStyle = palette[ci % palette.length];
-        for (const polygon of country.polygons) {
-          if (polygon.length < 4) continue;
-          ctx.beginPath();
-          let vis = false;
-          for (let i = 0; i < polygon.length; i++) {
-            const x = toX(polygon[i][0]);
-            const y = toY(polygon[i][1]);
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            if (x >= -5 && x <= w + 5 && y >= -5 && y <= h + 5) vis = true;
-          }
-          if (vis) { ctx.closePath(); ctx.fill(); ctx.stroke(); }
-        }
-      }
 
       // City question mark (shows immediately)
       const cx = toX(city.lon);

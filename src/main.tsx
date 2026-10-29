@@ -12,12 +12,14 @@ import "@fontsource/poppins/latin-900.css";
 // Letra redondeada del wordmark GEOSPEED (solo el logo)
 import "@fontsource/fredoka/latin-700.css";
 import "./index.css";
+import { afterAppLoad } from "./lib/idle";
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Register service worker for PWA / offline support
+// Register service worker for PWA / offline support. Al instalarse guarda el paquete base (~6 MB):
+// se registra unos segundos después de abrir para no quitarle red a la pantalla de carga y al Inicio.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  void afterAppLoad(8000).then(() => {
     navigator.serviceWorker.register('/sw.js').catch(() => {
       // SW registration failed — app works fine without it
     });

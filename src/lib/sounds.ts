@@ -15,7 +15,7 @@ import { isSfxEnabled } from './prefs';
 // All synthesis via Web Audio API — zero external dependencies.
 
 // ── Video recording audio capture ─────────────────────────────────────────
-import { getAudioDestination } from './shareVideo';
+import { getAudioDestination } from './audioCapture';
 
 let recordingNode: GainNode | null = null;
 

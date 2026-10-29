@@ -15,6 +15,7 @@ import { getCachedDailyStatus, playedToday, todayDailyNo, DAILY_STATUS_EVENT, ty
 import { lazy, Suspense } from 'react';
 // La demo dibuja el mapa (polígonos pesados): se carga aparte para que el inicio pinte antes
 const AutoDemo = lazy(() => import('./AutoDemo'));
+import { checkGlyphCoverage } from '@/lib/glyphWarmup';
 import Mascot from './Mascot';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import { MEDAL_RULE, medalKey, medalMap, useProgression } from '@/lib/progression';
@@ -218,6 +219,8 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';
   const difficultyEmoji = DIFF_CONFIG.find(d => d.key === selectedDifficulty)?.emoji ?? '🎒';
+  // Solo en desarrollo: avisa si el Inicio usa emojis que glyphWarmup.ts no precalienta en la pantalla de carga
+  useEffect(() => { checkGlyphCoverage(); }, []);
   // Fase 10: favoritos (configuraciones del Clásico, modos y quizzes)
   const favorites = useFavorites();
   const favLabel = (f: Favorite): string => {

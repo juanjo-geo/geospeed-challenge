@@ -15,6 +15,8 @@ import { countries } from '@/data/countries';
 import { getMapBounds } from '@/data/cities';
 import { getPlayerLevel } from './levelSystem';
 import { appNumberLocale } from '@/lib/format';
+// Audio de la grabación: el nodo vive en audioCapture.ts y sounds.ts enruta los efectos hacia él
+import { currentAudioDestination } from './audioCapture';
 
 interface VideoRoundData {
   clickLat: number;
@@ -35,19 +37,6 @@ interface ShareVideoData {
   totalCities: number;
 }
 
-// ── Audio capture support ──
-let audioDestination: MediaStreamAudioDestinationNode | null = null;
-
-/**
- * Get or create an audio destination node for capturing Web Audio output.
- * Call this from the sounds module to route audio to the recorder.
- */
-export function getAudioDestination(ctx: AudioContext): MediaStreamAudioDestinationNode {
-  if (!audioDestination || audioDestination.context !== ctx) {
-    audioDestination = ctx.createMediaStreamDestination();
-  }
-  return audioDestination;
-}
 
 // ── Feature detection ──
 export function canRecordVideo(): boolean {
@@ -386,6 +375,7 @@ export async function generateShareVideo(data: ShareVideoData): Promise<Blob> {
   const combinedStream = new MediaStream([...videoStream.getTracks()]);
 
   // Add audio track if available (routed from Web Audio via sounds module)
+  const audioDestination = currentAudioDestination();
   if (audioDestination && audioDestination.stream.getAudioTracks().length > 0) {
     for (const track of audioDestination.stream.getAudioTracks()) {
       combinedStream.addTrack(track);

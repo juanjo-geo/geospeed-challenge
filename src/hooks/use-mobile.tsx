@@ -56,9 +56,9 @@ function detectIsLandscape(): boolean {
 
 function detectIsMobile(): boolean {
   if (typeof window === "undefined") return false;
-  const w = window.innerWidth;
-  const isTouch = isTouchDevice();
-  return w < 768 || (isTouch && w <= 1024);
+  // Con matchMedia, no con innerWidth: leerlo en el primer render de React obligaba a maquetar la pantalla
+  // de carga dentro de la tarea de arranque (~60 ms en un computador, varias veces más en un celular)
+  return window.matchMedia("(max-width: 767.98px)").matches || (isTouchDevice() && window.matchMedia("(max-width: 1024px)").matches);
 }
 
 // =============================================================================
