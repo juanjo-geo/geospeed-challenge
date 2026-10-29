@@ -107,20 +107,16 @@ function lazyWithReload<T extends { default: React.ComponentType<any> }>(factory
 const GameScreen = lazyWithReload(() => import('@/components/game/GameScreen'));
 const ProfileScreen = lazyWithReload(() => import('@/components/game/ProfileScreen'));
 const FinalResultScreen = lazyWithReload(() => import('@/components/game/FinalResultScreen'));
-const MultiplayerLobby = lazyWithReload(() => import('@/components/game/MultiplayerLobby'));
 const FriendsScreen = lazyWithReload(() => import('@/components/game/FriendsScreen'));
 const ChallengeScreen = lazyWithReload(() => import('@/components/game/ChallengeScreen'));
 const MyChallengesScreen = lazyWithReload(() => import('@/components/game/MyChallengesScreen'));
 const HistoryScreen = lazyWithReload(() => import('@/components/game/HistoryScreen'));
 const RankingScreen = lazyWithReload(() => import('@/components/game/RankingScreen'));
-const WaitingRoom = lazyWithReload(() => import('@/components/game/WaitingRoom'));
-const MultiplayerResultScreen = lazyWithReload(() => import('@/components/game/MultiplayerResultScreen'));
 const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
 const WorldChallengeScreen = lazyWithReload(() => import('@/components/game/WorldChallengeScreen'));
 const TutorialOverlay = lazyWithReload(() => import('@/components/game/TutorialOverlay'));
 const StoreScreen = lazyWithReload(() => import('@/components/game/StoreScreen'));
 const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePassScreen'));
-const SpectatorScreen = lazyWithReload(() => import('@/components/game/SpectatorScreen'));
 const SettingsScreen = lazyWithReload(() => import('@/components/game/SettingsScreen'));
 const StreakScreen = lazyWithReload(() => import('@/components/game/StreakScreen'));
 const TrainingSetupScreen = lazyWithReload(() => import('@/components/game/TrainingSetupScreen'));
@@ -150,7 +146,6 @@ const SprintSearchScreen = lazyWithReload(() => import('@/components/game/Sprint
 const SprintResultScreen = lazyWithReload(() => import('@/components/game/SprintFlowScreens').then(m => ({ default: m.SprintResultScreen })));
 const MoreModesScreen = lazyWithReload(() => import('@/components/game/MoreModesScreen'));
 const HowToPlayScreen = lazyWithReload(() => import('@/components/game/HowToPlayScreen'));
-import { type GameRoom, updateRoomScore, subscribeToRoom, fetchRoom } from '@/lib/multiplayerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial, refreshEntitlements, ENTITLEMENTS_EVENT, PURCHASE_PENDING_KEY, type EntitlementsResult } from '@/lib/premiumSystem';
@@ -198,7 +193,7 @@ import {
   subscribeToPush,
 } from '@/lib/notifications';
 
-type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'mp-lobby' | 'mp-waiting' | 'mp-playing' | 'mp-final' | 'mp-spectate' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads' | 'room-create' | 'room-join' | 'room' | 'conq-home' | 'conq-invite' | 'conq-group' | 'conq-map' | 'conq-practice' | 'conq-play';
+type Phase = 'splash' | 'home' | 'daily-intro' | 'streak' | 'friends' | 'challenge' | 'my-challenges' | 'history' | 'ranking' | 'profile' | 'store' | 'battlepass' | 'settings' | 'more-modes' | 'howto' | 'tutorial' | 'countdown' | 'playing' | 'final' | 'ta-select' | 'ta-playing' | 'ta-final' | 'daily' | 'wc-playing' | 'training-setup' | 'training-repeat' | 'training-result' | 'memory' | 'sprint' | 'sprint-search' | 'sprint-result' | 'medals' | 'achievements' | 'quizzes' | 'quiz-edit' | 'quiz-intro' | 'downloads' | 'room-create' | 'room-join' | 'room' | 'conq-home' | 'conq-invite' | 'conq-group' | 'conq-map' | 'conq-practice' | 'conq-play';
 
 /** Entrenamiento o repaso en curso (Fase 4): tandas sucesivas hasta acertar las falladas */
 interface TrainingRun {
@@ -219,7 +214,7 @@ interface TrainingRun {
 /** Fases que conviven con la barra de navegación persistente (fuera de la partida) */
 const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro', 'downloads', 'room-create', 'room-join', 'conq-home', 'conq-invite', 'conq-group', 'conq-map'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
-const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'mp-playing', 'ta-playing', 'wc-playing', 'conq-practice', 'conq-play'];
+const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'ta-playing', 'wc-playing', 'conq-practice', 'conq-play'];
 
 // Mismas ciudades para todos: semilla del día de juego (medianoche de Colombia, src/lib/gameDay.ts)
 function getDailySeed(): number {
@@ -425,11 +420,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [revengeUsed, setRevengeUsed] = useState(false);
   const [originalScore, setOriginalScore] = useState(0);
   const [originalWorstScores, setOriginalWorstScores] = useState<number[]>([]);
-  // Multiplayer state
-  const [mpRoom, setMpRoom] = useState<GameRoom | null>(null);
-  const [mpIsHost, setMpIsHost] = useState(false);
-  const mpRoomRef = useRef<GameRoom | null>(null);
-  const [spectateRoomId, setSpectateRoomId] = useState<string>('');
   // Stable game key — only increments when a NEW game is explicitly started
   const gameKeyRef = useRef(0);
   // Semilla de la partida en curso: permite que "Reta a un amigo" comparta EXACTAMENTE
@@ -455,38 +445,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
   // Initialize ads on mount
   useEffect(() => { initPrefs(); initAds(); initAnalytics(); initFeatureFlags(); checkIncomingReferral(); resetSessionFrustration(); recordInstallDate(); checkRetention(); }, []);
-
-  useEffect(() => { mpRoomRef.current = mpRoom; }, [mpRoom]);
-
-  // Keep room subscription alive for the whole match lifecycle.
-  // Only re-subscribe when the room ID changes, not when phase changes,
-  // so we don't miss real-time updates during the mp-playing → mp-final transition.
-  const mpPhaseActive = phase === 'mp-playing' || phase === 'mp-final';
-  useEffect(() => {
-    if (!mpPhaseActive || !mpRoom) return;
-    // Merge DB update with local state — preserve MY score/finished if I already
-    // finished (optimistic update), so no race resets my score to 0.
-    const applyUpdate = (updated: GameRoom) => {
-      setMpRoom(prev => {
-        if (!prev) return updated;
-        const myScoreKey = mpIsHost ? 'host_score' : 'guest_score';
-        const myFinishedKey = mpIsHost ? 'host_finished' : 'guest_finished';
-        const iAlreadyFinished = prev[myFinishedKey];
-        return {
-          ...updated,
-          ...(iAlreadyFinished ? { [myScoreKey]: prev[myScoreKey], [myFinishedKey]: true } : {}),
-        };
-      });
-    };
-    const channel = subscribeToRoom(mpRoom.id, applyUpdate);
-    // Polling de respaldo (Realtime bloqueado por RLS sobre la tabla base game_rooms)
-    const poll = setInterval(async () => {
-      const r = await fetchRoom(mpRoom.id);
-      if (r) applyUpdate(r);
-    }, 2000);
-    return () => { supabase.removeChannel(channel); clearInterval(poll); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mpRoom?.id, mpPhaseActive]);
 
   // Countdown — 3 → 2 → 1 → 0 (GO!) → fase de juego. Se inicializa al entrar y solo avanza
   // mientras el telefono esta en horizontal (showRotateOverlay pausa el tic).
@@ -589,7 +547,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     const inGamePhases: Phase[] = [
       'countdown', 'playing', 'final', 'tutorial',
       'ta-select', 'ta-playing', 'ta-final', 'daily',
-      'mp-lobby', 'mp-waiting', 'mp-playing', 'mp-final', 'mp-spectate',
       'store', 'profile', 'battlepass', 'settings', 'more-modes', 'howto', 'daily-intro',
     ];
     if (!inGamePhases.includes(phase)) return;
@@ -608,7 +565,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   useEffect(() => {
     // Maqueta Girar_APROBADA: el aviso de girar aparece ANTES de la cuenta regresiva y la cuenta
     // espera en vertical ("La cuenta regresiva empieza despues").
-    const playPhases: Phase[] = ['countdown', 'playing', 'ta-playing', 'mp-playing', 'daily'];
+    const playPhases: Phase[] = ['countdown', 'playing', 'ta-playing', 'daily'];
     const isTouch = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
     if (!playPhases.includes(phase) || !isTouch) {
       // Outside gameplay or desktop: always hide overlay
@@ -1104,19 +1061,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
   }, [handleGoHome, handleOpenStore, handleOpenBattlePass]);
 
-  const handleMultiplayer = useCallback(() => setPhase('mp-lobby'), []);
-  const handleSpectate = useCallback(async (code: string) => {
-    // Find room by code to get the ID
-    const { data } = await (supabase
-      .from('game_rooms_public' as any)
-      .select('id')
-      .eq('code', code.toUpperCase())
-      .single() as any);
-    if (data?.id) {
-      setSpectateRoomId(data.id);
-      setPhase('mp-spectate');
-    }
-  }, []);
   const handleTimeAttack = useCallback(() => {
     if (offlineBlocked('play')) return;
     unlockAudio();
@@ -1294,7 +1238,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
   }, [challengeSeed, phase]);
 
-  // ── Deep link processing — /daily, /challenge/:seed, /duel/:code ──
+  // ── Deep link processing — /daily, /challenge/:seed, /duel/:code (enlaces viejos del duelo → Jugar con amigos) ──
   const deepLinkProcessed = useRef(false);
   useEffect(() => {
     if (phase !== 'home' || deepLinkProcessed.current || !deepLink) return;
@@ -1350,63 +1294,12 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       setChallengeSource({ type: 'code', code: routeParams.code.toUpperCase() });
       setPhase('challenge');
       navigate('/', { replace: true });
-    } else if (deepLink.type === 'duel' && routeParams.code) {
-      // /duel/ABC12 → go to multiplayer lobby with pre-filled code
-      setPhase('mp-lobby');
+    } else if (deepLink.type === 'duel') {
+      // El duelo en vivo se retiró (D8): sus enlaces viejos abren "Jugar con amigos" (retos y Sala en vivo)
+      setPhase('friends');
       navigate('/', { replace: true });
     }
   }, [phase, deepLink, routeParams, navigate]);
-
-  const handleRoomReady = useCallback((room: GameRoom, isHost: boolean) => {
-    setMpRoom(room);
-    setMpIsHost(isHost);
-    setPhase('mp-waiting');
-  }, []);
-
-  const handleMpGameStart = useCallback((room: GameRoom) => {
-    setMpRoom(room);
-    setDifficulty(room.difficulty as Difficulty);
-    setGameMode(room.mode as GameMode);
-    setPhase('mp-playing');
-  }, []);
-
-  const handleMpGameOver = useCallback((rounds: RoundResult[], reason: 'timeout' | 'complete') => {
-    const total = rounds.reduce((s, r) => s + r.totalPoints, 0);
-    setFinalRounds(rounds);
-    setFinalScore(total);
-    // F1: el duelo también queda en el historial del servidor (antes no se registraba)
-    saveGameResult({
-      gameType: 'duel',
-      mode: mpRoomRef.current?.mode ?? 'world',
-      difficulty: mpRoomRef.current?.difficulty ?? 'easy',
-      score: total,
-      roundsPlayed: rounds.length,
-      roundsTotal: 13,
-      avgDistanceKm: avgDistanceOf(rounds),
-      endReason: reason,
-      seed: mpRoomRef.current?.seed ?? null,
-      rounds: roundsFromResults(rounds),
-    });
-    if (mpRoomRef.current) {
-      // Save score to DB via edge function (broadcast is handled by MultiplayerResultScreen)
-      updateRoomScore(mpRoomRef.current.id, mpIsHost, total, rounds.length);
-      // Optimistic local update so the result screen shows correct score immediately
-      setMpRoom(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          ...(mpIsHost
-            ? { host_score: total, host_finished: true }
-            : { guest_score: total, guest_finished: true }),
-          current_round: rounds.length,
-        };
-      });
-    }
-    // Go to result screen immediately — MultiplayerResultScreen waits for opponentFinished flag
-    setPhase('mp-final');
-  }, [mpIsHost]);
-
-  const handleMpPlayAgain = useCallback(() => setPhase('mp-lobby'), []);
 
   const modeLabel = t(`mode_${gameMode}` as any) || MODE_CONFIG.find(m => m.key === gameMode)?.label || 'World';
   const diffLabel = t(`diff_${difficulty}` as any) || difficultyLabelsEs[difficulty];
@@ -1666,7 +1559,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onCreated={handleChallengeCreated}
           onOpenCode={handleOpenChallengeCode}
           onSignIn={() => navigate('/auth')}
-          onLiveDuel={handleMultiplayer}
           onLiveRoom={handleLiveRoom}
           onOpenRoomPin={handleOpenRoomPin}
           onConquest={handleConquest}
@@ -1751,38 +1643,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
     if (phase === 'my-challenges') {
       return <MyChallengesScreen onBack={handleGoHome} onOpen={handleOpenMyChallenge} onCreate={handleFriends} onSignIn={() => navigate('/auth')} />;
-    }
-
-    if (phase === 'mp-lobby') {
-      return <MultiplayerLobby onRoomReady={handleRoomReady} onBack={handleGoHome} onSpectate={handleSpectate} />;
-    }
-
-    if (phase === 'mp-spectate' && spectateRoomId) {
-      return <SpectatorScreen roomId={spectateRoomId} onBack={handleGoHome} />;
-    }
-
-    if (phase === 'mp-waiting' && mpRoom) {
-      return <WaitingRoom room={mpRoom} isHost={mpIsHost} onGameStart={handleMpGameStart} onBack={handleGoHome} />;
-    }
-
-    if (phase === 'mp-playing') {
-      return (
-        <GameScreen
-          key={`mp-${mpRoom?.id}`}
-          difficulty={difficulty}
-          gameMode={gameMode}
-          onRoundComplete={() => {}}
-          onExit={handleGoHome}
-          musicMuted={isMusicMuted}
-          onToggleMusic={toggleMusic}
-          onGameOver={handleMpGameOver}
-          seed={mpRoom?.seed}
-        />
-      );
-    }
-
-    if (phase === 'mp-final' && mpRoom) {
-      return <MultiplayerResultScreen room={mpRoom} isHost={mpIsHost} onPlayAgain={handleMpPlayAgain} onGoHome={handleGoHome} onRoomUpdate={setMpRoom} />;
     }
 
     if (phase === 'daily') {

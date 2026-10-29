@@ -26,8 +26,6 @@ interface FriendsScreenProps {
   /** Abre la invitación de un código (pantalla de reto) */
   onOpenCode: (code: string) => void;
   onSignIn: () => void;
-  /** Duelo en vivo (oculto tras el flag live_duel_enabled, D8) */
-  onLiveDuel?: () => void;
   /** Sala en vivo (hasta 20 jugadores): crear una */
   onLiveRoom?: () => void;
   /** Sala en vivo: el cuadro de código recibió un PIN de 6 números */
@@ -41,7 +39,7 @@ interface FriendsScreenProps {
  * "Jugar con amigos" (maqueta Amigos_Asincronico_APROBADA_v2): dos exploradores con el globo y la insignia
  * "Reto entre amigos", crear un reto (región y dificultad en las mismas hojas del Inicio) o unirse con código.
  */
-export default function FriendsScreen({ initialMode, initialDifficulty, initialCategory = 'cities', onBack, onCreated, onOpenCode, onSignIn, onLiveDuel, onLiveRoom, onOpenRoomPin, onConquest, onOpenConquestCode }: FriendsScreenProps) {
+export default function FriendsScreen({ initialMode, initialDifficulty, initialCategory = 'cities', onBack, onCreated, onOpenCode, onSignIn, onLiveRoom, onOpenRoomPin, onConquest, onOpenConquestCode }: FriendsScreenProps) {
   const { t } = useI18n();
   const [mode, setMode] = useState<GameMode>(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty>(initialDifficulty);
@@ -96,7 +94,6 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
   const isConq = !!onOpenConquestCode && /[A-Z]/.test(code) && isConqCode(code);
   const normalized = isPin ? digits : isConq ? code : normalizeCode(code);
   const canJoin = isPin || isConq || isValidCode(normalized);
-  const showLiveDuel = !!onLiveDuel && getFlag('live_duel_enabled');
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center game-bg overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6">
@@ -133,6 +130,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
               <span className="text-5xl sm:text-6xl" aria-hidden>🎮</span>
               <div className="min-w-0">
                 <h2 className="text-[min(5.6vw,1.5rem)] sm:text-3xl font-extrabold leading-tight">{t('friends_createLead')} <span className="text-primary">{t('friends_createTail')}</span></h2>
+                <PlayersChip>{t('friends_players')}</PlayersChip>
                 <p className="text-sm sm:text-base text-foreground/80">{t('friends_createDesc')}</p>
               </div>
             </div>
@@ -188,6 +186,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
             <span className="text-5xl sm:text-6xl shrink-0" aria-hidden>📡</span>
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <h2 className="text-[min(5.6vw,1.5rem)] sm:text-3xl font-extrabold leading-tight">{t('room_cardLead')} <span className="text-primary">{t('room_cardTail')}</span></h2>
+              <PlayersChip>{t('room_cardPlayers')}</PlayersChip>
               <p className="text-sm sm:text-base text-foreground/80">{t('room_cardDesc')}</p>
             </div>
             <button onClick={() => { playButtonTap(); onLiveRoom?.(); }} className="btn3d shrink-0 w-full sm:w-auto rounded-2xl px-6 py-3 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
@@ -202,6 +201,7 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
             <span className="text-5xl sm:text-6xl shrink-0" aria-hidden>🚩</span>
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <h2 className="text-[min(5.6vw,1.5rem)] sm:text-3xl font-extrabold leading-tight">{t('cq_cardLead')} <span className="text-primary">{t('cq_cardTail')}</span></h2>
+              <PlayersChip>{t('cq_cardPlayers')}</PlayersChip>
               <p className="text-sm sm:text-base text-foreground/80">{t('cq_cardDesc')}</p>
             </div>
             <button onClick={() => { playButtonTap(); onConquest?.(); }} className="btn3d shrink-0 w-full sm:w-auto rounded-2xl px-6 py-3 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
@@ -217,11 +217,6 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
             <span className="block text-foreground/70 text-xs sm:text-sm">{t('friends_infoTail')}</span>
           </p>
         </div>
-        {showLiveDuel && (
-          <p className="mt-2 text-center">
-            <button onClick={() => { playButtonTap(); onLiveDuel?.(); }} className="text-xs text-muted-foreground underline hover:text-foreground">{t('friends_liveDuel')}</button>
-          </p>
-        )}
         <button onClick={() => { playButtonTap(); onBack(); }} className="mt-4 mb-2 w-full max-w-xl mx-auto flex items-center justify-center gap-2 rounded-2xl border-2 border-accent/50 py-3 font-bold hover:bg-accent/10 transition-colors active:scale-[0.98]">
           <ChevronIcon dir="left" className="w-5 h-5" /> {t('ob_backHome')}
         </button>
@@ -263,6 +258,18 @@ function PickButton({ label, emoji, value, onClick }: { label: string; emoji: Re
         <ChevronIcon dir="down" className="w-4 h-4 text-foreground/70" />
       </button>
     </div>
+  );
+}
+
+/** Cuántos juegan cada modo, a primera vista (reto 1 contra 1 · sala hasta 20 · conquista 2 a 5) */
+function PlayersChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="my-1 inline-flex items-center gap-1.5 rounded-full border border-accent/50 bg-accent/10 px-2.5 py-0.5 text-xs sm:text-sm font-bold text-accent">
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="9" cy="8" r="3.2" /><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.6" /><path d="M16.5 13.6c2.7.2 4.5 2.2 4.5 5" />
+      </svg>
+      {children}
+    </span>
   );
 }
 
