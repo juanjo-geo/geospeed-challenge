@@ -8,6 +8,7 @@ import { isMusicMuted, toggleMuted as toggleMusicMuted } from '@/hooks/useBackgr
 import { playButtonTap } from '@/lib/sounds';
 import { syncStreakReminder } from '@/lib/streakReminder';
 import { hapticTap } from '@/lib/haptics';
+import { adPrivacyOptionsRequired, showAdPrivacyOptions } from '@/lib/adSystem';
 import Wordmark from '@/components/ui/Wordmark';
 import { HudIconButton } from './GameHud';
 import Flag from '@/components/ui/Flag';
@@ -130,6 +131,10 @@ export default function SettingsScreen({ onBack, onHowToPlay, onDownloads }: Set
             <Section title={t('settings_privacySection')}>
               <LinkRow icon="shield" label={t('settings_privacy')} onClick={() => go('/privacy')} />
               <LinkRow icon="doc" label={t('settings_terms')} onClick={() => go('/terms')} />
+              {/* App nativa en Europa / Reino Unido: Google exige poder cambiar el consentimiento de anuncios */}
+              {adPrivacyOptionsRequired() && (
+                <LinkRow icon="shield" label={t('settings_adPrivacy')} onClick={() => { playButtonTap(); void showAdPrivacyOptions(); }} />
+              )}
             </Section>
           </div>
 

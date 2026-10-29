@@ -430,6 +430,7 @@ const es = {
   settings_privacySection: 'Privacidad',
   settings_privacy: 'Política de privacidad',
   settings_terms: 'Términos de uso',
+  settings_adPrivacy: 'Privacidad de los anuncios',
   settings_account: 'Cuenta',
   settings_signedInAs: 'Sesión iniciada como',
   settings_guest: 'Jugando como invitado',

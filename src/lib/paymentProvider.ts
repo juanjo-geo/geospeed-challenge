@@ -92,11 +92,41 @@ class RevenueCatProvider implements PaymentProvider {
     return Boolean(this.apiKey) && !this.apiKey.startsWith('rc_placeholder');
   }
 
-  /** Carga el plugin nativo bajo demanda. En web nunca se llama. */
+  /**
+   * Carga el plugin nativo bajo demanda (chunk aparte; en web nunca se llama). Sin `@vite-ignore`:
+   * con él Vite dejaba el nombre del paquete tal cual en el build y la app nativa no podía cargarlo.
+   */
   private async load(): Promise<any> {
     if (this.rc) return this.rc;
-    this.rc = await import(/* @vite-ignore */ '@revenuecat/purchases-capacitor');
+    this.rc = await import('@revenuecat/purchases-capacitor');
     return this.rc;
+  }
+
+  /** id del usuario de Supabase con sesión (invitado o cuenta), o null. */
+  private async sessionUserId(): Promise<string | null> {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.user?.id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * RevenueCat identifica al comprador con el id de Supabase: así el webhook (revenuecat-webhook)
+   * sabe a quién registrar la compra en `purchases`. Si la sesión cambió (invitado → cuenta), se
+   * cambia también en RevenueCat.
+   */
+  private async identify(userId: string | null): Promise<void> {
+    if (!userId) return;
+    try {
+      const { Purchases } = await this.load();
+      const { appUserID } = await Purchases.getAppUserID();
+      if (appUserID !== userId) await Purchases.logIn({ appUserID: userId });
+    } catch (e) {
+      console.warn('[PaymentProvider] RevenueCat logIn falló:', e);
+    }
   }
 
   /** Las suscripciones (Pro mensual/anual) usan tipo 'subs'; el resto 'inapp'. */
@@ -114,14 +144,9 @@ class RevenueCatProvider implements PaymentProvider {
       const { Purchases, LOG_LEVEL } = await this.load();
       await Purchases.setLogLevel({ level: LOG_LEVEL.WARN });
 
-      // Liga las compras a la cuenta del usuario (Supabase) si hay sesión.
-      let appUserID: string | undefined;
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data: { user } } = await supabase.auth.getUser();
-        appUserID = user?.id || undefined;
-      } catch { /* invitado: RevenueCat usará un ID anónimo */ }
-
+      // Liga las compras a la cuenta del usuario (Supabase) si hay sesión; si no, RevenueCat usa un
+      // id anónimo y purchase() la crea e identifica antes de cobrar.
+      const appUserID = (await this.sessionUserId()) ?? undefined;
       await Purchases.configure({ apiKey: this.apiKey, appUserID });
       this.initialized = true;
       console.info('[PaymentProvider] RevenueCat configurado');
@@ -140,6 +165,16 @@ class RevenueCatProvider implements PaymentProvider {
     }
 
     try {
+      // Como en la web: toda compra necesita un usuario en el servidor al que registrarla (el
+      // webhook de RevenueCat la anota en `purchases`). Sin sesión se crea la de invitado.
+      const { ensureGuestSession } = await import('@/lib/identity');
+      if ((await ensureGuestSession({ force: true })) === 'unavailable') {
+        return { success: false, code: 'login_required' };
+      }
+      const userId = await this.sessionUserId();
+      if (!userId) return { success: false, code: 'login_required' };
+      await this.identify(userId);
+
       const { Purchases } = await this.load();
       const { products } = await Purchases.getProducts({
         productIdentifiers: [productId],
@@ -167,6 +202,7 @@ class RevenueCatProvider implements PaymentProvider {
     }
     if (!this.initialized) await this.initialize();
     try {
+      await this.identify(await this.sessionUserId());
       const { Purchases } = await this.load();
       await Purchases.restorePurchases();
       return { success: true };
@@ -178,7 +214,10 @@ class RevenueCatProvider implements PaymentProvider {
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {
     if (!this.hasKey()) return { isActive: false, expiresAt: null, source: null };
     if (!this.initialized) await this.initialize();
+    if (!this.initialized) return { isActive: false, expiresAt: null, source: null };
     try {
+      // Se llama tras iniciar sesión y al abrir la app: mantiene a RevenueCat con el usuario actual
+      await this.identify(await this.sessionUserId());
       const { Purchases } = await this.load();
       const { customerInfo } = await Purchases.getCustomerInfo();
       const pro = customerInfo?.entitlements?.active?.[RC_ENTITLEMENT_ID];

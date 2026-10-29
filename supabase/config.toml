@@ -12,3 +12,7 @@ verify_jwt = false
 
 [functions.mercadopago-checkout]
 verify_jwt = false
+
+# RevenueCat llama al webhook sin JWT de Supabase; la función exige su propia clave (REVENUECAT_WEBHOOK_AUTH).
+[functions.revenuecat-webhook]
+verify_jwt = false

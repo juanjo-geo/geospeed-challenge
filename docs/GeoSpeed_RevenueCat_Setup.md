@@ -2,7 +2,9 @@
 
 **Objetivo:** vender Pro y vidas DENTRO de la app Android usando la facturación de Google Play (vía RevenueCat). Google **rechaza** la app si usas Mercado Pago para bienes digitales dentro del APK; Mercado Pago queda solo para la web.
 
-**Estado del código:** ya está listo. `paymentProvider.ts` usa RevenueCat automáticamente en nativo. Lo único que falta es lo que tienes que hacer tú en las consolas (RevenueCat, Google Cloud, Play). Esta guía es esa parte.
+**Estado del código (2026-10-28):** listo. `paymentProvider.ts` usa RevenueCat automáticamente en nativo, identifica al comprador con su id de Supabase antes de cobrar, y el webhook `revenuecat-webhook` anota cada compra en el servidor (tabla `purchases`), así que el Pro de Google Play también cuenta para Sprint, los packs Pro y la racha. Lo único que falta es lo que tienes que hacer tú en las consolas (RevenueCat, Google Cloud, Play, Supabase). Esta guía es esa parte.
+
+> Arreglado el 2026-10-28: hasta esa fecha el build dejaba el plugin de RevenueCat sin empaquetar y la app nativa no habría podido cobrar nada. Cualquier AAB anterior está afectado.
 
 > Regla de oro ya implementada: en la app nativa NUNCA se abrirá Mercado Pago. Si falta la clave de RevenueCat, los botones de compra dicen "no disponible" en vez de cobrar mal.
 
@@ -25,16 +27,9 @@ Cuando crees los productos en Play Console y los conectes en RevenueCat, usa **e
 
 ---
 
-## PASO 0 — Instalar el plugin (en tu PC, carpeta del proyecto)
+## PASO 0 — Plugin instalado ✅
 
-En la terminal, dentro de `C:\Users\Juan Jose\GeospeedCh`:
-
-```bash
-npm install @revenuecat/purchases-capacitor
-npx cap sync android
-```
-
-> Hazlo ANTES de volver a compilar en Android Studio. Esto agrega el plugin al `package.json` y lo enlaza con el proyecto Android. (También deja todo listo para que Vercel siga compilando la web sin problemas cuando publiquemos.)
+`@revenuecat/purchases-capacitor` ya está en el proyecto y enlazado con Android (`npx cap sync android`). No tienes que hacer nada aquí.
 
 ---
 
@@ -92,23 +87,16 @@ RevenueCat te dirá "Conectado" cuando todo esté bien. (Puede tardar hasta 36h 
 1. **Entitlements → New** → identificador exactamente `pro`.
 2. **Products**: importa/registra los 6 IDs de Play (`lives_5`, `lives_15`, `lives_50`, `pro_monthly`, `pro_yearly`, `pro_lifetime`).
 3. Adjunta `pro_monthly`, `pro_yearly` y `pro_lifetime` al entitlement **`pro`**. (Las vidas NO van a un entitlement: son consumibles.)
+   Si RevenueCat pregunta el tipo de los productos únicos: `lives_5`, `lives_15`, `lives_50` = **Consumible**; `pro_lifetime` = **No consumible**.
 4. **Offerings → crea una offering "default"** y agrega los productos como paquetes (opcional pero recomendado; el código también puede comprarlos por ID directo).
+5. **Project settings → Restore behavior:** deja la opción por defecto, **Transfer to new App User ID**. Así, si alguien restaura sus compras en otra cuenta, el webhook las mueve a esa cuenta.
 
 ---
 
-## PASO 6 — Poner la clave en el .env
+## PASO 6 — La clave pública de RevenueCat
 
-1. En **RevenueCat → API Keys**, copia la **Public app-specific API key de Google** (empieza con `goog_...`).
-2. En `C:\Users\Juan Jose\GeospeedCh\.env`, reemplaza:
-   ```
-   VITE_REVENUECAT_API_KEY=goog_TU_CLAVE_REAL_AQUI
-   ```
-3. Vuelve a compilar:
-   ```bash
-   npm run build
-   npx cap sync android
-   ```
-   Y reconstruye el AAB firmado, súbelo de nuevo a Pruebas internas.
+1. En **RevenueCat → API Keys**, copia la **Public app-specific API key de Google** (empieza con `goog_...`). Es pública (va dentro de la app), no es un secreto.
+2. Pásamela por el chat: la pongo en `.env` (`VITE_REVENUECAT_API_KEY`), preparo el proyecto Android con `npm run build:native` + `npx cap sync android` y tú generas el AAB firmado y lo subes de nuevo a Pruebas internas.
 
 ---
 
@@ -125,9 +113,34 @@ Las compras reales solo funcionan con la app firmada, subida a un canal de prueb
 
 ---
 
-## PASO 8 (opcional, recomendado) — Webhook RevenueCat → Supabase
+## PASO 8 — Webhook RevenueCat → Supabase (necesario)
 
-Hoy, al comprar, la app acredita Pro/vidas en el momento y lo guarda en Supabase. Para mayor robustez (renovaciones, reembolsos, multi-dispositivo), conviene un webhook de RevenueCat hacia una Edge Function de Supabase que actualice `player_data`. **Esto lo implemento yo cuando ya tengas RevenueCat conectado** — avísame y lo hacemos.
+El código ya está hecho: migración `supabase/migrations/20261109120000_revenuecat.sql` + Edge Function `supabase/functions/revenuecat-webhook/index.ts`. Sin este paso, el Pro de Google Play solo existe en el teléfono: Sprint corta a esos jugadores en 5 carreras y los packs Pro los tratan como gratuitos.
+
+1. **Migración:** pega el contenido de `20261109120000_revenuecat.sql` en el [SQL Editor](https://supabase.com/dashboard/project/motyvjfhupmvmfpgftku/sql/new) y pulsa Run (se puede repetir sin problema).
+2. **Clave del webhook:** inventa una clave larga (por ejemplo, 40 letras y números al azar; un gestor de contraseñas la genera). No me la mandes.
+   - Supabase → **Edge Functions → Secrets → Add new secret**: nombre `REVENUECAT_WEBHOOK_AUTH`, valor = esa clave.
+3. **Publicar la función:** Supabase → **Edge Functions → Deploy a new function → Via Editor**, nombre `revenuecat-webhook`, pega el contenido de `supabase/functions/revenuecat-webhook/index.ts` y despliega. En los ajustes de la función, **apaga "Verify JWT with legacy secret"** (igual que en los webhooks de Mercado Pago).
+4. **En RevenueCat → Integrations → Webhooks → Add new webhook:**
+   - URL: `https://motyvjfhupmvmfpgftku.supabase.co/functions/v1/revenuecat-webhook`
+   - Authorization header value: la misma clave del paso 2.
+   - Environment: **Both Production and Sandbox** (las compras de los probadores llegan como sandbox y se guardan aparte).
+   - Events: todos.
+5. Pulsa **Send test event**. La respuesta debe ser `200` con `"action":"test"`.
+
+Qué hace cada aviso (detalle en la migración):
+
+| Aviso de RevenueCat | En el servidor |
+|---|---|
+| Compra / renovación de `pro_monthly` o `pro_yearly` | Pro hasta la fecha de vencimiento que dio Google |
+| `pro_lifetime` | Pro para siempre |
+| `lives_*` | Queda registrada (las vidas ya las sumó la app; la web no las vuelve a dar) |
+| Cancelación de la renovación | Nada: el Pro sigue hasta el fin del periodo pagado |
+| Reembolso | Compra revocada (y restablecida si Google revierte el reembolso) |
+| Vencimiento | Se recorta la vigencia |
+| Transferencia (restaurar en otra cuenta) | Las compras pasan a esa cuenta |
+
+Prueba automática: `npm run test:revenuecat-sql` (38 casos en Postgres local sobre todas las migraciones).
 
 ---
 
@@ -136,15 +149,18 @@ Hoy, al comprar, la app acredita Pro/vidas en el momento y lo guarda en Supabase
 | Tarea | Quién |
 |-------|-------|
 | Código RevenueCat en la app | ✅ Ya hecho (yo) |
-| `npm install @revenuecat/purchases-capacitor` + `cap sync` | **Tú** |
+| Plugin instalado + `cap sync` | ✅ Ya hecho (yo) |
 | Cuenta RevenueCat + app Google | **Tú** |
 | Subir primer AAB a Pruebas internas | **Tú** |
 | Crear los 6 productos en Play (IDs exactos) | **Tú** |
 | Cuenta de servicio Google Cloud + JSON a RevenueCat | **Tú** |
 | Entitlement `pro` + offering en RevenueCat | **Tú** |
-| Clave `goog_...` al `.env` + recompilar | **Tú** |
+| Pasarme la clave pública `goog_...` | **Tú** |
+| Ponerla en `.env` y preparar Android | **Yo** |
+| Generar el AAB firmado y subirlo | **Tú** |
 | Probar con cuenta tester | **Tú** |
-| Webhook RevenueCat → Supabase (opcional) | **Yo** (cuando esté conectado) |
+| Código del webhook RevenueCat → Supabase | ✅ Ya hecho (yo) |
+| Migración + secret + publicar la función + configurar el webhook (PASO 8) | **Tú** |
 
 ---
 

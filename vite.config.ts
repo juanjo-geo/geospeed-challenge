@@ -82,6 +82,9 @@ export default defineConfig(({ mode }) => ({
             if (id.includes("@supabase")) return "vendor-supabase";
             // Generador de QR (sala en vivo): solo se importa de forma diferida; no debe ir en la carga inicial
             if (id.includes("qrcode-generator")) return "vendor-qrcode";
+            // Plugins de la app nativa (AdMob, RevenueCat): se importan de forma diferida y solo dentro
+            // de Capacitor; en "vendor" engordaban la carga inicial de la web
+            if (id.includes("@capacitor-community/admob") || id.includes("@revenuecat")) return "vendor-native";
             return "vendor";
           }
           if (id.includes("/src/data/countries.ts")) return "data-countries";
