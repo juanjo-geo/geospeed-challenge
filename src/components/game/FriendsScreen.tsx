@@ -9,6 +9,7 @@ import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ChevronIcon } from '@/components/ui/icons';
+import FitText from '@/components/ui/FitText';
 import { REGION_ART, DIFF_ART, DIFF_ORDER, REGION_FLAG } from '@/lib/selectionArt';
 import { isProPack } from '@/lib/packAccess';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
@@ -247,15 +248,22 @@ export default function FriendsScreen({ initialMode, initialDifficulty, initialC
   );
 }
 
+/**
+ * Selector de la partida. Ícono y flecha arriba, nombre abajo con todo el ancho de la columna (FitText lo
+ * achica o lo parte en dos líneas si no cabe): en tres columnas de ~105 px el formato en fila cortaba
+ * "Ciudades" en "C…".
+ */
 function PickButton({ label, emoji, value, onClick }: { label: string; emoji: ReactNode; value: string; onClick: () => void }) {
   return (
     <div className="min-w-0">
-      <span className="block text-xs font-semibold text-foreground/70 mb-1">{label}</span>
+      <span className="block text-xs font-semibold text-foreground/70 mb-1 truncate">{label}</span>
       <button onClick={onClick} aria-haspopup="dialog" aria-label={`${label}: ${value}`}
-        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-left">
-        <span className="text-xl shrink-0" aria-hidden>{emoji}</span>
-        <span className="flex-1 min-w-0 font-bold text-sm sm:text-base truncate">{value}</span>
-        <ChevronIcon dir="down" className="w-4 h-4 text-foreground/70" />
+        className="w-full h-[calc(100%-1.25rem)] flex flex-col items-center justify-center gap-1 px-1.5 py-2 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-center">
+        <span className="flex items-center gap-1.5">
+          <span className="text-xl leading-none shrink-0" aria-hidden>{emoji}</span>
+          <ChevronIcon dir="down" className="w-3.5 h-3.5 text-foreground/70 shrink-0" />
+        </span>
+        <FitText text={value} className="w-full min-w-0 font-bold text-[13px] sm:text-sm leading-tight text-center" />
       </button>
     </div>
   );

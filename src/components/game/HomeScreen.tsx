@@ -28,6 +28,7 @@ import { useI18n } from '@/i18n';
 import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
+import FitText from '@/components/ui/FitText';
 import SprintHomeCard from './SprintHomeCard';
 import { REGION_ART, DIFF_ART, REGION_FLAG, regionGroup, packGroups, REGION_UNLOCK_LEVEL, DIFF_UNLOCK_LEVEL } from '@/lib/selectionArt';
 import { canPlayPack, isPackTrial, isProPack } from '@/lib/packAccess';
@@ -550,15 +551,17 @@ function Dropdown({ label, emoji, value, onClick }: { label: string; emoji: Reac
       <span className="block text-[10px] sm:text-xs lg:text-sm font-semibold text-muted-foreground lg:text-foreground mb-0.5 sm:mb-1 truncate">{label}</span>
       <button
         onClick={onClick}
-        className="w-full flex flex-col items-center gap-0.5 px-1 py-1.5 sm:flex-row sm:gap-2 sm:py-2 sm:px-2.5 lg:px-3 lg:py-2.5 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-left"
+        className="w-full flex flex-col items-center gap-0.5 px-1 py-1.5 sm:gap-1 sm:py-2 sm:px-2 lg:flex-row lg:gap-2 lg:px-3 lg:py-2.5 rounded-xl border border-accent/40 bg-background/50 hover:border-accent transition-colors active:scale-[0.98] text-left"
         aria-haspopup="dialog"
         aria-label={`${label}: ${value}`}
       >
-        <span className="flex items-center gap-1 sm:contents">
+        {/* Apilado hasta lg: en 640–1023 px los tres selectores comparten fila junto a la mascota y en fila
+            el nombre quedaba en "C…" */}
+        <span className="flex items-center gap-1 lg:contents">
           <span className="text-base sm:text-xl lg:text-2xl shrink-0 leading-none" aria-hidden>{emoji}</span>
-          <Chevron className="rotate-90 text-foreground/80 shrink-0 w-3 h-3 sm:w-4 sm:h-4 sm:order-last" />
+          <Chevron className="rotate-90 text-foreground/80 shrink-0 w-3 h-3 sm:w-4 sm:h-4 lg:order-last" />
         </span>
-        <span className="w-full text-center sm:text-left sm:flex-1 min-w-0 font-bold text-[12px] min-[400px]:text-[13px] sm:text-base truncate">{value}</span>
+        <FitText text={value} className="w-full text-center lg:text-left lg:flex-1 min-w-0 font-bold text-[12px] min-[400px]:text-[13px] md:text-base leading-tight" />
       </button>
     </div>
   );

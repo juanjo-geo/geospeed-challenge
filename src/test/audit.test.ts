@@ -17,6 +17,13 @@ describe('AUD05: nombres en inglés', () => {
     expect(itemTitle(city('johannesburgo'), 'en')).toBe('Johannesburg');
   });
 
+  it('en inglés las ciudades pierden la tilde del español (Paris, no París)', () => {
+    expect(itemTitle(city('paris'), 'en')).toBe('Paris');
+    expect(itemTitle(city('berlin'), 'en')).toBe('Berlin');
+    expect(itemTitle(city('rio-de-janeiro'), 'en')).toBe('Rio de Janeiro');
+    expect(itemTitle(city('paris'), 'es')).toBe('París');
+  });
+
   it('una ciudad que se llama igual en los dos idiomas no está en la tabla', () => {
     const bogota = worldCities.find((c) => c.name === 'Bogotá')!;
     expect(CITY_NAMES_EN[bogota.id!]).toBeUndefined();

@@ -42,8 +42,14 @@
       "tablet_7": { "size": "1200x1920", "count": 4 },
       "tablet_10": { "size": "1920x1200", "count": 4 }
     },
-    "feature_graphic": { "size": "1024x500", "format": "PNG or JPEG", "idea": "Mascota sobre el globo (arte de la pantalla de carga) + wordmark GEOSPEED + '¿Cuánto conoces el mundo?'" },
-    "hi_res_icon": { "size": "512x512", "format": "32-bit PNG" }
+    "feature_graphic": { "size": "1024x500", "format": "PNG 24 bits (sin transparencia)", "files": { "es-419": "store-listing/imagen-destacada-es.png", "en-US": "store-listing/imagen-destacada-en.png" } },
+    "screenshots_files": {
+      "note": "Hechas el 2026-10-28 con capturas reales del juego (Chrome sin interfaz, teléfono 844x390 / 390x844) dentro de un marco con título. 1920x1080 JPEG RGB: sirven para teléfono y también para tabletas de 7 y 10 pulgadas.",
+      "es-419": ["store-listing/screenshots/es/captura-01.jpg", "store-listing/screenshots/es/captura-02.jpg", "store-listing/screenshots/es/captura-03.jpg", "store-listing/screenshots/es/captura-04.jpg", "store-listing/screenshots/es/captura-05.jpg", "store-listing/screenshots/es/captura-06.jpg", "store-listing/screenshots/es/captura-07.jpg", "store-listing/screenshots/es/captura-08.jpg"],
+      "en-US": ["store-listing/screenshots/en/captura-01.jpg", "store-listing/screenshots/en/captura-02.jpg", "store-listing/screenshots/en/captura-03.jpg", "store-listing/screenshots/en/captura-04.jpg", "store-listing/screenshots/en/captura-05.jpg", "store-listing/screenshots/en/captura-06.jpg", "store-listing/screenshots/en/captura-07.jpg", "store-listing/screenshots/en/captura-08.jpg"],
+      "captions_es": ["Toca el mapa. Rápido y preciso.", "Cada respuesta suma puntos", "Ciudades, banderas, lugares y monumentos", "¿De qué país es esta bandera?", "Pack Colombia gratis", "Un desafío nuevo cada día", "Reta a tus amigos", "Aprende algo de cada lugar"]
+    },
+    "hi_res_icon": { "size": "512x512", "format": "32-bit PNG", "file": "store-listing/play-icon-512.png" }
   },
   "aso_keywords_priority": [
     "geography game",
