@@ -30,7 +30,15 @@ dist-ssr
 supabase/.temp/
 
 # Capturas locales (no van al repo)
-screenshots/
+/screenshots/
 
 # Temporales de Vite
 vite.config.ts.timestamp-*
+
+# Herramientas de capturas para Play: salidas y perfiles temporales de Chrome
+scripts/store-shots/raw/
+scripts/store-shots/final/
+scripts/store-shots/chr-*/
+scripts/store-shots/tmp-*.html
+scripts/store-shots/catalog.json
+scripts/store-shots/catalog-bundle.mjs

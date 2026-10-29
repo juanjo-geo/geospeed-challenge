@@ -50,9 +50,9 @@ for (let i = 0; i < qs.length; i += 50) {
 }
 
 // Solo las ciudades del mundo: las de Colombia y los packs (ids co: / ci:) tienen su nombre local, que también se usa en
-// inglés (Wikidata daría nombres oficiales largos como "San Miguel de Tucumán"). Un cambio que solo pone o quita tildes
-// tampoco cuenta (Cancún, Brasilia).
-const bare = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+// inglés (Wikidata daría nombres oficiales largos como "San Miguel de Tucumán"). Un cambio que solo quita o pone tildes
+// SÍ cuenta: en inglés se escribe "Paris" y "Berlin", no "París" y "Berlín" (antes se descartaba y el juego en inglés
+// preguntaba por "París"). Si la etiqueta inglesa es idéntica (Cancún, Bogotá) no se repite.
 /** Revisión a mano: nombres oficiales largos o recortados por la coma */
 const FIX = { puebla: null, 'santa-cruz': null, 'washington-d-c': 'Washington, D.C.' };
 const out = {};
@@ -62,7 +62,7 @@ for (const c of withQ) {
   if (!en) continue;
   en = en.replace(/\s*\(.*\)\s*$/, '').split(',')[0].trim(); // "Victoria, Seychelles" → "Victoria"
   if (c.id in FIX) en = FIX[c.id] ?? c.name;
-  if (!en || bare(en) === bare(c.name)) continue;
+  if (!en || en === c.name) continue;
   out[c.id] = en;
 }
 const ids = Object.keys(out).sort();
