@@ -80,7 +80,9 @@ Esto abre Android Studio con tu proyecto. La primera vez:
 
 ---
 
-## FASE 5 — Crear la keystore (firma de la app) ⚠️ CRÍTICO
+## FASE 5 — Keystore (firma de la app) ⚠️ CRÍTICO
+
+> **Ya existe (2026-10-18):** `C:\Users\Juan Jose\geospeed-upload-2026.jks`, alias `geospeed`; la contraseña la guarda JuanJo. **No crees otra**: usa esa en todos los AAB. Lo de abajo es solo referencia.
 
 La keystore es la **firma digital** de tu app. **Si la pierdes, no podrás volver a actualizar la app en Google Play nunca.** Guárdala en lugar seguro + respaldo.
 
@@ -99,31 +101,41 @@ keytool -genkey -v -keystore geospeed-release.jks -keyalg RSA -keysize 2048 -val
 
 ## FASE 6 — Generar el AAB firmado
 
-En Android Studio: **Build → Generate Signed Bundle / APK → Android App Bundle**, selecciona tu keystore, modo **release**.
+Antes de cada AAB, yo dejo la carpeta `android/` lista (`npm run build:native` + `npx cap sync android`) y subo el `versionCode` si hace falta: **cada AAB que subas a Play necesita un `versionCode` mayor que el anterior** (el primero es 1).
 
-Resultado: un archivo `.aab` en `android/app/release/`. Ese es el que sube a Google Play.
+1. Abre **Android Studio → Open** → elige la carpeta `C:\Users\Juan Jose\GeospeedCh\android` (la carpeta `android`, no la del proyecto). Espera a que termine "Gradle sync" (barra de abajo; la primera vez puede tardar varios minutos porque descarga dependencias).
+2. **Build → Generate Signed App Bundle or APK… → Android App Bundle → Next**.
+3. **Key store path:** `C:\Users\Juan Jose\geospeed-upload-2026.jks` · **Key alias:** `geospeed` · escribe las dos contraseñas → **Next**.
+4. Elige **release** → **Create**.
+5. Al terminar, el aviso "Locate" abre la carpeta: el archivo es `android\app\release\app-release.aab`. Ese es el que se sube a Play.
+
+Si Gradle muestra un error en rojo, cópiame el texto completo.
 
 ---
 
 ## FASE 7 — Subir a Google Play Console
 
-(Ya tienes cuenta de Google Play Console creada — el pago de $25 hecho.)
+**Antes que nada: la verificación de la cuenta.** Google exige verificar la identidad (y en cuentas personales, que tienes un teléfono Android real, con la app **Google Play Console**) antes de publicar. Las tareas pendientes aparecen en la página principal de https://play.google.com/console. Si un documento es rechazado, se reenvía desde ahí o desde https://payments.google.com → Alertas → Verificar (mejor entrar directo que desde el botón del correo).
 
-1. Entra a https://play.google.com/console
-2. **Crear app** → nombre "GeoSpeed IQ Challenge", idioma, juego, gratis.
-3. Completa el cuestionario inicial (clasificación de contenido, público objetivo, política de privacidad → usa tu URL `geospeed-challenge.vercel.app/privacy`).
-4. **Producción → Crear nueva versión** → sube el `.aab`.
-5. **Ficha de Play Store:** usa los textos de `store-listing/metadata.json` (ya los tienes). Necesitas:
-   - Ícono 512×512 (tienes `icon-512.png`).
-   - Gráfico destacado 1024×500 (hay que crearlo).
-   - Mínimo 2 screenshots de teléfono (captúralas del emulador/teléfono).
-6. **Enviar a revisión.** Google tarda 3-7 días para apps nuevas.
+Documentos que Google acepta en Colombia para una cuenta personal:
+- **Identidad:** cédula de ciudadanía, pasaporte, licencia de conducción o cédula de extranjería.
+- **Comprobante de domicilio:** factura de servicios (luz, agua, gas, internet o TV por cable), extracto bancario o de tarjeta de crédito, o estado de cuenta de un seguro. Emitido en los **últimos 90 días**, con tu **nombre exactamente igual** al del perfil de pagos y la **dirección completa exactamente igual** a la del perfil (si no coincide, puedes corregir el perfil durante la verificación). La cédula colombiana no muestra la dirección, así que no sirve como comprobante.
+- Foto o escaneo en color, legible, con las cuatro esquinas, sin brillos. En extractos, tapa los números de cuenta excepto los últimos 4.
+- Los intentos son limitados: revisa nombre, dirección y fecha antes de enviar. La revisión tarda de 1 a 7 días.
+
+**Orden recomendado:**
+1. **Crear app** → nombre **GeoSpeed Challenge**, idioma español, tipo **Juego**, **Gratis**.
+2. **Prueba interna** (Pruebas → Prueba interna → Crear versión): sube el `.aab`, acepta **Firma de apps de Google Play**, agrega una lista de probadores (correos) y publica la versión. Los probadores instalan desde el enlace de participación.
+3. **Contenido de la app** (Política → Contenido de la app): política de privacidad `https://geospeed-challenge.vercel.app/privacy`, acceso a la app (no requiere iniciar sesión), anuncios (**Sí**), clasificación del contenido (cuestionario), público objetivo (13+ recomendado: con anuncios personalizados, menores de 13 exige reglas de familias), seguridad de los datos, ID de publicidad (**Sí**), eliminación de cuenta (`https://geospeed-challenge.vercel.app/eliminar-cuenta`).
+4. **Ficha de Play Store:** textos de `store-listing/metadata.json`, ícono `store-listing/play-icon-512.png`, gráfico 1024×500 y capturas (los preparo yo). **Sitio web:** `https://geospeed-challenge.vercel.app` (lo necesita `app-ads.txt` de AdMob).
+5. **Prueba cerrada con 12 personas durante 14 días.** Si la cuenta es **personal y se creó después del 13 de noviembre de 2023**, Google no deja pasar a Producción hasta que 12 probadores hayan estado inscritos en una prueba cerrada **14 días seguidos** (y sigan inscritos el día que pidas el acceso). Invitar no basta: cada uno debe aceptar con el enlace e instalar. Las cuentas de organización no tienen este requisito.
+6. **Solicitar acceso a Producción** (Panel → Solicitar acceso) y luego **Producción → Crear versión**. La revisión de una app nueva tarda varios días.
 
 ---
 
 ## FASE 8 — Soft launch
 
-En Google Play Console puedes lanzar **por países** (Colombia, México, Chile primero) y en **prueba cerrada/abierta** antes de producción global. Recomendado: prueba cerrada con tu hermano y conocidos primero.
+En Google Play Console puedes lanzar **por países** (Colombia, México, Chile primero). La prueba cerrada de 14 días de la fase 7 sirve también como primera ronda de comentarios.
 
 ---
 
