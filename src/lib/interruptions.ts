@@ -12,7 +12,7 @@
 /** Fases en las que no se interrumpe al jugador (ver Index.tsx `Phase`). */
 export const BUSY_PHASES = new Set<string>([
   'splash', 'countdown', 'playing', 'daily', 'tutorial',
-  'ta-playing', 'wc-playing', 'mp-playing', 'mp-waiting', 'mp-spectate', 'room', 'conq-practice', 'conq-play',
+  'ta-playing', 'wc-playing', 'room', 'conq-practice', 'conq-play',
 ]);
 
 export const isBusyPhase = (phase: string) => BUSY_PHASES.has(phase);
