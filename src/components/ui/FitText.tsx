@@ -12,6 +12,8 @@ export default function FitText({ text, className = '', min = 0.7 }: { text: str
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Mide dentro del ResizeObserver, que corre con la pantalla ya calculada y antes de pintar. Medir aquí
+    // mismo obligaba a calcular toda la pantalla en medio del render (en el Inicio, más de 100 ms).
     const fit = () => {
       el.style.fontSize = '';
       el.style.whiteSpace = 'nowrap';
@@ -25,12 +27,17 @@ export default function FitText({ text, className = '', min = 0.7 }: { text: str
       }
       if (f < 1) el.style.fontSize = `${Math.max(min, Math.floor(f * 100) / 100) * base}px`;
     };
-    fit();
-    const ro = new ResizeObserver(fit);
+    const ro = new ResizeObserver(() => fit());
     if (el.parentElement) ro.observe(el.parentElement);
-    // Con la fuente de la marca ya cargada el texto mide distinto
-    void document.fonts?.ready.then(fit);
-    return () => ro.disconnect();
+    // Cuando llega una fuente de la marca el texto mide distinto: se reajusta en el siguiente cuadro
+    let raf = 0;
+    const onFonts = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(fit); };
+    document.fonts?.addEventListener?.('loadingdone', onFonts);
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+      document.fonts?.removeEventListener?.('loadingdone', onFonts);
+    };
   }, [text, min]);
 
   return <span ref={ref} className={`block overflow-hidden text-ellipsis [text-wrap:balance] ${className}`}>{text}</span>;

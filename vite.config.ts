@@ -50,6 +50,58 @@ function offlineManifest(): Plugin {
   };
 }
 
+/**
+ * Precarga de las fuentes de la pantalla de carga (wordmark en Fredoka 700, lema en Poppins 700,
+ * "Preparando…" en 600). Sin esto el navegador las pide cuando ya está pintando y el texto cambia de letra
+ * a mitad de la pantalla. Los archivos llevan hash, así que se resuelven con el bundle (solo en build).
+ */
+const PRELOAD_FONTS = [/^fredoka-latin-700-normal/, /^poppins-latin-700-normal/, /^poppins-latin-600-normal/];
+function fontPreload(): Plugin {
+  return {
+    name: "geospeed-font-preload",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(html, ctx) {
+        const tags = Object.keys(ctx.bundle ?? {})
+          .filter((f) => f.endsWith(".woff2") && PRELOAD_FONTS.some((re) => re.test(path.basename(f))))
+          // En el orden de PRELOAD_FONTS: el bundle no garantiza un orden estable entre builds
+          .sort((a, b) => PRELOAD_FONTS.findIndex((re) => re.test(path.basename(a))) - PRELOAD_FONTS.findIndex((re) => re.test(path.basename(b))))
+          .map((f) => ({ tag: "link", attrs: { rel: "preload", as: "font", type: "font/woff2", crossorigin: true, href: "/" + f }, injectTo: "head" as const }));
+        return { html, tags };
+      },
+    },
+  };
+}
+
+/**
+ * El módulo de entrada se evalúa DESPUÉS del primer pintado: esta etiqueta pasa a ser un modulepreload
+ * con data-entry (se descarga igual de pronto) y boot.js inserta el <script type="module"> tras el primer
+ * cuadro. Sin esto, cuando el JavaScript llegaba antes de que el navegador pintara, su evaluación
+ * (200–300 ms) retrasaba la pantalla de carga estática, y Lighthouse contaba dentro del LCP todo lo
+ * descargado hasta ese momento (LCP simulado 1,9 s → 4,4 s según la carrera).
+ */
+function deferEntry(): Plugin {
+  return {
+    name: "geospeed-defer-entry",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(html) {
+        let out = html.replace(/<script type="module" crossorigin src="([^"]+)"><\/script>/, '<link rel="modulepreload" crossorigin href="$1" data-entry>');
+        // Las hojas de estilo (lo único que bloquea el pintado) van ANTES de los modulepreload: el navegador pide
+        // los <link> en el orden del documento y Vite las deja al final de la cabecera, detrás de ~400 KB de JS.
+        const css = [...out.matchAll(/^[ \t]*<link rel="stylesheet"[^>]*>\r?\n/gm)].map((m) => m[0]);
+        if (css.length && /<link rel="modulepreload"/.test(out)) {
+          for (const tag of css) out = out.replace(tag, '');
+          out = out.replace(/([ \t]*<link rel="modulepreload")/, css.join('') + '$1');
+        }
+        return out;
+      },
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -59,7 +111,7 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger(), offlineManifest()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger(), offlineManifest(), fontPreload(), deferEntry()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

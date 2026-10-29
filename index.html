@@ -9,6 +9,8 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- La mascota de la pantalla de carga es lo más grande del primer pintado: se pide de una vez, sin esperar al JS -->
+    <link rel="preload" as="image" href="/mascot/explorer.webp" fetchpriority="high" />
     <!-- Force neon theme before first paint -->
     <script src="/boot.js"></script>
     <title>GeoSpeed Challenge — Geography Quiz Game</title>
@@ -37,6 +39,60 @@
   </head>
 
   <body>
+    <!-- Pantalla de carga en HTML puro: se ve en cuanto llegan el HTML y el CSS, antes del JavaScript. Es
+         una copia de SplashScreen.tsx en su estado de espera; React la reemplaza por la suya sin parpadeo
+         (ver SplashScreen) y boot.js solo la muestra en las rutas del juego (clase has-splash). -->
+    <div id="static-splash" class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden px-4" style="display:none;background:hsl(var(--brand-navy-deep))" aria-hidden="true">
+      <div class="absolute inset-0 pointer-events-none landscape:hidden" style="background:radial-gradient(ellipse 75% 50% at 50% 30%, hsl(212 85% 30%) 0%, hsl(var(--brand-navy)) 55%, transparent 100%)"></div>
+      <div class="absolute inset-0 pointer-events-none hidden landscape:block" style="background:radial-gradient(ellipse 50% 75% at 28% 45%, hsl(212 85% 30%) 0%, hsl(var(--brand-navy)) 55%, transparent 100%)"></div>
+      <svg class="absolute inset-x-0 bottom-0 w-full pointer-events-none h-[15%] landscape:h-[26%]" viewBox="0 0 1440 400" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="ss-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(var(--accent))" stop-opacity="0.09"/><stop offset="100%" stop-color="hsl(var(--accent))" stop-opacity="0.02"/></linearGradient>
+          <filter id="ss-glow" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <path d="M0,170 C260,90 520,260 820,190 C1080,130 1260,200 1440,150 L1440,400 L0,400 Z" fill="url(#ss-fill)"/>
+        <g fill="none" filter="url(#ss-glow)">
+          <path d="M0,150 C280,60 560,250 860,180 C1100,125 1280,190 1440,140" stroke="hsl(var(--accent) / 0.9)" stroke-width="3"/>
+          <path d="M0,210 C300,130 580,300 880,235 C1120,185 1300,250 1440,205" stroke="hsl(var(--accent) / 0.6)" stroke-width="2.5"/>
+          <path d="M0,270 C260,210 600,350 900,290 C1140,245 1300,300 1440,270" stroke="hsl(205 90% 60% / 0.55)" stroke-width="2"/>
+          <path d="M0,330 C320,280 640,390 940,345 C1160,315 1320,350 1440,330" stroke="hsl(var(--accent) / 0.35)" stroke-width="2"/>
+        </g>
+      </svg>
+      <span class="absolute left-[8%] top-[14%] w-1 h-1 rounded-full bg-accent/60 animate-pulse pointer-events-none"></span>
+      <span class="absolute right-[12%] top-[10%] w-1 h-1 rounded-full bg-accent/60 animate-pulse pointer-events-none" style="animation-delay:0.4s"></span>
+      <span class="absolute left-[20%] top-[48%] w-1 h-1 rounded-full bg-accent/60 animate-pulse pointer-events-none" style="animation-delay:0.8s"></span>
+      <span class="absolute right-[8%] top-[42%] w-1 h-1 rounded-full bg-accent/60 animate-pulse pointer-events-none" style="animation-delay:1.2s"></span>
+      <span class="absolute left-[44%] top-[6%] w-1 h-1 rounded-full bg-accent/60 animate-pulse pointer-events-none" style="animation-delay:1.6s"></span>
+      <span class="absolute right-[30%] top-[62%] w-1 h-1 rounded-full bg-accent/60 animate-pulse pointer-events-none" style="animation-delay:2s"></span>
+      <span class="absolute left-[6%] top-[70%] w-1 h-1 rounded-full bg-accent/60 animate-pulse pointer-events-none" style="animation-delay:2.4s"></span>
+      <div class="relative flex flex-col landscape:flex-row items-center gap-[3dvh] landscape:gap-[5vw]">
+        <div class="relative aspect-[10/19] w-[min(56vw,26dvh,370px)] landscape:w-[min(30vw,44dvh,390px)]">
+          <div class="absolute bottom-0 left-0 w-full rounded-full shadow-[0_0_28px_6px_hsl(var(--accent)/0.55),0_0_90px_20px_hsl(205_90%_55%/0.35)]">
+            <div class="w-full aspect-square rounded-full" style="background:radial-gradient(circle at 35% 35%, hsl(212 75% 56%), hsl(var(--brand-navy-deep)) 75%)"></div>
+          </div>
+          <div class="absolute left-1/2 top-[44.6%] -translate-x-1/2 w-[44%] aspect-[4/1] pointer-events-none">
+            <span class="absolute inset-0 rounded-[50%] border-2 border-accent/80 shadow-[0_0_14px_hsl(var(--accent)/0.8)]"></span>
+            <span class="absolute inset-[22%_24%] rounded-[50%] border-2 border-accent/90"></span>
+            <span class="absolute inset-0 rounded-[50%] border-2 border-accent/60 animate-ping"></span>
+          </div>
+          <span class="absolute -left-[4%] top-[26%] text-accent text-[clamp(0.9rem,4vw,1.6rem)] animate-pulse drop-shadow-[0_0_8px_hsl(var(--accent))] pointer-events-none">✦</span>
+          <span class="absolute -right-[6%] top-[33%] text-accent text-[clamp(0.8rem,3.4vw,1.4rem)] animate-pulse drop-shadow-[0_0_8px_hsl(var(--accent))] pointer-events-none" style="animation-delay:0.8s">✦</span>
+          <div class="absolute left-1/2 top-0 -translate-x-1/2 w-[96%]">
+            <div class="animate-mascot-float">
+              <img src="/mascot/explorer.webp" alt="" width="512" height="512" draggable="false" class="w-full select-none drop-shadow-[0_14px_30px_hsl(var(--brand-navy-deep)/0.6)]" />
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col items-center landscape:items-start text-center landscape:text-left">
+          <h1 class="leading-none"><span class="wordmark text-[min(13vw,7dvh,5.5rem)] landscape:text-[min(8.5vw,14dvh,6.5rem)]" role="img" aria-label="GeoSpeed"><span class="wordmark-geo">GEO</span><span class="wordmark-speed">SPEED</span></span></h1>
+          <p class="font-display mt-[1.5dvh] font-bold leading-tight text-foreground text-[min(4.45vw,2.35dvh,1.65rem)] landscape:text-[min(2.65vw,4.5dvh,1.95rem)] whitespace-nowrap"><span class="gs-es">¿Cuánto conoces el mundo?</span><span class="gs-en">How well do you know the world?</span></p>
+          <div class="mt-[3.5dvh] landscape:mt-[5dvh] w-[min(62vw,34dvh,30rem)] landscape:w-[min(42vw,72dvh,34rem)] h-[clamp(10px,1.8dvh,18px)] rounded-full overflow-hidden border border-accent/25 p-[2px]" style="background:hsl(var(--brand-navy-deep) / 0.8)">
+            <div class="h-full rounded-full splash-bar-run" style="background:linear-gradient(90deg, hsl(var(--accent) / 0.85), hsl(var(--accent)));box-shadow:0 0 14px hsl(var(--accent) / 0.75)"></div>
+          </div>
+          <p class="mt-[1.8dvh] font-semibold text-[min(3.8vw,2.1dvh,1.15rem)] landscape:text-[min(2vw,4dvh,1.25rem)] text-[hsl(200_100%_78%)] [text-shadow:0_1px_8px_hsl(var(--brand-navy-deep)),0_0_2px_hsl(var(--brand-navy-deep))]"><span class="gs-es">Preparando tu próxima aventura…</span><span class="gs-en">Preparing your next adventure…</span></p>
+        </div>
+      </div>
+    </div>
     <div id="root"><div id="boot-fallback" style="display:none;position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#F4F7FB;background:#0B1F3A"><img src="/mascot/explorer-logo.webp" alt="" width="72" height="72" /><p style="font-size:18px;font-weight:800;margin:0">GeoSpeed no terminó de cargar</p><p style="font-size:14px;opacity:.75;margin:0">Revisa tu conexión y vuelve a intentarlo · Check your connection and try again</p><a href="/" style="margin-top:8px;padding:12px 24px;border-radius:14px;background:#FFD93B;color:#071426;font-weight:900;text-decoration:none">Recargar · Reload</a></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

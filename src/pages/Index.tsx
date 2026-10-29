@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, startTransition, type ReactNode, type ErrorInfo } from 'react';
 import { categoryOf, type Category } from '@/lib/catalog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -1307,7 +1307,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // --- Render ---
   const renderPhase = () => {
     if (phase === 'splash') {
-      return <SplashScreen onComplete={() => setPhase('home')} />;
+      // En transición: React arma el Inicio en pedazos cortos en vez de una tarea larga que congela la pantalla
+      return <SplashScreen onComplete={() => startTransition(() => setPhase('home'))} />;
     }
 
     if (phase === 'store') {

@@ -12,6 +12,7 @@
 
 import { useEffect, useCallback, useState } from 'react';
 import { getSharedAudioContext } from '@/lib/sounds';
+import { afterAppLoad, firstInteraction } from '@/lib/idle';
 
 export type MusicTrack = 'on' | 'none';
 
@@ -74,16 +75,36 @@ function ensureGain(): GainNode | null {
 /** Volumen objetivo de la música según el nivel de combo actual */
 const targetVolume = () => BASE_VOLUME * INTENSITY_BOOST[intensity];
 
-/** Carga y decodifica el track una sola vez (buffer compartible entre contextos). */
+// La pista pesa ~850 KB y crear el AudioContext cuesta más de 100 ms de CPU: hacerlo mientras abre la app
+// le quitaba red y procesador a la pantalla de carga y al Inicio, y sin un gesto del jugador el navegador
+// deja el contexto suspendido de todos modos. Por eso: los bytes de la pista se descargan cuando la app ya
+// abrió y el navegador quedó libre (o antes, con el primer gesto), y el contexto + la decodificación solo
+// se crean con el primer toque o tecla (así la música suena enseguida al tocar, sin costo antes).
+const MUSIC_PREFETCH_MS = 5000;
+let armed = false; // ya pasó el primer gesto: se puede crear el contexto de audio
+let gesture: Promise<void> | null = null;
+const whenGesture = () => (gesture ??= firstInteraction().then(() => { armed = true; }));
+let bytesPromise: Promise<ArrayBuffer | null> | null = null;
+/** Descarga la pista (sin tocar el audio). Reutilizable: la decodificación recibe una copia. */
+function prefetchBytes(): Promise<ArrayBuffer | null> {
+  return (bytesPromise ??= fetch(TRACK_SRC)
+    .then((r) => r.arrayBuffer())
+    .catch(() => { bytesPromise = null; return null; }));
+}
+
+/** Decodifica el track una sola vez (buffer compartible entre contextos). Requiere contexto (gesto previo). */
 function loadBuffer(): Promise<AudioBuffer | null> {
   if (buffer) return Promise.resolve(buffer);
   if (bufferPromise) return bufferPromise;
   const c = ensureCtx();
   if (!c) return Promise.resolve(null);
-  bufferPromise = fetch(TRACK_SRC)
-    .then((r) => r.arrayBuffer())
-    .then((a) => c.decodeAudioData(a))
-    .then((b) => { buffer = b; return b; })
+  bufferPromise = prefetchBytes()
+    .then((a) => (a ? c.decodeAudioData(a.slice(0)) : null)) // decodeAudioData vacía el buffer que recibe
+    .then((b) => {
+      if (!b) { bufferPromise = null; return null; }
+      buffer = b;
+      return b;
+    })
     .catch(() => { bufferPromise = null; return null; });
   return bufferPromise;
 }
@@ -149,7 +170,7 @@ function stopSource() {
  * contexto (necesita gesto en iOS) y recrea el source si el contexto se recreó.
  */
 function revive() {
-  if (!isPlaying) return;
+  if (!isPlaying || !armed) return;
   const c = ensureCtx();
   if (!c) { installPlayRetry(); return; }
   if (c.state === 'suspended') c.resume().catch(() => {});
@@ -208,6 +229,12 @@ function setupMediaSession() {
 
 function startMusic() {
   isPlaying = true;
+  if (armed) { beginPlayback(); return; }
+  void afterAppLoad(MUSIC_PREFETCH_MS).then(() => { if (isPlaying) void prefetchBytes(); });
+  void whenGesture().then(() => { if (isPlaying) beginPlayback(); });
+}
+
+function beginPlayback() {
   const c = ensureCtx();
   if (!c) { installPlayRetry(); return; }
   if (c.state === 'suspended') c.resume().catch(() => {});
@@ -245,7 +272,7 @@ function installPlayRetry() {
 }
 
 function stopMusic() {
-  if (!isPlaying) { stopSource(); return; }
+  if (!isPlaying || !armed) { isPlaying = false; stopSource(); return; }
   fadeTo(0, () => {
     stopSource();
     isPlaying = false;

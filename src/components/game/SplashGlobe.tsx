@@ -27,41 +27,79 @@ function rng(seed: number) {
 type Spot = { lon: number; lat: number; r: number; dark: boolean };
 type Cloud = { lon: number; lat: number; r: number };
 
-/** Manchas de relieve sobre tierra (claras y oscuras) y nubes, en coordenadas geográficas para que giren con el globo */
-function buildTexture(): { spots: Spot[]; clouds: Cloud[] } {
+type Texture = { spots: Spot[]; clouds: Cloud[]; done: boolean; step: (budgetMs: number) => void };
+
+/**
+ * Manchas de relieve sobre tierra (claras y oscuras) y nubes, en coordenadas geográficas para que giren con
+ * el globo. Se arman de a poco, unos milisegundos por cuadro: de una vez eran ~80 ms justo cuando aparece la
+ * pantalla de carga (en un celular, varias veces más) y el globo se veía trabado.
+ */
+function textureBuilder(): Texture {
   const rand = rng(20261018);
-  const polys: { poly: number[][]; box: [number, number, number, number] }[] = [];
-  for (const c of countries) {
-    if (ICE.has(c.name)) continue;
-    for (const poly of c.polygons) {
-      if (poly.length < 4) continue;
-      let a = 180, b = -180, cMin = 90, d = -90;
-      for (const [lon, lat] of poly) { a = Math.min(a, lon); b = Math.max(b, lon); cMin = Math.min(cMin, lat); d = Math.max(d, lat); }
-      polys.push({ poly, box: [a, b, cMin, d] });
-    }
-  }
+  let polys: { poly: number[][]; box: [number, number, number, number] }[] | null = null;
   const spots: Spot[] = [];
-  for (let i = 0; i < 2600 && spots.length < 520; i++) {
-    const lon = rand() * 360 - 180;
-    const lat = rand() * 135 - 58;
-    const hit = polys.some(p => lon >= p.box[0] && lon <= p.box[1] && lat >= p.box[2] && lat <= p.box[3] && inPoly(lon, lat, p.poly));
-    if (hit) spots.push({ lon, lat, r: 1.2 + rand() * 3.2, dark: rand() < 0.55 });
-  }
   const clouds: Cloud[] = [];
-  for (let i = 0; i < 16; i++) {
-    const lon = rand() * 360 - 180, lat = rand() * 120 - 55;
-    const n = 3 + Math.floor(rand() * 3);
-    for (let k = 0; k < n; k++) clouds.push({ lon: lon + (rand() - 0.5) * 9, lat: lat + (rand() - 0.5) * 4, r: 2.5 + rand() * 3 });
+  let i = 0;
+  const tex: Texture = {
+    spots, clouds, done: false,
+    step(budgetMs) {
+      if (tex.done) return;
+      const t0 = performance.now();
+      if (!polys) {
+        polys = [];
+        for (const c of countries) {
+          if (ICE.has(c.name)) continue;
+          for (const poly of c.polygons) {
+            if (poly.length < 4) continue;
+            let a = 180, b = -180, cMin = 90, d = -90;
+            for (const [lon, lat] of poly) { a = Math.min(a, lon); b = Math.max(b, lon); cMin = Math.min(cMin, lat); d = Math.max(d, lat); }
+            polys.push({ poly, box: [a, b, cMin, d] });
+          }
+        }
+      }
+      const list = polys;
+      for (; i < 2600 && spots.length < 520; i++) {
+        if ((i & 31) === 0 && performance.now() - t0 > budgetMs) return;
+        const lon = rand() * 360 - 180;
+        const lat = rand() * 135 - 58;
+        const hit = list.some(p => lon >= p.box[0] && lon <= p.box[1] && lat >= p.box[2] && lat <= p.box[3] && inPoly(lon, lat, p.poly));
+        if (hit) spots.push({ lon, lat, r: 1.2 + rand() * 3.2, dark: rand() < 0.55 });
+      }
+      for (let c = 0; c < 16; c++) {
+        const lon = rand() * 360 - 180, lat = rand() * 120 - 55;
+        const n = 3 + Math.floor(rand() * 3);
+        for (let k = 0; k < n; k++) clouds.push({ lon: lon + (rand() - 0.5) * 9, lat: lat + (rand() - 0.5) * 4, r: 2.5 + rand() * 3 });
+      }
+      tex.done = true;
+    },
+  };
+  return tex;
+}
+
+/** Nube difusa dibujada una vez: cada cuadro la estampa escalada en vez de crear un degradado por nube */
+function cloudSprite(): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g2 = c.getContext('2d');
+  if (g2) {
+    const g = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    g2.fillStyle = g;
+    g2.fillRect(0, 0, 64, 64);
   }
-  return { spots, clouds };
+  return c;
 }
 
 /**
  * Globo terráqueo girando en proyección ortográfica, dibujado con los mismos polígonos del mapa.
  * Sustituye la ilustración de la maqueta de carga sin añadir imágenes.
  */
-export default function SplashGlobe({ className = '' }: { className?: string }) {
+export default function SplashGlobe({ className = '', paused = false }: { className?: string; paused?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Durante el fundido de salida no se dibuja: deja libre el hilo principal mientras se monta el Inicio
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -81,13 +119,18 @@ export default function SplashGlobe({ className = '' }: { className?: string }) 
       canvas.height = size;
     };
     resize();
-    const ro = new ResizeObserver(() => { resize(); if (still) draw(rot0); });
+    const ro = new ResizeObserver(() => { resize(); if (still) { tex.step(Infinity); draw(rot0); } });
     ro.observe(canvas);
 
     const sinT = Math.sin(TILT), cosT = Math.cos(TILT);
-    const { spots, clouds } = buildTexture();
+    const tex = textureBuilder();
+    const { spots, clouds } = tex;
+    const sprite = cloudSprite();
+    // El relieve y las nubes aparecen con un fundido corto cuando terminan de armarse
+    let texReadyAt = 0;
+    const TEX_FADE_MS = 400;
 
-    const draw = (lambda0: number) => {
+    const draw = (lambda0: number, fade = 1) => {
       const R = size / 2 - 1;
       if (R <= 0) return; // lienzo aún sin tamaño (oculto o sin maquetar)
       const cx = size / 2, cy = size / 2;
@@ -144,11 +187,11 @@ export default function SplashGlobe({ className = '' }: { className?: string }) 
       };
 
       // Relieve: manchas suaves de bosque (oscuras) y zonas claras, achatadas hacia el borde
-      for (const s of spots) {
+      for (const s of (fade > 0 ? spots : [])) {
         const p = proj(s.lon, s.lat);
         if (!p) continue;
         const rr = (s.r * DEG) * R;
-        ctx.globalAlpha = (s.dark ? 0.3 : 0.26) * Math.min(1, p.k * 1.4);
+        ctx.globalAlpha = (s.dark ? 0.3 : 0.26) * Math.min(1, p.k * 1.4) * fade;
         ctx.fillStyle = s.dark ? GLOBE.landDark : GLOBE.landLight;
         ctx.beginPath();
         ctx.ellipse(p.x, p.y, rr, rr * Math.max(0.35, p.k), 0, 0, Math.PI * 2);
@@ -157,18 +200,15 @@ export default function SplashGlobe({ className = '' }: { className?: string }) 
       ctx.globalAlpha = 1;
 
       // Nubes blancas difusas (como en la maqueta)
-      for (const c of clouds) {
+      for (const c of (fade > 0 ? clouds : [])) {
         const p = proj(c.lon, c.lat);
         if (!p) continue;
         const rr = (c.r * DEG) * R;
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rr);
-        g.addColorStop(0, `rgba(255,255,255,${0.55 * Math.min(1, p.k * 1.3)})`);
-        g.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.ellipse(p.x, p.y, rr, rr * Math.max(0.4, p.k), 0, 0, Math.PI * 2);
-        ctx.fill();
+        const ry = rr * Math.max(0.4, p.k);
+        ctx.globalAlpha = 0.55 * Math.min(1, p.k * 1.3) * fade;
+        ctx.drawImage(sprite, p.x - rr, p.y - ry, rr * 2, ry * 2);
       }
+      ctx.globalAlpha = 1;
 
       // Volumen: sombra hacia abajo a la derecha y brillo arriba a la izquierda
       const shade = ctx.createRadialGradient(cx - R * 0.45, cy - R * 0.5, R * 0.2, cx, cy, R * 1.05);
@@ -188,15 +228,21 @@ export default function SplashGlobe({ className = '' }: { className?: string }) 
     };
 
     if (still) {
+      tex.step(Infinity);
       draw(rot0);
     } else {
       const start = performance.now();
       let last = 0;
       const loop = (now: number) => {
         // ~30 fps basta para un giro lento y ahorra batería en celulares
-        if (now - last > 32) {
+        if (now - last > 32 && !pausedRef.current) {
           last = now;
-          draw(rot0 + ((now - start) / 1000) * SPEED * DEG);
+          if (!tex.done) {
+            tex.step(4);
+            if (tex.done) texReadyAt = now;
+          }
+          const fade = tex.done ? Math.min(1, (now - texReadyAt) / TEX_FADE_MS) : 0;
+          draw(rot0 + ((now - start) / 1000) * SPEED * DEG, fade);
         }
         raf = requestAnimationFrame(loop);
       };

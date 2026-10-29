@@ -24,10 +24,15 @@
  *   trackEvent('game_complete', { score: 5000, mode: 'world' });
  */
 
+import { afterAppLoad } from '@/lib/idle';
+
 // ─── Config ──────────────────────────────────────────────────────────
 
 // Replace with your actual GA4 Measurement ID
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
+// gtag.js (~170 KB) se descarga cuando la app ya abrió: durante el arranque le quitaba red y procesador a
+// la primera pantalla. Mientras tanto los eventos esperan en dataLayer (así funciona gtag).
+const GTAG_DELAY_MS = 6000;
 
 // Internal state
 let initialized = false;
@@ -59,11 +64,13 @@ export function initAnalytics(): void {
     return;
   }
 
-  // Inject gtag.js script
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-  document.head.appendChild(script);
+  // Inject gtag.js script (diferido; ver GTAG_DELAY_MS)
+  void afterAppLoad(GTAG_DELAY_MS).then(() => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    document.head.appendChild(script);
+  });
 
   // Initialize dataLayer and gtag
   window.dataLayer = window.dataLayer || [];
@@ -77,14 +84,15 @@ export function initAnalytics(): void {
     cookie_flags: 'SameSite=None;Secure',
   });
 
-  // Track session start
-  trackEvent('session_start', {
+  // Track session start. Va con el script: leer innerWidth/innerHeight durante el arranque obligaba a
+  // calcular la pantalla en medio del primer render.
+  void afterAppLoad(GTAG_DELAY_MS).then(() => trackEvent('session_start', {
     platform: getPlatform(),
     screen_width: window.innerWidth,
     screen_height: window.innerHeight,
     locale: navigator.language,
     referrer: document.referrer || 'direct',
-  });
+  }));
 
   // Track page visibility changes (for session duration / rage quit detection)
   document.addEventListener('visibilitychange', () => {

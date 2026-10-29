@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Emojis directo a la fuente de emojis del sistema (va después de Poppins en la lista de fuentes). Sin
+   esto, cada emoji en cada tamaño y grosor recorría toda la lista antes de encontrarla: al abrir el Inicio
+   eran más de 100 ms de "layout" en un computador y varias veces más en un celular. Solo caracteres que
+   ya se muestran como emoji (Emoji_Presentation), así que nada cambia de aspecto. */
+@font-face {
+  font-family: 'GS Emoji';
+  src: local('Apple Color Emoji'), local('Segoe UI Emoji'), local('Noto Color Emoji'), local('NotoColorEmoji'), local('SamsungColorEmoji');
+  font-weight: 100 900;
+  unicode-range: U+1F000-1FAFF, U+2B50, U+2B55, U+2B1B-2B1C, U+26A1, U+2705, U+2728, U+274C, U+274E, U+2753-2755, U+2757, U+2764, U+2795-2797, U+231A-231B, U+23E9-23EC, U+23F0, U+23F3, U+25FD-25FE, U+2614-2615, U+2648-2653, U+267F, U+2693, U+26AA-26AB, U+26BD-26BE, U+26C4-26C5, U+26CE, U+26D4, U+26EA, U+26F2-26F3, U+26F5, U+26FA, U+26FD, U+270A-270B, U+FE0F, U+200D, U+20E3;
+}
+
+/* Pantalla de carga estática de index.html (#static-splash): boot.js pone has-splash solo en las rutas del
+   juego; sus textos van en los dos idiomas y se muestra el del <html lang>. La barra de progreso es esta
+   animación, que la pantalla de React continúa con un retraso negativo (ver SplashScreen.tsx). */
+/* Oculta en línea (display:none en el HTML) para que en el servidor de desarrollo, donde el CSS llega con el
+   JavaScript, no se vea sin estilos; esta regla la muestra en cuanto hay CSS. */
+html.has-splash #static-splash { display: flex !important; }
+html[lang="en"] .gs-es, html:not([lang="en"]) .gs-en { display: none; }
+@keyframes splash-bar { from { width: 0%; } to { width: 88%; } }
+.splash-bar-run { animation: splash-bar 2200ms ease-out forwards; }
+
 @layer base {
   :root {
     /* ══════════════════════════════════════════════════════════════════
@@ -433,7 +454,7 @@
 
 /* ── Wordmark GEO·SPEED (maquetas: GEO blanco + SPEED turquesa) ── */
 /* Titulares con la tipografía redondeada y gruesa de las maquetas */
-.font-display { font-family: 'Poppins', system-ui, sans-serif; }
+.font-display { font-family: 'Poppins', 'GS Emoji', system-ui, sans-serif; }
 /* Wordmark "elaborado" de las maquetas (Carga, Girar, Inicio): letra redondeada y gruesa,
    GEO blanco con relieve (se oscurece hacia abajo) y SPEED turquesa brillante con resplandor. */
 .wordmark {
