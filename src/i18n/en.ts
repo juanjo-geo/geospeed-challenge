@@ -432,6 +432,7 @@ const en: Translations = {
   settings_privacySection: 'Privacy',
   settings_privacy: 'Privacy policy',
   settings_terms: 'Terms of use',
+  settings_adPrivacy: 'Ad privacy',
   settings_account: 'Account',
   settings_signedInAs: 'Signed in as',
   settings_guest: 'Playing as guest',

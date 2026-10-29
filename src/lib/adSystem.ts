@@ -2,31 +2,34 @@ import { BRAND } from '@/lib/theme';
 /**
  * GeoSpeed — Ad System
  *
- * Dual-mode ad integration:
- * 1. Google AdSense (web) — production ads for web browsers
- * 2. Dev Placeholder — simulated overlay for testing
+ * Tres modos:
+ * 1. App nativa (Capacitor): AdMob con @capacitor-community/admob — recompensado (+1 vida) e
+ *    intersticial entre partidas. Los anuncios se precargan; si no hay uno listo, no se ofrece.
+ * 2. Web: Google AdSense si VITE_ADSENSE_CLIENT_ID está configurado (hoy no lo está → sin anuncios).
+ * 3. Desarrollo: overlay de prueba para recorrer los flujos.
  *
- * AdSense integration uses the standard "Auto ads" approach:
- * - A script tag loads the AdSense library
- * - Interstitials are triggered via the adsbygoogle push API
- * - Rewarded ads use the experimental AdSense rewarded format
- *
- * When migrating to native apps, replace with AdMob calls.
- *
- * Setup:
- * 1. Set VITE_ADSENSE_CLIENT_ID in .env (e.g., "ca-pub-1234567890")
- * 2. Set VITE_ADSENSE_SLOT_INTERSTITIAL and VITE_ADSENSE_SLOT_REWARDED
- * 3. The script auto-loads on initAds()
+ * AdMob (nativo):
+ * - IDs en .env: VITE_ADMOB_REWARDED_ID y VITE_ADMOB_INTERSTITIAL_ID (públicos); el App ID va en
+ *   android/app/src/main/AndroidManifest.xml (sin él la app se cierra al iniciar).
+ * - VITE_ADMOB_TESTING=true (o un build de desarrollo) pide anuncios de prueba de Google: así un AAB
+ *   de prueba interna no genera tráfico inválido.
+ * - Consentimiento: el SDK de mensajes de usuario de Google (UMP) pregunta en Europa / Reino Unido
+ *   según el mensaje configurado en AdMob → Privacidad y mensajes; en el resto del mundo no pregunta.
  */
 
 import { isPro } from './premiumSystem';
 import { trackAdShown } from './analytics';
+import { isNativeApp } from './assetUrl';
+import type { PluginListenerHandle } from '@capacitor/core';
 
 // ─── Configuration ──────────────────────────────────────────────────
 
 const ADSENSE_CLIENT = import.meta.env.VITE_ADSENSE_CLIENT_ID || '';
 const ADSENSE_SLOT_INTERSTITIAL = import.meta.env.VITE_ADSENSE_SLOT_INTERSTITIAL || '';
 const ADSENSE_SLOT_REWARDED = import.meta.env.VITE_ADSENSE_SLOT_REWARDED || '';
+
+const ADMOB_REWARDED_ID = import.meta.env.VITE_ADMOB_REWARDED_ID || '';
+const ADMOB_INTERSTITIAL_ID = import.meta.env.VITE_ADMOB_INTERSTITIAL_ID || '';
 
 const DEV_AD_DURATION = 2000; // ms for dev placeholder
 
@@ -37,10 +40,6 @@ type AdResult = 'completed' | 'skipped' | 'error' | 'blocked';
 let adProviderReady = false;
 let useRealAds = false;
 
-// ¿Corre dentro de la app nativa (Capacitor)? Ahí vivirá AdMob en el futuro.
-function isNativePlatform(): boolean {
-  return typeof window !== 'undefined' && Boolean((window as any).Capacitor);
-}
 // ¿Estamos en build de desarrollo? Solo entonces se permite el overlay placeholder.
 function isDevBuild(): boolean {
   try { return Boolean((import.meta as any).env?.DEV); } catch { return false; }
@@ -61,6 +60,11 @@ declare global {
 export function initAds(): void {
   if (isPro()) return;
   adProviderReady = true;
+
+  if (isNativeApp()) {
+    void initNativeAds();
+    return;
+  }
 
   if (!ADSENSE_CLIENT) {
     console.info('[Ads] No VITE_ADSENSE_CLIENT_ID — using dev placeholder');
@@ -102,6 +106,8 @@ export function initAds(): void {
  */
 export async function showInterstitial(): Promise<AdResult> {
   if (isPro()) return 'blocked';
+
+  if (isNativeApp()) return showNativeInterstitial();
 
   trackAdShown('interstitial');
 
@@ -186,6 +192,8 @@ async function showAdSenseInterstitial(): Promise<AdResult> {
  */
 export async function showRewardedAd(): Promise<AdResult> {
   if (isPro()) return 'blocked';
+
+  if (isNativeApp()) return showNativeRewarded();
 
   trackAdShown('rewarded');
 
@@ -318,15 +326,206 @@ export function isAdReady(): boolean {
 
 /**
  * ¿Hay realmente un anuncio que mostrar al usuario?
+ * - App nativa → solo si AdMob ya tiene un recompensado cargado (una app nueva o sin inventario
+ *   puede no recibir anuncios: no se ofrece un botón que no hace nada)
  * - Web con AdSense configurado → sí
- * - App nativa (AdMob, futuro) → sí
  * - Build de desarrollo (placeholder) → sí
- * - Web de producción SIN AdSense → no (para no ofrecer botones que no hacen nada)
+ * - Web de producción SIN AdSense → no
  */
 export function isAdAvailable(): boolean {
   if (isPro()) return false;
+  if (isNativeApp()) return native.rewardedLoaded;
   if (useRealAds && (ADSENSE_SLOT_REWARDED || ADSENSE_SLOT_INTERSTITIAL)) return true;
-  if (isNativePlatform()) return true;
   if (isDevBuild()) return true;
   return false;
+}
+
+// ─── AdMob (app nativa) ─────────────────────────────────────────────
+
+type AdMobModule = typeof import('@capacitor-community/admob');
+
+/** Evento global cuando cambia la disponibilidad del recompensado (para refrescar botones). */
+export const ADS_AVAILABILITY_EVENT = 'geospeed:ads-availability';
+
+const native = {
+  mod: null as AdMobModule | null,
+  ready: false,
+  /** false si el usuario de Europa aún no da su consentimiento (UMP): no se piden anuncios */
+  canRequestAds: true,
+  /** Europa / Reino Unido: Ajustes debe ofrecer "Privacidad de los anuncios" */
+  privacyOptionsRequired: false,
+  rewardedLoaded: false,
+  rewardedLoading: false,
+  rewardedFails: 0,
+  interstitialLoaded: false,
+  interstitialLoading: false,
+  interstitialFails: 0,
+};
+
+/** Anuncios de prueba de Google: builds de desarrollo o un AAB de prueba interna (VITE_ADMOB_TESTING=true). */
+export function admobTesting(): boolean {
+  return isDevBuild() || import.meta.env.VITE_ADMOB_TESTING === 'true';
+}
+
+/** Espera antes de reintentar una carga fallida: 30 s, 1 min, 2 min… hasta 10 min. */
+export function adRetryDelayMs(fails: number): number {
+  return Math.min(10 * 60_000, 30_000 * 2 ** Math.max(0, fails - 1));
+}
+
+async function initNativeAds(): Promise<void> {
+  if (native.mod) return;
+  try {
+    const mod = await import('@capacitor-community/admob');
+    native.mod = mod;
+    const { AdMob } = mod;
+    await AdMob.initialize({ initializeForTesting: admobTesting() });
+    // Consentimiento (UMP). Sin mensaje configurado en AdMob o fuera de Europa responde NOT_REQUIRED.
+    try {
+      let info = await AdMob.requestConsentInfo();
+      if (info.isConsentFormAvailable && info.status === 'REQUIRED') info = await AdMob.showConsentForm();
+      native.canRequestAds = info.canRequestAds !== false;
+      native.privacyOptionsRequired = info.privacyOptionsRequirementStatus === 'REQUIRED';
+    } catch (e) {
+      console.info('[Ads] Consentimiento de AdMob no disponible:', e);
+    }
+    native.ready = true;
+    void preloadRewarded();
+    void preloadInterstitial();
+  } catch (e) {
+    console.warn('[Ads] AdMob no se pudo iniciar:', e);
+  }
+}
+
+function setRewardedLoaded(v: boolean): void {
+  if (native.rewardedLoaded === v) return;
+  native.rewardedLoaded = v;
+  try { window.dispatchEvent(new CustomEvent(ADS_AVAILABILITY_EVENT, { detail: { rewarded: v } })); } catch { /* ignore */ }
+}
+
+async function preloadRewarded(): Promise<void> {
+  const m = native.mod;
+  if (!m || !native.ready || !native.canRequestAds || !ADMOB_REWARDED_ID || isPro()) return;
+  if (native.rewardedLoaded || native.rewardedLoading) return;
+  native.rewardedLoading = true;
+  try {
+    await m.AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID, isTesting: admobTesting() });
+    native.rewardedFails = 0;
+    setRewardedLoaded(true);
+  } catch {
+    native.rewardedFails++;
+    setRewardedLoaded(false);
+    setTimeout(() => { void preloadRewarded(); }, adRetryDelayMs(native.rewardedFails));
+  } finally {
+    native.rewardedLoading = false;
+  }
+}
+
+async function preloadInterstitial(): Promise<void> {
+  const m = native.mod;
+  if (!m || !native.ready || !native.canRequestAds || !ADMOB_INTERSTITIAL_ID || isPro()) return;
+  if (native.interstitialLoaded || native.interstitialLoading) return;
+  native.interstitialLoading = true;
+  try {
+    await m.AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID, isTesting: admobTesting() });
+    native.interstitialFails = 0;
+    native.interstitialLoaded = true;
+  } catch {
+    native.interstitialFails++;
+    native.interstitialLoaded = false;
+    setTimeout(() => { void preloadInterstitial(); }, adRetryDelayMs(native.interstitialFails));
+  } finally {
+    native.interstitialLoading = false;
+  }
+}
+
+/**
+ * Muestra un anuncio ya cargado y espera a que se cierre. `listen` registra los eventos del tipo
+ * de anuncio; `finish` resuelve una sola vez y quita los oyentes. Un tope evita quedar colgados si
+ * el SDK no avisa el cierre.
+ */
+function runNativeAd(
+  register: (finish: (r: AdResult) => void) => Promise<PluginListenerHandle[]>,
+  show: () => Promise<unknown>,
+  onShown: (value: unknown) => void,
+  timeoutMs: number,
+): Promise<AdResult> {
+  return new Promise<AdResult>((resolve) => {
+    let done = false;
+    let handles: PluginListenerHandle[] = [];
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const finish = (r: AdResult) => {
+      if (done) return;
+      done = true;
+      if (timer) clearTimeout(timer);
+      handles.forEach((h) => { void h.remove(); });
+      resolve(r);
+    };
+    register(finish)
+      .then((hs) => {
+        handles = hs;
+        if (done) { hs.forEach((h) => { void h.remove(); }); return; }
+        timer = setTimeout(() => finish('error'), timeoutMs);
+        return show().then(onShown);
+      })
+      .catch(() => finish('error'));
+  });
+}
+
+async function showNativeRewarded(): Promise<AdResult> {
+  const m = native.mod;
+  if (!m || !native.rewardedLoaded) { void preloadRewarded(); return 'error'; }
+  trackAdShown('rewarded');
+  setRewardedLoaded(false);
+  let rewarded = false;
+  const result = await runNativeAd(
+    async (finish) => [
+      await m.AdMob.addListener(m.RewardAdPluginEvents.Rewarded, () => { rewarded = true; }),
+      await m.AdMob.addListener(m.RewardAdPluginEvents.Dismissed, () => finish(rewarded ? 'completed' : 'skipped')),
+      await m.AdMob.addListener(m.RewardAdPluginEvents.FailedToShow, () => finish('error')),
+    ],
+    () => m.AdMob.showRewardVideoAd(),
+    // En Android la promesa trae el premio ganado; el cierre llega por Dismissed
+    (item) => { if (item && typeof item === 'object' && 'amount' in item) rewarded = true; },
+    3 * 60_000,
+  );
+  void preloadRewarded();
+  // Si el SDK no avisó el cierre pero sí el premio, el jugador vio el anuncio completo
+  return result === 'error' && rewarded ? 'completed' : result;
+}
+
+async function showNativeInterstitial(): Promise<AdResult> {
+  const m = native.mod;
+  if (!m || !native.interstitialLoaded) { void preloadInterstitial(); return 'error'; }
+  trackAdShown('interstitial');
+  native.interstitialLoaded = false;
+  const result = await runNativeAd(
+    async (finish) => [
+      await m.AdMob.addListener(m.InterstitialAdPluginEvents.Dismissed, () => finish('completed')),
+      await m.AdMob.addListener(m.InterstitialAdPluginEvents.FailedToShow, () => finish('error')),
+    ],
+    () => m.AdMob.showInterstitial(),
+    () => { /* el cierre llega por Dismissed */ },
+    2 * 60_000,
+  );
+  void preloadInterstitial();
+  return result;
+}
+
+/** Europa / Reino Unido: hay que ofrecer cambiar el consentimiento de anuncios (Ajustes). */
+export function adPrivacyOptionsRequired(): boolean {
+  return isNativeApp() && native.privacyOptionsRequired;
+}
+
+/** Abre el formulario de privacidad de anuncios de Google. */
+export async function showAdPrivacyOptions(): Promise<void> {
+  const m = native.mod;
+  if (!m) return;
+  try {
+    await m.AdMob.showPrivacyOptionsForm();
+    const info = await m.AdMob.requestConsentInfo();
+    native.canRequestAds = info.canRequestAds !== false;
+    if (native.canRequestAds) { void preloadRewarded(); void preloadInterstitial(); }
+  } catch (e) {
+    console.warn('[Ads] Formulario de privacidad no disponible:', e);
+  }
 }

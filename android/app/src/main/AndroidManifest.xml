@@ -24,6 +24,11 @@
 
         </activity>
 
+        <!-- AdMob: id de la app (público). Sin esta línea el SDK de anuncios cierra la app al iniciar. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-9803010593449601~3668014353"/>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

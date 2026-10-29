@@ -15,9 +15,11 @@
     "test:scoring-sql": "node scripts/test-scoring-sql.mjs",
     "test:flags-sql": "node scripts/test-flags-sql.mjs",
     "test:features-sql": "node scripts/test-features-sql.mjs",
-    "test:conquest-sql": "node scripts/test-conquest-sql.mjs"
+    "test:conquest-sql": "node scripts/test-conquest-sql.mjs",
+    "test:revenuecat-sql": "node scripts/test-revenuecat-sql.mjs"
   },
   "dependencies": {
+    "@capacitor-community/admob": "8.2.1",
     "@capacitor/android": "^8.4.0",
     "@capacitor/cli": "^8.4.0",
     "@capacitor/core": "^8.4.0",
