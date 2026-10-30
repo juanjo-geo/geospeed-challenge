@@ -4,13 +4,13 @@
  * Strategy: Network-first for ALL requests (ensures fresh deploys are picked up).
  * Falls back to cache only when offline.
  * Fase 11 (juego sin conexión): al instalarse guarda el PAQUETE BASE completo (/offline-manifest.json, generado por el
- * build: código, datos, mascota, banderas, música; ~6 MB) para abrir y jugar sin señal. Los archivos con hash
+ * build: código, datos, mascota, banderas, música; ~6 MB; de a dos a la vez) para abrir y jugar sin señal. Los archivos con hash
  * (/assets/…) que ya estaban en la versión anterior se copian sin volver a descargarlos. Los packs de fotos los guarda
  * la pantalla Descargas en cachés "geospeed-pack-<id>", que sobreviven a las actualizaciones.
  * Handles SPA navigation (falls back to /index.html for HTML requests).
  */
 
-const CACHE_NAME = 'geospeed-v162';
+const CACHE_NAME = 'geospeed-v163';
 
 // Critical app shell files to pre-cache for offline support
 const APP_SHELL = [
@@ -24,19 +24,30 @@ const APP_SHELL = [
 
 const PACK_PREFIX = 'geospeed-pack-';
 
-// Paquete base para jugar sin conexión (lo que falle no impide instalar: se guardará al usarse)
+// Paquete base para jugar sin conexión (lo que falle no impide instalar: se guardará al usarse).
+// De a DOS descargas a la vez: con las 284 en paralelo, en una red lenta la instalación le quitaba casi toda la
+// red a la primera partida (los trozos del juego y las fotos llegaban a cuentagotas) y Lighthouse nunca veía la
+// red "calmada" (≤ 2 peticiones en vuelo) y abortaba el análisis a los 45 s. El total tarda lo mismo en una red
+// saturada; lo que cambia es cuánto le deja al juego mientras tanto.
+const PRECACHE_CONCURRENCY = 2;
 async function precacheBase(cache) {
   try {
     const res = await fetch('/offline-manifest.json', { cache: 'no-store' });
     if (!res.ok) return;
     const manifest = await res.json();
-    await Promise.allSettled((manifest.base || []).map(async (url) => {
-      if (url.startsWith('/assets/')) {
-        const old = await caches.match(url);
-        if (old) return cache.put(url, old);
+    const queue = (manifest.base || []).slice();
+    const worker = async () => {
+      for (let url = queue.shift(); url !== undefined; url = queue.shift()) {
+        try {
+          if (url.startsWith('/assets/')) {
+            const old = await caches.match(url);
+            if (old) { await cache.put(url, old); continue; }
+          }
+          await cache.add(new Request(url, { cache: 'reload' }));
+        } catch (_) { /* este archivo se guardará al usarse */ }
       }
-      return cache.add(new Request(url, { cache: 'reload' }));
-    }));
+    };
+    await Promise.all(Array.from({ length: PRECACHE_CONCURRENCY }, worker));
   } catch (_) { /* sin red o sin manifiesto: queda el app shell */ }
 }
 
