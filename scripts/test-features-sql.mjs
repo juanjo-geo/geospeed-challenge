@@ -19,6 +19,7 @@ const FEATURES = 'supabase/migrations/20261028120000_features.sql';
 const COLOMBIA = 'supabase/migrations/20261030120000_colombia.sql';
 const PRO = 'supabase/migrations/20261031120000_pro_packs.sql';
 const DETALLES = 'supabase/migrations/20261105120000_detalles.sql'; // lugares nuevos del Caribe
+const PRO_FIX = 'supabase/migrations/20261110120000_packs_pro_datos.sql'; // contornos de Napo y Tungurahua
 
 const dir = mkdtempSync(join(tmpdir(), 'geospeed-features-'));
 await build({ entryPoints: ['src/lib/featureScoring.ts', 'src/lib/scoring.ts'], bundle: true, format: 'esm', outdir: dir, alias: { '@': resolve('src') }, external: ['react'], logLevel: 'warning' });
@@ -47,6 +48,7 @@ await db.exec(slice(co, '-- ── B) Escala', '-- ── C)'));
 await db.exec(slice(co, '-- ── F) Seed', '-- ── H) Seed'));
 await db.exec(readFileSync(PRO, 'utf8'));
 await db.exec(slice(readFileSync(DETALLES, 'utf8'), '-- ── Caribe:'));
+await db.exec(readFileSync(PRO_FIX, 'utf8'));
 
 const cat = readFileSync('src/data/featureCatalog.ts', 'utf8');
 const items = [...cat.matchAll(/id: '(feat:[a-z0-9-]+)', kind: 'feature', ftype: '\w+', geom: '(\w+)'.*?lat: (-?[\d.]+), lon: (-?[\d.]+)/g)].map((m) => ({ id: m[1], geom: m[2], lat: +m[3], lon: +m[4], mode: 'world' }));

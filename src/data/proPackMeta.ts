@@ -109,7 +109,7 @@ export const PRO_PACK_META: Record<'andes' | 'conosur' | 'mexcam' | 'caribe', Pr
     "lon": -86.2704
    },
    "PA": {
-    "name": "Panama City",
+    "name": "Ciudad de Panamá",
     "lat": 8.97,
     "lon": -79.535
    },
@@ -124,7 +124,7 @@ export const PRO_PACK_META: Record<'andes' | 'conosur' | 'mexcam' | 'caribe', Pr
     "lon": -89.2156
    },
    "GT": {
-    "name": "Guatemala City",
+    "name": "Ciudad de Guatemala",
     "lat": 14.6231,
     "lon": -90.5289
    },
@@ -134,7 +134,7 @@ export const PRO_PACK_META: Record<'andes' | 'conosur' | 'mexcam' | 'caribe', Pr
     "lon": -88.7671
    },
    "MX": {
-    "name": "Mexico City",
+    "name": "Ciudad de México",
     "lat": 19.4444,
     "lon": -99.1329
    }

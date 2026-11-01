@@ -9,7 +9,12 @@
  * región, cifras de la ficha (para no repetirlas), dato curioso (para no repetirlo), lugares cercanos del catálogo,
  * resumen, frases de "qué ver" y el artículo de Wikipedia (para el enlace "Basado en Wikipedia").
  *
- * Uso: node scripts/build-story-sources.mjs --out <trabajo> [--cache <carpeta con la caché de Wikidata>]
+ * Packs Pro (punto 11, 2026-10-29): `--groups pro` (o andes,conosur,mexcam,caribe) reúne las fuentes de las ciudades
+ * (`ci:`) y divisiones (`div:`) de los cuatro packs, que no tienen dato curioso; las que son la misma entidad de
+ * Wikidata que una ciudad del mundo (Lima, Buenos Aires, Asunción…) no se redactan de nuevo: quedan en
+ * <trabajo>/aliases.json y merge-stories.mjs copia el texto del mundo.
+ *
+ * Uso: node scripts/build-story-sources.mjs --out <trabajo> [--cache <carpeta con la caché de Wikidata>] [--groups pro]
  */
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -22,6 +27,9 @@ const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? pro
 const OUT = arg('--out');
 if (!OUT) { console.error('Uso: node scripts/build-story-sources.mjs --out <trabajo>'); process.exit(1); }
 const CACHE = arg('--cache') ?? join(OUT, 'cache');
+const PACKS = ['andes', 'conosur', 'mexcam', 'caribe'];
+const WORLD_GROUPS = ['cities', 'flags', 'features', 'monuments', 'colombia'];
+const GROUPS = (arg('--groups') ?? WORLD_GROUPS.join(',')).split(',').flatMap((g) => (g === 'pro' ? PACKS : [g]));
 mkdirSync(CACHE, { recursive: true });
 mkdirSync(join(OUT, 'sources'), { recursive: true });
 const read = (f) => readFileSync(f, 'utf8');
@@ -54,18 +62,32 @@ export { FLAG_ITEMS } from '@/data/flagCatalog';
 export { FEATURE_ITEMS } from '@/data/featureCatalog';
 export { LANDMARK_ITEMS } from '@/data/landmarkCatalog';
 export { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
+export { PRO_PACK_CITIES, PRO_PACK_DIVISIONS } from '@/data/proPackCatalog';
 `);
 await build({ entryPoints: [entry], bundle: true, format: 'esm', outfile: join(tmp, 'entry.js'), alias: { '@': resolve('src') }, logLevel: 'warning', loader: { '.json': 'json' } });
 const C = await import(pathToFileURL(join(tmp, 'entry.js')).href);
 const byId = new Map();
-for (const list of [C.worldCities, C.europeCities, C.asiaCities, C.americasCities, C.africaCities, C.FLAG_ITEMS, C.FEATURE_ITEMS, C.LANDMARK_ITEMS, C.COLOMBIA_CITIES, C.COLOMBIA_DIVISIONS]) {
+for (const list of [C.worldCities, C.europeCities, C.asiaCities, C.americasCities, C.africaCities, C.FLAG_ITEMS, C.FEATURE_ITEMS, C.LANDMARK_ITEMS, C.COLOMBIA_CITIES, C.COLOMBIA_DIVISIONS, C.PRO_PACK_CITIES, C.PRO_PACK_DIVISIONS]) {
   for (const it of list) if (it.id && !byId.has(it.id)) byId.set(it.id, it);
 }
 const facts = JSON.parse(read('src/data/placeFacts.json'));
 const trivia = JSON.parse(read('src/data/placeTrivia.json'));
-const groupOf = (id) => (id.startsWith('flag:') ? 'flags' : id.startsWith('feat:') ? 'features' : id.startsWith('mon:') ? 'monuments' : id.startsWith('co:') || id.startsWith('div:co-') ? 'colombia' : 'cities');
+const isPro = (id) => id.startsWith('ci:') || (id.startsWith('div:') && !id.startsWith('div:co-'));
+const groupOf = (id) => (isPro(id) ? byId.get(id)?.region ?? 'pro' : id.startsWith('flag:') ? 'flags' : id.startsWith('feat:') ? 'features' : id.startsWith('mon:') ? 'monuments' : id.startsWith('co:') || id.startsWith('div:co-') ? 'colombia' : 'cities');
 const KIND_ES = { flags: 'país', features: 'lugar geográfico', monuments: 'monumento', colombia: 'municipio o departamento de Colombia', cities: 'ciudad' };
+/** Tipo de división de los packs Pro (FeatureType → nombre en español, como src/lib/featureTypes.ts) */
+const DIV_ES = { department: 'departamento', district: 'distrito capital', province: 'provincia', state: 'estado', parish: 'parroquia', adistrict: 'distrito', territory: 'territorio', municipality: 'municipio especial', region: 'región' };
 const regionName = (iso) => { try { return new Intl.DisplayNames(['es'], { type: 'region' }).of(iso) ?? iso; } catch { return iso; } };
+const kindOf = (c, id) => {
+  if (isPro(id)) return c?.kind === 'division' ? `${DIV_ES[c.ftype] ?? 'división'} de ${c.country}` : 'ciudad';
+  return c?.kind === 'feature' ? `${KIND_ES.features} (${c.ftype})` : KIND_ES[groupOf(id)];
+};
+const whereOf = (c, id) => {
+  if (!c || c.kind === 'flag') return null;
+  if (c.kind === 'feature') return (c.isos ?? []).map(regionName).join(', ');
+  if (isPro(id) && c.kind === 'division') return [c.country, c.capital ? `capital: ${c.capital}` : null].filter(Boolean).join('; ');
+  return [c.city, c.admin, c.country].filter(Boolean).join(', ');
+};
 
 /** Cifras de la ficha en texto (para que la reseña no las repita) */
 function figures(f) {
@@ -82,19 +104,34 @@ function figures(f) {
   return out;
 }
 
-const items = Object.keys(trivia).map((id) => {
+// Mundo + Colombia = los lugares con dato curioso; packs Pro = todo su catálogo (sin dato curioso)
+const proIds = [...C.PRO_PACK_CITIES, ...C.PRO_PACK_DIVISIONS].map((c) => c.id);
+const allIds = [...Object.keys(trivia), ...proIds].filter((id) => GROUPS.includes(groupOf(id)));
+// Un lugar de un pack que es la misma entidad de Wikidata que una ciudad del mundo reutiliza su texto (no se redacta)
+const worldByQ = new Map();
+for (const [id, f] of Object.entries(facts)) if (!id.includes(':') && f?.q && !worldByQ.has(f.q)) worldByQ.set(f.q, id);
+const aliases = {};
+for (const id of allIds) {
+  const q = facts[id]?.q;
+  if (isPro(id) && q && worldByQ.has(q)) {
+    const to = worldByQ.get(q);
+    aliases[id] = { to, name: byId.get(id)?.name ?? id, toName: byId.get(to)?.name ?? to };
+  }
+}
+const items = allIds.filter((id) => !aliases[id]).map((id) => {
   const c = byId.get(id);
   return {
     id, group: groupOf(id), q: facts[id]?.q ?? null,
     name: c?.name ?? id, nameEn: c?.nameEn ?? null,
-    kind: c?.kind === 'feature' ? `${KIND_ES.features} (${c.ftype})` : KIND_ES[groupOf(id)],
-    where: c?.kind === 'flag' ? null : c?.kind === 'feature' ? (c.isos ?? []).map(regionName).join(', ') : [c?.city, c?.admin, c?.country].filter(Boolean).join(', '),
+    kind: kindOf(c, id),
+    where: whereOf(c, id),
     figures: figures(facts[id]),
     trivia: trivia[id]?.[0] ?? null,
     near: (facts[id]?.near ?? []).map((n) => byId.get(n)?.name).filter(Boolean),
   };
 });
-console.log(`lugares: ${items.length}`);
+if (Object.keys(aliases).length) writeFileSync(join(OUT, 'aliases.json'), JSON.stringify(aliases, null, 1));
+console.log(`grupos: ${GROUPS.join(', ')} · lugares: ${items.length} · reutilizan el texto del mundo: ${Object.keys(aliases).length}`);
 
 // ── Wikidata: artículos ──────────────────────────────────────────────────────
 /** Lugares sin artículo por Wikidata (sin q, o un q sin enlace a Wikipedia): el artículo se fija a mano */
@@ -163,9 +200,8 @@ await Promise.all([worker(), worker(), worker(), worker()]);
 console.log('');
 
 // ── Tandas por grupo ─────────────────────────────────────────────────────────
-const groups = ['cities', 'flags', 'features', 'monuments', 'colombia'];
 let files = 0;
-for (const g of groups) {
+for (const g of GROUPS) {
   const list = items.filter((i) => i.group === g).sort((a, b) => a.id.localeCompare(b.id));
   chunks(list, BATCH).forEach((batch, k) => {
     writeFileSync(join(OUT, 'sources', `${g}-${String(k + 1).padStart(2, '0')}.json`), JSON.stringify(batch.map(({ q, group, ...rest }) => rest), null, 1));
