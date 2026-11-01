@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useI18n } from '@/i18n';
 import { PASSWORD_MIN, resetPasswordRedirectUrl } from '@/lib/authRules';
 import { isAnonymousSession, linkGuestEmail, setAccountPassword, prepareTransfer } from '@/lib/identity';
+import { captchaEnabled, getCaptchaToken, isCaptchaError, prefetchCaptcha } from '@/lib/captcha';
 import AccountScreen, { AccountField, PrimaryButton, SecondaryButton, LinkButton, OrDivider, ErrorNotice, InfoNote, GuestIcon } from '@/components/account/AccountScreen';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'set-password';
@@ -33,6 +34,8 @@ export default function Auth() {
   // Invitado con sesión anónima: "crear cuenta" enlaza el correo a su usuario (conserva todo)
   const [guest, setGuest] = useState(false);
   useEffect(() => { isAnonymousSession().then(setGuest).catch(() => {}); }, []);
+  // Turnstile: el script se descarga al abrir la pantalla para que el token esté listo al enviar
+  useEffect(() => { prefetchCaptcha(); }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -66,10 +69,13 @@ export default function Auth() {
         if (!email.trim() || !password) { setError(t('acct_errMissing')); return; }
         // Desde una sesión de invitado: ticket para traer su progreso a la cuenta (se canjea al entrar)
         await prepareTransfer();
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const captchaToken = await getCaptchaToken('login');
+        if (captchaEnabled() && !captchaToken) { setError(t('acct_errCaptcha')); return; }
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: { captchaToken } });
         if (error) {
           // Genérico: no se dice cuál dato falló ni si la cuenta existe (ACC-03)
-          if (error.message === 'Email not confirmed') setError(t('auth_errEmailNotConfirmed'));
+          if (isCaptchaError(error.message)) setError(t('acct_errCaptcha'));
+          else if (error.message === 'Email not confirmed') setError(t('auth_errEmailNotConfirmed'));
           else setError(t('acct_errLoginTitle'), t('acct_errLoginDesc'));
         } else {
           navigate(afterLogin);
@@ -79,9 +85,12 @@ export default function Auth() {
 
       if (mode === 'forgot') {
         if (!EMAIL_RE.test(email.trim())) { setError(t('auth_errInvalidEmail')); return; }
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: resetPasswordRedirectUrl() });
+        const captchaToken = await getCaptchaToken('reset');
+        if (captchaEnabled() && !captchaToken) { setError(t('acct_errCaptcha')); return; }
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: resetPasswordRedirectUrl(), captchaToken });
         // Misma pantalla exista o no la cuenta. Solo se muestra error si el servicio falló (p. ej. límite de envíos).
-        if (error && /rate|limit|too many/i.test(error.message)) setError(t('auth_errTooMany'));
+        if (error && isCaptchaError(error.message)) setError(t('acct_errCaptcha'));
+        else if (error && /rate|limit|too many/i.test(error.message)) setError(t('auth_errTooMany'));
         else setSent('reset');
         return;
       }
@@ -99,17 +108,21 @@ export default function Auth() {
         setError(r.reason === 'invalid' ? t('auth_errInvalidEmail') : t('auth_errGeneric'));
         return;
       }
+      const captchaToken = await getCaptchaToken('signup');
+      if (captchaEnabled() && !captchaToken) { setError(t('acct_errCaptcha')); return; }
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: { display_name: displayName.trim() },
           emailRedirectTo: window.location.origin,
+          captchaToken,
         },
       });
       if (error) {
         const msg = error.message;
-        if (msg.includes('already registered')) setSent('confirm'); // no revelar existencia de la cuenta
+        if (isCaptchaError(msg)) setError(t('acct_errCaptcha'));
+        else if (msg.includes('already registered')) setSent('confirm'); // no revelar existencia de la cuenta
         else if (msg.includes('valid email')) setError(t('auth_errInvalidEmail'));
         else if (msg.includes('signup is disabled') || msg.includes('Signups not allowed')) setError(t('auth_errSignupDisabled'));
         else setError(t('auth_errGeneric'));
