@@ -328,3 +328,9 @@ for (const pack of PRO_PACKS) {
 }
 const pts = Object.values(shapes).reduce((s, sh) => s + sh.rings.reduce((t, r) => t + r.length, 0), 0);
 console.log(`proPackShapes ${(json.length / 1024).toFixed(0)} KB, ${pts} puntos`);
+
+// Correcciones verificadas contra Wikidata sobre lo que trae Natural Earth (contornos cambiados, capitales, división
+// de cada ciudad, nombres): se aplican sobre los archivos recién escritos. El documento de revisión queda con los datos
+// originales de Natural Earth.
+const { applyProPackFixes } = await import('./pro-pack-fixes.mjs');
+console.log(await applyProPackFixes());

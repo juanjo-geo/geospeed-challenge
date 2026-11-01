@@ -45,8 +45,16 @@ const QID_OVERRIDES = {
   'mon:palenque': 'Q181427', 'mon:tulum': 'Q725883', // eran los municipios, no las ruinas
   'ci:mx-tlaxcala': 'Q689987', 'ci:mx-mazatlan': 'Q40194', 'co:san-agustin': null,
   'ci:py-general-eugenio-alejandrino-garay': 'Q2409529',
-  'div:pa-comarca-ngabe-bugle': 'Q1129783', 'div:cr-puntarenas': 'Q502170', 'div:do-la-estrelleta': 'Q1137545',
+  'div:cr-puntarenas': 'Q502170', 'div:do-la-estrelleta': 'Q1137545',
+  // Natural Earth: "comarca Ngäbe-Buglé" es la provincia de Bocas del Toro; la división "Lima" es el departamento sin
+  // Lima Metropolitana (que es div:pe-lima-distrito-capital). Ver scripts/pro-pack-fixes.mjs
+  'div:pa-comarca-ngabe-bugle': 'Q217138', 'div:pe-lima': 'Q211795',
+  // tenían el id del estado o departamento del mismo nombre (población y fotos de todo el estado)
+  'ci:mx-queretaro': 'Q173121', 'ci:sv-chalatenango': 'Q2290501', 'ci:gt-el-progreso': 'Q615633',
 };
+/** Elementos cuyas cifras de Wikidata no corresponden al contorno del juego (el departamento de Lima incluye Lima
+ * Metropolitana; la división del juego no) */
+const NO_FIGURES = new Set(['div:pe-lima']);
 
 // ── Catálogo (TS → JS con esbuild) ───────────────────────────────────────────
 const tmp = mkdtempSync(join(tmpdir(), 'geospeed-facts-'));
@@ -362,6 +370,7 @@ for (const { it, g } of ALL) {
   if (g.kind === 'feature') { delete f.pop; delete f.popY; delete f.cap; delete f.lang; delete f.cult; delete f.style; delete f.since;
     if (it.geom === 'line') delete f.area; if (it.ftype !== 'waterfall') delete f.h; if (!['peak', 'volcano', 'plateau', 'paramo'].includes(it.ftype)) delete f.elev; }
   if (g.kind === 'monument') { delete f.pop; delete f.popY; delete f.area; delete f.elev; delete f.len; delete f.lang; delete f.cap; }
+  if (NO_FIGURES.has(it.id)) { delete f.pop; delete f.popY; delete f.area; }
   const near = g.kind === 'country' ? nearCountry(it)
     : g.kind === 'division' ? nearDivision(it)
     : g.kind === 'monument' ? nearPoint(it, { monKm: 25, featKm: 8, max: 2, maxMon: 2 })
