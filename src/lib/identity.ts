@@ -11,6 +11,7 @@
  *    después (ticket de un solo uso en el servidor, migración 20261018150000_account_transfer.sql).
  */
 import { supabase } from '@/integrations/supabase/client';
+import { captchaEnabled, getCaptchaToken, isCaptchaError } from '@/lib/captcha';
 
 const ANON_OFF_KEY = 'geospeed_anon_unavailable_until';
 const TRANSFER_KEY = 'geospeed_transfer_ticket';
@@ -25,7 +26,11 @@ export async function ensureGuestSession(opts: { force?: boolean } = {}): Promis
     if (data.session) return 'existing';
     const until = Number(localStorage.getItem(ANON_OFF_KEY) || 0);
     if (until > Date.now() && !opts.force) return 'unavailable';
-    const { error } = await supabase.auth.signInAnonymously();
+    // Turnstile (punto 10): sin token no se intenta; tampoco se pausa, porque puede ser un fallo pasajero
+    const captchaToken = await getCaptchaToken('guest');
+    if (captchaEnabled() && !captchaToken) return 'unavailable';
+    const { error } = await supabase.auth.signInAnonymously({ options: { captchaToken } });
+    if (error && isCaptchaError(error.message)) return 'unavailable';
     if (error) {
       // Desactivado en el panel (o sin red): no insistir durante 6 h
       localStorage.setItem(ANON_OFF_KEY, String(Date.now() + 6 * 3600 * 1000));
