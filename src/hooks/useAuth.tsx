@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ensureCountry } from '@/lib/country';
 import { syncOnLogin } from '@/lib/cloudSync';
 import { importLegacyHistoryOnce, flushPendingResults } from '@/lib/gameResults';
-import { redeemTransfer } from '@/lib/identity';
+import { redeemTransfer, updateMyProfile } from '@/lib/identity';
+import { googleFirstName } from '@/lib/oauth';
 import type { User, Session } from '@supabase/supabase-js';
 
 /** Tareas de servidor al tener sesión: migrar historial local y vaciar la cola offline (F1). */
@@ -46,13 +47,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [displayName, setDisplayName] = useState('');
   const [avatar, setAvatar] = useState('');
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, sessionUser?: User | null) => {
     const { data } = await supabase
       .from('profiles')
       .select('display_name, avatar, country')
       .eq('id', userId)
       .single();
-    if (data) { setDisplayName(data.display_name); setAvatar(data.avatar ?? ''); ensureCountry(data.country); }
+    if (!data) return;
+    let name = data.display_name;
+    // Entró con Google y aún no tiene nombre de jugador: su nombre de pila (lo puede cambiar en el perfil)
+    const first = name ? '' : googleFirstName(sessionUser);
+    if (first && await updateMyProfile({ displayName: first })) name = first;
+    setDisplayName(name); setAvatar(data.avatar ?? ''); ensureCountry(data.country);
   };
 
   const refreshProfile = async () => {
@@ -65,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          setTimeout(() => fetchProfile(session.user.id, session.user), 0);
           // Sync cloud data on login
           syncOnLogin().catch(() => {});
           if (_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') afterSession(session.user.id);
@@ -79,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) fetchProfile(session.user.id, session.user);
       setLoading(false);
     });
 
