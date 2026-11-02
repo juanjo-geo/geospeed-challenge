@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useI18n } from '@/i18n';
 import { PASSWORD_MIN, resetPasswordRedirectUrl } from '@/lib/authRules';
 import { isAnonymousSession, linkGuestEmail, setAccountPassword, prepareTransfer } from '@/lib/identity';
 import { captchaEnabled, getCaptchaToken, isCaptchaError, prefetchCaptcha } from '@/lib/captcha';
-import AccountScreen, { AccountField, PrimaryButton, SecondaryButton, LinkButton, OrDivider, ErrorNotice, InfoNote, GuestIcon } from '@/components/account/AccountScreen';
+import { continueWithGoogle, googleSignInAvailable, oauthReturnError, type OAuthReturnError } from '@/lib/oauth';
+import AccountScreen, { AccountField, PrimaryButton, SecondaryButton, GoogleButton, LinkButton, OrDivider, ErrorNotice, InfoNote, GuestIcon } from '@/components/account/AccountScreen';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'set-password';
 type Sent = null | 'confirm' | 'reset' | 'link';
@@ -20,7 +22,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  *  - contraseñas nuevas ≥ 8 caracteres y confirmación
  *  - los mensajes nunca revelan si un correo tiene cuenta (registro y recuperación
  *    muestran la misma confirmación genérica; el error de acceso no dice qué dato falló)
- * Google y Apple no están en las maquetas ni activos en Supabase: solo correo y contraseña.
+ * Google (pedido de JuanJo, 2026-11-02): "Continuar con Google" en Entrar y Crear cuenta, solo si está activo en
+ * Supabase y fuera de la app nativa (src/lib/oauth.ts). Apple no.
  */
 export default function Auth() {
   const { t } = useI18n();
@@ -36,6 +39,13 @@ export default function Auth() {
   useEffect(() => { isAnonymousSession().then(setGuest).catch(() => {}); }, []);
   // Turnstile: el script se descarga al abrir la pantalla para que el token esté listo al enviar
   useEffect(() => { prefetchCaptcha(); }, []);
+  // Continuar con Google: el botón aparece solo si Google está activo en Supabase
+  const [googleOn, setGoogleOn] = useState(false);
+  useEffect(() => { googleSignInAvailable().then(setGoogleOn).catch(() => {}); }, []);
+  // Vuelta de Google (?oauth=google): con la sesión ya lista, o con un error en la dirección
+  const returningFromGoogle = params.get('oauth') === 'google';
+  const [googleError, setGoogleError] = useState<OAuthReturnError | null>(() => (returningFromGoogle ? oauthReturnError() : null));
+  const finishingGoogle = returningFromGoogle && !googleError;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -49,6 +59,37 @@ export default function Auth() {
   // El error se limpia al cambiar de modo a mano (no cuando el propio flujo cambia de modo con un aviso)
   const switchMode = (m: Mode) => { setMode(m); setSent(null); setPassword(''); setConfirm(''); setErrorState(null); };
   const goHome = () => navigate('/');
+
+  // De vuelta de Google: en cuanto haya sesión de cuenta (no de invitado), al destino. Si no llega, aviso y formulario.
+  useEffect(() => {
+    if (!finishingGoogle) return;
+    let done = false;
+    const finish = (s: Session | null) => {
+      if (done || !s?.user || s.user.is_anonymous) return;
+      done = true;
+      navigate(afterLogin, { replace: true });
+    };
+    supabase.auth.getSession().then(({ data }) => finish(data.session)).catch(() => {});
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => finish(s));
+    const timer = window.setTimeout(() => { if (!done) setGoogleError('failed'); }, 12000);
+    return () => { done = true; sub.subscription.unsubscribe(); window.clearTimeout(timer); };
+  }, [finishingGoogle, afterLogin, navigate]);
+  // Con el aviso a la vista, la dirección queda limpia (al recargar no se repite)
+  useEffect(() => {
+    if (!googleError) return;
+    window.history.replaceState(window.history.state, '', `/auth${nextParam ? `?next=${encodeURIComponent(nextParam)}` : ''}`);
+  }, [googleError, nextParam]);
+
+  /** `link`: desde Crear cuenta, un invitado convierte su usuario en cuenta de Google (conserva todo) */
+  const handleGoogle = async (opts: { link?: boolean; chooseAccount?: boolean } = {}) => {
+    if (loading) return;
+    setErrorState(null);
+    setGoogleError(null);
+    setLoading(true);
+    const { error } = await continueWithGoogle(afterLogin, opts);
+    // Si salió bien, el navegador ya va camino a Google; aquí solo se vuelve si falló antes de salir
+    if (error) { setError(t('acct_googleFailedTitle'), t('acct_googleFailedDesc')); setLoading(false); }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,6 +178,31 @@ export default function Auth() {
   const reveal = { shown: showPassword, onToggle: () => setShowPassword(v => !v), showLabel: t('auth_showPassword'), hideLabel: t('auth_hidePassword') };
   const errorBox = error && <ErrorNotice title={error.title} desc={error.desc} />;
   const guestButton = <SecondaryButton onClick={goHome} icon={<GuestIcon />}>{t('acct_guest')}</SecondaryButton>;
+  // Continuar con Google (o, si esa cuenta de Google ya existía, entrar con ella trayendo el progreso del invitado)
+  const googleBlock = (link: boolean) => googleOn && (
+    googleError === 'linked_elsewhere' ? (
+      <div className="flex flex-col gap-3">
+        <ErrorNotice title={t('acct_googleTakenTitle')} desc={t('acct_googleTakenDesc')} />
+        <GoogleButton onClick={() => handleGoogle({ chooseAccount: true })} disabled={loading}>{t('acct_googleUseThat')}</GoogleButton>
+      </div>
+    ) : (
+      <div className="flex flex-col gap-3">
+        {googleError === 'failed' && <ErrorNotice title={t('acct_googleFailedTitle')} desc={t('acct_googleFailedDesc')} />}
+        <GoogleButton onClick={() => handleGoogle({ link })} disabled={loading}>{t('acct_google')}</GoogleButton>
+      </div>
+    )
+  );
+
+  // ── Entrando con Google (de vuelta, mientras se confirma la sesión) ──
+  if (finishingGoogle) {
+    return (
+      <AccountScreen art="globe" title={{ lead: t('acct_googleWaitLead'), tail: t('acct_googleWaitTail') }} subtitle={t('acct_googleWaitSub')}>
+        <div className="flex justify-center py-4" role="status" aria-label={t('acct_googleWaitSub')}>
+          <span className="w-9 h-9 rounded-full border-4 border-accent/30 border-t-accent animate-spin" aria-hidden />
+        </div>
+      </AccountScreen>
+    );
+  }
 
   // ── Revisa tu correo (enlace de recuperación · confirmación de registro · enlace de invitado) ──
   if (sent) {
@@ -213,6 +279,7 @@ export default function Auth() {
             <SecondaryButton onClick={() => switchMode('login')}>{t('acct_hasAccount')} · {t('acct_signInLink')}</SecondaryButton>
           </div>
           <OrDivider label={t('acct_or')} />
+          {googleBlock(true)}
           {guestButton}
         </form>
       </AccountScreen>
@@ -240,6 +307,7 @@ export default function Auth() {
         <SecondaryButton onClick={() => switchMode('signup')}>{t('acct_createAccount')}</SecondaryButton>
         <p className="text-center"><LinkButton onClick={() => switchMode('forgot')}>{t('auth_forgot')}</LinkButton></p>
         <OrDivider label={t('acct_or')} />
+        {googleBlock(false)}
         {guestButton}
       </form>
     </AccountScreen>

@@ -160,6 +160,21 @@ export function SecondaryButton({ children, onClick, icon }: { children: ReactNo
   );
 }
 
+/** "Continuar con Google": blanco con la G oficial (pautas de marca de Google), del mismo tamaño que los demás */
+export function GoogleButton({ children, onClick, disabled }: { children: ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => { playButtonTap(); onClick(); }}
+      className="w-full h-12 lg:h-11 short:h-10 rounded-2xl border border-neutral-500 bg-white font-semibold text-base text-neutral-900 flex items-center justify-center gap-3 hover:bg-neutral-100 transition-colors active:scale-[0.98] disabled:opacity-60"
+    >
+      <img src="/google-g.svg" alt="" width={20} height={20} className="w-5 h-5" />
+      {children}
+    </button>
+  );
+}
+
 /** Enlace turquesa subrayado (Olvidé mi contraseña · Iniciar sesión) */
 export function LinkButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (

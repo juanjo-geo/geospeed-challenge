@@ -57,9 +57,11 @@ const Privacy = () => {
           <SubSection title="2.1 Datos de cuenta (opcional)">
             <p>
               Si decides crear una cuenta a traves de Supabase Auth, recopilamos tu direccion
-              de correo electronico y/o los datos basicos de tu perfil de proveedor social
-              (Google, Apple). Esto es necesario para guardar tu progreso entre dispositivos
-              y participar en el modo multijugador.
+              de correo electronico. Si entras con Google, Google nos comparte tu nombre, tu
+              correo y tu foto de perfil: usamos el correo para identificar tu cuenta y tu
+              nombre de pila como nombre de jugador (puedes cambiarlo en tu perfil); la foto
+              no se muestra en el juego. Esto es necesario para guardar tu progreso entre
+              dispositivos y jugar con amigos.
             </p>
           </SubSection>
 
@@ -246,9 +248,11 @@ const Privacy = () => {
             <SubSection title="2.1 Account Data (optional)">
               <p>
                 If you choose to create an account through Supabase Auth, we collect your email
-                address and/or basic profile data from your social provider (Google, Apple). This
-                is necessary to save your progress across devices and participate in multiplayer
-                mode.
+                address. If you sign in with Google, Google shares your name, email address and
+                profile picture with us: we use the email to identify your account and your first
+                name as your player name (you can change it in your profile); the picture is not
+                shown in the game. This is necessary to save your progress across devices and to
+                play with friends.
               </p>
             </SubSection>
 
