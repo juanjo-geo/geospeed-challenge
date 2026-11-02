@@ -1,13 +1,16 @@
 /** Lugares geográficos (Fase 6b): catálogo, contornos, puntaje por distancia y selección por categoría. */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { FEATURE_ITEMS } from '@/data/featureCatalog';
 import shapesJson from '@/data/featureShapes.json';
 import { __setFeatureShapes, featureDistance, type FeatureShapes } from '@/lib/featureScoring';
-import { getRandomItems, categoryOf, itemTitle, itemSubtitle, kindFromPlaceId, isFeature } from '@/lib/catalog';
+import { loadCatalogs, getRandomItems, categoryOf, itemTitle, itemSubtitle, kindFromPlaceId, isFeature } from '@/lib/catalog';
 import { featureHint } from '@/lib/cityHints';
 
 const shapes = shapesJson as unknown as FeatureShapes;
 const byId = (id: string) => FEATURE_ITEMS.find((f) => f.id === id)!;
+
+// Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
+beforeAll(() => loadCatalogs());
 
 describe('catálogo de lugares', () => {
   it('ids únicos con prefijo feat:, tipo y geometría válidos', () => {

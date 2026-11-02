@@ -1,12 +1,12 @@
 /** Conquista — fase C1 (banco de ciudades, encuadre, semilla del servidor) y fase C3 (cliente y simulador). */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { CONQUEST_COUNTRIES, CONQUEST_CITIES } from '@/data/conquestCatalog';
 import { CONQUEST_COUNTRIES_SPEC } from '@/data/conquestTiers';
 import { worldCities, europeCities, asiaCities, americasCities, africaCities } from '@/data/cities';
 import { COLOMBIA_CITIES } from '@/data/colombiaCatalog';
 import { PRO_PACK_CITIES } from '@/data/proPackCatalog';
-import { catalogItem, kindFromPlaceId, itemTitle } from '@/lib/catalog';
+import { loadCatalogs, catalogItem, kindFromPlaceId, itemTitle } from '@/lib/catalog';
 import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet, startAttempt, openRound, answerRound, abandonAttempt, fetchAttempt, currentRound, answeredRounds, rememberActiveMission, activeMission, forgetActiveMission, fetchActivity, markSeen, fetchStandings, championsOf, type ConqEvent } from '@/lib/conquest';
 import { playerStyles, pickTerritory, boardLayer, missionLayer, ZONE_BOUNDS, conqCountry, describeEvent, timeAgo } from '@/lib/conquestMap';
 import { reminderTimes, nativeReminderId } from '@/lib/conquestReminders';
@@ -18,6 +18,9 @@ const byId = new Map<string, { lat: number; lon: number; name: string }>();
 for (const l of [worldCities, europeCities, asiaCities, americasCities, africaCities, COLOMBIA_CITIES, PRO_PACK_CITIES, CONQUEST_CITIES]) {
   for (const c of l) if (c.id && !byId.has(c.id)) byId.set(c.id, c);
 }
+
+// Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
+beforeAll(() => loadCatalogs());
 
 describe('Conquista: banco de ciudades', () => {
   it('los diez países aprobados, con 12 ciudades distintas cada uno', () => {

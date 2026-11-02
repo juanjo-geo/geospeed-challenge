@@ -1,6 +1,5 @@
 import { createContext, useContext } from 'react';
 import es, { type TranslationKey, type Translations } from './es';
-import en from './en';
 
 export type Locale = 'es' | 'en';
 
@@ -9,7 +8,21 @@ export const LOCALES: { key: Locale; label: string; flag: string }[] = [
   { key: 'en', label: 'English', flag: '🇬🇧' },
 ];
 
-const dictionaries: Record<Locale, Translations> = { es, en };
+// El inglés (~22 KB comprimidos) no va en la carga inicial: la mayoría juega en español. main.tsx lo pide antes de
+// montar la app si el jugador lo usa, y Ajustes antes de cambiar el idioma.
+const dictionaries: Partial<Record<Locale, Translations>> = { es };
+let enLoading: Promise<void> | null = null;
+
+export function loadLocale(locale: Locale): Promise<void> {
+  if (dictionaries[locale]) return Promise.resolve();
+  enLoading ??= import('./en')
+    .then((m) => { dictionaries.en = m.default; })
+    .catch((e) => { enLoading = null; throw e; });
+  return enLoading;
+}
+
+/** ¿El diccionario de ese idioma ya está descargado? (mientras no, se muestra el español) */
+export const localeLoaded = (locale: Locale): boolean => !!dictionaries[locale];
 
 /** Detect initial locale from browser language */
 export function detectLocale(): Locale {

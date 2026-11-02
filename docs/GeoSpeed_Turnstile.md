@@ -5,6 +5,8 @@ con CAPTCHA: la sesión de invitado (se crea al guardar la primera partida), ini
 contraseña. Sin esto, un bot podría crear usuarios anónimos sin límite: era la condición de "costo cero" con la que se
 aprobaron las sesiones de invitado (decisión D1). Es gratis.
 
+**Estado (2026-11-02): activo.** Pasos 1, 2, 3 y 5 hechos. El paso 4 (app Android) queda para la primera prueba interna: se encendió antes porque todavía nadie tiene la app.
+
 El jugador casi nunca ve nada: el widget es invisible y solo aparece una ventanita "Un momento · Confirma que eres una
 persona" si Cloudflare tiene dudas.
 

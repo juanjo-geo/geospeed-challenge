@@ -1,11 +1,14 @@
 /** Monumentos (Fase 6c): catálogo, selección por categoría y textos. */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { LANDMARK_ITEMS } from '@/data/landmarkCatalog';
-import { getRandomItems, categoryOf, itemTitle, itemSubtitle, kindFromPlaceId, isMonument, itemPhotoUrl } from '@/lib/catalog';
+import { loadCatalogs, getRandomItems, categoryOf, itemTitle, itemSubtitle, kindFromPlaceId, isMonument, itemPhotoUrl } from '@/lib/catalog';
 import { landmarkHint } from '@/lib/cityHints';
 import { countryIso } from '@/lib/flags';
 
 const byId = (id: string) => LANDMARK_ITEMS.find((f) => f.id === id)!;
+
+// Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
+beforeAll(() => loadCatalogs());
 
 describe('catálogo de monumentos', () => {
   it('ids únicos con prefijo mon:, país conocido del catálogo y coordenadas válidas', () => {

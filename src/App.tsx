@@ -6,6 +6,7 @@ import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import ScreenReaderAnnouncer from "@/components/game/ScreenReaderAnnouncer";
 import Index from "./pages/Index.tsx";
+import { loadCatalogs } from "@/lib/catalog";
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount.tsx"));
@@ -13,7 +14,8 @@ const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const Support = lazy(() => import("./pages/Support.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
-const RoomTv = lazy(() => import("./pages/RoomTv.tsx"));
+// La pantalla para proyectar nombra lugares de los catálogos grandes: los baja junto con su código
+const RoomTv = lazy(() => Promise.all([import("./pages/RoomTv.tsx"), loadCatalogs()]).then(([m]) => m));
 
 // Los enlaces profundos renderizan <Index> DIRECTAMENTE (no un wrapper por ruta): así, cuando Index
 // hace navigate('/') tras procesar el enlace, React conserva la instancia (mismo tipo en la misma

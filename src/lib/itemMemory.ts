@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getCitiesByMode, placeIdOf, type City, type GameMode } from '@/data/cities';
-import { catalogItem } from '@/lib/catalog';
+import { catalogItem, onCatalogsLoaded } from '@/lib/catalog';
 
 export interface MemoryItem {
   item_id: string;
@@ -133,11 +133,15 @@ export function refreshMemory(force = false): Promise<MemoryItem[]> {
 /** La memoria para una pantalla: la de la caché al instante y la del servidor cuando llega */
 export function useMemory(): MemoryItem[] {
   const [items, setItems] = useState<MemoryItem[]>(getCachedMemory);
+  // Banderas, lugares y monumentos salen de los catálogos grandes, que llegan después del inicio (catalogItem los pide
+  // si hacen falta): al llegar se vuelve a pintar, porque lo que toca repasar puede sumar ítems
+  const [, setCatalogTick] = useState(0);
   useEffect(() => {
     const on = (e: Event) => setItems((e as CustomEvent<MemoryItem[]>).detail);
     window.addEventListener(MEMORY_EVENT, on);
     refreshMemory();
-    return () => window.removeEventListener(MEMORY_EVENT, on);
+    const off = onCatalogsLoaded(() => setCatalogTick((n) => n + 1));
+    return () => { window.removeEventListener(MEMORY_EVENT, on); off(); };
   }, []);
   return items;
 }

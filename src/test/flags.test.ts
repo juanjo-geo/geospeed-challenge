@@ -1,8 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { FLAG_ITEMS } from '@/data/flagCatalog';
-import { getRandomFlags, getRandomItems, itemTitle, itemSubtitle, kindFromPlaceId, categoryOf, flagsByMode } from '@/lib/catalog';
+import { loadCatalogs, getRandomFlags, getRandomItems, itemTitle, itemSubtitle, kindFromPlaceId, categoryOf, flagsByMode } from '@/lib/catalog';
 import { countryDistance } from '@/lib/flagScoring';
 import { flagHint } from '@/lib/cityHints';
+
+// Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
+beforeAll(() => loadCatalogs());
 
 describe('banderas (Fase 6)', () => {
   it('el catálogo tiene más de 100 banderas con id, ISO y región válidos', () => {

@@ -12,9 +12,21 @@ import "@fontsource/poppins/latin-900.css";
 // Letra redondeada del wordmark GEOSPEED (solo el logo)
 import "@fontsource/fredoka/latin-700.css";
 import "./index.css";
-import { afterAppLoad } from "./lib/idle";
+import { afterAppLoad, firstInteraction } from "./lib/idle";
+import { detectLocale, loadLocale } from "./i18n";
+import { loadCatalogs } from "./lib/catalog";
 
-createRoot(document.getElementById("root")!).render(<App />);
+const mount = () => createRoot(document.getElementById("root")!).render(<App />);
+
+// El inglés se descarga aparte: quien juega en inglés lo espera aquí (la pantalla de carga estática sigue a la vista),
+// máximo 3 s; si tarda más, la app arranca en español y cambia sola al llegar el diccionario.
+const initialLocale = detectLocale();
+if (initialLocale === "es") mount();
+else void Promise.race([loadLocale(initialLocale), new Promise((r) => setTimeout(r, 3000))]).catch(() => {}).finally(mount);
+
+// Banderas, lugares, monumentos y packs Pro (~60 KB) se descargan con el primer toque: así no compiten con la pantalla
+// de carga y están listos antes de que empiece una partida (las pantallas que los usan también los esperan)
+void firstInteraction().then(() => loadCatalogs()).catch(() => {});
 
 // Register service worker for PWA / offline support. Al instalarse guarda el paquete base (~6 MB):
 // se registra unos segundos después de abrir para no quitarle red a la pantalla de carga y al Inicio.
