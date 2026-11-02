@@ -11,8 +11,10 @@ pero solo aparece cuando Google está activo en Supabase. Mientras no lo actives
   racha, retos, compras…).
 - **Invitado en "Iniciar sesión":** entra a su cuenta de Google y se trae el progreso de este dispositivo, igual que al
   entrar con correo.
-- **Invitado cuya cuenta de Google ya existía:** ve "Esa cuenta de Google ya está en GeoSpeed" y el botón *Entrar con esa
-  cuenta*, que entra y trae el progreso.
+- **Invitado cuya cuenta de Google ya existía** (o cuyo correo de Google ya tiene cuenta con contraseña): ve "Esa cuenta
+  de Google ya está en GeoSpeed" y el botón *Entrar con esa cuenta*, que entra y trae el progreso.
+- **Mismo correo que una cuenta con contraseña:** entrar con Google lleva a esa misma cuenta (Supabase une las dos
+  formas de entrar cuando el correo está verificado).
 - **App de Android:** el botón no aparece. Google no permite iniciar sesión dentro de la vista web de la app; hace falta
   un complemento nativo (ver "Más adelante").
 

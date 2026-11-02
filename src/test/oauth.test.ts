@@ -10,6 +10,8 @@ describe('Continuar con Google', () => {
     expect(oauthReturnError('?oauth=google', '#access_token=x&refresh_token=y')).toBeNull();
     // Invitado que enlaza una cuenta de Google que ya tenía cuenta en GeoSpeed
     expect(oauthReturnError('?oauth=google', '#error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user')).toBe('linked_elsewhere');
+    // …o cuyo correo ya tiene cuenta con contraseña (al entrar, Supabase une Google a esa cuenta)
+    expect(oauthReturnError('?oauth=google', '#error=invalid_request&error_code=email_exists&error_description=A+user+with+this+email+address+has+already+been+registered')).toBe('linked_elsewhere');
     expect(oauthReturnError('?oauth=google&error=access_denied&error_description=The+user+denied', '')).toBe('cancelled');
     expect(oauthReturnError('?oauth=google&error=server_error&error_description=Unable+to+exchange+external+code', '')).toBe('failed');
   });

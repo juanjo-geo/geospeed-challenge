@@ -67,7 +67,10 @@ export function oauthReturnError(search = window.location.search, hash = window.
   const code = all.get('error_code') ?? '';
   const desc = (all.get('error_description') ?? '').toLowerCase();
   if (!error && !code && !desc) return null;
-  if (code === 'identity_already_exists' || /already (linked|exists)/.test(desc)) return 'linked_elsewhere';
+  // Al enlazar a un invitado: esa cuenta de Google ya está en otro usuario (identity_already_exists) o su correo ya
+  // tiene cuenta con contraseña (email_exists). En los dos casos se entra con ella: Supabase une Google a la cuenta
+  // que tiene el mismo correo verificado.
+  if (code === 'identity_already_exists' || code === 'email_exists' || /already (linked|exists|been registered)/.test(desc)) return 'linked_elsewhere';
   if (error === 'access_denied') return 'cancelled';
   return 'failed';
 }
