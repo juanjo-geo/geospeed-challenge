@@ -25,11 +25,16 @@
  */
 
 import { afterAppLoad } from '@/lib/idle';
+import { isNativeApp } from '@/lib/assetUrl';
 
 // ─── Config ──────────────────────────────────────────────────────────
 
-// Replace with your actual GA4 Measurement ID
-const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
+// Las pruebas en este computador (npm run dev / preview en localhost) no se cuentan en GA4. La app de Android también
+// carga desde https://localhost, por eso solo se excluye fuera de Capacitor (y no en las pruebas automáticas, que
+// revisan los eventos con un gtag falso).
+const LOCAL_TEST = import.meta.env.MODE !== 'test' && typeof window !== 'undefined' && !isNativeApp()
+  && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+const GA_MEASUREMENT_ID = LOCAL_TEST ? '' : import.meta.env.VITE_GA_MEASUREMENT_ID || '';
 // gtag.js (~170 KB) se descarga cuando la app ya abrió: durante el arranque le quitaba red y procesador a
 // la primera pantalla. Mientras tanto los eventos esperan en dataLayer (así funciona gtag).
 const GTAG_DELAY_MS = 6000;

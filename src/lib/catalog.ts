@@ -11,11 +11,7 @@
 import { CITY_NAMES_EN } from '@/data/cityNamesEn';
 import { CONQUEST_CITIES } from '@/data/conquestCatalog';
 import { getRandomCities, getCitiesByMode, isPackMode, type City, type Difficulty, type GameMode } from '@/data/cities';
-import { FLAG_ITEMS } from '@/data/flagCatalog';
-import { FEATURE_ITEMS } from '@/data/featureCatalog';
-import { LANDMARK_ITEMS } from '@/data/landmarkCatalog';
 import { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
-import { PRO_PACK_CITIES, PRO_PACK_DIVISIONS } from '@/data/proPackCatalog';
 import { PRO_PACK_META } from '@/data/proPackMeta';
 import { countryDisplayName, countryIso, flagUrl } from '@/lib/flags';
 import { continentName } from '@/lib/cityHints';
@@ -32,15 +28,58 @@ export const CATEGORIES: Category[] = ['cities', 'flags', 'features', 'monuments
 export const isCategory = (v: unknown): v is Category => CATEGORIES.includes(v as Category);
 /** Mínimo de ítems para ofrecer una categoría en una región (una partida del Clásico tiene 13 rondas) */
 const MIN_POOL = 13;
+
+// ── Catálogos grandes (banderas, lugares, monumentos y packs Pro, ~60 KB comprimidos): fuera de la carga inicial ──
+interface HeavyCatalogs { FLAG_ITEMS: City[]; FEATURE_ITEMS: City[]; LANDMARK_ITEMS: City[]; PRO_PACK_CITIES: City[]; PRO_PACK_DIVISIONS: City[] }
+const NO_CATALOGS: HeavyCatalogs = { FLAG_ITEMS: [], FEATURE_ITEMS: [], LANDMARK_ITEMS: [], PRO_PACK_CITIES: [], PRO_PACK_DIVISIONS: [] };
+let heavy: HeavyCatalogs | null = null;
+let heavyLoading: Promise<void> | null = null;
+const heavyListeners = new Set<() => void>();
+const data = (): HeavyCatalogs => heavy ?? NO_CATALOGS;
+
 /**
- * Categorías de una región: en los packs, divisiones (departamentos, estados, provincias…) en vez de banderas; en los
- * packs Pro solo las que tienen al menos 13 ítems (p. ej. el Caribe no tiene 13 monumentos en el catálogo).
+ * Descarga los catálogos grandes. Se piden con el primer toque (main.tsx), junto con las pantallas que los usan
+ * (Index: withCatalogs) o cuando se busca un ítem que todavía no está (catalogItem). Antes de llegar, las listas de
+ * banderas, lugares, monumentos y packs Pro están vacías.
  */
+export function loadCatalogs(): Promise<void> {
+  if (heavy) return Promise.resolve();
+  heavyLoading ??= import('@/data/heavyCatalogs')
+    .then((m) => {
+      heavy = m;
+      catalogIndex = null; // se rehace con todo
+      heavyListeners.forEach((fn) => fn());
+    })
+    .catch((e) => { heavyLoading = null; throw e; });
+  return heavyLoading;
+}
+export const catalogsLoaded = (): boolean => heavy !== null;
+/** Avisa cuando terminan de llegar los catálogos (para volver a pintar); devuelve cómo dejar de escuchar */
+export function onCatalogsLoaded(fn: () => void): () => void {
+  heavyListeners.add(fn);
+  return () => { heavyListeners.delete(fn); };
+}
+
+/**
+ * Categorías de cada pack Pro: las que tienen al menos 13 ítems (p. ej. Andes no tiene 13 monumentos en el catálogo).
+ * Van fijas para no descargar los catálogos al dibujar el Inicio; src/test/proPacks.test.ts comprueba que coinciden
+ * con los catálogos (proPackCategoriesFromCatalogs).
+ */
+const PRO_PACK_CATEGORIES: Record<string, Category[]> = {
+  andes: ['cities', 'divisions', 'features'],
+  conosur: ['cities', 'divisions', 'features'],
+  mexcam: ['cities', 'divisions', 'features', 'monuments'],
+  caribe: ['cities', 'divisions', 'features', 'monuments'],
+};
+/** Categorías de una región: en los packs, divisiones (departamentos, estados, provincias…) en vez de banderas */
 export function categoriesForMode(mode: GameMode | string): Category[] {
   if (!isPackMode(mode)) return ['cities', 'flags', 'features', 'monuments'];
-  const all: Category[] = ['cities', 'divisions', 'features', 'monuments'];
-  if (!isProPack(mode)) return all;
-  return all.filter((c) => poolForCategory(c, mode as GameMode).length >= MIN_POOL);
+  if (!isProPack(mode)) return ['cities', 'divisions', 'features', 'monuments'];
+  return PRO_PACK_CATEGORIES[mode] ?? ['cities', 'divisions'];
+}
+/** Las categorías de un pack Pro calculadas con los catálogos cargados (para la prueba de PRO_PACK_CATEGORIES) */
+export function proPackCategoriesFromCatalogs(mode: GameMode): Category[] {
+  return (['cities', 'divisions', 'features', 'monuments'] as Category[]).filter((c) => poolForCategory(c, mode).length >= MIN_POOL);
 }
 /** La categoría elegida, válida para la región (banderas ↔ departamentos son la misma idea a otra escala) */
 export function categoryForMode(category: Category, mode: GameMode | string): Category {
@@ -123,7 +162,7 @@ function byMode(items: City[], mode: GameMode): City[] {
 }
 
 /** Ciudades de una región (en los packs Pro vienen de proPackCatalog.ts) */
-const packCities = (mode: GameMode): City[] => (isProPack(mode) ? PRO_PACK_CITIES.filter((c) => c.region === mode) : getCitiesByMode(mode));
+const packCities = (mode: GameMode): City[] => (isProPack(mode) ? data().PRO_PACK_CITIES.filter((c) => c.region === mode) : getCitiesByMode(mode));
 
 /** Todos los ítems de una categoría en una región (para elegir y para saber si alcanza para una partida) */
 function poolForCategory(cat: Category, mode: GameMode): City[] {
@@ -144,14 +183,14 @@ export function catalogPool(cat: Category, mode: GameMode): City[] {
 }
 
 /** Banderas de una región (world = todas, incluida Oceanía) */
-export const flagsByMode = (mode: GameMode): City[] => FLAG_ITEMS.filter((f) => mode === 'world' || f.region === mode);
+export const flagsByMode = (mode: GameMode): City[] => data().FLAG_ITEMS.filter((f) => mode === 'world' || f.region === mode);
 /** Lugares geográficos de una región (world = todos los que no son exclusivos de un pack) */
-export const featuresByMode = (mode: GameMode): City[] => byMode(FEATURE_ITEMS, mode);
+export const featuresByMode = (mode: GameMode): City[] => byMode(data().FEATURE_ITEMS, mode);
 /** Monumentos de una región */
-export const landmarksByMode = (mode: GameMode): City[] => byMode(LANDMARK_ITEMS, mode);
+export const landmarksByMode = (mode: GameMode): City[] => byMode(data().LANDMARK_ITEMS, mode);
 /** Divisiones (departamentos) de un pack */
 export const divisionsByMode = (mode: GameMode): City[] =>
-  mode === 'colombia' ? COLOMBIA_DIVISIONS : isProPack(mode) ? PRO_PACK_DIVISIONS.filter((d) => d.region === mode) : [];
+  mode === 'colombia' ? COLOMBIA_DIVISIONS : isProPack(mode) ? data().PRO_PACK_DIVISIONS.filter((d) => d.region === mode) : [];
 
 export function getRandomFlags(difficulty: Difficulty, count: number, mode: GameMode = 'world', seed?: number): City[] {
   return pickFromPool(flagsByMode(mode), difficulty, count, seed);
@@ -188,9 +227,13 @@ export function catalogItem(id: string | null | undefined): City | undefined {
   if (!id) return undefined;
   if (!catalogIndex) {
     catalogIndex = new Map();
-    for (const list of [FLAG_ITEMS, FEATURE_ITEMS, LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS, PRO_PACK_CITIES, PRO_PACK_DIVISIONS, CONQUEST_CITIES]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
+    const d = data();
+    for (const list of [d.FLAG_ITEMS, d.FEATURE_ITEMS, d.LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS, d.PRO_PACK_CITIES, d.PRO_PACK_DIVISIONS, CONQUEST_CITIES]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
   }
-  return catalogIndex.get(id);
+  const it = catalogIndex.get(id);
+  // Todavía sin los catálogos grandes: se piden (quien escucha onCatalogsLoaded vuelve a pintar con el ítem)
+  if (!it && !heavy) loadCatalogs().catch(() => {});
+  return it;
 }
 
 /**

@@ -1,9 +1,9 @@
 /** Pack Colombia (Fase 7a): catálogo, categorías por región, selección, escala y textos. */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
 import packShapesJson from '@/data/packShapes.json';
 import { getMapBounds, getCitiesByMode, isPackMode, type City } from '@/data/cities';
-import { getRandomItems, categoriesForMode, categoryForMode, featuresByMode, landmarksByMode, itemTitle, itemSubtitle, kindFromPlaceId, catalogItem } from '@/lib/catalog';
+import { loadCatalogs, getRandomItems, categoriesForMode, categoryForMode, featuresByMode, landmarksByMode, itemTitle, itemSubtitle, kindFromPlaceId, catalogItem } from '@/lib/catalog';
 import { __setPackShapes, featureDistance, type FeatureShapes } from '@/lib/featureScoring';
 import { scaleForMode, closeness } from '@/lib/scoring';
 import { itemHint } from '@/lib/cityHints';
@@ -15,6 +15,9 @@ const inBounds = (c: City) => {
   const b = getMapBounds('colombia');
   return c.lat >= b.latMin && c.lat <= b.latMax && c.lon >= b.lonMin && c.lon <= b.lonMax;
 };
+
+// Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
+beforeAll(() => loadCatalogs());
 
 describe('catálogo del pack Colombia', () => {
   it('municipios y departamentos con ids únicos, dentro del mapa del pack y con los cuatro niveles', () => {

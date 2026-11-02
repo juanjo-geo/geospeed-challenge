@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, startTransition, type ReactNode, type ErrorInfo } from 'react';
-import { categoryOf, type Category } from '@/lib/catalog';
+import { categoryOf, loadCatalogs, type Category } from '@/lib/catalog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { addGameHistory, getGameHistory } from '@/lib/gameUtils';
@@ -104,41 +104,44 @@ function lazyWithReload<T extends { default: React.ComponentType<any> }>(factory
     }
   });
 }
-const GameScreen = lazyWithReload(() => import('@/components/game/GameScreen'));
+// Pantallas que buscan ítems de los catálogos grandes (banderas, lugares, monumentos, packs Pro): bajan su código y los
+// catálogos a la vez, así nunca se pintan con los catálogos a medio llegar (src/lib/catalog.ts, loadCatalogs)
+const withCatalogs = <T,>(factory: () => Promise<T>) => () => Promise.all([factory(), loadCatalogs()]).then(([m]) => m);
+const GameScreen = lazyWithReload(withCatalogs(() => import('@/components/game/GameScreen')));
 const ProfileScreen = lazyWithReload(() => import('@/components/game/ProfileScreen'));
 const FinalResultScreen = lazyWithReload(() => import('@/components/game/FinalResultScreen'));
-const FriendsScreen = lazyWithReload(() => import('@/components/game/FriendsScreen'));
-const ChallengeScreen = lazyWithReload(() => import('@/components/game/ChallengeScreen'));
-const MyChallengesScreen = lazyWithReload(() => import('@/components/game/MyChallengesScreen'));
-const HistoryScreen = lazyWithReload(() => import('@/components/game/HistoryScreen'));
+const FriendsScreen = lazyWithReload(withCatalogs(() => import('@/components/game/FriendsScreen')));
+const ChallengeScreen = lazyWithReload(withCatalogs(() => import('@/components/game/ChallengeScreen')));
+const MyChallengesScreen = lazyWithReload(withCatalogs(() => import('@/components/game/MyChallengesScreen')));
+const HistoryScreen = lazyWithReload(withCatalogs(() => import('@/components/game/HistoryScreen')));
 const RankingScreen = lazyWithReload(() => import('@/components/game/RankingScreen'));
-const TimeAttackScreen = lazyWithReload(() => import('@/components/game/TimeAttackScreen'));
-const WorldChallengeScreen = lazyWithReload(() => import('@/components/game/WorldChallengeScreen'));
+const TimeAttackScreen = lazyWithReload(withCatalogs(() => import('@/components/game/TimeAttackScreen')));
+const WorldChallengeScreen = lazyWithReload(withCatalogs(() => import('@/components/game/WorldChallengeScreen')));
 const TutorialOverlay = lazyWithReload(() => import('@/components/game/TutorialOverlay'));
 const StoreScreen = lazyWithReload(() => import('@/components/game/StoreScreen'));
 const BattlePassScreen = lazyWithReload(() => import('@/components/game/BattlePassScreen'));
 const SettingsScreen = lazyWithReload(() => import('@/components/game/SettingsScreen'));
 const StreakScreen = lazyWithReload(() => import('@/components/game/StreakScreen'));
-const TrainingSetupScreen = lazyWithReload(() => import('@/components/game/TrainingSetupScreen'));
+const TrainingSetupScreen = lazyWithReload(withCatalogs(() => import('@/components/game/TrainingSetupScreen')));
 const TrainingRepeatScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingRepeatScreen })));
 const TrainingResultScreen = lazyWithReload(() => import('@/components/game/TrainingFlowScreens').then(m => ({ default: m.TrainingResultScreen })));
-const MemoryScreen = lazyWithReload(() => import('@/components/game/MemoryScreen'));
-const MyQuizzesScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.MyQuizzesScreen })));
-const QuizEditorScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizEditorScreen })));
-const QuizIntroScreen = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizIntroScreen })));
+const MemoryScreen = lazyWithReload(withCatalogs(() => import('@/components/game/MemoryScreen')));
+const MyQuizzesScreen = lazyWithReload(withCatalogs(() => import('@/components/game/QuizScreens').then(m => ({ default: m.MyQuizzesScreen }))));
+const QuizEditorScreen = lazyWithReload(withCatalogs(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizEditorScreen }))));
+const QuizIntroScreen = lazyWithReload(withCatalogs(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizIntroScreen }))));
 const QuizResultPanel = lazyWithReload(() => import('@/components/game/QuizScreens').then(m => ({ default: m.QuizResultPanel })));
 const DownloadsScreen = lazyWithReload(() => import('@/components/game/DownloadsScreen'));
 import { noteRoomsBetaParam } from '@/lib/roomsBeta';
 import { noteConquestBetaParam } from '@/lib/conquestBeta';
-const RoomCreateScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomCreateScreen })));
-const RoomJoinScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomJoinScreen })));
-const RoomScreen = lazyWithReload(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomScreen })));
+const RoomCreateScreen = lazyWithReload(withCatalogs(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomCreateScreen }))));
+const RoomJoinScreen = lazyWithReload(withCatalogs(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomJoinScreen }))));
+const RoomScreen = lazyWithReload(withCatalogs(() => import('@/components/game/RoomScreens').then(m => ({ default: m.RoomScreen }))));
 const ConquestHomeScreen = lazyWithReload(() => import('@/components/game/ConquestScreens').then(m => ({ default: m.ConquestHomeScreen })));
 const ConquestInviteScreen = lazyWithReload(() => import('@/components/game/ConquestScreens').then(m => ({ default: m.ConquestInviteScreen })));
 const ConquestLobbyScreen = lazyWithReload(() => import('@/components/game/ConquestScreens').then(m => ({ default: m.ConquestLobbyScreen })));
-const ConquestBoardScreen = lazyWithReload(() => import('@/components/game/ConquestBoard').then(m => ({ default: m.ConquestBoardScreen })));
-const ConquestPractice = lazyWithReload(() => import('@/components/game/ConquestGame'));
-const ConquestMission = lazyWithReload(() => import('@/components/game/ConquestGame').then(m => ({ default: m.ConquestMission })));
+const ConquestBoardScreen = lazyWithReload(withCatalogs(() => import('@/components/game/ConquestBoard').then(m => ({ default: m.ConquestBoardScreen }))));
+const ConquestPractice = lazyWithReload(withCatalogs(() => import('@/components/game/ConquestGame')));
+const ConquestMission = lazyWithReload(withCatalogs(() => import('@/components/game/ConquestGame').then(m => ({ default: m.ConquestMission }))));
 const MedalsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.MedalsScreen })));
 const AchievementsScreen = lazyWithReload(() => import('@/components/game/ProgressionScreens').then(m => ({ default: m.AchievementsScreen })));
 const SprintScreen = lazyWithReload(() => import('@/components/game/SprintScreen'));
@@ -1091,8 +1094,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleTrainingCfg = useCallback((cfg: TrainingCfg) => { setTrainingCfg(cfg); saveTrainingCfg(cfg); }, []);
   const handleTrainingGo = useCallback((cfg: TrainingCfg) => startTrainingRun('training', trainingCities(cfg), cfg), [startTrainingRun]);
   // Repaso del día: lo que toca hoy (máximo 10), sin reloj ni vidas
-  const handleStartReview = useCallback(() => {
+  const handleStartReview = useCallback(async () => {
+    // Las banderas, lugares y monumentos del repaso salen de los catálogos grandes (normalmente ya cargados)
+    await loadCatalogs().catch(() => {});
     const cities = shuffled(reviewCities(getCachedMemory()));
+    if (!cities.length) return;
     startTrainingRun('review', cities, { mode: 'world', difficulty: 'basic', size: cities.length, clock: false, category: categoryOf(cities) });
   }, [startTrainingRun]);
   const handleOpenMemory = useCallback(() => { setPhase('memory'); scrollAppToTop(); }, []);

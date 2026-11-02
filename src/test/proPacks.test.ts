@@ -1,10 +1,10 @@
 /** Packs Pro (Fase 7b): catálogo, categorías ofrecidas, selección, escala, pistas y la partida de prueba diaria. */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, beforeAll } from 'vitest';
 import { PRO_PACK_CITIES, PRO_PACK_DIVISIONS } from '@/data/proPackCatalog';
 import { PRO_PACK_META } from '@/data/proPackMeta';
 import proShapesJson from '@/data/proPackShapes.json';
 import { getMapBounds, isPackMode, type City, type GameMode } from '@/data/cities';
-import { getRandomItems, categoriesForMode, featuresByMode, landmarksByMode } from '@/lib/catalog';
+import { loadCatalogs, getRandomItems, categoriesForMode, featuresByMode, landmarksByMode, proPackCategoriesFromCatalogs } from '@/lib/catalog';
 import { scaleForMode } from '@/lib/scoring';
 import { itemHint } from '@/lib/cityHints';
 
@@ -23,6 +23,9 @@ const inBounds = (c: City, mode: GameMode) => {
   const b = getMapBounds(mode);
   return c.lat >= b.latMin && c.lat <= b.latMax && c.lon >= b.lonMin && c.lon <= b.lonMax;
 };
+
+// Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
+beforeAll(() => loadCatalogs());
 
 describe('catálogo de los packs Pro', () => {
   it('cada pack tiene divisiones con contorno y ciudades dentro de su mapa, con los cuatro niveles', () => {
@@ -45,6 +48,8 @@ describe('catálogo de los packs Pro', () => {
   it('solo se ofrecen las categorías con al menos 13 ítems, y siempre ciudades y divisiones', () => {
     for (const p of PACKS) {
       const cats = categoriesForMode(p);
+      // La lista fija (para no cargar los catálogos al dibujar el Inicio) coincide con los catálogos
+      expect(cats, p).toEqual(proPackCategoriesFromCatalogs(p));
       expect(cats.slice(0, 2), p).toEqual(['cities', 'divisions']);
       if (cats.includes('features')) expect(featuresByMode(p).length).toBeGreaterThanOrEqual(13);
       if (cats.includes('monuments')) expect(landmarksByMode(p).length).toBeGreaterThanOrEqual(13);

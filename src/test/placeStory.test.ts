@@ -1,12 +1,15 @@
 /** Reseña del lugar (bloque R1): fotos del carrusel según el tipo de elemento y el país del Mundial. */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import facts from '@/data/placeFacts.json';
-import { catalogItem } from '@/lib/catalog';
+import { loadCatalogs, catalogItem } from '@/lib/catalog';
 import { worldCities } from '@/data/cities';
 import { storySlides, mundialStoryItem } from '@/lib/placeStory';
 import type { PlaceFact } from '@/lib/placeFacts';
 
 const F = facts as unknown as Record<string, PlaceFact>;
+
+// Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
+beforeAll(() => loadCatalogs());
 
 describe('reseña del lugar: carrusel', () => {
   it('una ciudad con foto propia: la ciudad, su país y lugares cercanos, sin repetir y hasta 5', () => {
