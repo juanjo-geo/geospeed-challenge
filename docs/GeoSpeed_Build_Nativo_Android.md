@@ -105,7 +105,10 @@ Antes de cada AAB, yo dejo la carpeta `android/` lista (`npm run build:native` +
 
 1. Abre **Android Studio → Open** → elige la carpeta `C:\Users\Juan Jose\GeospeedCh\android` (la carpeta `android`, no la del proyecto). Espera a que termine "Gradle sync" (barra de abajo; la primera vez puede tardar varios minutos porque descarga dependencias).
 2. **Build → Generate Signed App Bundle or APK… → Android App Bundle → Next**.
-3. **Key store path:** `C:\Users\Juan Jose\geospeed-upload-2026.jks` · **Key alias:** `geospeed` · escribe las dos contraseñas → **Next**.
+3. **Key store path:** `C:\Users\Juan Jose\geospeed-upload-2026-11.jks` · **Key alias:** `geospeed` · escribe las dos contraseñas → **Next**.
+   La llave es la del 2026-11-04 (huella SHA-1 `C1:6B:57:94:7E:1B:D7:BF:ED:70:F5:F5:82:32:A0:4E:63:01:8E:05`). Las de
+   junio (`geospeed-release.jks`) y octubre (`geospeed-upload-2026.jks`) no sirven: se perdieron sus contraseñas y no
+   se subió nada con ellas.
 4. Elige **release** → **Create**.
 5. Al terminar, el aviso "Locate" abre la carpeta: el archivo es `android\app\release\app-release.aab`. Ese es el que se sube a Play.
 
