@@ -105,7 +105,10 @@ Antes de cada AAB, yo dejo la carpeta `android/` lista (`npm run build:native` +
 
 1. Abre **Android Studio → Open** → elige la carpeta `C:\Users\Juan Jose\GeospeedCh\android` (la carpeta `android`, no la del proyecto). Espera a que termine "Gradle sync" (barra de abajo; la primera vez puede tardar varios minutos porque descarga dependencias).
 2. **Build → Generate Signed App Bundle or APK… → Android App Bundle → Next**.
-3. **Key store path:** `C:\Users\Juan Jose\geospeed-upload-2026.jks` · **Key alias:** `geospeed` · escribe las dos contraseñas → **Next**.
+3. **Key store path:** `C:\Users\Juan Jose\geospeed-upload-2026-11.jks` · **Key alias:** `geospeed` · escribe las dos contraseñas → **Next**.
+   La llave es la del 2026-11-04 (huella SHA-1 `C1:6B:57:94:7E:1B:D7:BF:ED:70:F5:F5:82:32:A0:4E:63:01:8E:05`). Las de
+   junio (`geospeed-release.jks`) y octubre (`geospeed-upload-2026.jks`) no sirven: se perdieron sus contraseñas y no
+   se subió nada con ellas.
 4. Elige **release** → **Create**.
 5. Al terminar, el aviso "Locate" abre la carpeta: el archivo es `android\app\release\app-release.aab`. Ese es el que se sube a Play.
 
@@ -143,11 +146,19 @@ En Google Play Console puedes lanzar **por países** (Colombia, México, Chile p
 
 - **Plugin:** `@capacitor-community/admob` 8.2.1, enlazado con Android. `adSystem.ts` usa AdMob dentro de la app: un anuncio con recompensa (+1 vida) en "Sin vidas" y en las ofertas, y uno de pantalla completa entre partidas cada 3 juegos (nunca a jugadores Pro). Los anuncios se precargan; si AdMob todavía no tiene uno listo (pasa en apps nuevas), el botón "Ver video" no aparece.
 - **App ID:** ya está en `android/app/src/main/AndroidManifest.xml`. Sin esa línea el SDK de anuncios cierra la app al abrirla.
-- **Anuncios de prueba:** para un AAB de prueba interna, pídeme que active `VITE_ADMOB_TESTING=true` en `.env` antes de generarlo. Así salen anuncios de prueba de Google y tus toques no cuentan como tráfico inválido (AdMob puede suspender la cuenta por eso). Para el AAB de producción, se quita. Otra opción: AdMob → Configuración → **Dispositivos de prueba** → agrega tu teléfono.
+- **Anuncios de prueba:** el AAB de prueba interna se genera con anuncios de prueba de Google (`VITE_ADMOB_TESTING=true npm run build:native`, sin tocar `.env`). Así tus toques no cuentan como tráfico inválido (AdMob puede suspender la cuenta por eso). Para el AAB de producción se genera con `npm run build:native` a secas. Otra opción: AdMob → Configuración → **Dispositivos de prueba** → agrega tu teléfono.
 - **Consentimiento en Europa:** el SDK pregunta solo en la UE y el Reino Unido, con el mensaje que configures en **AdMob → Privacidad y mensajes → GDPR** (créalo antes de publicar: España está entre los países de Conquista). Para esos usuarios, Ajustes muestra "Privacidad de los anuncios".
 - **app-ads.txt:** ya está publicado en `https://geospeed-challenge.vercel.app/app-ads.txt`. Para que AdMob lo encuentre, la ficha de Play debe tener como **sitio web del desarrollador** `https://geospeed-challenge.vercel.app`.
 - **Declaraciones en Play Console** (Contenido de la app): **Anuncios → Sí, contiene anuncios**. **ID de publicidad → Sí, se usa para publicidad** (el SDK de AdMob agrega el permiso `AD_ID`). En **Seguridad de los datos**, declara los datos que recopila el SDK de anuncios (ID del dispositivo e interacciones con la app, para publicidad).
 - AdMob muestra pocos anuncios hasta que la app esté publicada en Play y vinculada en **AdMob → Apps → Configuración de la app → Tienda de aplicaciones**.
+
+## Recordatorios (permiso de alarmas exactas)
+
+El complemento `@capacitor/local-notifications` declara `SCHEDULE_EXACT_ALARM`. Google Play solo lo admite en apps de
+alarma o calendario y pide una declaración en la consola, así que `AndroidManifest.xml` lo quita
+(`tools:node="remove"`). Sin él, el complemento programa una alarma normal: el recordatorio del diario (7 p. m.) y los
+de Conquista (24 h y 1 h antes del cierre) pueden llegar unos minutos tarde. En la declaración de permisos de Play no
+hay que justificar alarmas exactas.
 
 ## Pagos nativos
 

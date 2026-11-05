@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -43,4 +44,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- El complemento de recordatorios trae el permiso de alarmas exactas. Google Play solo lo admite en apps de alarma o
+         calendario (con declaración en la consola); sin él, los recordatorios del diario y de Conquista llegan con una
+         alarma normal, que puede retrasarse unos minutos. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
 </manifest>
