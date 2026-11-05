@@ -12,6 +12,7 @@ import { useGallery } from '@/lib/placeGallery';
 import { usePlaceStory } from '@/lib/placeStories';
 import { prefersReducedMotion } from '@/lib/prefs';
 import { trackEvent } from '@/lib/analytics';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import Flag from '@/components/ui/Flag';
 import { HudIconButton } from './GameHud';
 
@@ -61,6 +62,8 @@ export default function PlaceStoryModal({ item, source, onClose }: PlaceStoryMod
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const close = useCallback(() => { playButtonTap(); onClose(); }, [onClose]);
+  // "Atrás" del teléfono cierra solo la reseña (la partida o el repaso de debajo siguen)
+  useBackHandler(close, { layer: BACK_LAYER.modal });
   // Esc cierra solo la reseña (la revisión de debajo también escucha Esc y las flechas)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -11,6 +11,7 @@ import type { City, GameMode } from '@/data/cities';
 import { catalogItem, catalogPool, type Category } from '@/lib/catalog';
 import { cityById, getCachedMemory, isReviewable } from '@/lib/itemMemory';
 import { isMockQuizzes, mockQuizzes } from '@/lib/quizzesMock';
+import { publicOrigin } from './assetUrl';
 
 export const QUIZ_MIN = 5;
 export const QUIZ_MAX = 50;
@@ -90,7 +91,7 @@ export function failedItemIds(): string[] {
     .slice(0, QUIZ_MAX);
 }
 
-export const quizLink = (code: string) => `${window.location.origin}/q/${code}`;
+export const quizLink = (code: string) => `${publicOrigin()}/q/${code}`;
 
 // ── Sin conexión (Fase 11): mis quizzes guardados en el teléfono y los creados sin señal, que se suben al volver ──
 const CACHE_KEY = 'geospeed_my_quizzes_cache';

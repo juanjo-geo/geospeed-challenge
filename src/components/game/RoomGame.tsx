@@ -11,6 +11,7 @@ import { formatDistance } from '@/lib/gameUtils';
 import { frameAnswer } from '@/lib/mapFraming';
 import { appNumberLocale } from '@/lib/format';
 import { playBad, playButtonTap, playClick, playCountdown, playGo, playGood, playMedium, playPerfect, playTick, playTimeExpired } from '@/lib/sounds';
+import { useBackHandler } from '@/lib/backNav';
 import { RoomError, answerRoom, roomTimeline, serverNow, type RoomAnswerResult, type RoomState } from '@/lib/rooms';
 import WorldMapCanvas from './WorldMapCanvas';
 import RotateOverlay from './RotateOverlay';
@@ -189,6 +190,7 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
   }, [revealed, tl.round, myAns, isPlayer]);
 
   const confirmExit = () => { playButtonTap(); if (window.confirm(t('room_exitConfirm'))) onExit(); };
+  useBackHandler(confirmExit); // "atrás" del teléfono = la × de salir de la sala (pide confirmación)
   const fmt = (n: number) => n.toLocaleString(appNumberLocale());
   const total = me?.total ?? 0;
 

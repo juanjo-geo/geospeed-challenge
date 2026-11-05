@@ -1,5 +1,6 @@
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import Mascot from './Mascot';
 
 /**
@@ -8,6 +9,7 @@ import Mascot from './Mascot';
  */
 export default function StreakLostModal({ lost, best, onPlay, onClose }: { lost: number; best: number; onPlay: () => void; onClose: () => void }) {
   const { t } = useI18n();
+  useBackHandler(onClose, { layer: BACK_LAYER.modal }); // "atrás" del teléfono = "Ahora no"
   return (
     <div className="modal-layer z-[80] bg-black/60 backdrop-blur-sm animate-fade-in" role="dialog" aria-modal="true" aria-label={t('streak_lostTitle', { n: lost })} onClick={onClose}>
       <div className="modal-panel w-full max-w-sm rounded-3xl border-2 border-accent/40 bg-card p-5 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>

@@ -137,6 +137,8 @@ export default defineConfig(({ mode }) => ({
             // Plugins de la app nativa (AdMob, RevenueCat): se importan de forma diferida y solo dentro
             // de Capacitor; en "vendor" engordaban la carga inicial de la web
             if (id.includes("@capacitor-community/admob") || id.includes("@revenuecat")) return "vendor-native";
+            // Botón atrás, hoja de compartir y archivos de la app nativa (src/lib/backNav.ts, nativeShare.ts)
+            if (id.includes("@capacitor/app") || id.includes("@capacitor/share") || id.includes("@capacitor/filesystem") || id.includes("@capacitor/synapse")) return "vendor-native";
             return "vendor";
           }
           if (id.includes("/src/data/countries.ts")) return "data-countries";

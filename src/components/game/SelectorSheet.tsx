@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { playButtonTap } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 
 export interface SelectorOption<K extends string> {
   key: K;
@@ -57,6 +58,8 @@ export default function SelectorSheet<K extends string>({ title, subtitle, optio
   const [visible, setVisible] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const group = openGroup ? groups?.[openGroup] : undefined;
+  // "Atrás" del teléfono: de una sublista ("Packs de países") vuelve a la lista; si no, cierra la hoja
+  useBackHandler(() => (openGroup ? setOpenGroup(null) : onClose()), { layer: BACK_LAYER.modal });
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true));

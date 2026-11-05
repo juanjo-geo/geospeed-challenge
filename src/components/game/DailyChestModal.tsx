@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useI18n } from '@/i18n';
 import { playButtonTap, playLevelUp } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { fireGoldBurst, fireCelebration } from '@/lib/confetti';
 import type { StreakReward } from '@/lib/dailyStreak';
 
@@ -22,6 +23,7 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
   const { t } = useI18n();
   const [opened, setOpened] = useState(false);
   const chestRef = useRef<HTMLButtonElement>(null);
+  useBackHandler(onClose, { layer: BACK_LAYER.modal }); // "atrás" del teléfono = cerrar (el premio sigue esperando)
 
   const handleOpen = () => {
     if (opened) return;

@@ -12,6 +12,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { captchaEnabled, getCaptchaToken, isCaptchaError } from '@/lib/captcha';
+import { publicOrigin } from './assetUrl';
 
 const ANON_OFF_KEY = 'geospeed_anon_unavailable_until';
 const TRANSFER_KEY = 'geospeed_transfer_ticket';
@@ -70,7 +71,7 @@ export async function linkGuestEmail(email: string, displayName: string): Promis
   if (displayName.trim()) await updateMyProfile({ displayName });
   const { error } = await supabase.auth.updateUser(
     { email, data: { display_name: displayName.trim() } },
-    { emailRedirectTo: `${window.location.origin}/auth?mode=set-password` },
+    { emailRedirectTo: `${publicOrigin()}/auth?mode=set-password` },
   );
   if (!error) return { ok: true };
   const msg = error.message.toLowerCase();

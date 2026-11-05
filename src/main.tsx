@@ -15,6 +15,13 @@ import "./index.css";
 import { afterAppLoad, firstInteraction } from "./lib/idle";
 import { detectLocale, loadLocale } from "./i18n";
 import { loadCatalogs } from "./lib/catalog";
+import { initBackNavigation } from "./lib/backNav";
+import { installNativeShare } from "./lib/nativeShare";
+
+// "Atrás" del teléfono y del navegador (cada pantalla registra el de su botón visible) y, en la app nativa,
+// la hoja de compartir de Android para todos los botones de compartir
+initBackNavigation();
+installNativeShare();
 
 const mount = () => createRoot(document.getElementById("root")!).render(<App />);
 

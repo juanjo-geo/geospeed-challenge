@@ -3,6 +3,7 @@ import { itemTitleAuto, itemSubtitleAuto } from '@/lib/catalog';
 import { type RoundResult } from './GameScreen';
 import { formatDistance } from '@/lib/gameUtils';
 import { playButtonTap } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { useI18n } from '@/i18n';
 import Wordmark from '@/components/ui/Wordmark';
 import Flag from '@/components/ui/Flag';
@@ -50,6 +51,9 @@ export default function CityAnswersScreen({ rounds, isMundial = false, focusInde
     rounds.forEach((r, i) => { if (r.totalPoints > bp) { bp = r.totalPoints; b = i; } });
     return bp > 0 ? b : -1;
   }, [rounds]);
+
+  // "Atrás" del teléfono = "Volver al resultado"
+  useBackHandler(onClose, { layer: BACK_LAYER.overlay });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

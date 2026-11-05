@@ -8,6 +8,7 @@ import { isAnonymousSession, linkGuestEmail, setAccountPassword, prepareTransfer
 import { captchaEnabled, getCaptchaToken, isCaptchaError, prefetchCaptcha } from '@/lib/captcha';
 import { continueWithGoogle, googleSignInAvailable, oauthReturnError, type OAuthReturnError } from '@/lib/oauth';
 import AccountScreen, { AccountField, PrimaryButton, SecondaryButton, GoogleButton, LinkButton, OrDivider, ErrorNotice, InfoNote, GuestIcon } from '@/components/account/AccountScreen';
+import { publicOrigin } from '@/lib/assetUrl';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'set-password';
 type Sent = null | 'confirm' | 'reset' | 'link';
@@ -156,7 +157,7 @@ export default function Auth() {
         password,
         options: {
           data: { display_name: displayName.trim() },
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: publicOrigin(),
           captchaToken,
         },
       });

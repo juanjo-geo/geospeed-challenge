@@ -110,7 +110,7 @@ export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, on
             <button
               disabled={c.locked}
               onClick={() => { if (!c.locked) { playButtonTap(); c.onClick(); } }}
-              className={`relative flex md:flex-col items-center md:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-3xl border-2 bg-card/75 text-left transition-all active:scale-[0.98] hover:brightness-110 ${c.ring} ${c.locked ? 'opacity-55 cursor-not-allowed' : ''}`}
+              className={`relative w-full h-full flex md:flex-col items-center md:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-3xl border-2 bg-card/75 text-left transition-all active:scale-[0.98] hover:brightness-110 ${c.ring} ${c.locked ? 'opacity-55 cursor-not-allowed' : ''}`}
             >
               {/* Ilustración compuesta: emoji grande con otro delante */}
               <span className={`relative w-28 h-24 sm:w-32 sm:h-28 shrink-0 flex items-center justify-center ${c.locked ? 'grayscale' : ''}`} aria-hidden>

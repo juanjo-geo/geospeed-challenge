@@ -16,11 +16,13 @@ import { appNumberLocale } from '@/lib/format';
 import { trackEvent } from '@/lib/analytics';
 import { fireCelebration } from '@/lib/confetti';
 import { playBad, playButtonTap, playClick, playCountdown, playGo, playGood, playMedium, playPerfect, playShareSuccess, playTick, playTimeExpired, playVictory } from '@/lib/sounds';
+import { useBackHandler } from '@/lib/backNav';
 import WorldMapCanvas from './WorldMapCanvas';
 import { HudIconButton } from './GameHud';
 import Mascot from './Mascot';
 import { ConqFace, errCode, useErrText } from './ConquestParts';
 import type { PracticeTarget } from './ConquestBoard';
+import { publicOrigin } from '@/lib/assetUrl';
 
 /**
  * Conquista el mapa — P3 partida y P4 resultado (docs/GeoSpeed_Conquista_Plan.md).
@@ -273,6 +275,7 @@ export default function ConquestPractice({ seasonId, iso, target, musicMuted, on
     if (stage === 'question' || stage === 'answer') { if (!window.confirm(t('cq_exitPracticeConfirm'))) return; }
     onExit();
   };
+  useBackHandler(exit); // "atrás" del teléfono = la × (pide confirmación a mitad de la práctica)
   const targetLabel = target?.kind === 'capture' ? t('cq_toCaptureShort') : target?.kind === 'own' ? t('cq_yourMark') : t('cq_rivalMark');
 
   // ── Cargando / sin ciudades / error ──
@@ -598,6 +601,8 @@ export function ConquestMission({ seasonId, iso: isoProp, attemptId, requestId, 
       onExit();
     }
   };
+  // "Atrás" del teléfono = la × (abandonar pide confirmación; en el resultado vuelve al tablero)
+  useBackHandler(() => void exit());
 
   // Props del mapa memoizados (el lienzo reinicia su animación si cambian de identidad)
   const bounds = useMemo(() => countryBounds(iso || 'CO', 0.06), [iso]);
@@ -722,7 +727,7 @@ function MissionResult({ attempt, seasonId, net, onBoard }: { attempt: ConqAttem
   const shareText = t('cq_shareWin', { country, total: fmtN(total) });
   const share = async () => {
     playButtonTap();
-    const url = typeof window !== 'undefined' ? window.location.origin : 'https://geospeed-challenge.vercel.app';
+    const url = publicOrigin();
     try {
       if ('share' in navigator) { await navigator.share({ text: shareText, url }); playShareSuccess(); trackEvent('conq_share_result', { method: 'native' }); return; }
     } catch { return; }

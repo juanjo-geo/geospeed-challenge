@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
 import { getPrefs, setPref } from '@/lib/prefs';
 import { playButtonTap } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 
 type HudIcon = 'sound' | 'mute' | 'gear' | 'close' | 'home' | 'back';
 
@@ -39,6 +40,8 @@ export function HudIconButton({ icon, label, onClick, size = 'md' }: { icon: Hud
 export function InGameSettings({ musicMuted, onToggleMusic, onClose }: { musicMuted?: boolean; onToggleMusic?: () => void; onClose: () => void }) {
   const { t } = useI18n();
   const [prefs, setPrefsState] = useState(getPrefs());
+  // "Atrás" del teléfono cierra estos ajustes y la ronda sigue (no sale de la partida)
+  useBackHandler(onClose, { layer: BACK_LAYER.modal });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };

@@ -5,6 +5,7 @@ import TrainingTip from './TrainingTip';
 import { City, getProgressiveCities, getMapBounds, isPackMode, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import { correctPinLabel, getRandomItems, isFlag, isFeature, isMonument, isSpecial, usesShapeFile, itemTitle, itemSubtitle, itemFlagUrl, itemPhotoUrl, featureTypeEmoji, featureTypeLabel, type Category } from '@/lib/catalog';
 import { preloadLandmarkPhoto } from '@/lib/landmarkPhotos';
+import { useBackHandler } from '@/lib/backNav';
 import { countryDistance } from '@/lib/flagScoring';
 import { featureDistance } from '@/lib/featureScoring';
 import { useFeatureShapes, usePackShapes } from '@/hooks/useFeatureShapes';
@@ -529,6 +530,9 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
   };
 
   useEffect(() => { setMascotState('idle'); }, [currentRound]);
+
+  // "Atrás" del teléfono = la × de salir (pide confirmación). Los ajustes y la reseña abiertos encima cierran primero.
+  useBackHandler(onExit ? () => { if (window.confirm(exitConfirm ?? t('game_exitConfirm'))) onExit(); } : null);
 
   if (!currentCity) return null;
 

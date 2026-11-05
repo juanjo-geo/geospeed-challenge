@@ -3,6 +3,7 @@ import { getEnergy, formatRegenTime } from '@/lib/energySystem';
 import { showRewardedAd, isAdAvailable } from '@/lib/adSystem';
 import { rewardAdWatched, isPro, STORE_PRODUCTS } from '@/lib/premiumSystem';
 import { useI18n } from '@/i18n';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import Mascot from './Mascot';
 
 interface NoLivesModalProps {
@@ -18,6 +19,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
   const userIsPro = isPro();
   const mountedAt = useState(() => Date.now())[0];
   const MIN_VISIBLE_MS = 3000; // Show at least 3 seconds
+  useBackHandler(onClose, { layer: BACK_LAYER.modal }); // "atrás" del teléfono = "Esperar"
 
   useEffect(() => {
     const interval = setInterval(() => {

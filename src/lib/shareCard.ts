@@ -3,6 +3,7 @@ import { MODE_CONFIG, getMapBounds } from '@/data/cities';
 import { countries } from '@/data/countries';
 import { getPlayerLevel } from './levelSystem';
 import { appNumberLocale } from '@/lib/format';
+import { SHARE_ORIGIN } from './dailyShare';
 
 interface RoundData {
   clickLat: number;
@@ -318,27 +319,39 @@ export async function generateShareCard(data: ShareCardData): Promise<Blob> {
   ctx.lineTo(W - 40, H - 40);
   ctx.stroke();
 
-  // Footer
+  // Footer (la dirección real del juego; antes decía "geospeed.app", que no es nuestra)
   ctx.fillStyle = '#64748b';
   ctx.font = '10px system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('¿Puedes superarlo? 🌍 geospeed.app', W / 2, H - 20);
+  ctx.fillText(`${shareIsEnglish() ? 'Can you beat it?' : '¿Puedes superarlo?'} 🌍 ${SHARE_ORIGIN.replace(/^https:\/\//, '')}`, W / 2, H - 20);
 
   return new Promise<Blob>((resolve) => {
     canvas.toBlob((blob) => resolve(blob!), 'image/png');
   });
 }
 
+/** El juego está en inglés (los textos compartidos siguen el idioma del juego, no el del teléfono) */
+export const shareIsEnglish = (): boolean =>
+  typeof document !== 'undefined' && (document.documentElement.lang || '').toLowerCase().startsWith('en');
+
+/** Texto que acompaña la imagen o el video del resultado, con el enlace para que el amigo pueda jugar */
+export function shareScoreText(score: number): string {
+  const pts = score.toLocaleString(appNumberLocale());
+  return shareIsEnglish()
+    ? `I scored ${pts} points in GeoSpeed. Can you beat it? 🌍 ${SHARE_ORIGIN}`
+    : `Hice ${pts} puntos en GeoSpeed. ¿Puedes superarlo? 🌍 ${SHARE_ORIGIN}`;
+}
+
 export async function shareResult(data: ShareCardData) {
   const blob = await generateShareCard(data);
   const file = new File([blob], `geospeed-${data.score}-pts.png`, { type: 'image/png' });
 
-  // Try Web Share API first
+  // Try Web Share API first (en la app nativa lo da src/lib/nativeShare.ts con la hoja de compartir de Android)
   if (navigator.share && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({
         title: `📍 GeoSpeed — ${data.score.toLocaleString(appNumberLocale())} pts`,
-        text: `Hice ${data.score.toLocaleString(appNumberLocale())} puntos en GeoSpeed. ¿Puedes superarlo? 🌍`,
+        text: shareScoreText(data.score),
         files: [file],
       });
       return;

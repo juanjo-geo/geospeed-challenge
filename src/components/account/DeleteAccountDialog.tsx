@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { deleteMyAccount } from '@/lib/accountDeletion';
 
 /**
@@ -20,6 +21,8 @@ export default function DeleteAccountDialog({ guest: guestProp = false, onClose 
   const [stage, setStage] = useState<'confirm' | 'working' | 'done' | 'error'>('confirm');
   const word = t('del_confirmWord');
   const ready = typed.trim().toUpperCase() === word.toUpperCase();
+  // "Atrás" del teléfono = "Cancelar"; mientras se borra (o ya se borró) no hace nada
+  useBackHandler(stage === 'working' || stage === 'done' ? () => {} : onClose, { layer: BACK_LAYER.modal });
 
   const run = async () => {
     if (!ready || stage === 'working') return;

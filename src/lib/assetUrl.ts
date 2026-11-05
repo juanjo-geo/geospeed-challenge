@@ -14,3 +14,11 @@ export function isNativeApp(): boolean {
 
 /** Ruta de una foto (/countries/…, /cities/…, /landmarks/…): en la app nativa, la del sitio publicado */
 export const photoUrl = (path: string): string => (isNativeApp() ? `${REMOTE_ORIGIN}${path}` : path);
+
+/**
+ * Origen de los enlaces que salen del juego (retos, salas, quizzes, Conquista, invitaciones, correos de la cuenta).
+ * Dentro de la app nativa la página vive en https://localhost, que en el teléfono de otra persona no abre nada: allí
+ * se usa el sitio publicado. En la web, el origen actual (así las pruebas locales siguen abriendo la copia local).
+ */
+export const publicOrigin = (): string =>
+  typeof window === 'undefined' || isNativeApp() ? REMOTE_ORIGIN : window.location.origin;

@@ -16,6 +16,7 @@ import { ChevronIcon } from '@/components/ui/icons';
 import Mascot from './Mascot';
 import SelectorSheet from './SelectorSheet';
 import DeleteAccountDialog from '@/components/account/DeleteAccountDialog';
+import { useBackHandler } from '@/lib/backNav';
 const SplashGlobe = lazy(() => import('./SplashGlobe'));
 
 interface SettingsScreenProps {
@@ -49,6 +50,8 @@ export default function SettingsScreen({ onBack, onHowToPlay, onDownloads }: Set
   const [deleteOpen, setDeleteOpen] = useState(false);
   const canVibrate = typeof navigator !== 'undefined' && 'vibrate' in navigator;
   const closeLang = useCallback(() => setLangOpen(false), []);
+  // "Atrás" del teléfono = la flecha de la cabecera (la hoja de idioma y el borrado de cuenta registran el suyo)
+  useBackHandler(onBack);
 
   useEffect(() => subscribePrefs(setPrefs), []);
 

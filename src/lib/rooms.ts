@@ -17,6 +17,7 @@ import type { Difficulty, GameMode } from '@/data/cities';
 import { haversineDistance } from '@/lib/gameUtils';
 import { closeness, scaleForMode, scoreRound, difficultyHundredths } from '@/lib/scoring';
 import { roomsBetaOn } from '@/lib/roomsBeta';
+import { publicOrigin } from './assetUrl';
 
 // ── Tipos (lo que devuelve room_state) ──────────────────────────────────────────────────────────────────
 export type RoomPhase = 'lobby' | 'countdown' | 'question' | 'reveal' | 'finished' | 'cancelled';
@@ -47,7 +48,7 @@ export const ROOM_NAME_MIN = 2;
 export const ROOM_NAME_MAX = 20;
 export const isRoomPin = (s: string) => /^[1-9]\d{5}$/.test(s);
 export const normalizePin = (raw: string) => raw.replace(/\D/g, '').slice(0, 6);
-export const roomLink = (pin: string) => `${typeof window !== 'undefined' ? window.location.origin : 'https://geospeed-challenge.vercel.app'}/sala/${pin}`;
+export const roomLink = (pin: string) => `${publicOrigin()}/sala/${pin}`;
 export const roomTvLink = (pin: string) => `${roomLink(pin)}/tv`;
 
 export type RoomErrorCode =

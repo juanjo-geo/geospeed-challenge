@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 
 const TUTORIAL_KEY = 'geospeed_tutorial_seen';
 
@@ -30,6 +31,8 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
     setVisible(false);
     onComplete();
   };
+  // "Atrás" del teléfono = tocar la pantalla (sigue a la cuenta regresiva, donde "atrás" cancela y devuelve la vida)
+  useBackHandler(dismiss, { layer: BACK_LAYER.overlay, active: visible });
 
   if (!visible) return null;
 

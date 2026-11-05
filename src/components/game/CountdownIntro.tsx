@@ -1,4 +1,5 @@
 import { useI18n } from '@/i18n';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import Wordmark from '@/components/ui/Wordmark';
 import GlowWaves from '@/components/ui/GlowWaves';
 import Mascot from './Mascot';
@@ -29,6 +30,8 @@ const TICKS = [-45, 45, 135, 225];
  */
 export default function CountdownIntro({ count, label, ruleHint, onCancel, running = true }: CountdownIntroProps) {
   const { t } = useI18n();
+  // "Atrás" del teléfono = "Cancelar" (capa de superposición: la pantalla de la partida debajo registra la suya)
+  useBackHandler(onCancel, { layer: BACK_LAYER.overlay });
   const isGo = count <= 0;
   // "Clásico · Mundo · Turista": la región (parte central) va en amarillo
   const labelParts = label ? label.split(' · ') : [];
