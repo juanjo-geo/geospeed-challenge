@@ -4,6 +4,7 @@ import Mascot, { type MascotState } from '@/components/game/Mascot';
 import { HudIconButton } from '@/components/game/GameHud';
 import { ArrowRightIcon } from '@/components/ui/icons';
 import { playButtonTap } from '@/lib/sounds';
+import { useBackHandler } from '@/lib/backNav';
 // Globo y mapa dibujan los polígonos de países: carga diferida (la página de cuenta ya es lazy)
 const SplashGlobe = lazy(() => import('@/components/game/SplashGlobe'));
 const WorldBackdrop = lazy(() => import('@/components/game/WorldBackdrop'));
@@ -38,6 +39,7 @@ interface AccountScreenProps {
  * objeto de cada paso dibujado al lado.
  */
 export default function AccountScreen({ art, onBack, backLabel = '', title, subtitle, hero, card, cardTitle, children }: AccountScreenProps) {
+  useBackHandler(onBack); // "atrás" del teléfono = la flecha de volver
   const globe = art === 'globe';
   const mobileOnly = cardTitle ? 'lg:hidden' : '';
   // El título cabe en una línea: tamaño según su largo y el ancho de la columna (unidades de contenedor)

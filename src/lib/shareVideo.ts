@@ -15,6 +15,7 @@ import { countries } from '@/data/countries';
 import { getMapBounds } from '@/data/cities';
 import { getPlayerLevel } from './levelSystem';
 import { appNumberLocale } from '@/lib/format';
+import { shareScoreText } from './shareCard';
 // Audio de la grabación: el nodo vive en audioCapture.ts y sounds.ts enruta los efectos hacia él
 import { currentAudioDestination } from './audioCapture';
 
@@ -427,7 +428,7 @@ export async function shareVideo(data: ShareVideoData): Promise<boolean> {
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({
         title: `📍 GeoSpeed — ${data.totalScore.toLocaleString(appNumberLocale())} pts`,
-        text: `Hice ${data.totalScore.toLocaleString(appNumberLocale())} puntos en GeoSpeed. ¿Puedes superarlo? 🌍`,
+        text: shareScoreText(data.totalScore),
         files: [file],
       });
       return true;

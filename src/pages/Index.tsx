@@ -23,6 +23,7 @@ import { OPEN_SETTINGS_EVENT } from '@/components/ui/ScreenHeader';
 import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import AppNav, { type NavTab } from '@/components/game/AppNav';
 import { APP_SCROLL_ID, scrollAppToTop } from '@/lib/appScroll';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import Wordmark from '@/components/ui/Wordmark';
 import { initPrefs } from '@/lib/prefs';
 import { getTranslations, detectLocale, translate } from '@/i18n';
@@ -32,6 +33,7 @@ import HomeScreen from '@/components/game/HomeScreen';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
 import { appNumberLocale } from '@/lib/format';
+import { publicOrigin } from '@/lib/assetUrl';
 
 // ── Error Boundary — catches lazy-load failures and render crashes ──
 class PhaseErrorBoundary extends Component<
@@ -544,24 +546,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     withPackTrial(mode, () => startSelected(diff, mode, category));
   }, [offlineBlocked, blockPackTrial, withPackTrial]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Back gesture / hardware back button → return to home instead of leaving the app.
-  // Works for Android swipe-back and browser back. (Native Capacitor back button also emits popstate.)
-  useEffect(() => {
-    const inGamePhases: Phase[] = [
-      'countdown', 'playing', 'final', 'tutorial',
-      'ta-select', 'ta-playing', 'ta-final', 'daily',
-      'store', 'profile', 'battlepass', 'settings', 'more-modes', 'howto', 'daily-intro',
-    ];
-    if (!inGamePhases.includes(phase)) return;
-    // Push a sentinel entry so the first back press is captured here
-    window.history.pushState({ geospeedGuard: true }, '');
-    const onPop = () => {
-      setPhase('home');
-      scrollAppToTop();
-    };
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, [phase]);
+  // El "atrás" del teléfono y del navegador ya no se maneja aquí: cada pantalla registra el de su botón visible
+  // (src/lib/backNav.ts); los de las pantallas que Index dibuja directamente están junto a renderPhase.
 
   // Detect portrait rotation DURING gameplay → show overlay (game stays mounted)
   // Uses touch detection instead of isMobile so it works on all tablets/phones
@@ -1182,7 +1168,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     const seed = gameSeedRef.current;
     // Clean URL: /challenge/SEED?d=difficulty&m=mode&s=score
     const params = new URLSearchParams({ d: difficulty, m: gameMode, s: String(score) });
-    return `${window.location.origin}/challenge/${seed}?${params.toString()}`;
+    return `${publicOrigin()}/challenge/${seed}?${params.toString()}`;
   }, [difficulty, gameMode]);
 
   const handleShareChallenge = useCallback(async () => {
@@ -1200,7 +1186,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   /** Generate a shareable daily challenge URL */
   const getDailyShareLink = useCallback(() => {
     const today = new Date().toISOString().split('T')[0];
-    return `${window.location.origin}/daily/${today}`;
+    return `${publicOrigin()}/daily/${today}`;
   }, []);
 
   // Parse challenge URL on mount (supports both old ?ch= query params and new /challenge/:seed route)
@@ -1311,6 +1297,22 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const diffLabel = t(`diff_${difficulty}` as any) || difficultyLabelsEs[difficulty];
 
   // --- Render ---
+  // ── Atrás del teléfono / navegador (src/lib/backNav.ts) ──
+  // Pantallas que Index dibuja sin cabecera propia: lo mismo que su botón visible
+  const phaseBack: Partial<Record<Phase, () => void>> = {
+    'ta-select': handleGoHome,
+    'training-repeat': finishTraining,
+    'training-result': handleGoHome,
+    'sprint-search': handleOpenSprint,
+    'sprint-result': handleOpenSprint,
+  };
+  useBackHandler(phaseBack[phase]);
+  // Respaldo: una pantalla del menú que no registre el suyo vuelve al Inicio
+  useBackHandler(handleGoHome, { layer: BACK_LAYER.fallback, active: phase !== 'home' && NAV_PHASES.includes(phase) });
+  // Ventanas de Index: el aviso de notificaciones se cierra como con "Ahora no"; guardando el reto no se sale
+  useBackHandler(handleNotifDismiss, { layer: BACK_LAYER.modal, active: showNotifPrompt });
+  useBackHandler(() => {}, { layer: BACK_LAYER.modal, active: challengeSaving });
+
   const renderPhase = () => {
     if (phase === 'splash') {
       // En transición: React arma el Inicio en pedazos cortos en vez de una tarea larga que congela la pantalla

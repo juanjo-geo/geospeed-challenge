@@ -32,6 +32,7 @@ import WorldMapCanvas from './WorldMapCanvas';
 import CountUp from '@/components/ui/CountUp';
 import CountdownIntro from './CountdownIntro';
 import RotateOverlay from './RotateOverlay';
+import { useBackHandler } from '@/lib/backNav';
 import Mascot, { type MascotState } from './Mascot';
 import RoundFeedbackCard from './RoundFeedbackCard';
 import { HudIconButton, InGameSettings } from './GameHud';
@@ -488,6 +489,15 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   const pinLabels = useMemo(
     () => ({ you: t('game_yourAnswer'), correct: lastRound ? cname(lastRound.city.country) : t('wc_correctCountry') }),
     [t, lastRound, cname],
+  );
+
+  // "Atrás" del teléfono: lo mismo que el botón visible de cada etapa (elegir nivel → Atrás; cuenta regresiva →
+  // Cancelar; jugando → la × de salir con confirmación). En el resultado manda el de FinalResultScreen.
+  useBackHandler(
+    stage === 'select' ? onExit
+      : stage === 'countdown' ? cancelCountdown
+      : stage === 'playing' ? () => { if (window.confirm(t('game_exitConfirm'))) onExit(); }
+      : null,
   );
 
   // ───────────────────────── RENDER ─────────────────────────

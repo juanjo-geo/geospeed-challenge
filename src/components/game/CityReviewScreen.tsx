@@ -6,6 +6,7 @@ import { type MapBounds } from '@/data/cities';
 import { formatDistance } from '@/lib/gameUtils';
 import { itemHint, playerHint, useCityTips } from '@/lib/cityHints';
 import { playAccordion, playButtonTap } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { useI18n } from '@/i18n';
 import WorldMapCanvas from './WorldMapCanvas';
 import PlaceSheet from './PlaceSheet';
@@ -60,6 +61,9 @@ export default function CityReviewScreen({ rounds, index, isMundial = false, onI
   useEffect(() => { setShowCalc(false); }, [index]);
 
   const go = (i: number) => { if (i >= 0 && i < total) { playButtonTap(); onIndexChange(i); } };
+
+  // "Atrás" del teléfono = "Volver al listado" (la reseña abierta encima registra el suyo)
+  useBackHandler(onBackToList, { layer: BACK_LAYER.overlay });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -6,6 +6,7 @@ import { useFeatureShapes, usePackShapes } from '@/hooks/useFeatureShapes';
 import { formatDistance } from '@/lib/gameUtils';
 import { itemHint, useCityTips } from '@/lib/cityHints';
 import { playButtonTap, playShareSuccess, playVictory, playGameOver } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { fireCelebration } from '@/lib/confetti';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/hooks/useAuth';
@@ -307,6 +308,8 @@ function ChallengeCompare({ detail, rows, rivalName, onOpenMap, onBack }: { deta
   const slice = rows.slice(page * perPage, page * perPage + perPage);
   const mine = detail.my_result!, rival = detail.rival_result!;
 
+  useBackHandler(onBack, { layer: BACK_LAYER.overlay }); // "atrás" del teléfono = volver al resultado
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onBack(); else if (e.key === 'ArrowRight') setPage(p => Math.min(pages - 1, p + 1)); else if (e.key === 'ArrowLeft') setPage(p => Math.max(0, p - 1)); };
     window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
@@ -393,6 +396,8 @@ function ChallengeMapReview({ detail, rows, index, rivalName, onIndexChange, onB
   useEffect(() => { setStoryOpen(false); }, [row.city]);
   const mp = row.me?.points ?? 0, rp = row.rv?.points ?? 0;
   const who = mp > rp ? 'me' : rp > mp ? 'rival' : 'tie';
+
+  useBackHandler(onBack, { layer: BACK_LAYER.overlay }); // "atrás" del teléfono = volver a la comparación
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onBack(); else if (e.key === 'ArrowRight' && index < total - 1) onIndexChange(index + 1); else if (e.key === 'ArrowLeft' && index > 0) onIndexChange(index - 1); };

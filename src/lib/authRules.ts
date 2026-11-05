@@ -1,3 +1,4 @@
+import { publicOrigin } from './assetUrl';
 /**
  * Reglas de cuenta (decisión D10 del plan de rediseño).
  * Mínimo 8 caracteres para contraseñas NUEVAS (registro y restablecimiento).
@@ -7,5 +8,5 @@ export const PASSWORD_MIN = 8;
 
 /** URL a la que vuelve el enlace de recuperación. Debe estar en Auth → URL Configuration → Redirect URLs del dashboard. */
 export function resetPasswordRedirectUrl(): string {
-  return `${window.location.origin}/reset-password`;
+  return `${publicOrigin()}/reset-password`;
 }

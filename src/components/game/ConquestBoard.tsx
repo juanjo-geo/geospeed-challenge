@@ -20,6 +20,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
 import WorldMapCanvas from './WorldMapCanvas';
 import { BackHome, Card, ConqFace, CtaButton, ErrorBox, Page, Swatch, errCode, useErrText } from './ConquestParts';
+import { publicOrigin } from '@/lib/assetUrl';
 
 /**
  * Conquista el mapa — fase C4 (docs/GeoSpeed_Conquista_Plan.md): P1 tablero (mapa con el color de cada dueño, leyenda,
@@ -344,7 +345,7 @@ function SeasonPanel({ map, styles, onOpenGroup, onOpenTitles }: { map: ConqMap;
   const share = async () => {
     playButtonTap();
     const text = iWon ? t('cq_shareChampion', { n: meRow?.territories ?? 0 }) : t('cq_shareSeason', { rank: t('cq_rankN', { n: meRow?.rank ?? 0 }), n: meRow?.territories ?? 0 });
-    const url = typeof window !== 'undefined' ? window.location.origin : 'https://geospeed-challenge.vercel.app';
+    const url = publicOrigin();
     try {
       if ('share' in navigator) { await navigator.share({ text, url }); playShareSuccess(); trackEvent('conq_share_season', { method: 'native' }); return; }
     } catch { return; }

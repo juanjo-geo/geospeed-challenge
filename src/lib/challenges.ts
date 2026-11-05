@@ -19,6 +19,7 @@ import { worldCities, placeIdOf, type City, type Difficulty, type GameMode } fro
 import { getRandomItems, kindFromPlaceId, type Category } from '@/lib/catalog';
 import { countryIso } from '@/lib/flags';
 import { ensureGuestSession } from '@/lib/identity';
+import { publicOrigin } from './assetUrl';
 
 export const CHALLENGE_ROUNDS = 13;
 export const CHALLENGE_SECONDS = 15;
@@ -158,7 +159,7 @@ export function challengeCitiesToGame(ch: Pick<Challenge, 'cities' | 'difficulty
 }
 
 export function challengeLink(code: string): string {
-  return `${window.location.origin}/reto/${code}`;
+  return `${publicOrigin()}/reto/${code}`;
 }
 
 // ── RPC ─────────────────────────────────────────────────────────────────────

@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { conquestBetaOn, enableConquestBeta } from '@/lib/conquestBeta';
 import { cityById } from '@/lib/itemMemory';
 import { CONQUEST_COUNTRIES } from '@/data/conquestCatalog';
+import { publicOrigin } from './assetUrl';
 
 // ── Tipos (lo que devuelve el servidor) ──────────────────────────────────────────────────────────────────
 export interface ConqRules {
@@ -113,7 +114,7 @@ export const CONQ_RULES_V1: ConqRules = {
 /** Código de invitación: 6 letras o números, sin espacios ni minúsculas */
 export const normalizeConqCode = (raw: string) => raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
 export const isConqCode = (s: string) => /^[A-Z0-9]{6}$/.test(s);
-export const conquestLink = (code: string) => `${typeof window !== 'undefined' ? window.location.origin : 'https://geospeed-challenge.vercel.app'}/conquista/${code}`;
+export const conquestLink = (code: string) => `${publicOrigin()}/conquista/${code}`;
 export const cleanGroupName = (raw: string) => raw.replace(/\s+/g, ' ').trimStart().slice(0, CONQ_NAME_MAX);
 
 // ── Errores con código estable (se traducen con cq_err_<código>) ─────────────────────────────────────────

@@ -8,6 +8,7 @@
  */
 
 import { addLives } from './energySystem';
+import { publicOrigin } from './assetUrl';
 
 const REF_CODE_KEY = 'geospeed_ref_code';
 const REF_COUNT_KEY = 'geospeed_ref_count';
@@ -37,7 +38,7 @@ export function getReferralCode(): string {
 /** Get the full referral link */
 export function getReferralLink(): string {
   const code = getReferralCode();
-  const base = window.location.origin;
+  const base = publicOrigin();
   return `${base}/?ref=${code}`;
 }
 

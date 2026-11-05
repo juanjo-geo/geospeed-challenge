@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import Wordmark from '@/components/ui/Wordmark';
 import GlowWaves from '@/components/ui/GlowWaves';
 import Mascot from './Mascot';
@@ -11,6 +12,9 @@ const WorldBackdrop = lazy(() => import('./WorldBackdrop'));
  * ondas de luz y "Volver al inicio". Sin detección propia: el padre controla la visibilidad.
  */
 export default function RotateOverlay({ t, beforeCountdown, onBack }: { t: (key: string) => string; beforeCountdown: boolean; onBack: () => void }) {
+  // Antes de la cuenta regresiva, "atrás" del teléfono = "Volver al inicio" (devuelve la vida). En plena partida no se
+  // registra: manda la de la partida, que pide confirmación antes de salir.
+  useBackHandler(beforeCountdown ? onBack : null, { layer: BACK_LAYER.modal });
   return (
     <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center min-h-[100dvh] text-center px-6 overflow-hidden" style={{ background: 'hsl(var(--brand-navy-deep))' }}>
       <div

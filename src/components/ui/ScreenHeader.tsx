@@ -3,6 +3,7 @@ import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import Wordmark from './Wordmark';
 import { HudIconButton } from '@/components/game/GameHud';
+import { useBackHandler } from '@/lib/backNav';
 
 interface ScreenHeaderProps {
   onBack: () => void;
@@ -35,6 +36,8 @@ export function requestOpenSettings() {
  */
 export default function ScreenHeader({ onBack, title, subtitle, right, align = 'center', titleAside, titleClassName = 'text-[2.1rem] sm:text-5xl short:text-2xl', subtitleClassName = 'text-base sm:text-lg short:text-xs', titleNode }: ScreenHeaderProps) {
   const { t } = useI18n();
+  // El "atrás" del teléfono hace lo mismo que esta flecha (src/lib/backNav.ts)
+  useBackHandler(onBack);
   const words = title.split(' ');
   const head = words.slice(0, -1).join(' ');
   const tail = words[words.length - 1];

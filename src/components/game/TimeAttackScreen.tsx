@@ -11,6 +11,7 @@ import { fireStarBurst, fireGoldBurst, fireRedBurst, fireDistanceReveal } from '
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import WorldMapCanvas from './WorldMapCanvas';
 import CountdownIntro from './CountdownIntro';
+import { useBackHandler } from '@/lib/backNav';
 import Mascot, { type MascotState, reactionForDistance } from './Mascot';
 import { useA11y } from '@/contexts/AccessibilityContext';
 import { announce } from './ScreenReaderAnnouncer';
@@ -264,6 +265,9 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
       mapArea.w, mapArea.h, cover, getMapBounds(gameMode),
     );
   }, [cover, lastResult, mapArea.w, mapArea.h, gameMode]);
+
+  // "Atrás" del teléfono: en la cuenta regresiva = Cancelar; jugando = la × de salir (pide confirmación)
+  useBackHandler(onExit ? () => { if (!taStarted) onExit(); else if (window.confirm(t('game_exitConfirm'))) onExit(); } : null);
 
   if (!currentCity) return null;
 

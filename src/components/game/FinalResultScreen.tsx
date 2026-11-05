@@ -9,6 +9,7 @@ import { isPro } from '@/lib/premiumSystem';
 import { playVictory, playLevelUp, playRevengeActivate, playShareSuccess, playButtonTap, playGameOver } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import { shareResult } from '@/lib/shareCard';
+import { useBackHandler } from '@/lib/backNav';
 import { canRecordVideo, shareVideo } from '@/lib/shareVideo';
 import { checkLevelUp, calculateXP } from '@/lib/levelSystem';
 import { fireCelebration } from '@/lib/confetti';
@@ -187,6 +188,9 @@ export default function FinalResultScreen({
     return () => { alive = false; clearTimeout(a); clearTimeout(b); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // "Atrás" del teléfono = "Volver al menú" (el repaso por ciudad y las ofertas abiertas encima cierran primero)
+  useBackHandler(onGoHome);
 
   // Con el repaso abierto, sus propias teclas mandan (Esc vuelve al listado, no al menú)
   useKeyboardShortcuts(useMemo(() => (review ? {} : {

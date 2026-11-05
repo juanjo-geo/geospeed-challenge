@@ -6,6 +6,7 @@ import { REGION_ART, DIFF_ART, DIFF_ORDER, REGION_FLAG } from '@/lib/selectionAr
 import { isProPack } from '@/lib/packAccess';
 import { isPro } from '@/lib/premiumSystem';
 import { playButtonTap, playShareSuccess, playVictory } from '@/lib/sounds';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { fireCelebration } from '@/lib/confetti';
 import { trackEvent } from '@/lib/analytics';
 import {
@@ -255,6 +256,9 @@ export function RoomScreen({ roomId, onExit }: RoomScreenProps) {
   const [id, setId] = useState(roomId);
   useEffect(() => { setId(roomId); }, [roomId]);
   const { state, setState, error, refresh } = useRoomState({ id });
+  // "Atrás" del teléfono en cargando / error / expulsado / cancelada = "Volver al inicio" (la sala de espera, la
+  // partida y el resultado registran el suyo)
+  useBackHandler(onExit, { active: !state || !!state.kicked || state.status === 'cancelled' });
 
   if (!state) {
     return (
@@ -274,6 +278,7 @@ export function RoomScreen({ roomId, onExit }: RoomScreenProps) {
 /** Resultado de la sala: podio, tabla completa y "Otra ronda" (el anfitrión la arma; a los demás los lleva solos) */
 function RoomFinal({ state, onExit, onSwitch }: { state: RoomState; onExit: () => void; onSwitch: (id: string) => void }) {
   const { t } = useI18n();
+  useBackHandler(onExit); // "atrás" del teléfono = "Volver al inicio"
   const errText = useRoomErrorText();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<RoomErrorCode | null>(null);
@@ -400,6 +405,9 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
     if (host && !window.confirm(t('room_cancelConfirm'))) return;
     void (host ? cancelRoom(state.id) : leaveRoom(state.id)).catch(() => {}).finally(onExit);
   };
+  // "Atrás" del teléfono = salir de la sala (el anfitrión confirma que la cancela); con el aviso de expulsar abierto, lo cierra
+  useBackHandler(leave);
+  useBackHandler(() => setKickSlot(null), { layer: BACK_LAYER.modal, active: kickSlot != null });
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center game-bg px-3 pt-4 sm:px-4 sm:pt-6 md:px-6">

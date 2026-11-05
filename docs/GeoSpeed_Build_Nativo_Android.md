@@ -160,6 +160,33 @@ alarma o calendario y pide una declaración en la consola, así que `AndroidMani
 de Conquista (24 h y 1 h antes del cierre) pueden llegar unos minutos tarde. En la declaración de permisos de Play no
 hay que justificar alarmas exactas.
 
+## Atrás, pantalla completa y compartir (versión 2 · 1.0.1, 2026-11-05)
+
+Lo que Felipe encontró en la primera prueba interna:
+- **Botón y gesto de atrás:** con `@capacitor/app` 8.1.2 la app recibe cada "atrás" y hace lo mismo que el botón
+  visible de la pantalla o ventana de arriba (`src/lib/backNav.ts`): cierra la hoja o la ventana, vuelve a la pantalla
+  anterior, en plena partida pregunta "¿Salir de la partida?" y en el Inicio manda la app al fondo como cualquier app
+  de Android (no la cierra).
+- **Pantalla completa:** sin barra de notificaciones (hora, red, llamada en curso) ni barra de navegación, como en los
+  juegos. Deslizando desde el borde se asoman un momento y se vuelven a esconder. Lo hacen `capacitor.config.ts`
+  (`SystemBars.hidden`) y `MainActivity.java` (modo inmersivo, se reaplica al volver a la app o tras un anuncio).
+- **Compartir:** el WebView de Android no trae la función de compartir del navegador, así que ningún botón de compartir
+  hacía nada. `src/lib/nativeShare.ts` abre la hoja de compartir de Android con `@capacitor/share` 8.0.3 (las imágenes
+  y los videos pasan antes por la caché de la app con `@capacitor/filesystem` 8.1.5, sin permisos nuevos). Además, los
+  enlaces que se comparten desde la app (retos, salas, quizzes, Conquista, invitaciones) y los de los correos de la
+  cuenta salían como `https://localhost/...`; ahora usan `https://geospeed-challenge.vercel.app`.
+
+## Subir una versión nueva a la prueba interna
+
+1. Yo dejo `android/` listo (compilación nativa, `npx cap sync android` y el `versionCode` subido).
+2. En Android Studio: **File → Sync Project with Gradle Files** (descarga los complementos nuevos la primera vez).
+3. **Build → Generate Signed App Bundle or APK… → Android App Bundle** con la misma llave (FASE 6) → **release** →
+   **Create**. Sale en `android\app\release\app-release.aab` (reemplaza el anterior).
+4. Play Console → **Prueba interna → Crear una versión nueva** → sube el `.aab` → nombre de la versión (lo propone solo,
+   p. ej. `2 (1.0.1)`) → notas de la versión → **Siguiente → Guardar y publicar**.
+5. Los probadores reciben la actualización por Play Store (a veces tarda unos minutos; si no aparece, que abran otra
+   vez el enlace de la prueba y toquen **Actualizar**).
+
 ## Pagos nativos
 
 Google Play exige que los bienes digitales (Pro, vidas) se vendan con **Google Play Billing**, nunca con Mercado Pago dentro de la app. El código ya usa RevenueCat en nativo; la configuración está en `GeoSpeed_RevenueCat_Setup.md` (incluye el webhook que avisa al servidor).

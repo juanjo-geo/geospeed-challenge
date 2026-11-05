@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { type FrustrationOffer, markOfferShown } from '@/lib/frustrationDetector';
 import { playButtonTap } from '@/lib/sounds';
 import { trackEvent } from '@/lib/analytics';
+import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { useI18n } from '@/i18n';
 
 interface FrustrationOfferModalProps {
@@ -33,6 +34,7 @@ export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: Fr
     setVisible(false);
     setTimeout(onDismiss, 200);
   };
+  useBackHandler(handleDismiss, { layer: BACK_LAYER.modal }); // "atrás" del teléfono = "No, gracias"
 
   const urgencyColors = {
     low: { bg: '', border: 'border-accent/50', cta: 'var(--grad-cta)' },

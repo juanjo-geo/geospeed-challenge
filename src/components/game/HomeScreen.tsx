@@ -33,6 +33,7 @@ import FitText from '@/components/ui/FitText';
 import SprintHomeCard from './SprintHomeCard';
 import { REGION_ART, DIFF_ART, REGION_FLAG, regionGroup, packGroups, REGION_UNLOCK_LEVEL, DIFF_UNLOCK_LEVEL } from '@/lib/selectionArt';
 import { canPlayPack, isPackTrial, isProPack } from '@/lib/packAccess';
+import { publicOrigin } from '@/lib/assetUrl';
 
 interface HomeScreenProps {
   onStartGame: (difficulty: Difficulty, mode: GameMode, category: Category) => void;
@@ -245,7 +246,7 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
   const dateLabel = new Date().toLocaleDateString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short' });
 
   const shareDaily = async () => {
-    const url = `${window.location.origin}/d/${todayDailyNo()}`;
+    const url = `${publicOrigin()}/d/${todayDailyNo()}`;
     const text = t('home_dailyShareText', { date: dateLabel });
     if (navigator.share) {
       try { await navigator.share({ title: 'GeoSpeed Daily', text, url }); } catch { /* cancelado */ }
