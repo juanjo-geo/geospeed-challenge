@@ -28,7 +28,7 @@ const Terms = () => {
           Terminos y Condiciones
         </h1>
         <p className="mb-2 text-sm text-[#d4d4c8]/60">
-          Ultima actualizacion: 18 de mayo de 2026
+          Última actualización: 8 de noviembre de 2026
         </p>
         <p className="mb-8 text-sm text-[#d4d4c8]/60">
           Aplicacion: GeoSpeed Challenge &middot; Desarrollador: JuanJo Grimar
@@ -78,15 +78,15 @@ const Terms = () => {
             paquetes de vidas, y contenido cosmetico (Battle Pass). Los precios se muestran en
             la moneda local del usuario antes de confirmar la compra. Las compras en dispositivos
             moviles se procesan a traves de Apple App Store o Google Play Store segun la
-            plataforma. Las compras en la web se procesan a traves de Stripe. Todas las compras
+            plataforma. Las compras en la web se procesan a través de Mercado Pago. Todas las compras
             son finales, salvo lo dispuesto por las politicas de reembolso de Apple, Google o
             la legislacion aplicable.
           </p>
 
           <SectionTitle>6. Publicidad</SectionTitle>
           <p className="text-[#d4d4c8] leading-relaxed">
-            La version gratuita de la App muestra anuncios proporcionados por Google AdMob
-            (movil) y Google AdSense (web). Los anuncios pueden incluir anuncios intersticiales
+            La versión gratuita de la app de Android muestra anuncios proporcionados por Google
+            AdMob. Los anuncios pueden incluir anuncios intersticiales
             (entre partidas) y anuncios de video recompensados (opcionales, para obtener vidas).
             Puedes eliminar los anuncios adquiriendo GeoSpeed Pro.
           </p>
@@ -178,7 +178,7 @@ const Terms = () => {
               Terms &amp; Conditions
             </h1>
             <p className="mb-2 text-sm text-[#d4d4c8]/60">
-              Last updated: May 18, 2026
+              Last updated: November 8, 2026
             </p>
             <p className="mb-8 text-sm text-[#d4d4c8]/60">
               App: GeoSpeed Challenge &middot; Developer: JuanJo Grimar
@@ -223,14 +223,14 @@ const Terms = () => {
               packs, and cosmetic content (Battle Pass). Prices are displayed in the user's
               local currency before confirming the purchase. Mobile purchases are processed
               through Apple App Store or Google Play Store depending on the platform. Web
-              purchases are processed through Stripe. All purchases are final, except as
+              purchases are processed through Mercado Pago. All purchases are final, except as
               provided by Apple's, Google's refund policies, or applicable law.
             </p>
 
             <SectionTitle>6. Advertising</SectionTitle>
             <p className="text-[#d4d4c8] leading-relaxed">
-              The free version of the App displays ads provided by Google AdMob (mobile) and
-              Google AdSense (web). Ads may include interstitial ads (between games) and
+              The free version of the Android app displays ads provided by Google AdMob. Ads may
+              include interstitial ads (between games) and
               rewarded video ads (optional, to obtain lives). You can remove ads by purchasing
               GeoSpeed Pro.
             </p>
