@@ -73,11 +73,11 @@ const Support = () => {
             />
             <FAQItem
               q="Los anuncios no se cargan o muestran contenido inapropiado"
-              a="Los anuncios son proporcionados por Google AdMob/AdSense. Si ves contenido inapropiado, puedes reportarlo directamente en el anuncio (icono de info/triangulo). Si los anuncios no cargan, verifica tu conexion a internet."
+              a="Los anuncios son proporcionados por Google AdMob. Si ves contenido inapropiado, puedes reportarlo directamente en el anuncio (icono de info/triangulo). Si los anuncios no cargan, verifica tu conexion a internet."
             />
             <FAQItem
               q="No recibi mi compra / suscripcion premium"
-              a="Las compras se procesan a traves de RevenueCat (movil) o Stripe (web). Si pagaste pero no recibes los beneficios: 1) Espera unos minutos y reinicia la app. 2) Verifica que estas usando la misma cuenta. 3) Si el problema persiste, envianos tu recibo de compra a juanjogrimar@gmail.com y lo resolveremos en menos de 24 horas."
+              a="Las compras se procesan con Google Play (app) o Mercado Pago (web). Si pagaste pero no recibes los beneficios: 1) Espera unos minutos y reinicia la app. 2) Verifica que estas usando la misma cuenta. 3) Si el problema persiste, envianos tu recibo de compra a juanjogrimar@gmail.com y lo resolveremos en menos de 24 horas."
             />
             <FAQItem
               q="Como elimino mi cuenta y mis datos?"
@@ -173,11 +173,11 @@ const Support = () => {
               />
               <FAQItem
                 q="Ads aren't loading or show inappropriate content"
-                a="Ads are provided by Google AdMob/AdSense. If you see inappropriate content, you can report it directly on the ad (info/triangle icon). If ads aren't loading, check your internet connection."
+                a="Ads are provided by Google AdMob. If you see inappropriate content, you can report it directly on the ad (info/triangle icon). If ads aren't loading, check your internet connection."
               />
               <FAQItem
                 q="I didn't receive my purchase / premium subscription"
-                a="Purchases are processed through RevenueCat (mobile) or Stripe (web). If you paid but don't see the benefits: 1) Wait a few minutes and restart the app. 2) Verify you're using the same account. 3) If the problem persists, send us your purchase receipt at juanjogrimar@gmail.com and we'll resolve it within 24 hours."
+                a="Purchases are processed through Google Play (app) or Mercado Pago (web). If you paid but don't see the benefits: 1) Wait a few minutes and restart the app. 2) Verify you're using the same account. 3) If the problem persists, send us your purchase receipt at juanjogrimar@gmail.com and we'll resolve it within 24 hours."
               />
               <FAQItem
                 q="How do I delete my account and data?"

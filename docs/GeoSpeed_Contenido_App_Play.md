@@ -1,0 +1,82 @@
+# GeoSpeed Challenge — Respuestas para "Contenido de la app" en Play Console
+
+Lo que se le declara a Google y por qué. Debe coincidir con la política de privacidad (`src/pages/Privacy.tsx`) y con
+lo que la app hace de verdad: **si se agrega un SDK, un proveedor o un dato nuevo, actualizar las dos cosas.**
+
+Base: el manifiesto del AAB 2 (1.0.1), el código y la información de datos que publican Google AdMob y RevenueCat
+(consultada el 2026-11-08).
+
+## 1. Política de privacidad
+
+`https://geospeed-challenge.vercel.app/privacy`
+
+## 2. Acceso a la app
+
+**Algunas funciones están restringidas.** Se juega sin cuenta, pero Sprint y crear una Sala en vivo piden una cuenta
+registrada. Google pide una cuenta de prueba para revisarlas. La crea JuanJo y escribe la contraseña directamente en
+Play Console.
+
+Instrucciones para el revisor (en inglés):
+
+> The game can be played without an account. A registered account is only needed for Sprint and for hosting a Live
+> Room. To sign in: Home → gear icon (Settings) → "I already have an account". Sprint unlocks after 5 games.
+
+## 3. Anuncios
+
+**Sí, mi app contiene anuncios** (Google AdMob).
+
+## 4. Clasificación del contenido
+
+Categoría **Juego**. Correo: el de la cuenta. No hay violencia, contenido sexual, lenguaje ofensivo, drogas ni juegos de
+azar. El cofre diario es gratis y no se compra. Sí hay compras digitales (Pro y vidas).
+
+## 5. Público objetivo
+
+**13 a 15, 16 a 17 y 18 o más.** No incluir menores de 13: con menores aplica la Política de Familias y los anuncios
+personalizados y el ID de publicidad dejarían de estar permitidos para ellos.
+
+## 6. ID de publicidad
+
+**Sí, la app usa un ID de publicidad.** Finalidades: **Publicidad o marketing**, **Estadísticas** y **Prevención de
+fraudes, seguridad y cumplimiento**. El SDK de AdMob agrega el permiso `com.google.android.gms.permission.AD_ID`.
+
+## 7. Seguridad de los datos
+
+- ¿Recopila o comparte datos del usuario? **Sí.**
+- ¿Todos están cifrados en tránsito? **Sí** (HTTPS/TLS).
+- Métodos para crear cuenta: **nombre de usuario y contraseña** (correo y contraseña; "Continuar con Google" aún no
+  está disponible dentro de la app).
+- URL para eliminar la cuenta: `https://geospeed-challenge.vercel.app/eliminar-cuenta`
+- ¿Se pueden pedir borrar datos sin borrar la cuenta? **No.**
+
+| Tipo de dato | Recopilado | Compartido | Efímero | Uso | Finalidades |
+|---|---|---|---|---|---|
+| Ubicación → Ubicación aproximada | Sí | Sí | No | Obligatorio | Funcionalidad de la app · Estadísticas · Publicidad o marketing · Prevención de fraudes |
+| Información personal → Nombre | Sí | No | No | Opcional | Funcionalidad de la app · Administración de la cuenta |
+| Información personal → Dirección de correo | Sí | No | No | Opcional | Administración de la cuenta |
+| Información personal → IDs de usuario | Sí | No | No | Obligatorio | Funcionalidad de la app · Administración de la cuenta · Prevención de fraudes |
+| Información financiera → Historial de compras | Sí | No | No | Obligatorio | Funcionalidad de la app · Estadísticas |
+| Actividad en la app → Interacciones en la app | Sí | Sí | No | Obligatorio | Funcionalidad de la app · Estadísticas · Publicidad o marketing · Prevención de fraudes |
+| Actividad en la app → Otro contenido generado por el usuario | Sí | No | No | Opcional | Funcionalidad de la app |
+| Actividad en la app → Otras acciones | Sí | No | No | Obligatorio | Funcionalidad de la app · Personalización |
+| Información y rendimiento → Diagnóstico | Sí | Sí | No | Obligatorio | Estadísticas · Publicidad o marketing · Prevención de fraudes |
+| Dispositivo u otros IDs | Sí | Sí | No | Obligatorio | Estadísticas · Publicidad o marketing · Prevención de fraudes |
+
+De dónde sale cada uno:
+
+- **Compartidos:** los cuatro marcados son los que Google AdMob indica que recopila y comparte: IP (ubicación
+  aproximada), interacciones, diagnóstico e identificadores del dispositivo.
+- **Ubicación aproximada, además:** el país del perfil y el país aproximado de Google Analytics.
+- **Nombre:** el nombre de jugador. **IDs de usuario:** la sesión de invitado o la cuenta, también usada en RevenueCat.
+- **Historial de compras:** Google Play y RevenueCat. Los datos de la tarjeta nunca llegan a la app.
+- **Otro contenido generado por el usuario:** nombres de quizzes y apodos en salas.
+- **Otras acciones:** partidas, rondas, racha, medallas y lugares por repasar.
+- **Dispositivo u otros IDs, además:** Google Analytics y Cloudflare Turnstile.
+- Supabase, Google Analytics, RevenueCat, Cloudflare y Brevo actúan como proveedores de servicios, así que por sí solos
+  no cuentan como "compartir".
+- **No se recopilan:** ubicación precisa, teléfono, dirección, contactos, fotos, audio, archivos, calendario, salud,
+  mensajes ni historial web.
+
+## 8. Otras declaraciones
+
+Apps de noticias: **No**. Apps gubernamentales: **No**. Funciones financieras: **ninguna**. Salud: **ninguna**.
