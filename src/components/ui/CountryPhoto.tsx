@@ -11,6 +11,8 @@ interface CountryPhotoProps {
   /** Degradado inferior para poner texto encima */
   overlay?: boolean;
   children?: React.ReactNode;
+  /** Avisa si la imagen no cargó (la tarjeta de respuesta acomoda la mascota) */
+  onFail?: () => void;
 }
 
 /**
@@ -20,7 +22,7 @@ interface CountryPhotoProps {
  * "saltaba" de pequeña a grande en el iPhone. Si el archivo falla, el recuadro se cierra.
  * Sin loading="lazy" (en un contenedor oculto Chrome no la cargaba nunca).
  */
-export default function CountryPhoto({ country, src, size = 'lg', className = '', overlay = true, children }: CountryPhotoProps) {
+export default function CountryPhoto({ country, src, size = 'lg', className = '', overlay = true, children, onFail }: CountryPhotoProps) {
   const url = src !== undefined ? src : countryPhotoUrl(country, size);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export default function CountryPhoto({ country, src, size = 'lg', className = ''
         alt=""
         decoding="async"
         onLoad={() => setLoadedUrl(url)}
-        onError={() => { markPhotoMissing(url); setFailedUrl(url); }}
+        onError={() => { markPhotoMissing(url); setFailedUrl(url); onFail?.(); }}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
       {overlay && <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, hsl(var(--brand-navy-deep) / 0) 35%, hsl(var(--brand-navy-deep) / 0.85) 100%)' }} />}

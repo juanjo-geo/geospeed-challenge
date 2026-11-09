@@ -20,6 +20,7 @@ import Wordmark from '@/components/ui/Wordmark';
 import { type RoundResult, getRoundFeedback } from './GameScreen';
 import { appNumberLocale } from '@/lib/format';
 import RoundFeedbackCard from './RoundFeedbackCard';
+import { AudioButtons, HudIconButton } from './GameHud';
 import FitToBox from '@/components/ui/FitToBox';
 import { frameAnswer, feedbackCover } from '@/lib/mapFraming';
 import { preloadPhoto } from '@/lib/cityPhotos';
@@ -53,11 +54,13 @@ interface TimeAttackScreenProps {
   gameMode: GameMode;
   onGameOver: (result: TimeAttackResult) => void;
   onExit?: () => void;
+  /** La partida arrancó (terminó la cuenta regresiva): aquí se cobra la vida */
+  onStarted?: () => void;
   musicMuted?: boolean;
   onToggleMusic?: () => void;
 }
 
-export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onExit, musicMuted, onToggleMusic }: TimeAttackScreenProps) {
+export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onExit, onStarted, musicMuted, onToggleMusic }: TimeAttackScreenProps) {
   const { t, locale } = useI18n();
   // Ficha del lugar (Fase 8): el dato clave en la tarjeta (en Caos la tarjeta sale al instante: hace de franja)
   const placeFacts = usePlaceFacts();
@@ -130,6 +133,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
 
   // Al arrancar de verdad, reinicia el cronómetro de la 1ª ronda (no contar la cuenta regresiva)
   useEffect(() => { if (taStarted) roundStartRef.current = Date.now(); }, [taStarted]);
+  useEffect(() => { if (taStarted) onStarted?.(); }, [taStarted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Global countdown timer — pauses when portrait on mobile / antes de arrancar
   useEffect(() => {
@@ -424,16 +428,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
                 {t('game_whereIsLead')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>?
               </div>
             </div>
-            {onToggleMusic && (
-              <button onClick={onToggleMusic} className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-sm backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={musicMuted ? t('music_on') : t('music_off')}>
-                {musicMuted ? '🔇' : '🔊'}
-              </button>
-            )}
-            {onExit && (
-              <button onClick={confirmExit} className="pointer-events-auto w-8 h-8 shrink-0 rounded-full border border-border/60 flex items-center justify-center text-base backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={t('game_exit')}>
-                ×
-              </button>
-            )}
+            <AudioButtons size="sm" musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
+            {onExit && <HudIconButton size="sm" icon="close" label={t('game_exit')} onClick={confirmExit} />}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] font-bold">
             <span className="hidden min-[560px]:inline rounded-full px-2 py-0.5 border border-destructive/50 backdrop-blur-md whitespace-nowrap" style={pillStyle}>
@@ -464,18 +460,10 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
         <ComboFx level={comboLevelOf(combo)} hit={comboHit} active={!isAnimating} />
 
         {/* Música + salir (con panel lateral) */}
-        {!isCompact && (onExit || onToggleMusic) && (
-          <div className="absolute z-20 flex items-center gap-2" style={{ top: 'max(0.5rem, var(--sat))', right: 'max(0.5rem, var(--sar))' }}>
-            {onToggleMusic && (
-              <button onClick={onToggleMusic} className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center text-base backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={musicMuted ? t('music_on') : t('music_off')}>
-                {musicMuted ? '🔇' : '🔊'}
-              </button>
-            )}
-            {onExit && (
-              <button onClick={confirmExit} className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center text-lg backdrop-blur-md transition-all active:scale-90" style={pillStyle} aria-label={t('game_exit')}>
-                ×
-              </button>
-            )}
+        {!isCompact && (
+          <div className="absolute z-20 flex items-center gap-2.5" style={{ top: 'max(0.75rem, var(--sat))', right: 'max(0.75rem, var(--sar))' }}>
+            <AudioButtons musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
+            {onExit && <HudIconButton icon="close" label={t('game_exit')} onClick={confirmExit} />}
           </div>
         )}
 

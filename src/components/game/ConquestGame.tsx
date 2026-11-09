@@ -18,7 +18,7 @@ import { fireCelebration } from '@/lib/confetti';
 import { playBad, playButtonTap, playClick, playCountdown, playGo, playGood, playMedium, playPerfect, playShareSuccess, playTick, playTimeExpired, playVictory } from '@/lib/sounds';
 import { useBackHandler } from '@/lib/backNav';
 import WorldMapCanvas from './WorldMapCanvas';
-import { HudIconButton } from './GameHud';
+import { AudioButtons, HudIconButton } from './GameHud';
 import Mascot from './Mascot';
 import { ConqFace, errCode, useErrText } from './ConquestParts';
 import type { PracticeTarget } from './ConquestBoard';
@@ -88,7 +88,7 @@ function PlayFrame(p: PlayFrameProps) {
         {p.practice
           ? <span className="shrink-0 rounded-full border border-accent/60 px-2.5 py-0.5 text-[11px] sm:text-xs font-black text-accent">🎯 {t('cq_practiceTag')}</span>
           : p.clock && <span className="shrink-0 rounded-full border border-primary/60 px-2.5 py-0.5 text-[11px] sm:text-xs font-black text-primary tabular-nums" title={t('cq_reservation')}>⚔️ {p.clock}</span>}
-        <HudIconButton icon={p.musicMuted ? 'mute' : 'sound'} label={p.musicMuted ? t('music_on') : t('music_off')} onClick={p.onToggleMusic} size="sm" />
+        <AudioButtons size="sm" musicMuted={p.musicMuted} onToggleMusic={p.onToggleMusic} />
         <HudIconButton icon="close" label={p.exitLabel} onClick={p.onExit} size="sm" />
       </header>
 

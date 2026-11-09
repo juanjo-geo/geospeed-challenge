@@ -90,7 +90,7 @@ export async function syncConquestReminders(list: ReminderSeason[]): Promise<voi
     await LocalNotifications.cancel({ notifications: plan.flatMap(({ s }) => REMINDER_HOURS.map((h) => ({ id: nativeReminderId(s.seasonId, h) }))) });
     const perm = await LocalNotifications.checkPermissions();
     if (perm.display !== 'granted') return;
-    const notifications = plan.flatMap(({ s, times }) => times.map((x) => ({ id: nativeReminderId(s.seasonId, x.h), ...texts(x.h), schedule: { at: new Date(x.at), allowWhileIdle: true } })));
+    const notifications = plan.flatMap(({ s, times }) => times.map((x) => ({ id: nativeReminderId(s.seasonId, x.h), ...texts(x.h), schedule: { at: new Date(x.at), allowWhileIdle: true }, isExactNotification: false })));
     if (notifications.length) await LocalNotifications.schedule({ notifications });
   } catch { /* sin complemento o sin permiso */ }
 }

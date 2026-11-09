@@ -340,6 +340,20 @@ export function readPendingResults(): Array<Record<string, unknown>> {
   return readPending() as Array<Record<string, unknown>>;
 }
 
+const COUNTED_TYPES: GameType[] = ['classic', 'daily', 'timeattack', 'mundial', 'speeddemon', 'training', 'challenge', 'duel', 'sprint', 'quiz', 'quiz_free', 'room'];
+
+/** Cuántas partidas guardadas tiene el jugador de cada tipo (desglose de Estadísticas). null sin sesión o sin conexión. */
+export async function fetchMyGamesByType(): Promise<Partial<Record<GameType, number>> | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+  const pairs = await Promise.all(COUNTED_TYPES.map(async (type) => {
+    const { count, error } = await supabase.from('game_results').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id).eq('game_type', type);
+    if (error) throw error;
+    return [type, count ?? 0] as const;
+  }));
+  return Object.fromEntries(pairs);
+}
+
 /** Historial paginado por cursor (created_at del último elemento). */
 export async function fetchMyHistory(opts: { mode?: string; difficulty?: string; category?: string; before?: string; limit?: number } = {}): Promise<MyHistoryRow[]> {
   const { data: { session } } = await supabase.auth.getSession();

@@ -24,6 +24,8 @@ import { type TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import AppNav, { type NavTab } from '@/components/game/AppNav';
 import { APP_SCROLL_ID, scrollAppToTop } from '@/lib/appScroll';
 import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
+import { nextBackStack, type BackRules } from '@/lib/backStack';
+import { HudIconButton } from '@/components/game/GameHud';
 import Wordmark from '@/components/ui/Wordmark';
 import { initPrefs } from '@/lib/prefs';
 import { getTranslations, detectLocale, translate } from '@/i18n';
@@ -220,6 +222,15 @@ interface TrainingRun {
 const NAV_PHASES: Phase[] = ['home', 'daily-intro', 'streak', 'profile', 'store', 'battlepass', 'settings', 'more-modes', 'howto', 'friends', 'challenge', 'my-challenges', 'history', 'ranking', 'training-setup', 'training-result', 'memory', 'sprint', 'sprint-result', 'medals', 'achievements', 'quizzes', 'quiz-edit', 'quiz-intro', 'downloads', 'room-create', 'room-join', 'conq-home', 'conq-invite', 'conq-group', 'conq-map'];
 /** Fases donde GameScreen muestra su propio boton de musica en el HUD */
 const GAME_SCREEN_PHASES: Phase[] = ['playing', 'daily', 'ta-playing', 'wc-playing', 'conq-practice', 'conq-play'];
+/** "Atrás" vuelve a la pantalla anterior del menú (src/lib/backStack.ts); los resultados no se guardan en la pila */
+const BACK_RETURNS = new Set<Phase>(NAV_PHASES.filter((p) => p !== 'home' && p !== 'sprint-result' && p !== 'training-result'));
+const BACK_RULES: BackRules<Phase> = {
+  home: 'home',
+  returns: BACK_RETURNS,
+  opens: new Set<Phase>([...BACK_RETURNS, 'ta-select', 'wc-playing']),
+  // Guardar un quiz o unirse a un grupo reemplaza la pantalla: atrás no debe volver al formulario
+  replaces: (prev, next) => (prev === 'quiz-edit' && next === 'quiz-intro') || (prev === 'conq-invite' && next === 'conq-group'),
+};
 
 // Mismas ciudades para todos: semilla del día de juego (medianoche de Colombia, src/lib/gameDay.ts)
 function getDailySeed(): number {
@@ -361,6 +372,23 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('splash');
   phaseRef.current = phase;
+  // Pila de "atrás": de qué pantalla del menú se vino
+  const backStackRef = useRef<Phase[]>([]);
+  const lastPhaseRef = useRef<Phase>(phase);
+  const tabTargetRef = useRef<Phase | null>(null);
+  // Desde qué pantalla se lanzó la partida (Cancelar en la cuenta regresiva vuelve allí)
+  const launchOriginRef = useRef<Phase | null>(null);
+  // 60s de Caos: partida lanzada desde la elección de nivel a la que aún no se le cobró la vida
+  const taLifePendingRef = useRef(false);
+  useEffect(() => {
+    const prev = lastPhaseRef.current;
+    if (prev === phase) return;
+    lastPhaseRef.current = phase;
+    if ((phase === 'countdown' || phase === 'tutorial') && prev !== 'tutorial') launchOriginRef.current = BACK_RETURNS.has(prev) ? prev : null;
+    const isTab = phase === tabTargetRef.current;
+    tabTargetRef.current = null;
+    backStackRef.current = nextBackStack(backStackRef.current, prev, phase, BACK_RULES, isTab);
+  }, [phase]);
   // Al salir de una fase ocupada, se muestran los mensajes que esperaban (con una pausa breve)
   useEffect(() => {
     if (isBusyPhase(phase) || deferredToastsRef.current.length === 0) return;
@@ -416,7 +444,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const [quizCities, setQuizCities] = useState<City[] | null>(null);
   const [quizDraft, setQuizDraft] = useState<Partial<QuizDraft> | null>(null);
   const [quizCode, setQuizCode] = useState<string | null>(null);
-  const [quizReturn, setQuizReturn] = useState<'home' | 'quizzes'>('home');
   // Carrera contra el fantasma (Fase 3): la partida del rival si ya jugó este reto (se pide al empezar)
   const [challengeGhost, setChallengeGhost] = useState<{ id: string; ghost: ChallengeGhost } | null>(null);
   // Al terminar un reto se espera a que la partida llegue al servidor y se va directo a la comparación
@@ -925,6 +952,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setChallengeSeed(null);
     setChallengerScore(null);
     setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null);
+    const origin = launchOriginRef.current;
+    if (origin) { setPhase(origin); scrollAppToTop(); return; }
     setPhase('home'); scrollAppToTop(); navigate('/', { replace: true });
   }, [isTraining, navigate, gameMode]);
 
@@ -982,7 +1011,16 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const handleGoHome = useCallback(() => { setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setActiveQuiz(null); setQuizCities(null); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate]);
+  const resetRunState = useCallback(() => { setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setActiveQuiz(null); setQuizCities(null); }, []);
+  const handleGoHome = useCallback(() => { resetRunState(); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate, resetRunState]);
+  // Atrás: a la pantalla anterior del menú; sin anterior, al Inicio
+  const handleBack = useCallback(() => {
+    const target = backStackRef.current[backStackRef.current.length - 1];
+    if (!target) { handleGoHome(); return; }
+    resetRunState();
+    setPhase(target);
+    scrollAppToTop();
+  }, [handleGoHome, resetRunState]);
   const handleOpenStore = useCallback(() => { trackStoreView(); setPhase('store'); }, []);
   const handleOpenProfile = useCallback(() => { setProfileTab('overview'); setPhase('profile'); }, []);
   const handleOpenSettings = useCallback(() => setPhase('settings'), []);
@@ -1041,6 +1079,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     : null;
   const handleNav = useCallback((tab: NavTab) => {
     scrollAppToTop();
+    // Las pestañas son primer nivel: atrás desde ellas va al Inicio
+    const target: Phase | null = tab === 'progress' ? 'history' : tab === 'store' ? 'store' : tab === 'pass' ? 'battlepass' : tab === 'profile' ? 'profile' : null;
+    if (target === phase) backStackRef.current = [];
+    else tabTargetRef.current = target;
     switch (tab) {
       case 'home': handleGoHome(); break;
       case 'progress': setPhase('history'); scrollAppToTop(); break;
@@ -1048,12 +1090,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       case 'pass': handleOpenBattlePass(); break;
       case 'profile': setProfileTab('overview'); setPhase('profile'); break;
     }
-  }, [handleGoHome, handleOpenStore, handleOpenBattlePass]);
+  }, [phase, handleGoHome, handleOpenStore, handleOpenBattlePass]);
 
   const handleTimeAttack = useCallback(() => {
     if (offlineBlocked('play')) return;
     unlockAudio();
-    if (!consumeLife()) { setShowNoLives(true); return; }
+    // La vida se cobra al arrancar la partida (onStarted): volver atrás o cancelar la cuenta regresiva no cuesta nada
+    if (getEnergy().lives <= 0) { setShowNoLives(true); return; }
     setPhase('ta-select');
   }, []);
   const handleDailyChallenge = useCallback(() => {
@@ -1127,9 +1170,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setPhase('quiz-edit');
     scrollAppToTop();
   }, []);
-  const handleOpenQuiz = useCallback((code: string, from: 'home' | 'quizzes' = 'home') => {
+  const handleOpenQuiz = useCallback((code: string) => {
     setQuizCode(code);
-    setQuizReturn(from);
     setPhase('quiz-intro');
     scrollAppToTop();
     touchFavorite('quiz', code);
@@ -1265,7 +1307,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     } else if (deepLink.type === 'quiz' && routeParams.code) {
       // /q/ABC123 → presentación del quiz compartido (sin cuenta; el código se valida en el servidor)
       setQuizCode(routeParams.code.toUpperCase());
-      setQuizReturn('home');
       setPhase('quiz-intro');
       trackEvent('quiz_link_open', {});
       navigate('/', { replace: true });
@@ -1300,7 +1341,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // ── Atrás del teléfono / navegador (src/lib/backNav.ts) ──
   // Pantallas que Index dibuja sin cabecera propia: lo mismo que su botón visible
   const phaseBack: Partial<Record<Phase, () => void>> = {
-    'ta-select': handleGoHome,
+    'ta-select': handleBack,
     'training-repeat': finishTraining,
     'training-result': handleGoHome,
     'sprint-search': handleOpenSprint,
@@ -1308,7 +1349,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   };
   useBackHandler(phaseBack[phase]);
   // Respaldo: una pantalla del menú que no registre el suyo vuelve al Inicio
-  useBackHandler(handleGoHome, { layer: BACK_LAYER.fallback, active: phase !== 'home' && NAV_PHASES.includes(phase) });
+  useBackHandler(handleBack, { layer: BACK_LAYER.fallback, active: phase !== 'home' && NAV_PHASES.includes(phase) });
   // Ventanas de Index: el aviso de notificaciones se cierra como con "Ahora no"; guardando el reto no se sale
   useBackHandler(handleNotifDismiss, { layer: BACK_LAYER.modal, active: showNotifPrompt });
   useBackHandler(() => {}, { layer: BACK_LAYER.modal, active: challengeSaving });
@@ -1320,55 +1361,55 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'store') {
-      return <StoreScreen onClose={handleGoHome} />;
+      return <StoreScreen onClose={handleBack} />;
     }
 
     if (phase === 'battlepass') {
-      return <BattlePassScreen onClose={handleGoHome} onOpenStore={handleOpenStore} />;
+      return <BattlePassScreen onClose={handleBack} onOpenStore={handleOpenStore} />;
     }
 
     if (phase === 'profile') {
-      return <ProfileScreen key={profileTab} onBack={handleGoHome} initialTab={profileTab} onMyChallenges={handleMyChallenges} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onOpenMedals={handleOpenMedals} onOpenAchievements={handleOpenAchievements} />;
+      return <ProfileScreen key={profileTab} onBack={handleBack} initialTab={profileTab} onMyChallenges={handleMyChallenges} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onOpenMedals={handleOpenMedals} onOpenAchievements={handleOpenAchievements} />;
     }
 
     if (phase === 'history') {
-      return <HistoryScreen onBack={handleGoHome} onPlay={() => handleSelectDifficulty(difficulty, gameMode)} onMyChallenges={handleMyChallenges} />;
+      return <HistoryScreen onBack={handleBack} onPlay={() => handleSelectDifficulty(difficulty, gameMode)} onMyChallenges={handleMyChallenges} />;
     }
 
     if (phase === 'ranking') {
-      return <RankingScreen initialMode={gameMode} initialDifficulty={difficulty} onBack={handleGoHome} onSignIn={() => navigate('/auth')} />;
+      return <RankingScreen initialMode={gameMode} initialDifficulty={difficulty} onBack={handleBack} onSignIn={() => navigate('/auth')} />;
     }
 
     if (phase === 'settings') {
-      return <SettingsScreen onBack={handleGoHome} onHowToPlay={handleHowTo} onDownloads={handleOpenDownloads} />;
+      return <SettingsScreen onBack={handleBack} onHowToPlay={handleHowTo} onDownloads={handleOpenDownloads} />;
     }
     if (phase === 'downloads') {
-      return <DownloadsScreen onBack={handleGoHome} onOpenStore={handleOpenStore} />;
+      return <DownloadsScreen onBack={handleBack} onOpenStore={handleOpenStore} />;
     }
 
     if (phase === 'more-modes') {
-      return <MoreModesScreen onBack={handleGoHome} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} onSprint={handleOpenSprint} onQuizzes={handleOpenQuizzes} onConquest={handleConquest} />;
+      return <MoreModesScreen onBack={handleBack} onTimeAttack={handleTimeAttack} onSpeedDemon={handleSpeedDemon} onWorldChallenge={handleWorldChallenge} onTraining={handleStartTraining} onMemory={handleOpenMemory} onSprint={handleOpenSprint} onQuizzes={handleOpenQuizzes} onConquest={handleConquest} />;
     }
     if (phase === 'quizzes') {
-      return <MyQuizzesScreen onBack={handleGoHome} onCreate={handleCreateQuiz} onEdit={handleEditQuiz} onOpen={(code) => handleOpenQuiz(code, 'quizzes')} onPlay={startQuizRun} onOpenStore={handleOpenStore} />;
+      return <MyQuizzesScreen onBack={handleBack} onCreate={handleCreateQuiz} onEdit={handleEditQuiz} onOpen={(code) => handleOpenQuiz(code)} onPlay={startQuizRun} onOpenStore={handleOpenStore} />;
     }
     if (phase === 'quiz-edit') {
-      return <QuizEditorScreen initial={quizDraft} onBack={handleOpenQuizzes} onSaved={(q) => handleOpenQuiz(q.code, 'quizzes')} onOpenStore={handleOpenStore} />;
+      return <QuizEditorScreen initial={quizDraft} onBack={handleBack} onSaved={(q) => handleOpenQuiz(q.code)} onOpenStore={handleOpenStore} />;
     }
     if (phase === 'quiz-intro' && quizCode) {
-      return <QuizIntroScreen code={quizCode} onBack={quizReturn === 'quizzes' ? handleOpenQuizzes : handleGoHome} onPlay={startQuizRun} onEdit={handleEditQuiz} onDaily={handleDailyIntro} />;
+      return <QuizIntroScreen code={quizCode} onBack={handleBack} onPlay={startQuizRun} onEdit={handleEditQuiz} onDaily={handleDailyIntro} />;
     }
 
     if (phase === 'daily-intro') {
-      return <DailyIntroScreen onBack={handleGoHome} onPlay={handleDailyChallenge} invite={dailyInvite} />;
+      return <DailyIntroScreen onBack={handleBack} onPlay={handleDailyChallenge} invite={dailyInvite} />;
     }
 
     if (phase === 'streak') {
-      return <StreakScreen onBack={handleGoHome} onPlayDaily={handleDailyIntro} />;
+      return <StreakScreen onBack={handleBack} onPlayDaily={handleDailyIntro} />;
     }
 
     if (phase === 'training-setup') {
-      return <TrainingSetupScreen cfg={trainingCfg} onChange={handleTrainingCfg} onStart={handleTrainingGo} onBack={handleGoHome} onReview={handleStartReview} onOpenMemory={handleOpenMemory} />;
+      return <TrainingSetupScreen cfg={trainingCfg} onChange={handleTrainingCfg} onStart={handleTrainingGo} onBack={handleBack} onReview={handleStartReview} onOpenMemory={handleOpenMemory} />;
     }
     if (phase === 'training-repeat') {
       return <TrainingRepeatScreen misses={trainingMisses} onRepeat={handleTrainingRepeat} onFinish={finishTraining} />;
@@ -1386,17 +1427,17 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       );
     }
     if (phase === 'memory') {
-      return <MemoryScreen onBack={handleGoHome} onReview={handleStartReview} onTrain={handleStartTraining} />;
+      return <MemoryScreen onBack={handleBack} onReview={handleStartReview} onTrain={handleStartTraining} />;
     }
     if (phase === 'medals') {
       // Tocar una casilla deja ese mapa elegido en el Inicio (la hoja de Inicio respeta los candados por nivel)
-      return <MedalsScreen onBack={handleGoHome} onPickMap={() => { handleGoHome(); toast(t('medals_picked')); }} />;
+      return <MedalsScreen onBack={handleBack} onPickMap={() => { handleGoHome(); toast(t('medals_picked')); }} />;
     }
     if (phase === 'achievements') {
-      return <AchievementsScreen onBack={handleGoHome} />;
+      return <AchievementsScreen onBack={handleBack} />;
     }
     if (phase === 'sprint') {
-      return <SprintScreen onBack={handleGoHome} onFind={handleSprintFind} onOpenStore={handleOpenStore} onCreateAccount={() => navigate('/auth')} onPlay={handleGoHome} />;
+      return <SprintScreen onBack={handleBack} onFind={handleSprintFind} onOpenStore={handleOpenStore} onCreateAccount={() => navigate('/auth')} onPlay={handleGoHome} />;
     }
     if (phase === 'sprint-search') {
       return <SprintSearchScreen rematchOf={sprintRematchOf} onFound={handleSprintFound} onCancel={handleOpenSprint} onOpenStore={handleOpenStore} />;
@@ -1406,7 +1447,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'howto') {
-      return <HowToPlayScreen onBack={handleGoHome} onStartTraining={handleStartTraining} />;
+      return <HowToPlayScreen onBack={handleBack} onStartTraining={handleStartTraining} />;
     }
 
     if (phase === 'tutorial') {
@@ -1470,11 +1511,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
               ))}
             </div>
             <div className="flex gap-2 sm:gap-3">
-              <button onClick={handleGoHome} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]">
+              <button onClick={handleBack} className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm border border-border text-muted-foreground transition-all hover:bg-muted active:scale-[0.97]">
                 {t('back').toUpperCase()}
               </button>
               <button
-                onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
+                onClick={() => { taLifePendingRef.current = true; gameKeyRef.current += 1; setPhase('ta-playing'); }}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
               >
@@ -1491,6 +1532,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         <WorldChallengeScreen
           key={`wc-${gameKeyRef.current}`}
           onExit={handleGoHome}
+          onBack={handleBack}
           onNoLives={() => setShowNoLives(true)}
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
@@ -1504,7 +1546,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           key={`ta-${gameKeyRef.current}`}
           difficulty={difficulty}
           gameMode={gameMode}
-          onExit={handleGoHome}
+          onExit={() => { if (taLifePendingRef.current) { taLifePendingRef.current = false; setPhase('ta-select'); scrollAppToTop(); } else handleGoHome(); }}
+          onStarted={() => { if (taLifePendingRef.current) { taLifePendingRef.current = false; consumeLife(); } }}
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
           onGameOver={(result) => {
@@ -1564,7 +1607,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           initialMode={gameMode}
           initialDifficulty={difficulty}
           initialCategory={gameCategory}
-          onBack={handleGoHome}
+          onBack={handleBack}
           onCreated={handleChallengeCreated}
           onOpenCode={handleOpenChallengeCode}
           onSignIn={() => navigate('/auth')}
@@ -1584,7 +1627,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           initialCategory={gameCategory}
           isRegistered={!!user && !isAnonymousUser}
           defaultName={authDisplayName || ''}
-          onBack={handleFriends}
+          onBack={handleBack}
           onCreated={handleRoomEntered}
           onSignIn={() => navigate('/auth')}
         />
@@ -1592,23 +1635,23 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'room-join' && roomPin) {
-      return <RoomJoinScreen pin={roomPin} defaultName={user && !isAnonymousUser ? authDisplayName || '' : ''} onBack={handleGoHome} onJoined={handleRoomEntered} />;
+      return <RoomJoinScreen pin={roomPin} defaultName={user && !isAnonymousUser ? authDisplayName || '' : ''} onBack={handleBack} onJoined={handleRoomEntered} />;
     }
 
     if (phase === 'room' && roomId) {
-      return <RoomScreen roomId={roomId} onExit={handleGoHome} />;
+      return <RoomScreen roomId={roomId} onExit={handleGoHome} musicMuted={isMusicMuted} onToggleMusic={toggleMusic} />;
     }
 
     // Conquista el mapa (fase C3): crear o unirse, invitación y sala de espera; el tablero llega en C4
     const conqSignIn = (code?: string | null) => navigate(`/auth?next=${encodeURIComponent(code ? `/conquista/${code}` : '/conquista')}`);
     if (phase === 'conq-home') {
-      return <ConquestHomeScreen isRegistered={!!user && !isAnonymousUser} onBack={handleGoHome} onSignIn={() => conqSignIn()} onOpenGroup={handleConquestGroup} onOpenCode={handleConquestCode} />;
+      return <ConquestHomeScreen isRegistered={!!user && !isAnonymousUser} onBack={handleBack} onSignIn={() => conqSignIn()} onOpenGroup={handleConquestGroup} onOpenCode={handleConquestCode} />;
     }
     if (phase === 'conq-invite' && conqCode) {
-      return <ConquestInviteScreen code={conqCode} isRegistered={!!user && !isAnonymousUser} onBack={handleConquest} onSignIn={() => conqSignIn(conqCode)} onJoined={handleConquestGroup} />;
+      return <ConquestInviteScreen code={conqCode} isRegistered={!!user && !isAnonymousUser} onBack={handleBack} onSignIn={() => conqSignIn(conqCode)} onJoined={handleConquestGroup} />;
     }
     if (phase === 'conq-group' && conqGroupId) {
-      return <ConquestLobbyScreen groupId={conqGroupId} onBack={handleConquest} onOpenMap={(sid) => { setConqSeasonId(sid); setConqSheetIso(null); setPhase('conq-map'); scrollAppToTop(); }} />;
+      return <ConquestLobbyScreen groupId={conqGroupId} onBack={handleBack} onOpenMap={(sid) => { setConqSeasonId(sid); setConqSheetIso(null); setPhase('conq-map'); scrollAppToTop(); }} />;
     }
     if (phase === 'conq-map' && conqSeasonId) {
       return (
@@ -1641,7 +1684,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           key={challengeSource.type === 'code' ? challengeSource.code : challengeSource.challenge.id}
           source={challengeSource}
           onPlay={handlePlayChallenge}
-          onBack={handleGoHome}
+          onBack={handleBack}
           onSignIn={() => navigate('/auth')}
           onCreateAnother={handleFriends}
           onMyChallenges={handleMyChallenges}
@@ -1651,7 +1694,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     if (phase === 'my-challenges') {
-      return <MyChallengesScreen onBack={handleGoHome} onOpen={handleOpenMyChallenge} onCreate={handleFriends} onSignIn={() => navigate('/auth')} />;
+      return <MyChallengesScreen onBack={handleBack} onOpen={handleOpenMyChallenge} onCreate={handleFriends} onSignIn={() => navigate('/auth')} />;
     }
 
     if (phase === 'daily') {
@@ -1886,19 +1929,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       {showRotateOverlay && <RotateOverlay t={t} beforeCountdown={phase === 'countdown'} onBack={phase === 'countdown' ? handleCancelCountdown : handleGoHome} />}
 
       {/* Floating music toggle — en partida; fuera de ella la música se controla desde Ajustes */}
-      {phase !== 'splash' && !showNav && !GAME_SCREEN_PHASES.includes(phase) && phase !== 'final' && phase !== 'ta-final' && (
-        <button
-          onClick={toggleMusic}
-          className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-md transition-all active:scale-90 shadow-lg"
-          style={{
-            background: 'hsl(var(--background) / 0.7)',
-            borderColor: 'hsl(var(--primary) / 0.3)',
-          }}
-          aria-label={isMusicMuted ? t('music_on') : t('music_off')}
-          title={isMusicMuted ? t('music_on') : t('music_off')}
-        >
-          <span className="text-base">{isMusicMuted ? '🔇' : '🎵'}</span>
-        </button>
+      {phase !== 'splash' && !showNav && !GAME_SCREEN_PHASES.includes(phase) && phase !== 'final' && phase !== 'ta-final' && phase !== 'room' && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <HudIconButton icon={isMusicMuted ? 'musicOff' : 'music'} label={isMusicMuted ? t('music_on') : t('music_off')} onClick={toggleMusic} />
+        </div>
       )}
     </>
   );

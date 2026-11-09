@@ -51,7 +51,9 @@ export async function syncStreakReminder(): Promise<void> {
     if (perm.display !== 'granted') return;
     const { title, body } = reminderTexts(streak);
     await LocalNotifications.schedule({
-      notifications: [{ id: NATIVE_ID, title, body, schedule: { at, allowWhileIdle: true } }],
+      // isExactNotification: false: si no, el complemento abre "Alarmas y recordatorios" del sistema cada vez
+      // que programa (la app no tiene ese permiso a propósito: Google lo reserva a apps de alarmas y calendarios)
+      notifications: [{ id: NATIVE_ID, title, body, schedule: { at, allowWhileIdle: true }, isExactNotification: false }],
     });
   } catch { /* sin complemento (web) o sin permiso */ }
 }

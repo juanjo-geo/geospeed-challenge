@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ACHIEVEMENTS, achievementTier, medalCounts, useProgression } from '@/lib/progression';
 import { scrollAppToTop } from '@/lib/appScroll';
-import { fetchMyProgress, type MyProgress } from '@/lib/gameResults';
+import { fetchMyGamesByType, fetchMyProgress, type GameType, type MyProgress } from '@/lib/gameResults';
 import { getStreakState } from '@/lib/dailyStreak';
 import { playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
@@ -321,6 +321,8 @@ function shortDate(raw: string, locale: string): string {
 }
 
 /* ── Stats Tab ── */
+const MODE_BAR_COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--destructive))', 'hsl(var(--brand-sky))'];
+
 function StatsTab({ stats, avgDist, totalXp, energy, history }: {
   stats: ReturnType<typeof getPlayerStats>;
   avgDist: number;
@@ -331,9 +333,24 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
   const { t, locale } = useI18n();
   const bestGame = history.length > 0 ? history.reduce((best, g) => g.score > best.score ? g : best, history[0]) : null;
   const totalGames = stats.gamesPlayed;
-  const classicGames = history.filter(g => g.type === 'classic').length;
-  const taGames = history.filter(g => g.type === 'timeattack').length;
-  const dailyGames = history.filter(g => g.type === 'daily').length;
+  // Desglose: con sesión, todas las partidas guardadas; sin sesión, las últimas que hay en este teléfono
+  const [byType, setByType] = useState<Partial<Record<GameType, number>> | null>(null);
+  useEffect(() => { fetchMyGamesByType().then(setByType).catch(() => {}); }, []);
+  const localCount = (type: GameHistoryEntry['type']) => history.filter(g => g.type === type && g.mode !== 'mundial').length;
+  const modeRows: { label: string; types: GameType[]; local: number }[] = [
+    { label: t('profile_mode13'), types: ['classic'], local: localCount('classic') },
+    { label: t('profile_modeDaily'), types: ['daily'], local: localCount('daily') },
+    { label: t('profile_modeChaos'), types: ['timeattack'], local: localCount('timeattack') },
+    { label: t('wc_modeName'), types: ['mundial'], local: history.filter(g => g.mode === 'mundial').length },
+    { label: t('profile_modeChallenges'), types: ['challenge', 'duel'], local: 0 },
+    { label: t('more_sprintName'), types: ['sprint'], local: 0 },
+    { label: t('room_historyName'), types: ['room'], local: 0 },
+    { label: t('train_title'), types: ['training'], local: 0 },
+    { label: t('profile_modeQuizzes'), types: ['quiz', 'quiz_free'], local: 0 },
+    { label: t('profile_modeImpossible'), types: ['speeddemon'], local: 0 },
+  ];
+  const modeCounts = modeRows.map(r => (byType ? r.types.reduce((n, x) => n + (byType[x] ?? 0), 0) : r.local));
+  const modeTotal = modeCounts.reduce((a, b) => a + b, 0);
 
   return (
     <div className="space-y-3">
@@ -348,13 +365,11 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
       </div>
 
       {/* Modes breakdown */}
-      {totalGames > 0 && (
+      {modeTotal > 0 && (
         <div className="bg-card/70 border border-border rounded-2xl p-3 sm:p-4">
           <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mb-2">{t('profile_byMode')}</p>
           <div className="space-y-2">
-            <ModeBar label={t('profile_mode13')} count={classicGames} total={totalGames} color="hsl(var(--primary))" />
-            <ModeBar label={t('profile_modeChaos')} count={taGames} total={totalGames} color="hsl(var(--destructive))" />
-            <ModeBar label={t('profile_modeDaily')} count={dailyGames} total={totalGames} color="hsl(var(--accent))" />
+            {modeRows.map((r, i) => <ModeBar key={r.label} label={r.label} count={modeCounts[i]} total={modeTotal} color={MODE_BAR_COLORS[i % MODE_BAR_COLORS.length]} />)}
           </div>
         </div>
       )}
@@ -393,7 +408,7 @@ function ModeBar({ label, count, total, color }: { label: string; count: number;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] sm:text-xs text-muted-foreground w-24 sm:w-28 truncate">{label}</span>
+      <span className="text-[10px] sm:text-xs text-muted-foreground w-28 sm:w-32 shrink-0 truncate">{label}</span>
       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
       </div>

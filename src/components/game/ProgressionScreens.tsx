@@ -3,6 +3,7 @@ import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
+import RewardsGlossary from './RewardsGlossary';
 import { REGION_MODES, PACK_MODES, type GameMode } from '@/data/cities';
 import { CATEGORY_ART, categoriesForMode, categoryLabelKey, type Category } from '@/lib/catalog';
 import { REGION_ART, REGION_FLAG, DIFF_ART, mapUnlockLevel } from '@/lib/selectionArt';
@@ -222,6 +223,7 @@ function Showcase({ earned }: { earned: Set<string> }) {
         </span>
       </div>
       {user ? <CosmeticsPicker earned={earned} st={st} /> : <p className="text-xs text-muted-foreground">{t('prog_noData')}</p>}
+      <RewardsGlossary className="mt-3" />
     </section>
   );
 }

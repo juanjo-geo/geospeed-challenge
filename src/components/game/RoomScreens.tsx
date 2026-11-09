@@ -21,6 +21,7 @@ import { ChevronIcon } from '@/components/ui/icons';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot from './Mascot';
 import { PlayerFace, formatPin } from './RoomParts';
+import { AudioButtons } from './GameHud';
 import { appNumberLocale } from '@/lib/format';
 
 const RoomGame = lazy(() => import('./RoomGame'));
@@ -247,9 +248,14 @@ export function RoomJoinScreen({ pin, defaultName, onBack, onJoined }: RoomJoinS
 interface RoomScreenProps {
   roomId: string;
   onExit: () => void;
+  musicMuted?: boolean;
+  onToggleMusic?: () => void;
 }
 
-export function RoomScreen({ roomId, onExit }: RoomScreenProps) {
+type AudioProps = Pick<RoomScreenProps, 'musicMuted' | 'onToggleMusic'>;
+
+export function RoomScreen({ roomId, onExit, musicMuted, onToggleMusic }: RoomScreenProps) {
+  const audio: AudioProps = { musicMuted, onToggleMusic };
   const { t } = useI18n();
   const errText = useRoomErrorText();
   // "Otra ronda" lleva a todos a una sala nueva con los mismos jugadores
@@ -270,13 +276,13 @@ export function RoomScreen({ roomId, onExit }: RoomScreenProps) {
   }
   if (state.kicked) return <Centered><Mascot state="sad" className="w-20" /><p className="font-extrabold text-lg">{t('room_err_kicked')}</p><BackHome onClick={onExit} /></Centered>;
   if (state.status === 'cancelled') return <Centered><Mascot state="sad" className="w-20" /><p className="font-extrabold text-lg">{t('room_cancelled')}</p><BackHome onClick={onExit} /></Centered>;
-  if (state.status === 'lobby') return <RoomLobby state={state} onState={setState} onRefresh={refresh} onExit={onExit} />;
-  if (state.status === 'finished') return <RoomFinal state={state} onExit={onExit} onSwitch={setId} />;
-  return <Suspense fallback={<Centered><p className="text-muted-foreground">{t('loading')}</p></Centered>}><RoomGame state={state} onRefresh={refresh} onExit={onExit} /></Suspense>;
+  if (state.status === 'lobby') return <RoomLobby state={state} onState={setState} onRefresh={refresh} onExit={onExit} {...audio} />;
+  if (state.status === 'finished') return <RoomFinal state={state} onExit={onExit} onSwitch={setId} {...audio} />;
+  return <Suspense fallback={<Centered><p className="text-muted-foreground">{t('loading')}</p></Centered>}><RoomGame state={state} onRefresh={refresh} onExit={onExit} {...audio} /></Suspense>;
 }
 
 /** Resultado de la sala: podio, tabla completa y "Otra ronda" (el anfitrión la arma; a los demás los lleva solos) */
-function RoomFinal({ state, onExit, onSwitch }: { state: RoomState; onExit: () => void; onSwitch: (id: string) => void }) {
+function RoomFinal({ state, onExit, onSwitch, musicMuted, onToggleMusic }: { state: RoomState; onExit: () => void; onSwitch: (id: string) => void } & AudioProps) {
   const { t } = useI18n();
   useBackHandler(onExit); // "atrás" del teléfono = "Volver al inicio"
   const errText = useRoomErrorText();
@@ -318,6 +324,7 @@ function RoomFinal({ state, onExit, onSwitch }: { state: RoomState; onExit: () =
   return (
     <div className="min-h-[100dvh] flex flex-col items-center game-bg overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6">
       <div className="w-full max-w-4xl animate-fade-in-up flex flex-col gap-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
+        <div className="flex justify-end gap-2 -mb-2"><AudioButtons size="sm" musicMuted={musicMuted} onToggleMusic={onToggleMusic} /></div>
         <h1 className="text-center font-extrabold text-3xl sm:text-4xl">{t('room_finalTitle')} <span className="text-primary">{t('room_finalTitleTail')}</span></h1>
         {me && <p className="text-center font-bold text-lg">{t('room_finalYou', { n: me.rank, total: state.player_count, points: fmt(me.total) })}</p>}
 
@@ -367,7 +374,7 @@ function RoomFinal({ state, onExit, onSwitch }: { state: RoomState; onExit: () =
   );
 }
 
-function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; onState: (s: RoomState) => void; onRefresh: () => Promise<void>; onExit: () => void }) {
+function RoomLobby({ state, onState, onRefresh, onExit, musicMuted, onToggleMusic }: { state: RoomState; onState: (s: RoomState) => void; onRefresh: () => Promise<void>; onExit: () => void } & AudioProps) {
   const { t } = useI18n();
   const errText = useRoomErrorText();
   const [busy, setBusy] = useState(false);
@@ -420,6 +427,7 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
             <h1 className="font-extrabold text-2xl sm:text-3xl leading-tight">{t('room_lobbyTitle')} <span className="text-primary">{t('room_lobbyTitleTail')}</span></h1>
             <SettingsLine s={state.settings} left />
           </div>
+          <AudioButtons size="sm" musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] short:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -476,10 +484,9 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
         </div>
 
         {error && <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm text-center" role="alert">{errText(error)}</p>}
-        {/* Barra fija abajo: con el QR, la tarjeta del PIN llena la pantalla y el botón quedaba fuera de la vista.
-            A la derecha deja libre el botón flotante de música (bajo md) */}
+        {/* Barra fija abajo: con el QR, la tarjeta del PIN llena la pantalla y el botón quedaba fuera de la vista */}
         {host ? (
-          <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 pl-3 sm:pl-4 md:px-6 pr-[60px] pt-3 flex flex-col items-center gap-1.5 bg-gradient-to-t from-background via-background/95 to-transparent"
+          <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 flex flex-col items-center gap-1.5 bg-gradient-to-t from-background via-background/95 to-transparent"
             style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
             <button onClick={() => { playButtonTap(); trackEvent('room_start', { players: state.player_count }); void run(() => startRoom(state.id)); }} disabled={!enough || busy}
               className="btn3d w-full max-w-xl rounded-2xl py-4 short:py-2.5 font-black text-xl text-primary-foreground disabled:opacity-50" style={{ background: 'var(--grad-cta)' }}>
@@ -488,7 +495,7 @@ function RoomLobby({ state, onState, onRefresh, onExit }: { state: RoomState; on
             <p className="text-sm text-muted-foreground text-center">{enough ? t('room_startHint') : t('room_needTwo')}</p>
           </div>
         ) : (
-          <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 pl-3 sm:pl-4 md:px-6 pr-[60px] pt-3 flex flex-col items-center gap-1.5 text-center bg-gradient-to-t from-background via-background/95 to-transparent"
+          <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 flex flex-col items-center gap-1.5 text-center bg-gradient-to-t from-background via-background/95 to-transparent"
             style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
             <p className="font-bold text-lg animate-pulse">⏳ {t('room_waitingHost', { name: state.host_name ?? '' })}</p>
             <button onClick={leave} className="text-sm text-muted-foreground underline hover:text-foreground">{t('room_leave')}</button>

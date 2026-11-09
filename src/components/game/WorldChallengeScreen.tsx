@@ -35,7 +35,7 @@ import RotateOverlay from './RotateOverlay';
 import { useBackHandler } from '@/lib/backNav';
 import Mascot, { type MascotState } from './Mascot';
 import RoundFeedbackCard from './RoundFeedbackCard';
-import { HudIconButton, InGameSettings } from './GameHud';
+import { AudioButtons, HudIconButton, InGameSettings } from './GameHud';
 import { type RoundResult, ClockIcon, BarsIcon, PinIcon } from './GameScreen';
 import FitToBox from '@/components/ui/FitToBox';
 import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming';
@@ -65,6 +65,8 @@ type Stage = 'select' | 'countdown' | 'playing' | 'over';
 interface WorldChallengeScreenProps {
   /** Volver al home. */
   onExit: () => void;
+  /** Atrás desde la elección de nivel: a la pantalla anterior (si falta, onExit). */
+  onBack?: () => void;
   /** Sin vidas: el padre muestra el modal y saca al usuario. */
   onNoLives: () => void;
   musicMuted?: boolean;
@@ -121,7 +123,7 @@ function shuffle<T>(arr: T[]): T[] {
  * encabezado compacto (teléfono en horizontal), engranaje que pausa, y la misma tarjeta de respuesta
  * (RoundFeedbackCard) con foto del país, mascota, "Ver cálculo" y SIGUIENTE.
  */
-export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, onToggleMusic }: WorldChallengeScreenProps) {
+export default function WorldChallengeScreen({ onExit, onBack, onNoLives, musicMuted, onToggleMusic }: WorldChallengeScreenProps) {
   const { t, locale } = useI18n();
   const isPortraitMobile = useIsPortraitMobile();
   const layoutMode = useGameLayoutMode();
@@ -494,7 +496,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
   // "Atrás" del teléfono: lo mismo que el botón visible de cada etapa (elegir nivel → Atrás; cuenta regresiva →
   // Cancelar; jugando → la × de salir con confirmación). En el resultado manda el de FinalResultScreen.
   useBackHandler(
-    stage === 'select' ? onExit
+    stage === 'select' ? (onBack ?? onExit)
       : stage === 'countdown' ? cancelCountdown
       : stage === 'playing' ? () => { if (window.confirm(t('game_exitConfirm'))) onExit(); }
       : null,
@@ -552,7 +554,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
           <p className="mt-3 short:mt-2 text-xs text-foreground/70">{t('wc_rules')}</p>
 
           <div className="mt-4 short:mt-3 flex gap-2 sm:gap-3">
-            <button onClick={onExit} className="flex-1 rounded-2xl border-2 border-accent/40 bg-background/40 py-3 short:py-2 font-bold text-sm hover:bg-muted/40 transition-colors active:scale-[0.97]">
+            <button onClick={onBack ?? onExit} className="flex-1 rounded-2xl border-2 border-accent/40 bg-background/40 py-3 short:py-2 font-bold text-sm hover:bg-muted/40 transition-colors active:scale-[0.97]">
               {t('back')}
             </button>
             <button
@@ -772,7 +774,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
                 {eraLabel && <span className="text-muted-foreground font-semibold"> · {eraLabel}</span>}
               </div>
             </div>
-            {onToggleMusic && <HudIconButton size="sm" icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+            <AudioButtons size="sm" musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
             <HudIconButton size="sm" icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
             <HudIconButton size="sm" icon="close" label={t('game_exit')} onClick={confirmExit} />
           </div>
@@ -802,7 +804,7 @@ export default function WorldChallengeScreen({ onExit, onNoLives, musicMuted, on
         {/* Sonido · ajustes · salir (con barra lateral) */}
         {hasSidebar && (
           <div className="absolute z-20 flex items-center gap-2.5" style={{ top: 'max(0.75rem, var(--sat))', right: 'max(0.75rem, var(--sar))' }}>
-            {onToggleMusic && <HudIconButton icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+            <AudioButtons musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
             <HudIconButton icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
             <HudIconButton icon="close" label={t('game_exit')} onClick={confirmExit} />
           </div>

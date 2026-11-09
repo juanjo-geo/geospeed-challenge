@@ -115,7 +115,7 @@ export default function SettingsScreen({ onBack, onHowToPlay, onDownloads }: Set
               disabled={!canVibrate}
               onToggle={() => toggle('haptics')}
             />
-            <ToggleRow icon="music" label={t('settings_streakReminder')} desc={t('settings_streakReminderDesc')} on={prefs.streakReminder} onToggle={() => { toggle('streakReminder'); setTimeout(() => syncStreakReminder(), 0); }} />
+            <ToggleRow icon="bell" label={t('settings_streakReminder')} desc={t('settings_streakReminderDesc')} on={prefs.streakReminder} onToggle={() => { toggle('streakReminder'); setTimeout(() => syncStreakReminder(), 0); }} />
             <ToggleRow icon="motion" label={t('settings_reduceMotion')} desc={t('settings_reduceMotionDesc')} on={prefs.reduceMotion} onToggle={() => toggle('reduceMotion')} />
             <ToggleRow icon="eye" label={t('settings_colorblind')} desc={t('settings_colorblindDesc')} on={colorblind} onToggle={() => { toggleColorblind(); playButtonTap(); }} />
           </Section>
@@ -241,12 +241,13 @@ function LinkRow({ icon, label, onClick, danger = false }: { icon: SettingIconNa
   );
 }
 
-type SettingIconName = 'music' | 'sound' | 'vibrate' | 'motion' | 'eye' | 'globe' | 'help' | 'chat' | 'shield' | 'doc' | 'logout' | 'user' | 'userPlus' | 'trash' | 'download';
+type SettingIconName = 'bell' | 'music' | 'sound' | 'vibrate' | 'motion' | 'eye' | 'globe' | 'help' | 'chat' | 'shield' | 'doc' | 'logout' | 'user' | 'userPlus' | 'trash' | 'download';
 
 /** Íconos de línea turquesa de la maqueta */
 function SettingIcon({ name, className }: { name: SettingIconName; className: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {name === 'bell' && <><path d="M6 17v-6a6 6 0 1 1 12 0v6l1.5 2h-15z" /><path d="M10 21.5a2.2 2.2 0 0 0 4 0" /></>}
       {name === 'download' && <><path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 19.5h14" /></>}
       {name === 'music' && <><path d="M9 18V5l11-2v13" /><circle cx="6.5" cy="18" r="2.5" fill="currentColor" /><circle cx="17.5" cy="16" r="2.5" fill="currentColor" /></>}
       {name === 'sound' && <><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" /></>}
