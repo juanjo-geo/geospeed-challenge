@@ -15,7 +15,9 @@ import { useBackHandler } from '@/lib/backNav';
 import { RoomError, answerRoom, roomTimeline, serverNow, type RoomAnswerResult, type RoomState } from '@/lib/rooms';
 import WorldMapCanvas from './WorldMapCanvas';
 import RotateOverlay from './RotateOverlay';
-import { HudIconButton } from './GameHud';
+import { AudioButtons, HudIconButton } from './GameHud';
+import SafeImg from '@/components/ui/SafeImg';
+import { preloadPhoto } from '@/lib/cityPhotos';
 import Flag from '@/components/ui/Flag';
 import { PlayerFace, formatPin } from './RoomParts';
 
@@ -23,6 +25,8 @@ interface RoomGameProps {
   state: RoomState;
   onRefresh: () => Promise<void>;
   onExit: () => void;
+  musicMuted?: boolean;
+  onToggleMusic?: () => void;
 }
 
 /** Mi respuesta de una ronda: el toque y, cuando el servidor contesta, mis puntos */
@@ -37,7 +41,7 @@ const nearOthers = (correct: { lat: number; lon: number }, others: { lat: number
  * no este teléfono. Al responder se ve "Respuesta enviada" y el contador de respuestas, pero no el lugar correcto hasta
  * que cierra la ronda. Al cerrar: el mapa con el lugar, mi toque y los de todos, mis puntos, mi puesto y el top 5.
  */
-export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
+export default function RoomGame({ state, onRefresh, onExit, musicMuted, onToggleMusic }: RoomGameProps) {
   const { t, locale } = useI18n();
   const isPortraitMobile = useIsPortraitMobile();
   const [now, setNow] = useState(serverNow);
@@ -68,6 +72,14 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
     return c ? { ...c, lat: raw.lat ?? c.lat, lon: raw.lon ?? c.lon } : { id: raw.id, kind: raw.kind as City['kind'], name: raw.name, country: raw.country ?? '', lat: raw.lat ?? 0, lon: raw.lon ?? 0, difficulty: s.difficulty };
   }, [raw?.id, raw?.lat]); // eslint-disable-line react-hooks/exhaustive-deps
   const myAns = mine[tl.round];
+  // La foto de la ronda actual y la de la siguiente (que ya llegó con el estado) se piden por adelantado
+  const upcomingIds = state.items.filter((i) => i.n >= tl.round).map((i) => i.id).join(',');
+  useEffect(() => {
+    for (const id of upcomingIds.split(',')) {
+      const c = id ? cityById(id) : null;
+      if (c && isMonument(c)) preloadPhoto(itemPhotoUrl(c, 'sm'));
+    }
+  }, [upcomingIds]);
 
   // ── Responder ──
   const sending = useRef<number | null>(null);
@@ -222,7 +234,7 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
         <span className="shrink-0 rounded-full border border-accent/50 px-2.5 py-0.5 text-[11px] sm:text-xs font-black text-accent whitespace-nowrap">📡 {tl.round}/{s.rounds_total}</span>
         <div className="min-w-0 flex-1 flex items-center gap-2">
           {item && isFlag(item) && <Flag country={item.name} className="w-10 sm:w-14 shrink-0 rounded shadow" />}
-          {item && isMonument(item) && itemPhotoUrl(item, 'sm') && <img src={itemPhotoUrl(item, 'sm')!} alt="" className="w-10 h-8 sm:w-14 sm:h-10 object-cover rounded-md shrink-0" />}
+          {item && isMonument(item) && <SafeImg src={itemPhotoUrl(item, 'sm')} className="w-10 h-8 sm:w-14 sm:h-10 object-cover rounded-md shrink-0" />}
           <p className="min-w-0 leading-tight">
             <span className="block text-[10px] sm:text-xs text-muted-foreground font-semibold">{item && isFlag(item) ? t('flag_whichCountry') : t('game_whereIsLead')}</span>
             <span className="block font-black text-base sm:text-xl truncate">{item ? (isFlag(item) ? (tl.phase === 'question' ? '' : itemTitle(item, locale)) : `${itemTitle(item, locale)}?`) : '…'}</span>
@@ -235,6 +247,7 @@ export default function RoomGame({ state, onRefresh, onExit }: RoomGameProps) {
           <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">{answeredLine}</span>
         </div>
         {isPlayer && <span className="shrink-0 rounded-xl border border-primary/50 px-2 py-0.5 text-center"><span className="block text-[9px] sm:text-[10px] text-muted-foreground uppercase">{t('game_points')}</span><span className="block font-black text-sm sm:text-lg text-primary tabular-nums">{fmt(total)}</span></span>}
+        <AudioButtons size="sm" musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
         <HudIconButton icon="close" label={t('room_exit')} onClick={confirmExit} size="sm" />
       </header>
       {tl.phase === 'question' && <div className="shrink-0 h-1.5 bg-muted/50"><div className={`h-full transition-[width] duration-200 ${secsLeft <= 3 ? 'bg-destructive' : 'bg-accent'}`} style={{ width: `${timeFrac * 100}%` }} /></div>}

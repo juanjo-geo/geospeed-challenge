@@ -4,6 +4,7 @@ import { playButtonTap } from '@/lib/sounds';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import Mascot from './Mascot';
 import { CosmeticsPicker } from './ProgressionScreens';
+import RewardsGlossary from './RewardsGlossary';
 import { earnedSet, useProgression } from '@/lib/progression';
 import {
   fetchDailyStatus, getCachedDailyStatus, playedToday, DAILY_STATUS_EVENT,
@@ -42,6 +43,10 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
   const best = st?.best_streak ?? 0;
   const done = playedToday(st);
   const earned = new Set((st?.badges ?? []).map((b) => b.id));
+  // Qué ganó hoy o cuál es el próximo premio (lo que responde "¿y esto para qué?")
+  const wonToday = done ? STREAK_MILESTONES.find((m) => m.days === streak) ?? null : null;
+  const nextPrize = STREAK_MILESTONES.find((m) => m.days > streak) ?? null;
+  const daysToPrize = nextPrize ? nextPrize.days - streak : 0;
 
   // Calendario: semanas de lunes a domingo que terminan en la de hoy
   const cells = useMemo(() => {
@@ -78,7 +83,7 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
             <div className="min-w-0 flex-1">
               <p className="text-5xl sm:text-6xl font-black text-primary leading-none">🔥 {streak}</p>
               <p className="font-bold text-lg">{streak === 1 ? t('streak_dayOne') : t('streak_days', { n: streak })}</p>
-              <p className="text-sm text-muted-foreground">{t('streak_best', { n: best })}</p>
+              <p className="text-sm text-muted-foreground">{best === 1 ? t('streak_bestOne') : t('streak_best', { n: best })}</p>
               <p className="mt-1.5 text-sm font-semibold">
                 🛡️ {t('streak_freezes', { n: st?.freezes ?? 1, cap: st?.freeze_cap ?? 1 })}
                 {refillDays != null && (st?.freezes ?? 1) < (st?.freeze_cap ?? 1) && <span className="text-muted-foreground font-normal"> · {t('streak_refillIn', { n: refillDays })}</span>}
@@ -88,7 +93,10 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
 
           <section className="mt-3 md:mt-0 rounded-3xl border-2 border-accent/40 bg-card/70 p-4 flex flex-col justify-center gap-3">
             {done ? (
-              <p className="text-center font-bold text-accent text-lg">✓ {t('streak_doneToday')}</p>
+              <div className="text-center">
+                <p className="font-extrabold text-accent text-lg leading-tight">✓ {t('streak_doneToday')}</p>
+                <p className="text-sm mt-1">{t('streak_comeBack', { n: streak + 1 })}</p>
+              </div>
             ) : (
               <>
                 <p className="text-center font-semibold">{streak > 0 ? t('streak_keepIt', { n: streak }) : t('streak_startOne')}</p>
@@ -97,7 +105,12 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
                 </button>
               </>
             )}
-            <p className="text-xs text-center text-muted-foreground">{t('streak_howFreezes')}</p>
+            {wonToday ? (
+              <p className="text-sm font-bold text-primary text-center">🎁 {t('streak_wonToday', { reward: t(wonToday.rewardKey as never) })}</p>
+            ) : nextPrize && (
+              <p className="text-sm font-bold text-primary text-center">🎁 {daysToPrize > 1 ? t('streak_prizeIn', { n: daysToPrize, reward: t(nextPrize.rewardKey as never) }) : t(done ? 'streak_prizeTomorrow' : 'streak_prizeToday', { reward: t(nextPrize.rewardKey as never) })}</p>
+            )}
+            <p className="text-xs text-center text-muted-foreground">🛡️ {t('streak_howFreezes')}</p>
           </section>
         </div>
 
@@ -149,6 +162,7 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
               );
             })}
           </div>
+          <RewardsGlossary className="mt-3" />
         </section>
 
         {/* Título y marco (lo ven otros en el ranking) */}

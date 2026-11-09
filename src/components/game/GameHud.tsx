@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
-import { getPrefs, setPref } from '@/lib/prefs';
+import { getPrefs, setPref, subscribePrefs } from '@/lib/prefs';
 import { playButtonTap } from '@/lib/sounds';
 import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 
-type HudIcon = 'sound' | 'mute' | 'gear' | 'close' | 'home' | 'back';
+type HudIcon = 'music' | 'musicOff' | 'sound' | 'mute' | 'vibrate' | 'gear' | 'close' | 'home' | 'back';
+
+// Los mismos dibujos de Ajustes: nota = música de fondo, parlante = efectos de sonido
+const MUSIC_NOTE = (<><path d="M9 18V5l11-2v13" /><circle cx="6.5" cy="18" r="2.5" fill="currentColor" /><circle cx="17.5" cy="16" r="2.5" fill="currentColor" /></>);
+const SPEAKER = <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" />;
 
 const ICON_PATHS: Record<HudIcon, JSX.Element> = {
-  sound: (<><path d="M4 10v4h4l5 4V6L8 10H4Z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" /><path d="M19 6a8.5 8.5 0 0 1 0 12" /></>),
-  mute: (<><path d="M4 10v4h4l5 4V6L8 10H4Z" /><path d="m17 9 5 6" /><path d="m22 9-5 6" /></>),
+  music: MUSIC_NOTE,
+  musicOff: (<>{MUSIC_NOTE}<path d="m3 3 18 18" /></>),
+  sound: (<>{SPEAKER}<path d="M15.5 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" /></>),
+  mute: (<>{SPEAKER}<path d="m16 9.5 5 5" /><path d="m21 9.5-5 5" /></>),
+  vibrate: (<><rect x="8" y="3.5" width="8" height="17" rx="2" /><path d="M4.5 8.5 3 10l1.5 1.5L3 13l1.5 1.5M19.5 8.5 21 10l-1.5 1.5L21 13l-1.5 1.5" /></>),
   gear: (<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></>),
   close: (<><path d="M6 6l12 12" /><path d="M18 6 6 18" /></>),
   back: (<path d="m14.5 5.5-6.5 6.5 6.5 6.5" />),
@@ -30,6 +37,24 @@ export function HudIconButton({ icon, label, onClick, size = 'md' }: { icon: Hud
         {ICON_PATHS[icon]}
       </svg>
     </button>
+  );
+}
+
+/** Los dos sonidos del juego, cada uno con su ícono: música de fondo (nota) y efectos (parlante). */
+export function AudioButtons({ musicMuted, onToggleMusic, size = 'md' }: { musicMuted?: boolean; onToggleMusic?: () => void; size?: 'sm' | 'md' }) {
+  const { t } = useI18n();
+  const [sfx, setSfx] = useState(() => getPrefs().sfx);
+  useEffect(() => subscribePrefs((p) => setSfx(p.sfx)), []);
+  const toggleSfx = () => {
+    const next = !getPrefs().sfx;
+    setPref('sfx', next);
+    if (next) playButtonTap();
+  };
+  return (
+    <>
+      {onToggleMusic && <HudIconButton size={size} icon={musicMuted ? 'musicOff' : 'music'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+      <HudIconButton size={size} icon={sfx ? 'sound' : 'mute'} label={sfx ? t('sfx_off') : t('sfx_on')} onClick={toggleSfx} />
+    </>
   );
 }
 
@@ -62,9 +87,9 @@ export function InGameSettings({ musicMuted, onToggleMusic, onClose }: { musicMu
         <p className="text-xs font-bold uppercase tracking-widest text-accent">{t('game_paused')}</p>
         <h2 className="text-2xl short:text-xl font-extrabold mt-0.5 mb-3 short:mb-2">{t('settings_title')}</h2>
         <div className="flex flex-col divide-y divide-border rounded-2xl border border-border bg-background/40">
-          {onToggleMusic && <ToggleRow label={t('settings_music')} on={!musicMuted} onClick={onToggleMusic} />}
-          <ToggleRow label={t('settings_sfx')} on={prefs.sfx} onClick={() => toggle('sfx')} />
-          <ToggleRow label={t('settings_haptics')} on={prefs.haptics} onClick={() => toggle('haptics')} />
+          {onToggleMusic && <ToggleRow icon="music" label={t('settings_music')} on={!musicMuted} onClick={onToggleMusic} />}
+          <ToggleRow icon="sound" label={t('settings_sfx')} on={prefs.sfx} onClick={() => toggle('sfx')} />
+          <ToggleRow icon="vibrate" label={t('settings_haptics')} on={prefs.haptics} onClick={() => toggle('haptics')} />
         </div>
         <button
           onClick={onClose}
@@ -78,10 +103,13 @@ export function InGameSettings({ musicMuted, onToggleMusic, onClose }: { musicMu
   );
 }
 
-function ToggleRow({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+function ToggleRow({ icon, label, on, onClick }: { icon: HudIcon; label: string; on: boolean; onClick: () => void }) {
   return (
     <button type="button" role="switch" aria-checked={on} onClick={onClick} className="flex items-center justify-between gap-3 px-3 py-3 short:py-2 text-left">
-      <span className="font-semibold text-sm">{label}</span>
+      <span className="flex items-center gap-2.5 font-semibold text-sm min-w-0">
+        <svg viewBox="0 0 24 24" className="w-5 h-5 text-accent shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{ICON_PATHS[icon]}</svg>
+        {label}
+      </span>
       <span className={`relative w-11 h-6 rounded-full transition-colors ${on ? 'bg-accent' : 'bg-muted'}`} aria-hidden>
         <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${on ? 'left-[1.375rem]' : 'left-0.5'}`} />
       </span>

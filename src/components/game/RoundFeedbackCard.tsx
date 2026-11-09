@@ -6,6 +6,7 @@ import Mascot, { type MascotState } from './Mascot';
 import Flag from '@/components/ui/Flag';
 import CountryPhoto from '@/components/ui/CountryPhoto';
 import { itemPhotoUrl } from '@/lib/catalog';
+import { photoKnownMissing } from '@/lib/countryPhotos';
 import { playAccordion } from '@/lib/sounds';
 import { appNumberLocale } from '@/lib/format';
 import { COMBO_LEVELS } from '@/lib/scoring';
@@ -58,7 +59,9 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
   const subheading = subtitle ?? result.city.country;
   // Foto: la del monumento si la tiene; si no, la del país (D7)
   const photoUrl = itemPhotoUrl(result.city, 'sm');
-  const hasPhoto = !!photoUrl;
+  // La mascota solo va montada sobre la foto si la foto está: sin ella, el margen negativo la cortaba contra el borde
+  const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
+  const hasPhoto = !!photoUrl && failedPhoto !== photoUrl && !photoKnownMissing(photoUrl);
   const fmtX = (n: number) => `× ${n.toLocaleString(numberLocale, { minimumFractionDigits: n % 1 ? 1 : 0, maximumFractionDigits: 2 })}`;
   const comboLevel = result.comboLevel ?? 0;
   const comboKey = COMBO_LEVELS[comboLevel]?.key;
@@ -74,7 +77,7 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
       {/* Foto del país (D7) arriba y la mascota medio encima: así caben las dos también en un iPhone en
           horizontal (antes ambas se ocultaban con alto ≤ 420 px, p.ej. iPhone 16 Pro). Solo se quita la
           foto en pantallas diminutas (≤ 330 px de alto). */}
-      <CountryPhoto country={result.city.country} src={photoUrl} size="sm" className={`rounded-t-3xl ${lg ? '-mx-5 -mt-5 h-24' : '-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-20 [@media(max-height:420px)]:-mx-2 [@media(max-height:420px)]:-mt-2 [@media(max-height:420px)]:h-16 [@media(max-height:330px)]:hidden'}`} />
+      <CountryPhoto country={result.city.country} src={photoUrl} size="sm" onFail={() => setFailedPhoto(photoUrl)} className={`rounded-t-3xl ${lg ? '-mx-5 -mt-5 h-24' : '-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 h-20 [@media(max-height:420px)]:-mx-2 [@media(max-height:420px)]:-mt-2 [@media(max-height:420px)]:h-16 [@media(max-height:330px)]:hidden'}`} />
       {lg ? (
         <>
           <div className="flex items-center gap-4">

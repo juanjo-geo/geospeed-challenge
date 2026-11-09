@@ -18,6 +18,7 @@ import { PlayerFace, formatPin } from '@/components/game/RoomParts';
 import Wordmark from '@/components/ui/Wordmark';
 import QrCode from '@/components/ui/QrCode';
 import Flag from '@/components/ui/Flag';
+import SafeImg from '@/components/ui/SafeImg';
 
 /**
  * Pantalla para proyectar la sala en vivo (bloque S4, `/sala/:pin/tv`): en un computador conectado al TV o al
@@ -185,7 +186,7 @@ function TvRound({ state, phase, round, closesAt, opensAt, now, locale }: { stat
       <div className="shrink-0 flex items-center gap-[2vw] rounded-[1.5vw] border-2 border-accent/50 bg-card/85 px-[2vw] py-[1.4vh]">
         <span className="shrink-0 rounded-full border-2 border-accent/60 px-[1vw] py-[0.4vh] font-black text-accent text-[clamp(1rem,1.8vw,2.2rem)]">📡 {round}/{s.rounds_total}</span>
         {item && isFlag(item) && <Flag country={item.name} className="w-[9vw] shrink-0 rounded-lg shadow-lg" />}
-        {photo && <img src={photo} alt="" className="h-[11vh] aspect-[4/3] object-cover rounded-xl shrink-0" />}
+        <SafeImg src={photo} className="h-[11vh] aspect-[4/3] object-cover rounded-xl shrink-0" />
         <p className="min-w-0 flex-1 leading-tight">
           <span className="block text-[clamp(0.9rem,1.5vw,1.8rem)] text-muted-foreground font-bold">{item && isFlag(item) ? t('flag_whichCountry') : t('game_whereIsLead')}</span>
           <span className="block font-black text-[clamp(1.6rem,3.6vw,4.4rem)] truncate">{item ? (isFlag(item) ? (phase === 'question' ? '' : itemTitle(item, locale)) : `${itemTitle(item, locale)}?`) : '…'}</span>

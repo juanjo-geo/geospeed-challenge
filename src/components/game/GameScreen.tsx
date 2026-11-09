@@ -32,7 +32,8 @@ import { getEquipped } from '@/lib/cosmetics';
 import Wordmark from '@/components/ui/Wordmark';
 import RoundFeedbackCard from './RoundFeedbackCard';
 const PlaceStoryModal = lazy(() => import('./PlaceStoryModal'));
-import { HudIconButton, InGameSettings } from './GameHud';
+import { AudioButtons, HudIconButton, InGameSettings } from './GameHud';
+import SafeImg from '@/components/ui/SafeImg';
 import { frameAnswer, feedbackCover, PIN_LEGEND_CORNER } from '@/lib/mapFraming';
 import FitToBox from '@/components/ui/FitToBox';
 import { appNumberLocale } from '@/lib/format';
@@ -664,7 +665,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
               {isFlag(currentCity)
                 ? <span className="flex items-center gap-2 min-w-0"><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="w-16 aspect-[3/2] object-cover rounded-[4px] ring-1 ring-black/20 shrink-0" /><span className="text-sm font-black truncate">{t('flag_whichCountry')}</span></span>
                 : <span className="flex items-center gap-2 min-w-0">
-                    {isMonument(currentCity) && itemPhotoUrl(currentCity, 'sm') && <img src={itemPhotoUrl(currentCity, 'sm') ?? ''} alt="" className="w-16 aspect-[3/2] object-cover rounded-[4px] ring-1 ring-black/20 shrink-0" />}
+                    {isMonument(currentCity) && <SafeImg src={itemPhotoUrl(currentCity, 'sm')} className="w-16 aspect-[3/2] object-cover rounded-[4px] ring-1 ring-black/20 shrink-0" />}
                     <p className="text-sm font-black truncate">{currentCity.ftype ? featureTypeEmoji(currentCity.ftype) : isMonument(currentCity) ? '🗼' : '📍'} {itemTitle(currentCity, locale)}</p>
                   </span>}
             </div>
@@ -716,7 +717,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
             <>
             {/* Monumento (Fase 6c): la foto es la pregunta; el nombre va debajo, más chico */}
             {isMonument(currentCity) && itemPhotoUrl(currentCity, 'lg') && (
-              <img src={itemPhotoUrl(currentCity, 'lg') ?? ''} alt="" className="mx-auto mb-[3cqi] w-full max-w-[320px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
+              <SafeImg src={itemPhotoUrl(currentCity, 'lg')} className="mx-auto mb-[3cqi] w-full max-w-[320px] aspect-[3/2] object-cover rounded-lg ring-2 ring-white/30 shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
             )}
             <p
               className={`${sidebarNameSize(itemTitle(currentCity, locale), isMonument(currentCity))} font-extrabold leading-tight`}
@@ -835,11 +836,11 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 {isTraining && <span className="text-muted-foreground font-semibold">{t('game_trainingPrefix')} · </span>}
                 {isFlag(currentCity)
                   ? <><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" /><span className="align-middle">{t('flag_whichCountry')}</span></>
-                  : <>{isMonument(currentCity) && itemPhotoUrl(currentCity, 'sm') && <img src={itemPhotoUrl(currentCity, 'sm') ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" />}<span className="align-middle">{t('game_whereIsLead')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>?</span>{currentCity.ftype && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
+                  : <>{isMonument(currentCity) && <SafeImg src={itemPhotoUrl(currentCity, 'sm')} className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" />}<span className="align-middle">{t('game_whereIsLead')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>?</span>{currentCity.ftype && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
                 {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {isSpecial(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>}
               </div>
             </div>
-            {onToggleMusic && <HudIconButton size="sm" icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+            <AudioButtons size="sm" musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
             <HudIconButton size="sm" icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
             {onExit && <HudIconButton size="sm" icon="close" label={t('game_exit')} onClick={confirmExit} />}
           </div>
@@ -876,7 +877,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
         {/* Música + salir (escritorio / tablet con panel lateral) */}
         {!isCompact && (
           <div className="absolute z-20 flex items-center gap-2.5" style={{ top: 'max(0.75rem, var(--sat))', right: 'max(0.75rem, var(--sar))' }}>
-            {onToggleMusic && <HudIconButton icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} />}
+            <AudioButtons musicMuted={musicMuted} onToggleMusic={onToggleMusic} />
             <HudIconButton icon="gear" label={t('settings_title')} onClick={() => setSettingsOpen(true)} />
             {onExit && <HudIconButton icon="close" label={t('game_exit')} onClick={confirmExit} />}
           </div>

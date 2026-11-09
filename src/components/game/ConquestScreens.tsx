@@ -485,7 +485,7 @@ export function ConquestLobbyScreen({ groupId, onBack, onOpenMap }: ConquestLobb
 
       {/* Barra fija abajo (como la sala en vivo): iniciar o esperar al administrador */}
       {!active && (
-        <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 pl-3 sm:pl-4 md:px-6 pr-[60px] pt-3 flex flex-col items-center gap-1.5 text-center bg-gradient-to-t from-background via-background/95 to-transparent"
+        <div className="sticky bottom-0 z-10 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 flex flex-col items-center gap-1.5 text-center bg-gradient-to-t from-background via-background/95 to-transparent"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
           {group.is_admin ? (
             <>

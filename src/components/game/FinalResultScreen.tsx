@@ -27,7 +27,7 @@ import { showRewardedAd } from '@/lib/adSystem';
 import { addLives } from '@/lib/energySystem';
 import { useNavigate } from 'react-router-dom';
 import FrustrationOfferModal from './FrustrationOfferModal';
-import { HudIconButton } from './GameHud';
+import { AudioButtons, HudIconButton } from './GameHud';
 import { appNumberLocale } from '@/lib/format';
 import { loadCityTips } from '@/lib/cityHints';
 import { loadPlaceFacts, loadPlaceTrivia } from '@/lib/placeFacts';
@@ -292,7 +292,7 @@ export default function FinalResultScreen({
           <span className="text-xs sm:text-sm font-semibold text-[hsl(205_90%_78%)] mt-0.5">{modeLabel} · {diffLabel}</span>
         </div>
         <div className="flex items-center justify-end gap-1.5 sm:gap-2.5">
-          {onToggleMusic && <span className="hidden sm:inline-flex"><HudIconButton icon={musicMuted ? 'mute' : 'sound'} label={musicMuted ? t('music_on') : t('music_off')} onClick={onToggleMusic} /></span>}
+          <span className="hidden sm:inline-flex items-center gap-1.5 sm:gap-2.5"><AudioButtons musicMuted={musicMuted} onToggleMusic={onToggleMusic} /></span>
           <span className="hidden sm:inline-flex"><HudIconButton icon="home" label={t('final_home')} onClick={() => { playButtonTap(); onGoHome(); }} /></span>
           <HudIconButton icon="close" label={t('final_home')} onClick={() => { playButtonTap(); onGoHome(); }} />
         </div>
