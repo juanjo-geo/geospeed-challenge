@@ -54,11 +54,13 @@ interface TimeAttackScreenProps {
   gameMode: GameMode;
   onGameOver: (result: TimeAttackResult) => void;
   onExit?: () => void;
+  /** La partida arrancó (terminó la cuenta regresiva): aquí se cobra la vida */
+  onStarted?: () => void;
   musicMuted?: boolean;
   onToggleMusic?: () => void;
 }
 
-export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onExit, musicMuted, onToggleMusic }: TimeAttackScreenProps) {
+export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onExit, onStarted, musicMuted, onToggleMusic }: TimeAttackScreenProps) {
   const { t, locale } = useI18n();
   // Ficha del lugar (Fase 8): el dato clave en la tarjeta (en Caos la tarjeta sale al instante: hace de franja)
   const placeFacts = usePlaceFacts();
@@ -131,6 +133,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
 
   // Al arrancar de verdad, reinicia el cronómetro de la 1ª ronda (no contar la cuenta regresiva)
   useEffect(() => { if (taStarted) roundStartRef.current = Date.now(); }, [taStarted]);
+  useEffect(() => { if (taStarted) onStarted?.(); }, [taStarted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Global countdown timer — pauses when portrait on mobile / antes de arrancar
   useEffect(() => {

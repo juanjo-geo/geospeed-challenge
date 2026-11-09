@@ -378,6 +378,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const tabTargetRef = useRef<Phase | null>(null);
   // Desde qué pantalla se lanzó la partida (Cancelar en la cuenta regresiva vuelve allí)
   const launchOriginRef = useRef<Phase | null>(null);
+  // 60s de Caos: partida lanzada desde la elección de nivel a la que aún no se le cobró la vida
+  const taLifePendingRef = useRef(false);
   useEffect(() => {
     const prev = lastPhaseRef.current;
     if (prev === phase) return;
@@ -1093,7 +1095,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleTimeAttack = useCallback(() => {
     if (offlineBlocked('play')) return;
     unlockAudio();
-    if (!consumeLife()) { setShowNoLives(true); return; }
+    // La vida se cobra al arrancar la partida (onStarted): volver atrás o cancelar la cuenta regresiva no cuesta nada
+    if (getEnergy().lives <= 0) { setShowNoLives(true); return; }
     setPhase('ta-select');
   }, []);
   const handleDailyChallenge = useCallback(() => {
@@ -1512,7 +1515,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
                 {t('back').toUpperCase()}
               </button>
               <button
-                onClick={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
+                onClick={() => { taLifePendingRef.current = true; gameKeyRef.current += 1; setPhase('ta-playing'); }}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-[0.97]"
                 style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', boxShadow: '0 5px 0 hsl(var(--primary-deep))' }}
               >
@@ -1543,7 +1546,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           key={`ta-${gameKeyRef.current}`}
           difficulty={difficulty}
           gameMode={gameMode}
-          onExit={handleGoHome}
+          onExit={() => { if (taLifePendingRef.current) { taLifePendingRef.current = false; setPhase('ta-select'); scrollAppToTop(); } else handleGoHome(); }}
+          onStarted={() => { if (taLifePendingRef.current) { taLifePendingRef.current = false; consumeLife(); } }}
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
           onGameOver={(result) => {
