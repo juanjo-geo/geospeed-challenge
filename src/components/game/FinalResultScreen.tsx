@@ -142,7 +142,9 @@ export default function FinalResultScreen({
     const stats = getPlayerStats();
     const prevBest = previousBestOverride ?? stats.bestScore;
     setPreviousBest(prevBest);
-    const prevXp = calculateXP();
+    // saveGameResult ya sumó esta partida al acumulado
+    const newXp = calculateXP();
+    const prevXp = Math.max(0, newXp - totalScore);
     // 60s de Caos nunca contó en stats (su escala de puntos inflaría el récord global)
     if (variant !== 'timeattack') updatePlayerStats(totalScore, countDistancesInStats ? distances : []);
     const record = totalScore > prevBest && prevBest > 0;
@@ -155,7 +157,6 @@ export default function FinalResultScreen({
       playGameOver();
     }
 
-    const newXp = prevXp + totalScore;
     const levelResult = checkLevelUp(prevXp, newXp);
     if (levelResult.leveled) setTimeout(() => playLevelUp(), reason === 'complete' ? 900 : 400);
 

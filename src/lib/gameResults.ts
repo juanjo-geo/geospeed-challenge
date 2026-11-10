@@ -19,6 +19,7 @@ import type { RoundResult } from '@/components/game/GameScreen';
 import type { TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import { getGameHistory, getPlayerStats, type GameHistoryEntry } from './gameUtils';
 import { ensureGuestSession } from './identity';
+import { addGameXP, mergeServerXP } from './levelSystem';
 
 export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel' | 'sprint' | 'quiz' | 'quiz_free' | 'room';
 export type EndReason = 'complete' | 'timeout' | 'abandoned';
@@ -145,6 +146,7 @@ async function rpcSave(payload: Json): Promise<{ id: string | null; retryable: b
  * Nunca lanza: el final de partida no debe romperse por el servidor.
  */
 export async function saveGameResult(input: SaveGameInput): Promise<string | null> {
+  addGameXP(input.score); // antes del primer await: la pantalla final ya la ve sumada
   const clientId = input.clientId ?? newClientId();
   const payload = toPayload(input, clientId);
   try {
@@ -255,6 +257,7 @@ export async function fetchMyProgress(): Promise<MyProgress | null> {
   const { data, error } = await supabase.rpc('my_progress');
   if (error || !data || (Array.isArray(data) && data.length === 0)) return null;
   const row = Array.isArray(data) ? data[0] : data;
+  mergeServerXP(Number(row.total_xp ?? 0));
   return {
     gamesPlayed: Number(row.games_played ?? 0),
     bestScore: Number(row.best_score ?? 0),

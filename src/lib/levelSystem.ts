@@ -9,6 +9,8 @@ export interface PlayerLevel {
   xp: number;
   xpForNext: number;
   progress: number; // 0-100
+  /** Nivel que abre regiones y dificultades: nunca baja de lo que el jugador ya tenía abierto */
+  unlockLevel: number;
 }
 
 export interface LevelReward {
@@ -17,18 +19,26 @@ export interface LevelReward {
   unlock?: string;
 }
 
-const LEVELS: { minXp: number; title: string; emoji: string }[] = [
+/**
+ * 1 punto = 1 XP, acumulado en toda la vida del jugador. Una partida de Clásico da unos 6.000 puntos a un jugador nuevo,
+ * 14.000 a uno promedio y 30.000 a uno bueno. Los niveles 2 a 6 abren regiones y dificultades en las primeras partidas;
+ * los últimos piden muchas (Deidad Geo: unas 180 para un jugador promedio).
+ */
+export const LEVELS: { minXp: number; title: string; emoji: string }[] = [
   { minXp: 0, title: 'Novato', emoji: '🌱' },
-  { minXp: 500, title: 'Explorador', emoji: '🧭' },
-  { minXp: 1500, title: 'Viajero', emoji: '✈️' },
-  { minXp: 3500, title: 'Navegante', emoji: '🗺️' },
-  { minXp: 7000, title: 'Geógrafo', emoji: '🌍' },
-  { minXp: 12000, title: 'Cartógrafo', emoji: '📐' },
-  { minXp: 20000, title: 'Maestro', emoji: '🎓' },
-  { minXp: 35000, title: 'Leyenda', emoji: '👑' },
-  { minXp: 60000, title: 'Oráculo', emoji: '🔮' },
-  { minXp: 100000, title: 'Deidad Geo', emoji: '⚡' },
+  { minXp: 3000, title: 'Explorador', emoji: '🧭' },
+  { minXp: 8000, title: 'Viajero', emoji: '✈️' },
+  { minXp: 15000, title: 'Navegante', emoji: '🗺️' },
+  { minXp: 35000, title: 'Geógrafo', emoji: '🌍' },
+  { minXp: 70000, title: 'Cartógrafo', emoji: '📐' },
+  { minXp: 150000, title: 'Maestro', emoji: '🎓' },
+  { minXp: 400000, title: 'Leyenda', emoji: '👑' },
+  { minXp: 1000000, title: 'Oráculo', emoji: '🔮' },
+  { minXp: 2500000, title: 'Deidad Geo', emoji: '⚡' },
 ];
+
+/** Umbrales con los que se abrían los candados (niveles 1 a 6) antes de esta escala: nadie pierde lo que ya tenía abierto */
+const OLD_UNLOCK_XP = [0, 500, 1500, 3500, 7000, 12000];
 
 const LEVEL_REWARDS: Record<number, LevelReward> = {
   1: { lives: 0, description: 'Nivel inicial' },
@@ -43,11 +53,54 @@ const LEVEL_REWARDS: Record<number, LevelReward> = {
   10: { lives: 20, description: 'Deidad Geo desbloqueado' },
 };
 
-export function calculateXP(): number {
+const XP_KEY = 'geospeed_total_points';
+const UNLOCK_FLOOR_KEY = 'geospeed_unlock_floor';
+
+function readNumber(key: string): number | null {
+  try {
+    const raw = localStorage.getItem(key);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isFinite(n) ? n : null;
+  } catch { return null; }
+}
+
+function writeNumber(key: string, value: number) {
+  try { localStorage.setItem(key, String(value)); } catch { /* sin espacio o almacenamiento bloqueado */ }
+}
+
+/** Lo que guardaba el dispositivo antes del contador: la suma de las últimas 20 partidas del historial */
+function pointsInHistory(): number {
   const stats = getPlayerStats();
-  const history = getGameHistory();
-  // XP = total accumulated score from all games
-  return history.reduce((sum, g) => sum + g.score, 0) || (stats.bestScore * stats.gamesPlayed * 0.3);
+  return getGameHistory().reduce((sum, g) => sum + g.score, 0) || Math.round(stats.bestScore * stats.gamesPlayed * 0.3);
+}
+
+/** XP total. El historial local solo guarda 20 partidas, así que el acumulado vive en su propio contador. */
+export function calculateXP(): number {
+  const saved = readNumber(XP_KEY);
+  if (saved !== null) return saved;
+  const seed = pointsInHistory();
+  writeNumber(XP_KEY, seed);
+  return seed;
+}
+
+/** Suma una partida terminada en este dispositivo */
+export function addGameXP(points: number) {
+  writeNumber(XP_KEY, calculateXP() + Math.max(0, Math.round(points)));
+}
+
+/** El servidor suma las partidas de todos los dispositivos: si va adelante, el contador lo alcanza */
+export function mergeServerXP(total: number) {
+  if (total > calculateXP()) writeNumber(XP_KEY, Math.round(total));
+}
+
+/** Nivel de candados que el jugador ya tenía abierto cuando llegó esta escala */
+function unlockFloor(): number {
+  const saved = readNumber(UNLOCK_FLOOR_KEY);
+  if (saved !== null) return saved;
+  const points = pointsInHistory();
+  const floor = OLD_UNLOCK_XP.filter((min) => points >= min).length;
+  writeNumber(UNLOCK_FLOOR_KEY, floor);
+  return floor;
 }
 
 export function getPlayerLevel(): PlayerLevel {
@@ -76,6 +129,7 @@ export function getPlayerLevel(): PlayerLevel {
     xp,
     xpForNext,
     progress,
+    unlockLevel: Math.max(levelIndex + 1, unlockFloor()),
   };
 }
 
@@ -122,6 +176,7 @@ function getPlayerLevelByNumber(levelNumber: number): PlayerLevel {
     xp,
     xpForNext,
     progress,
+    unlockLevel: Math.max(levelNumber, unlockFloor()),
   };
 }
 
