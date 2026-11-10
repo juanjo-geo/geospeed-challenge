@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import Mascot from './Mascot';
+import { useProfilePhoto } from '@/lib/profilePhoto';
 
 const AVATAR_KEY = 'geospeed_avatar';
 
@@ -12,6 +13,7 @@ const AVATAR_KEY = 'geospeed_avatar';
  */
 export function AccountButton({ onOpenProfile, showName = true, nameClassName = '' }: { onOpenProfile?: () => void; showName?: boolean; nameClassName?: string }) {
   const { user, displayName, isAnonymous, avatar: serverAvatar } = useAuth();
+  const photo = useProfilePhoto();
   const { t } = useI18n();
   const navigate = useNavigate();
   const hasAccount = !!user && !isAnonymous;
@@ -28,7 +30,9 @@ export function AccountButton({ onOpenProfile, showName = true, nameClassName = 
     >
       <span className="w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-full border-2 border-accent/70 bg-card/80 flex items-center justify-center overflow-hidden text-accent">
         {hasAccount ? (
-          avatar === 'mascot'
+          photo
+            ? <img src={photo} alt="" className="w-full h-full object-cover" />
+            : avatar === 'mascot'
             ? <Mascot className="w-[80%]" />
             : <span className="text-lg" aria-hidden>{avatar}</span>
         ) : (

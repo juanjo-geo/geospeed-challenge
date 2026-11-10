@@ -17,6 +17,7 @@ import {
 } from '@/lib/progression';
 import { DAILY_STATUS_EVENT, FRAME_STYLE, TITLE_KEY, fetchDailyStatus, getCachedDailyStatus, setActiveCosmetics, type DailyStatus } from '@/lib/dailyChallenge';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfilePhoto } from '@/lib/profilePhoto';
 
 const DIFF_SHORT: Record<string, string> = { basic: 'home_diffBasic', easy: 'home_diffEasy', medium: 'home_diffMedium', hard: 'home_diffHard' };
 /** Misma clave que la selección del Inicio (HomeScreen SELECTION_KEY): tocar un mapa lo deja elegido para jugar */
@@ -198,6 +199,7 @@ function AchievementCard({ a, p, fresh }: { a: AchievementDef; p: Progression | 
 function Showcase({ earned }: { earned: Set<string> }) {
   const { t } = useI18n();
   const { user, displayName, avatar } = useAuth();
+  const photo = useProfilePhoto();
   const [st, setSt] = useState<DailyStatus | null>(getCachedDailyStatus);
   useEffect(() => {
     const on = (e: Event) => setSt((e as CustomEvent<DailyStatus>).detail);
@@ -215,7 +217,7 @@ function Showcase({ earned }: { earned: Set<string> }) {
       <div className="flex items-center gap-3 mb-3">
         <span className="w-16 h-16 shrink-0 rounded-full border-[3px] border-primary bg-[radial-gradient(circle_at_50%_40%,hsl(var(--brand-navy-card)),hsl(var(--brand-navy-deep)))] flex items-center justify-center overflow-hidden"
           style={fs ? { borderColor: fs.ring, boxShadow: `0 0 14px ${fs.glow}` } : undefined} aria-hidden>
-          {!avatar || avatar === 'mascot' ? <Mascot state="wink" className="w-[80%]" /> : <span className="text-3xl">{avatar}</span>}
+          {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : !avatar || avatar === 'mascot' ? <Mascot state="wink" className="w-[80%]" /> : <span className="text-3xl">{avatar}</span>}
         </span>
         <span className="min-w-0">
           <span className="block font-black text-xl truncate">{displayName || t('profile_player')}</span>

@@ -80,7 +80,8 @@ De dónde sale cada uno:
 - Supabase, Google Analytics, RevenueCat, Cloudflare y Brevo actúan como proveedores de servicios, así que por sí solos
   no cuentan como "compartir".
 - **No se recopilan:** ubicación precisa, teléfono, dirección, contactos, fotos, audio, archivos, calendario, salud,
-  mensajes ni historial web.
+  mensajes ni historial web. La foto de perfil se queda en el dispositivo y Google no cuenta eso como recopilar. Si algún
+  día se sube al servidor, cambian esta tabla y la política, y hacen falta moderación y reporte.
 
 ## 8. Otras declaraciones
 
