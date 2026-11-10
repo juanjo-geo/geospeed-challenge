@@ -16,6 +16,7 @@ import FilterButton from './FilterButton';
 import { HomeIcon } from '@/components/ui/icons';
 import { REGION_ART, DIFF_ART, DIFF_ORDER, regionGroup, packGroups } from '@/lib/selectionArt';
 import { formatNumber } from '@/lib/format';
+import { useProfilePhoto } from '@/lib/profilePhoto';
 
 interface RankingScreenProps {
   initialMode?: string;
@@ -42,6 +43,7 @@ const MOCK_NAMES = ['Laura', 'Mateo', 'Sofía', 'Daniel', 'Camila', 'Andrés', '
 export default function RankingScreen({ initialMode = 'world', initialDifficulty = 'basic', onBack, onSignIn }: RankingScreenProps) {
   const { t } = useI18n();
   const { displayName, avatar } = useAuth();
+  const myPhoto = useProfilePhoto();
   const [boardKey, setBoardKey] = useState(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty | ''>(initialDifficulty);
   const [period, setPeriod] = useState<RankPeriod>('all');
@@ -199,7 +201,7 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
               <div className="w-full md:mt-3 rounded-2xl border-2 border-primary bg-primary/10 shadow-[0_0_18px_hsl(var(--primary)/0.25)] px-3 py-2.5 md:p-4">
                 <div className="flex items-center gap-3 md:justify-center">
                   <span className="font-black text-[1.9rem] md:text-5xl text-primary">#{hasRank.rank}</span>
-                  <Avatar avatar={avatar || 'mascot'} size="lg" frame={getCachedDailyStatus()?.active_frame} />
+                  <Avatar avatar={avatar || 'mascot'} photo={myPhoto} size="lg" frame={getCachedDailyStatus()?.active_frame} />
                   <span className="flex-1 md:flex-none min-w-0 font-extrabold text-lg md:text-xl text-left leading-tight truncate">{myName}{knownName && <span className="text-primary"> · {t('ch_you')}</span>}</span>
                   <span className="md:hidden font-extrabold text-xl text-primary whitespace-nowrap">{formatNumber(hasRank.bestScore ?? 0)} <span className="text-sm">pts</span></span>
                 </div>
@@ -249,7 +251,7 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="w-8 h-8 mx-auto rounded-full border-2 border-accent/70 flex items-center justify-center font-bold">{rank}</span>;
 }
 
-function Avatar({ avatar, size = 'sm', frame }: { avatar: string; size?: 'sm' | 'lg'; frame?: string | null }) {
+function Avatar({ avatar, photo, size = 'sm', frame }: { avatar: string; photo?: string | null; size?: 'sm' | 'lg'; frame?: string | null }) {
   const cls = size === 'lg' ? 'w-14 h-14 md:w-16 md:h-16 border-primary' : 'w-10 h-10 border-accent/70';
   // Marco de la racha del diario (bronce / plata / oro): anillo y brillo del color
   const fs = frame ? FRAME_STYLE[frame] : null;
@@ -259,7 +261,7 @@ function Avatar({ avatar, size = 'sm', frame }: { avatar: string; size?: 'sm' | 
       style={fs ? { borderColor: fs.ring, borderWidth: 3, boxShadow: `0 0 10px ${fs.glow}` } : undefined}
       aria-hidden
     >
-      {!avatar || avatar === 'mascot' ? <Mascot state="wink" className="w-[80%]" /> : <span className={size === 'lg' ? 'text-3xl' : 'text-xl'}>{avatar}</span>}
+      {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : !avatar || avatar === 'mascot' ? <Mascot state="wink" className="w-[80%]" /> : <span className={size === 'lg' ? 'text-3xl' : 'text-xl'}>{avatar}</span>}
     </span>
   );
 }

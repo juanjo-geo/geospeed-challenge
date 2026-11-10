@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ACHIEVEMENTS, achievementTier, medalCounts, useProgression } from '@/lib/progression';
 import { scrollAppToTop } from '@/lib/appScroll';
 import { fetchMyGamesByType, fetchMyProgress, type GameType, type MyProgress } from '@/lib/gameResults';
@@ -18,6 +18,8 @@ import Mascot from './Mascot';
 import { appNumberLocale, formatNumber } from '@/lib/format';
 import { ChevronIcon, HomeIcon, LegendPin } from '@/components/ui/icons';
 import HeaderBackdrop from './HeaderBackdrop';
+import PhotoCropDialog from './PhotoCropDialog';
+import { clearProfilePhoto, useProfilePhoto } from '@/lib/profilePhoto';
 
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
 const AVATARS = ['mascot', '🌍', '🗺️', '🧭', '✈️', '🚀', '🏔️', '🌋', '🏝️', '🎯', '👑', '⚡', '🔮', '🦅', '🐉', '🎲', '🛸'];
@@ -66,6 +68,9 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
     setEditingName(false);
   };
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const photo = useProfilePhoto();
+  const [pickedFile, setPickedFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<ProfileTab>(initialTab);
 
   const localStats = getPlayerStats();
@@ -90,6 +95,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
 
   const selectAvatar = (a: string) => {
     playButtonTap();
+    clearProfilePhoto();
     setAvatar(a);
     localStorage.setItem(AVATAR_KEY, a);
     updateMyProfile({ avatar: a }).catch(() => {});
@@ -125,7 +131,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                 className="relative w-36 h-36 sm:w-44 sm:h-44 short:w-24 short:h-24 rounded-full border-[5px] border-primary bg-[radial-gradient(circle_at_50%_40%,hsl(var(--brand-navy-card)),hsl(var(--brand-navy-deep)))] flex items-center justify-center shadow-[0_0_34px_hsl(var(--primary)/0.45)] transition-transform hover:scale-[1.03] active:scale-95"
                 aria-label={t('profile_changeAvatar')}
               >
-                <AvatarFace avatar={avatar} size="lg" />
+                {photo ? <img src={photo} alt="" className="absolute inset-0 w-full h-full rounded-full object-cover" /> : <AvatarFace avatar={avatar} size="lg" />}
                 <svg viewBox="0 0 60 16" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[46%] text-primary" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" aria-hidden>
                   <path d="M6 4l5 6M22 3l2 8M38 3l-2 8M54 4l-5 6" />
                 </svg>
@@ -137,12 +143,20 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                   <div className="w-full mb-3 pb-3 border-b border-accent/20 animate-fade-in">
                     <p className="text-xs text-muted-foreground mb-2">{t('profile_chooseAvatar')}</p>
                     <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5 sm:gap-2">
+                      <button
+                        onClick={() => { playButtonTap(); fileRef.current?.click(); }}
+                        className={`aspect-square rounded-xl overflow-hidden flex items-center justify-center transition-all active:scale-90 ${photo ? 'border-2 border-primary' : 'bg-muted/40 border border-dashed border-accent/70 hover:border-accent'}`}
+                        aria-label={t('profile_photoUpload')}
+                        title={t('profile_photoUpload')}
+                      >
+                        {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : <svg viewBox="0 0 24 24" className="w-1/2 h-1/2 text-accent" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="13" r="3.5" /></svg>}
+                      </button>
                       {AVATARS.map(a => (
                         <button
                           key={a}
                           onClick={() => selectAvatar(a)}
                           className={`aspect-square rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                            avatar === a ? 'bg-primary/20 border-2 border-primary' : 'bg-muted/40 border border-transparent hover:border-accent/50'
+                            avatar === a && !photo ? 'bg-primary/20 border-2 border-primary' : 'bg-muted/40 border border-transparent hover:border-accent/50'
                           }`}
                           aria-label={a === 'mascot' ? t('profile_avatarExplorer') : a}
                         >
@@ -150,8 +164,17 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                         </button>
                       ))}
                     </div>
+                    <p className="mt-2 text-[11px] text-muted-foreground">{t('profile_photoPrivate')}</p>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ''; if (file) setPickedFile(file); }}
+                    />
                   </div>
                 )}
+                {pickedFile && <PhotoCropDialog file={pickedFile} onClose={() => setPickedFile(null)} onSaved={() => { setPickedFile(null); setShowAvatarPicker(false); }} />}
 
                 {editingName ? (
                   <form onSubmit={(e) => { e.preventDefault(); saveName(); }} className="w-full max-w-xs flex gap-2">

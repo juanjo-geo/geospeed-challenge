@@ -88,7 +88,7 @@ const Privacy = () => {
           Política de Privacidad
         </h1>
         <p className="mb-2 text-sm text-[#d4d4c8]/60">
-          Última actualización: 8 de noviembre de 2026
+          Última actualización: 9 de noviembre de 2026
         </p>
         <p className="mb-8 text-sm text-[#d4d4c8]/60">
           Aplicación: GeoSpeed Challenge &middot; Desarrollador: GeoSpeed Games (JuanJo Grimar)
@@ -123,7 +123,9 @@ const Privacy = () => {
               Guardamos el nombre de jugador y el avatar que elijas, y tu país, que sugerimos a
               partir del idioma o la zona horaria de tu teléfono y puedes cambiar en tu perfil. Tu
               nombre de jugador, avatar, país, títulos y puntajes son visibles para otros jugadores
-              en los rankings, los retos, las salas en vivo y los quizzes.
+              en los rankings, los retos, las salas en vivo y los quizzes. Si eliges una foto propia
+              como imagen de perfil, se guarda solo en tu dispositivo: no la recibimos y los demás
+              jugadores no la ven.
             </p>
           </SubSection>
 
@@ -274,7 +276,7 @@ const Privacy = () => {
               Privacy Policy
             </h1>
             <p className="mb-2 text-sm text-[#d4d4c8]/60">
-              Last updated: November 8, 2026
+              Last updated: November 9, 2026
             </p>
             <p className="mb-8 text-sm text-[#d4d4c8]/60">
               App: GeoSpeed Challenge &middot; Developer: GeoSpeed Games (JuanJo Grimar)
@@ -307,7 +309,9 @@ const Privacy = () => {
                 We store the player name and avatar you choose, and your country, which we suggest
                 from your phone&apos;s language or time zone and you can change in your profile.
                 Your player name, avatar, country, titles and scores are visible to other players
-                in rankings, challenges, live rooms and quizzes.
+                in rankings, challenges, live rooms and quizzes. If you choose your own photo as your
+                profile picture, it is stored only on your device: we do not receive it and other
+                players cannot see it.
               </p>
             </SubSection>
 
