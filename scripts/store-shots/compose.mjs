@@ -103,7 +103,7 @@ function portHtml(raw, t, sub) {
 }
 
 function featureHtml() {
-  const tag = LOCALE === 'es' ? '¿Cuánto conoces <span class="hl">el mundo?</span>' : 'How well do you know <span class="hl">the world?</span>';
+  const tag = LOCALE === 'es' ? '¿Cuánto conoces <span class="hl">el mundo?</span>' : 'How well do you<br>know <span class="hl">the world?</span>';
   const chips = LOCALE === 'es' ? ['250+ ciudades', 'Banderas', 'Desafío diario', 'Retos con amigos'] : ['250+ cities', 'Flags', 'Daily challenge', 'Friend challenges'];
   return `<!doctype html><html><head><meta charset="utf-8"><style>${BASE_CSS}
     .map { position: absolute; inset: 0; background: url('${url(join(RAW, '01-pregunta.png'))}') no-repeat; background-size: 1592px auto; background-position: -284px -141px; opacity: .42; filter: saturate(1.1); }

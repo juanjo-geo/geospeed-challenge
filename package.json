@@ -16,6 +16,7 @@
     "test:flags-sql": "node scripts/test-flags-sql.mjs",
     "test:features-sql": "node scripts/test-features-sql.mjs",
     "test:conquest-sql": "node scripts/test-conquest-sql.mjs",
+    "test:moderation-sql": "node scripts/test-moderation-sql.mjs",
     "test:revenuecat-sql": "node scripts/test-revenuecat-sql.mjs"
   },
   "dependencies": {

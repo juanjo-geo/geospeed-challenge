@@ -19,6 +19,7 @@ import CityAnswersScreen from './CityAnswersScreen';
 import CityReviewScreen from './CityReviewScreen';
 import { type RoundResult } from './GameScreen';
 import { appNumberLocale, formatNumber } from '@/lib/format';
+import ReportButton from './ReportButton';
 import { PinIcon, StopwatchIcon, HomeIcon, ChevronIcon, ArrowRightIcon, LegendPin } from '@/components/ui/icons';
 
 const PlaceStoryModal = lazy(() => import('./PlaceStoryModal'));
@@ -194,6 +195,7 @@ export default function ChallengeResultScreen({ detail, onBack, onCreateAnother,
               <PlayerCard name={myName} score={mine!.score} tag={outcome === 'win' ? 'winner' : outcome === 'tie' ? 'tie' : 'done'} mine showYou={!!displayName} t={t} />
               <PlayerCard name={rivalName} score={rival!.score} tag={outcome === 'lose' ? 'winner' : outcome === 'tie' ? 'tie' : 'done'} t={t} />
             </div>
+            {detail.rival?.name && <div className="mt-1 text-right"><ReportButton variant="link" target={{ kind: 'challenge', ref: detail.id, name: detail.rival.name }} /></div>}
             <div className="mt-3 flex items-center gap-3">
               <span className="flex-1 h-px bg-border" aria-hidden />
               <p className="text-base sm:text-lg font-bold whitespace-nowrap">

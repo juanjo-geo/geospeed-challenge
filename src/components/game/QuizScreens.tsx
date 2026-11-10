@@ -17,6 +17,7 @@ import {
   type Quiz, type QuizDraft, type QuizError,
 } from '@/lib/quizzes';
 import FavStar from './FavStar';
+import ReportButton, { TermsNote } from './ReportButton';
 import { rememberQuizName } from '@/lib/favorites';
 
 const errorKey: Record<QuizError, string> = {
@@ -234,6 +235,7 @@ export function QuizEditorScreen({ initial, onBack, onSaved, onOpenStore }: Edit
             <input value={name} maxLength={QUIZ_NAME_MAX} onChange={(e) => setName(e.target.value)} placeholder={t('quiz_namePlaceholder')}
               className="mt-1 w-full rounded-xl border-2 border-accent/50 bg-brand-navy-deep/60 px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-accent" />
             {name && !quizNameOk(name) && <span className="text-xs font-semibold text-destructive">{t('quiz_errRude')}</span>}
+            <TermsNote className="mt-1" />
           </label>
           <div>
             <p className="text-sm font-bold mb-1">{t('quiz_categories')}</p>
@@ -399,6 +401,7 @@ export function QuizIntroScreen({ code, onBack, onPlay, onEdit, onDaily }: Intro
               </div>
               {q.mine && <button onClick={() => { playButtonTap(); onEdit(q); }} className="mt-2 w-full rounded-xl border-2 border-foreground/20 py-2 text-sm font-bold">✏️ {t('quiz_edit')}</button>}
               <p className="mt-2 text-center text-[11px] text-muted-foreground">{t('quiz_freeToPlay')}</p>
+              {!q.mine && <div className="mt-1 text-center"><ReportButton variant="link" target={{ kind: 'quiz', ref: q.code, name: q.name }} /></div>}
             </section>
             <QuizRanking quiz={q} />
           </>
@@ -420,6 +423,7 @@ function QuizRanking({ quiz }: { quiz: Quiz }) {
             <li key={r.rank} className={`flex items-center gap-2.5 rounded-xl px-3 py-1.5 ${r.me ? 'bg-primary/15 border border-primary/50' : 'bg-foreground/5'}`}>
               <span className="w-6 text-center font-black">{r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank}</span>
               <span className="flex-1 min-w-0 truncate font-bold">{r.name ?? t('quiz_anon')}{r.me && <span className="text-primary"> · {t('ch_you')}</span>}</span>
+              {!r.me && r.name && <ReportButton className="!w-6 !h-6" target={{ kind: 'player', ref: `quiz:${quiz.code}`, name: r.name }} />}
               <span className="font-black text-primary">{formatNumber(r.score)}</span>
             </li>
           ))}

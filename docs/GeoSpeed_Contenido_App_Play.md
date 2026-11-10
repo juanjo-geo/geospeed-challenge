@@ -97,6 +97,5 @@ Apps de noticias: **No**. Apps gubernamentales: **No**. Funciones financieras: *
 
 ## 10. Pendiente antes de producción
 
-Contenido de usuarios (política de Google): los Términos ya definen lo prohibido y el reporte es por correo. Falta que
-los nombres de jugador pasen por un filtro (`update_my_profile` no usa `_quiz_name_ok`), reportar dentro de la app y
-aceptar los Términos antes de crear contenido.
+Contenido de usuarios (política de Google): filtro de nombres, botón de reportar y aviso de Términos listos desde el
+2026-11-09. Los reportes se revisan según `docs/GeoSpeed_Moderacion.md`.

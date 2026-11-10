@@ -7,6 +7,7 @@
  * Sin reloj la rapidez no cuenta (game_type 'quiz_free'); con reloj, 'quiz'.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { nameAllowed } from '@/lib/nameFilter';
 import type { City, GameMode } from '@/data/cities';
 import { catalogItem, catalogPool, type Category } from '@/lib/catalog';
 import { cityById, getCachedMemory, isReviewable } from '@/lib/itemMemory';
@@ -42,13 +43,7 @@ export interface Quiz {
 export interface QuizDraft { id?: string; name: string; region: GameMode; categories: Category[]; item_ids: string[]; settings: QuizSettings }
 
 // ── Nombres: la misma lista del servidor (_quiz_name_ok), para avisar antes de guardar ──
-const RUDE = new Set(('puta puto putas putos mierda mierdas verga vergas malparido malparida hijueputa hijueputas hijoeputa hdp marica maricon ' +
-  'maricones pendejo pendeja culero culera chinga chingada chingado cabron cabrona zorra gilipollas polla pene fuck fucking fucker shit ' +
-  'bitch cunt dick pussy nigger nigga faggot whore slut asshole bastard nazi hitler').split(' '));
-export function quizNameOk(name: string): boolean {
-  const words = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/);
-  return !words.some((w) => RUDE.has(w));
-}
+export const quizNameOk = nameAllowed;
 export const cleanName = (name: string) => name.replace(/\s+/g, ' ').trim().slice(0, QUIZ_NAME_MAX);
 
 // ── Lugares ──

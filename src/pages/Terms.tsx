@@ -153,7 +153,7 @@ const Terms = () => {
             <li>Spam, publicidad o enlaces.</li>
           </ul>
           <p className="mt-4 text-[#d4d4c8] leading-relaxed">
-            Si ves contenido o a un jugador que incumpla estas reglas, repórtalo a{" "}
+            Si ves contenido o a un jugador que incumpla estas reglas, usa el botón de reportar (la bandera junto a su nombre) o escríbenos a{" "}
             <a href="mailto:juanjogrimar@gmail.com" className="text-[#f5c842] underline">
               juanjogrimar@gmail.com
             </a>{" "}
@@ -338,7 +338,7 @@ const Terms = () => {
               <li>Spam, advertising, or links.</li>
             </ul>
             <p className="mt-4 text-[#d4d4c8] leading-relaxed">
-              If you see content or a player breaking these rules, report it to{" "}
+              If you see content or a player breaking these rules, use the report button (the flag next to their name) or email{" "}
               <a href="mailto:juanjogrimar@gmail.com" className="text-[#f5c842] underline">
                 juanjogrimar@gmail.com
               </a>{" "}
