@@ -183,6 +183,8 @@ en Sprint y Sala en vivo. C0 es independiente y puede salir primero; C1 (conteni
 
 ## 7. Decisiones para JuanJo
 
+**Cambio del 2026-11-09 (JuanJo):** los 10 países se sortean en cada temporada entre los 30 del banco (`_conq_draw`, sin repetir los de la temporada anterior); la migración es `20261111120000_conquista_sorteo.sql`. Para agregar un país: 12 ciudades en `src/data/conquestTiers.ts`, correr `scripts/build-conquest-catalog.mjs` y aplicar la semilla.
+
 **Decidido por JuanJo el 2026-10-26:** CQ-D1 solo cuentas registradas; CQ-D2 banco de 12 ciudades por país; CQ-D3 sin push
 en la v1 (actividad en el juego + recordatorios locales); CQ-D4 primero C0 (auditoría), luego C1–C7.
 

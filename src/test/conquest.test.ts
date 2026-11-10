@@ -8,7 +8,7 @@ import { COLOMBIA_CITIES } from '@/data/colombiaCatalog';
 import { PRO_PACK_CITIES } from '@/data/proPackCatalog';
 import { loadCatalogs, catalogItem, kindFromPlaceId, itemTitle } from '@/lib/catalog';
 import { normalizeConqCode, isConqCode, mapConqError, formatTimeLeft, createGroup, previewInvite, acceptInvite, fetchGroup, startSeason, leaveGroup, ConqError, conqPoints, fetchMap, fetchTerritory, fetchPracticeSet, startAttempt, openRound, answerRound, abandonAttempt, fetchAttempt, currentRound, answeredRounds, rememberActiveMission, activeMission, forgetActiveMission, fetchActivity, markSeen, fetchStandings, championsOf, type ConqEvent } from '@/lib/conquest';
-import { playerStyles, pickTerritory, boardLayer, missionLayer, ZONE_BOUNDS, conqCountry, describeEvent, timeAgo } from '@/lib/conquestMap';
+import { playerStyles, pickTerritory, boardLayer, missionLayer, boardZones, defaultZone, conqCountry, describeEvent, timeAgo } from '@/lib/conquestMap';
 import { reminderTimes, nativeReminderId } from '@/lib/conquestReminders';
 import { conquestBetaOn } from '@/lib/conquestBeta';
 import { roundDelayMs, lostPoints, summarizeNet, reportMissionNet, netLog, netAverage, type NetSample } from '@/lib/conquestNet';
@@ -22,12 +22,16 @@ for (const l of [worldCities, europeCities, asiaCities, americasCities, africaCi
 // Banderas, lugares, monumentos y packs Pro llegan aparte de la carga inicial (src/lib/catalog.ts, loadCatalogs)
 beforeAll(() => loadCatalogs());
 
+/** Un tablero de ejemplo: el sorteo real sale del servidor */
+const BOARD = ['CO', 'PE', 'EC', 'CL', 'AR', 'BR', 'MX', 'ES', 'FR', 'IT'];
+
 describe('Conquista: banco de ciudades', () => {
-  it('los diez países aprobados, con 12 ciudades distintas cada uno', () => {
-    expect(CONQUEST_COUNTRIES.map((k) => k.iso)).toEqual(['CO', 'PE', 'EC', 'CL', 'AR', 'BR', 'MX', 'ES', 'FR', 'IT']);
+  it('treinta países para el sorteo, con 12 ciudades distintas cada uno', () => {
+    expect(CONQUEST_COUNTRIES).toHaveLength(30);
+    expect(new Set(CONQUEST_COUNTRIES.map((k) => k.iso)).size).toBe(30);
     const all = CONQUEST_COUNTRIES.flatMap((k) => k.cityIds);
     for (const k of CONQUEST_COUNTRIES) expect(new Set(k.cityIds).size).toBe(12);
-    expect(new Set(all).size).toBe(120);
+    expect(new Set(all).size).toBe(360);
     expect(CONQUEST_COUNTRIES_SPEC.every((k) => k.cities.length === 12)).toBe(true);
   });
 
@@ -35,7 +39,7 @@ describe('Conquista: banco de ciudades', () => {
     for (const k of CONQUEST_COUNTRIES) {
       const [x0, y0, x1, y1] = k.bounds;
       expect(x1 - x0).toBeGreaterThan(2);
-      expect(x1 - x0).toBeLessThan(60);
+      expect(x1 - x0).toBeLessThan(110);
       for (const id of k.cityIds) {
         const c = byId.get(id);
         expect(c, id).toBeTruthy();
@@ -60,10 +64,10 @@ describe('Conquista: banco de ciudades', () => {
     expect(itemTitle(burdeos, 'en')).toBe('Bordeaux');
   });
 
-  it('la semilla del servidor trae las ciudades nuevas, las reutilizadas y las 120 filas del banco', () => {
+  it('la semilla del servidor trae las ciudades nuevas, las reutilizadas y las 360 filas del banco', () => {
     const sql = readFileSync('supabase/seed/conquest_bank.sql', 'utf8');
     const bank = sql.slice(sql.indexOf('insert into public.conq_bank'));
-    expect(bank.match(/^ {2}\('[A-Z]{2}', /gm)?.length).toBe(120);
+    expect(bank.match(/^ {2}\('[A-Z]{2}', /gm)?.length).toBe(360);
     for (const c of CONQUEST_CITIES) expect(sql).toContain(`('${c.id}', 'city'`);
   });
 });
@@ -166,12 +170,13 @@ describe('Conquista: tablero y práctica (C4)', () => {
     expect(pickTerritory(-1.0, -77.5)).toBe('EC');
     expect(pickTerritory(4.9, -52.3)).not.toBe('FR'); // Cayena
     expect(pickTerritory(10, -40)).toBeNull(); // Atlántico
-    expect(pickTerritory(51.5, -0.12)).toBeNull(); // Londres: fuera del tablero
+    expect(pickTerritory(51.5, -0.12, 120, BOARD)).toBeNull(); // Londres: fuera de este tablero
+    expect(pickTerritory(51.5, -0.12)).toBe('GB'); // pero Reino Unido entra en el sorteo
   });
 
   it('capas: los 10 países pintados, iniciales solo de los que tienen dueño, Francia sin ultramar', () => {
     const st = playerStyles([{ user_id: 'me', name: 'Yo', avatar: null, slot: 0 }, { user_id: 'x', name: 'Paola', avatar: null, slot: 1 }], 'me');
-    const terr = CONQUEST_COUNTRIES.map((c) => ({ iso: c.iso, owner_id: c.iso === 'PE' ? 'x' : c.iso === 'CO' ? 'me' : null, retired: c.iso === 'IT', defense: c.iso === 'PE' ? 3420 : 0, version: 0, captured_at: null, reserved_until: null }));
+    const terr = CONQUEST_COUNTRIES.filter((c) => BOARD.includes(c.iso)).map((c) => ({ iso: c.iso, owner_id: c.iso === 'PE' ? 'x' : c.iso === 'CO' ? 'me' : null, retired: c.iso === 'IT', defense: c.iso === 'PE' ? 3420 : 0, version: 0, captured_at: null, reserved_until: null }));
     const layer = boardLayer(terr, st, 'PE');
     expect(Object.keys(layer.fills)).toHaveLength(10);
     expect(layer.fills.CO.color).toBe(CONQ.me);
@@ -181,10 +186,23 @@ describe('Conquista: tablero y práctica (C4)', () => {
     expect(layer.badges!.map((b) => b.text).sort()).toEqual(['P', 'Y']);
     expect(layer.fills.FR.box![0]).toBeGreaterThan(-10); // la caja de Francia no llega a la Guayana (−54°)
     expect(missionLayer('CL').fills.CL.color).toBeUndefined();
+    const all = boardZones(CONQUEST_COUNTRIES.map((c) => c.iso));
+    expect(all.zones).toEqual(['america', 'europe', 'asia', 'africa', 'oceania', 'all']);
     for (const c of CONQUEST_COUNTRIES) {
-      const z = c.iso === 'ES' || c.iso === 'FR' || c.iso === 'IT' ? ZONE_BOUNDS.europe : ZONE_BOUNDS.america;
+      const z = all.bounds[c.zone]!;
       expect(c.bounds[0] >= z.lonMin && c.bounds[2] <= z.lonMax && c.bounds[1] >= z.latMin && c.bounds[3] <= z.latMax).toBe(true);
     }
+  });
+
+  it('las zonas del tablero salen de los países sorteados', () => {
+    expect(boardZones(['CO', 'ES', 'JP']).zones).toEqual(['america', 'europe', 'asia', 'all']);
+    expect(boardZones(['CO', 'PE']).zones).toEqual(['america']);
+    expect(boardZones(['AU', 'JP']).bounds.oceania).toBeTruthy();
+    expect(boardZones(['CO', 'PE']).bounds.europe).toBeUndefined();
+    expect(defaultZone(['CO', 'PE', 'ES'], false)).toBe('america');
+    expect(defaultZone(['CO', 'ES', 'FR'], false)).toBe('europe');
+    expect(defaultZone(['CO', 'ES', 'FR'], true)).toBe('all');
+    expect(defaultZone(['CO', 'PE'], true)).toBe('america');
   });
 
   it('simulador: tablero, ficha con sus bloqueos y práctica fuera del paquete', async () => {

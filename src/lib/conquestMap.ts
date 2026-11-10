@@ -5,6 +5,7 @@
  */
 import { CONQ } from '@/lib/theme';
 import { CONQUEST_COUNTRIES, type ConquestCountry } from '@/data/conquestCatalog';
+import type { ConquestZone } from '@/data/conquestTiers';
 import { FLAG_ITEMS } from '@/data/flagCatalog';
 import { countryDistance } from '@/lib/flagScoring';
 import type { MapBounds } from '@/data/cities';
@@ -91,21 +92,40 @@ export function countryBounds(iso: string, margin = 0.04): MapBounds {
   return { lonMin: b[0] - mx, latMin: b[1] - my, lonMax: b[2] + mx, latMax: b[3] + my };
 }
 
-// ── Zonas del tablero: los 10 países están en dos continentes ───────────────────────────────────────────────
-export type BoardZone = 'america' | 'europe' | 'all';
-export const EUROPE_ISOS = new Set(['ES', 'FR', 'IT']);
-export const zoneOf = (iso: string): Exclude<BoardZone, 'all'> => (EUROPE_ISOS.has(iso) ? 'europe' : 'america');
+// ── Zonas del tablero: dependen de los 10 países que salieron en el sorteo ──────────────────────────────────
+export type BoardZone = ConquestZone | 'all';
+const ZONE_ORDER: ConquestZone[] = ['america', 'europe', 'asia', 'africa', 'oceania'];
+export const zoneOf = (iso: string): ConquestZone => conqCountry(iso)?.zone ?? 'america';
 function unionBounds(list: ConquestCountry[], m: number): MapBounds {
   return {
     lonMin: Math.min(...list.map((c) => c.bounds[0])) - m, latMin: Math.min(...list.map((c) => c.bounds[1])) - m,
     lonMax: Math.max(...list.map((c) => c.bounds[2])) + m, latMax: Math.max(...list.map((c) => c.bounds[3])) + m,
   };
 }
-export const ZONE_BOUNDS: Record<BoardZone, MapBounds> = {
-  america: unionBounds(CONQUEST_COUNTRIES.filter((c) => !EUROPE_ISOS.has(c.iso)), 2),
-  europe: unionBounds(CONQUEST_COUNTRIES.filter((c) => EUROPE_ISOS.has(c.iso)), 1.5),
-  all: unionBounds(CONQUEST_COUNTRIES, 2),
-};
+/** Margen arriba para que los botones de zona no tapen el país más al norte */
+const belowChips = (b: MapBounds): MapBounds => ({ ...b, latMax: b.latMax + (b.latMax - b.latMin) * 0.12 });
+
+/** Zonas que tienen países en este tablero, con su encuadre ("Todo" al final, si hay más de una) */
+export function boardZones(isos: string[]): { zones: BoardZone[]; bounds: Partial<Record<BoardZone, MapBounds>> } {
+  const list = CONQUEST_COUNTRIES.filter((c) => isos.includes(c.iso));
+  const bounds: Partial<Record<BoardZone, MapBounds>> = {};
+  const zones: BoardZone[] = [];
+  for (const z of ZONE_ORDER) {
+    const inZone = list.filter((c) => c.zone === z);
+    if (inZone.length) { zones.push(z); bounds[z] = belowChips(unionBounds(inZone, 1.5)); }
+  }
+  if (zones.length > 1) zones.push('all');
+  if (list.length) bounds.all = belowChips(unionBounds(list, 2));
+  return { zones, bounds };
+}
+
+/** Zona con la que abre el tablero: en pantallas anchas todo; en el celular, la que tenga más países */
+export function defaultZone(isos: string[], wide: boolean): BoardZone {
+  const { zones } = boardZones(isos);
+  if (wide && zones.includes('all')) return 'all';
+  const count = (z: BoardZone) => isos.filter((iso) => zoneOf(iso) === z).length;
+  return zones.filter((z) => z !== 'all').sort((a, b) => count(b) - count(a))[0] ?? 'all';
+}
 
 /**
  * País del tablero que se tocó: el más cercano a menos de `maxKm` (dentro = 0 km), mirando solo los que tienen el toque
@@ -113,10 +133,10 @@ export const ZONE_BOUNDS: Record<BoardZone, MapBounds> = {
  * pasa una tolerancia de unos 18 px según la escala del mapa (un dedo que cae al lado del país lo elige igual).
  */
 const NAME_BY_ISO = new Map(FLAG_ITEMS.map((f) => [f.iso, f.name]));
-export function pickTerritory(lat: number, lon: number, maxKm = 120): string | null {
+export function pickTerritory(lat: number, lon: number, maxKm = 120, isos?: string[]): string | null {
   let best: string | null = null;
   let bestKm = Infinity;
-  for (const c of CONQUEST_COUNTRIES) {
+  for (const c of isos ? CONQUEST_COUNTRIES.filter((x) => isos.includes(x.iso)) : CONQUEST_COUNTRIES) {
     const b = c.bounds;
     if (lon < b[0] - 3 || lon > b[2] + 3 || lat < b[1] - 3 || lat > b[3] + 3) continue;
     const name = NAME_BY_ISO.get(c.iso);

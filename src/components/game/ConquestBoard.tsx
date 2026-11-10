@@ -8,12 +8,11 @@ import {
 } from '@/lib/conquest';
 import {
   boardLayer, conqCountryName, countryBounds, describeEvent, myStanding, pickTerritory, playerStyles, sheetLayer, timeAgo, zoneOf,
-  ZONE_BOUNDS, type BoardZone, type PlayerStyle,
+  boardZones, defaultZone, type BoardZone, type PlayerStyle,
 } from '@/lib/conquestMap';
 import { askConquestPermissionOnce, syncConquestReminders } from '@/lib/conquestReminders';
 import { fireCelebration } from '@/lib/confetti';
 import { playShareSuccess, playVictory } from '@/lib/sounds';
-import { CONQUEST_COUNTRIES } from '@/data/conquestCatalog';
 import { CONQ } from '@/lib/theme';
 import { appNumberLocale } from '@/lib/format';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -61,13 +60,22 @@ const IsoFlag = ({ iso, className = 'w-7' }: { iso: string; className?: string }
   <img src={`/flags/${iso}.svg`} alt="" aria-hidden className={`aspect-[3/2] object-cover rounded-[3px] shadow-sm ring-1 ring-black/20 shrink-0 ${className}`} />
 );
 
+const ZONE_LABEL: Record<BoardZone, 'cq_zoneAmerica' | 'cq_zoneEurope' | 'cq_zoneAsia' | 'cq_zoneAfrica' | 'cq_zoneOceania' | 'cq_zoneAll'> = {
+  america: 'cq_zoneAmerica', europe: 'cq_zoneEurope', asia: 'cq_zoneAsia', africa: 'cq_zoneAfrica', oceania: 'cq_zoneOceania', all: 'cq_zoneAll',
+};
+
 export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpenGroup, onPractice, onStart, onResume, onOpenTitles }: ConquestBoardScreenProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const errText = useErrText();
   const { map, error, refresh } = useConqMap(seasonId);
   const [selected, setSelected] = useState<string | null>(initialIso);
   const [sheet, setSheet] = useState<string | null>(initialIso);
-  const [zone, setZone] = useState<BoardZone>(() => (initialIso ? zoneOf(initialIso) : typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'all' : 'america'));
+  const [zonePick, setZone] = useState<BoardZone | null>(() => (initialIso ? zoneOf(initialIso) : null));
+  // Los países salen del sorteo de cada temporada: las zonas también
+  const isoKey = (map?.territories ?? []).map((x) => x.iso).join(',');
+  const isos = useMemo(() => (isoKey ? isoKey.split(',') : []), [isoKey]);
+  const { zones, bounds: zoneBounds } = useMemo(() => boardZones(isos), [isos]);
+  const zone: BoardZone = zonePick && zones.includes(zonePick) ? zonePick : defaultZone(isos, typeof window !== 'undefined' && window.innerWidth >= 1024);
   // Pestaña elegida; mientras no se elija, una temporada cerrada abre en su clasificación final
   const [tabPick, setTabPick] = useState<BoardTab | null>(null);
   useTick(30_000);
@@ -85,13 +93,14 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
   const mapBox = useRef<HTMLDivElement>(null);
   const onMapClick = useCallback((lat: number, lon: number) => {
     // Tolerancia ≈ 18 px a la escala de la zona (en "Todo" un píxel son decenas de km)
-    const b = ZONE_BOUNDS[zone];
+    const b = zoneBounds[zone];
+    if (!b) return;
     const kmPerPx = ((b.lonMax - b.lonMin) * 95) / Math.max(200, mapBox.current?.clientWidth ?? 400);
-    const iso = pickTerritory(lat, lon, Math.max(60, Math.min(400, kmPerPx * 18)));
+    const iso = pickTerritory(lat, lon, Math.max(60, Math.min(400, kmPerPx * 18)), isos);
     if (!iso) return;
     playClick();
     setSelected(iso);
-  }, [zone]);
+  }, [zone, zoneBounds, isos]);
   const openSheet = (iso: string) => { playButtonTap(); setSelected(iso); setSheet(iso); trackEvent('conq_territory_open', { iso }); };
 
   if (!map) {
@@ -172,13 +181,13 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
         {/* P1: mapa con dueños, zonas y leyenda (min-w-0: si no, el lienzo ensancha la columna de la cuadrícula) */}
         <div className="min-w-0 flex flex-col gap-2">
           <div ref={mapBox} className="relative rounded-3xl overflow-hidden border-2 border-accent/40 h-[clamp(16rem,52dvh,30rem)] short:h-[78dvh] lg:h-[min(66dvh,36rem)]" role="region" aria-label={t('cq_mapAria')}>
-            <WorldMapCanvas onMapClick={onMapClick} gameMode="world" viewBounds={ZONE_BOUNDS[zone]} territories={layer} showZoomControls />
-            <div className="absolute left-2 top-2 flex gap-1.5" role="group" aria-label={t('cq_zones')}>
-              {(['america', 'europe', 'all'] as BoardZone[]).map((z) => (
+            <WorldMapCanvas onMapClick={onMapClick} gameMode="world" viewBounds={zoneBounds[zone]} territories={layer} showZoomControls />
+            <div className="absolute left-2 top-2 right-2 flex flex-wrap gap-1.5 pointer-events-none" role="group" aria-label={t('cq_zones')}>
+              {zones.map((z) => (
                 <button key={z} onClick={() => { playButtonTap(); setZone(z); }} aria-pressed={zone === z}
-                  className={`rounded-full px-3 py-1 text-xs font-bold border backdrop-blur-md ${zone === z ? 'bg-primary text-primary-foreground border-primary' : 'border-accent/50 text-foreground'}`}
+                  className={`pointer-events-auto rounded-full px-3 py-1 text-xs font-bold border backdrop-blur-md ${zone === z ? 'bg-primary text-primary-foreground border-primary' : 'border-accent/50 text-foreground'}`}
                   style={zone === z ? undefined : { background: 'hsl(var(--brand-navy-deep) / 0.8)' }}>
-                  {t(z === 'america' ? 'cq_zoneAmerica' : z === 'europe' ? 'cq_zoneEurope' : 'cq_zoneAll')}
+                  {t(ZONE_LABEL[z])}
                 </button>
               ))}
             </div>
@@ -209,11 +218,9 @@ export function ConquestBoardScreen({ seasonId, initialIso = null, onBack, onOpe
           <Card className="!p-3 sm:!p-4">
             <h2 className="font-extrabold text-base sm:text-lg mb-2">{t('cq_listTitle')}</h2>
             <ul className="flex flex-col gap-1.5">
-              {CONQUEST_COUNTRIES.map((c) => {
-                const terr = map.territories.find((x) => x.iso === c.iso);
-                if (!terr) return null;
-                return <TerritoryRow key={c.iso} terr={terr} styles={styles} selected={selected === c.iso} onOpen={() => openSheet(c.iso)} />;
-              })}
+              {[...map.territories].sort((a, b) => conqCountryName(a.iso, locale).localeCompare(conqCountryName(b.iso, locale), locale)).map((terr) => (
+                <TerritoryRow key={terr.iso} terr={terr} styles={styles} selected={selected === terr.iso} onOpen={() => openSheet(terr.iso)} />
+              ))}
             </ul>
           </Card>
         </div>

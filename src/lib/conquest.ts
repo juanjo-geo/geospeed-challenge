@@ -412,7 +412,7 @@ interface MockAttempt {
 }
 interface MockSeason {
   id: string; number: number; status: ConqSeasonStatus; confirms: string[]; started_at: number | null; ends_at: number | null;
-  roster?: ConqPlayer[]; terr?: Record<string, MockTerr>; used?: { iso: string; at: number; attempt?: string }[]; attempts?: MockAttempt[];
+  catalog?: string[]; roster?: ConqPlayer[]; terr?: Record<string, MockTerr>; used?: { iso: string; at: number; attempt?: string }[]; attempts?: MockAttempt[];
   events?: MockEvent[]; seen?: number; final?: { standings: ConqStanding[]; territories: ConqTerritory[] };
 }
 interface MockEvent { id: number; type: ConqEventType; country: string | null; actor: string | null; prev: string | null; next: string | null; score: number | null; defense: number | null; at: number; attempt?: string }
@@ -539,6 +539,7 @@ const mock = {
     const confirmed = g.members.filter((m) => s.confirms.includes(m.user_id));
     if (confirmed.length < CONQ_MIN_PLAYERS) throw new ConqError('not_enough_players');
     s.status = 'active'; s.started_at = Date.now(); s.ends_at = Date.now() + 7 * 86_400_000;
+    s.catalog = mockDraw(g.seasons.find((x) => x.number === s.number - 1)?.catalog);
     s.roster = confirmed.map((m, i) => ({ user_id: m.user_id, name: m.name, avatar: m.avatar, slot: i }));
     mockEvent(s, { type: 'season_start', country: null, actor: ME });
     mockSave(db); return mockView(g);
@@ -552,7 +553,7 @@ const mock = {
     const territories = closed && s.final ? s.final.territories : mockTerrList(s, now);
     return {
       season: { id: s.id, group_id: g.id, number: s.number, status: s.status, started_at: s.started_at ? new Date(s.started_at).toISOString() : null,
-        ends_at: s.ends_at ? new Date(s.ends_at).toISOString() : null, rules: CONQ_RULES_V1, catalog: MOCK_CATALOG },
+        ends_at: s.ends_at ? new Date(s.ends_at).toISOString() : null, rules: CONQ_RULES_V1, catalog: s.catalog ?? MOCK_CATALOG },
       server_now: new Date(now).toISOString(), data_version: territories.reduce((a, x) => a + x.version, 0),
       players: mockRoster(g, s), territories, standings: closed && s.final ? s.final.standings : mockStandings(g, s), final: closed, me: mockMe(s),
       unread: (s.events ?? []).filter((e) => e.actor !== ME && ['conquered', 'captured', 'join', 'season_start'].includes(e.type) && e.id > (s.seen ?? 0)).length, my_id: ME,
@@ -702,6 +703,11 @@ const mock = {
 };
 
 const MOCK_CATALOG = ['CO', 'PE', 'EC', 'CL', 'AR', 'BR', 'MX', 'ES', 'FR', 'IT'];
+/** Sorteo simulado, igual que el del servidor (en las pruebas automáticas salen siempre los mismos diez) */
+function mockDraw(prev?: string[]): string[] {
+  if (import.meta.env.MODE === 'test') return MOCK_CATALOG;
+  return CONQUEST_COUNTRIES.map((c) => c.iso).filter((iso) => !prev?.includes(iso)).sort(() => Math.random() - 0.5).slice(0, 10);
+}
 function mockSeason(seasonId: string) {
   const db = mockDb();
   for (const g of Object.values(db)) {
@@ -721,13 +727,13 @@ function mockEvent(s: MockSeason, e: Partial<MockEvent> & { type: ConqEventType 
 }
 function mockTerrList(s: MockSeason, now: number): ConqTerritory[] {
   const terr = mockTerr(s);
-  return MOCK_CATALOG.map((iso) => ({ iso, owner_id: terr[iso].owner, retired: terr[iso].retired, defense: terr[iso].defense,
+  return (s.catalog ?? MOCK_CATALOG).map((iso) => ({ iso, owner_id: terr[iso].owner, retired: terr[iso].retired, defense: terr[iso].defense,
     version: terr[iso].version, captured_at: terr[iso].captured_at ? new Date(terr[iso].captured_at!).toISOString() : null,
     reserved_until: terr[iso].reserved_until && terr[iso].reserved_until! > now ? new Date(terr[iso].reserved_until!).toISOString() : null }));
 }
 function mockTerr(s: MockSeason): Record<string, MockTerr> {
   s.terr ??= {};
-  for (const iso of MOCK_CATALOG) s.terr[iso] ??= { owner: null, retired: false, defense: 0, version: 0, reserved_until: null, captured_at: null };
+  for (const iso of s.catalog ?? MOCK_CATALOG) s.terr[iso] ??= { owner: null, retired: false, defense: 0, version: 0, reserved_until: null, captured_at: null };
   return s.terr;
 }
 /** Plantilla congelada (las temporadas simuladas viejas no la tenían: los confirmados) */

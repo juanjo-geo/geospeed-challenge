@@ -145,7 +145,7 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("/src/data/cities.ts")) return "data-cities";
           // Catálogos de banderas y lugares (Fase 6): aparte para que la caché no los mezcle con el código
           // (heavyCatalogs.ts es su punto de entrada: se carga después del inicio, ver loadCatalogs en src/lib/catalog.ts)
-          if (id.includes("/src/data/flagCatalog.ts") || id.includes("/src/data/featureCatalog.ts") || id.includes("/src/data/landmarkCatalog.ts") || id.includes("/src/data/proPackCatalog.ts") || id.includes("/src/data/heavyCatalogs.ts")) return "data-catalogs";
+          if (id.includes("/src/data/flagCatalog.ts") || id.includes("/src/data/featureCatalog.ts") || id.includes("/src/data/landmarkCatalog.ts") || id.includes("/src/data/proPackCatalog.ts") || id.includes("/src/data/conquestCatalog.ts") || id.includes("/src/data/heavyCatalogs.ts")) return "data-catalogs";
           return undefined;
         },
       },
