@@ -4,6 +4,7 @@ import { playButtonTap } from '@/lib/sounds';
 import { formatNumber } from '@/lib/format';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { GhostFace } from './GhostRace';
+import ReportButton from './ReportButton';
 import {
   fetchSprintStatus, getCachedSprintStatus, fetchSprintBoard, markSprintInboxSeen, setMyCountry, countryOptions, isoName,
   divisionByKey, divisionProgress, SPRINT_STATUS_EVENT, DIVISIONS, type SprintStatus, type SprintBoard, type SprintScope,
@@ -206,6 +207,7 @@ export default function SprintScreen({ onBack, onFind, onOpenStore, onCreateAcco
                 <span className={`w-7 text-center font-black ${r.rank <= 3 ? 'text-primary' : 'text-foreground/70'}`}>{r.rank}</span>
                 <IsoFlag iso={r.country} />
                 <span className="flex-1 min-w-0 truncate font-bold">{r.name}{r.is_me && <span className="text-primary"> · {t('ch_you')}</span>}</span>
+                {!r.is_me && <ReportButton target={{ kind: 'player', ref: 'sprint', name: r.name, userId: r.user_id }} />}
                 <span aria-hidden>{divisionByKey(r.division).emoji}</span>
                 <span className="font-black tabular-nums">{formatNumber(r.points)}</span>
               </li>

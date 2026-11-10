@@ -9,6 +9,8 @@ import { captchaEnabled, getCaptchaToken, isCaptchaError, prefetchCaptcha } from
 import { continueWithGoogle, googleSignInAvailable, oauthReturnError, type OAuthReturnError } from '@/lib/oauth';
 import AccountScreen, { AccountField, PrimaryButton, SecondaryButton, GoogleButton, LinkButton, OrDivider, ErrorNotice, InfoNote, GuestIcon } from '@/components/account/AccountScreen';
 import { publicOrigin } from '@/lib/assetUrl';
+import { TermsNote } from '@/components/game/ReportButton';
+import { nameAllowed } from '@/lib/nameFilter';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'set-password';
 type Sent = null | 'confirm' | 'reset' | 'link';
@@ -139,6 +141,7 @@ export default function Auth() {
 
       // signup
       if (!displayName.trim()) { setError(t('auth_errNameRequired')); return; }
+      if (!nameAllowed(displayName)) { setError(t('acc_nameRude')); return; }
       if (!EMAIL_RE.test(email.trim())) { setError(t('auth_errInvalidEmail')); return; }
       if (password.length < PASSWORD_MIN) { setError(t('auth_errPasswordShort')); return; }
       if (password !== confirm) { setError(t('auth_errPasswordMismatch')); return; }
@@ -272,6 +275,7 @@ export default function Auth() {
           <AccountField icon="lock" label={t('auth_password')} hideLabelOnMobile placeholder={t('auth_password')} type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" reveal={reveal} />
           <AccountField icon="lock" label={t('auth_confirmPassword')} hideLabelOnMobile placeholder={t('auth_confirmPassword')} type={showPassword ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" reveal={reveal} />
           {errorBox}
+          <TermsNote className="text-center" />
           <div className="mt-1"><PrimaryButton type="submit" disabled={loading}>{loading ? t('auth_loading') : t('auth_signUp')}</PrimaryButton></div>
           <p className="text-center text-base lg:hidden">
             {t('acct_hasAccount')} <span className="text-foreground/60 mx-1">·</span> <LinkButton onClick={() => switchMode('login')}>{t('acct_signInLink')}</LinkButton>

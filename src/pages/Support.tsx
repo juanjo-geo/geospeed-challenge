@@ -93,7 +93,7 @@ const Support = () => {
             />
             <FAQItem
               q="¿Cómo reporto un nombre ofensivo o a un jugador?"
-              a="Escríbenos a juanjogrimar@gmail.com con el nombre del jugador, el modo y la pantalla donde lo viste (una captura ayuda). Revisamos cada reporte y podemos cambiar el nombre o bloquear la cuenta."
+              a="Toca la bandera que aparece junto a su nombre y elige el motivo. También puedes escribirnos a juanjogrimar@gmail.com con el nombre del jugador, el modo y la pantalla donde lo viste (una captura ayuda). Revisamos cada reporte y podemos cambiar el nombre o bloquear la cuenta."
             />
           </div>
 
@@ -197,7 +197,7 @@ const Support = () => {
               />
               <FAQItem
                 q="How do I report an offensive name or a player?"
-                a="Email us at juanjogrimar@gmail.com with the player's name, the game mode and the screen where you saw it (a screenshot helps). We review every report and may change the name or block the account."
+                a="Tap the flag next to their name and choose a reason. You can also email juanjogrimar@gmail.com with the player's name, the game mode and the screen where you saw it (a screenshot helps). We review every report and may change the name or block the account."
               />
             </div>
 

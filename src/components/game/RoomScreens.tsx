@@ -21,6 +21,7 @@ import { ChevronIcon } from '@/components/ui/icons';
 import SelectorSheet, { type SelectorOption } from './SelectorSheet';
 import Mascot from './Mascot';
 import { PlayerFace, formatPin } from './RoomParts';
+import ReportButton, { TermsNote } from './ReportButton';
 import { AudioButtons } from './GameHud';
 import { appNumberLocale } from '@/lib/format';
 
@@ -232,6 +233,7 @@ export function RoomJoinScreen({ pin, defaultName, onBack, onJoined }: RoomJoinS
                   className="w-full rounded-2xl border-2 border-foreground/20 bg-background/50 px-4 py-3 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 {error && <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm" role="alert">{errText(error)}</p>}
+                <TermsNote className="text-left" />
                 <button type="submit" disabled={joining || name.trim().length < ROOM_NAME_MIN} className="btn3d w-full rounded-2xl py-3.5 font-black text-lg text-primary-foreground disabled:opacity-50" style={{ background: 'var(--grad-cta)' }}>
                   {joining ? '⏳' : '🚪'} {t('room_joinCta')}
                 </button>
@@ -350,6 +352,7 @@ function RoomFinal({ state, onExit, onSwitch, musicMuted, onToggleMusic }: { sta
                   <span className="w-6 text-center font-black text-muted-foreground">{p.rank}</span>
                   <PlayerFace player={p} />
                   <span className="min-w-0 flex-1 truncate font-semibold">{p.name}{p.me ? ` · ${t('ch_you')}` : ''}</span>
+                  {!p.me && <ReportButton target={{ kind: 'room', ref: `${state.id}:${p.slot}`, name: p.name }} />}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">🎯 {p.hits}</span>
                   <span className="font-black tabular-nums">{fmt(p.total)}</span>
                 </li>
@@ -471,6 +474,7 @@ function RoomLobby({ state, onState, onRefresh, onExit, musicMuted, onToggleMusi
                     <span className="block font-bold text-sm truncate">{p.name}</span>
                     <span className="block text-[11px] text-muted-foreground">{p.is_host ? `👑 ${t('room_host')}` : p.me ? t('ch_you') : ''}</span>
                   </span>
+                  {!p.me && <ReportButton className="ml-auto" target={{ kind: 'room', ref: `${state.id}:${p.slot}`, name: p.name }} />}
                   {host && !p.is_host && (
                     <button onClick={() => { playButtonTap(); setKickSlot(p.slot); }} className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-destructive text-white text-xs font-black" aria-label={t('room_kick', { name: p.name })}>×</button>
                   )}

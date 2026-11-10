@@ -17,6 +17,7 @@ import { HomeIcon } from '@/components/ui/icons';
 import { REGION_ART, DIFF_ART, DIFF_ORDER, regionGroup, packGroups } from '@/lib/selectionArt';
 import { formatNumber } from '@/lib/format';
 import { useProfilePhoto } from '@/lib/profilePhoto';
+import ReportButton from './ReportButton';
 
 interface RankingScreenProps {
   initialMode?: string;
@@ -42,7 +43,7 @@ const MOCK_NAMES = ['Laura', 'Mateo', 'Sofía', 'Daniel', 'Camila', 'Andrés', '
  */
 export default function RankingScreen({ initialMode = 'world', initialDifficulty = 'basic', onBack, onSignIn }: RankingScreenProps) {
   const { t } = useI18n();
-  const { displayName, avatar } = useAuth();
+  const { user, displayName, avatar } = useAuth();
   const myPhoto = useProfilePhoto();
   const [boardKey, setBoardKey] = useState(initialMode);
   const [difficulty, setDifficulty] = useState<Difficulty | ''>(initialDifficulty);
@@ -174,7 +175,10 @@ export default function RankingScreen({ initialMode = 'world', initialDifficulty
                     <RankBadge rank={r.rank} />
                     <Avatar avatar={r.avatar} frame={r.activeFrame} />
                     <span className="min-w-0 leading-tight">
-                      <span className="block font-bold text-base md:text-lg truncate">{r.displayName}</span>
+                      <span className="flex items-center gap-0.5 min-w-0">
+                        <span className="font-bold text-base md:text-lg truncate">{r.displayName}</span>
+                        {r.userId !== user?.id && r.displayName && <ReportButton target={{ kind: 'player', ref: 'ranking', name: r.displayName, userId: r.userId }} />}
+                      </span>
                       {r.activeTitle && TITLE_KEY[r.activeTitle] && <span className="block text-[11px] font-bold text-primary/90 truncate">✦ {t(TITLE_KEY[r.activeTitle] as never)}</span>}
                     </span>
                     <span className={`text-right font-extrabold text-lg md:text-xl whitespace-nowrap ${r.rank === 1 ? 'text-primary' : ''}`}>{formatNumber(r.bestScore)} <span className="text-sm">pts</span></span>

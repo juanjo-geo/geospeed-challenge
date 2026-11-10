@@ -14,6 +14,7 @@ import Mascot from './Mascot';
 import { PlayerFace } from './RoomParts';
 import { BackHome, Card, CtaButton, ErrorBox, Page, errCode, useErrText } from './ConquestParts';
 import { rememberMuted, syncConquestReminders } from '@/lib/conquestReminders';
+import ReportButton from './ReportButton';
 
 /**
  * Conquista el mapa — fase C3 (docs/GeoSpeed_Conquista_Plan.md): A1 Crear o unirse (con la lista de mis grupos),
@@ -406,6 +407,7 @@ export function ConquestLobbyScreen({ groupId, onBack, onOpenMap }: ConquestLobb
                     {!active && (m.confirmed ? `✓ ${t('cq_confirmed')}` : t('cq_pending'))}
                   </span>
                 </span>
+                {!m.me && m.name && <ReportButton target={{ kind: 'player', ref: `group:${group.id}`, name: m.name, userId: m.user_id }} />}
                 {group.is_admin && !active && !m.me && (
                   <button onClick={() => remove(m)} className="shrink-0 w-8 h-8 rounded-full border border-destructive/60 text-destructive font-black hover:bg-destructive/10" aria-label={t('cq_remove', { name: m.name ?? '' })}>×</button>
                 )}

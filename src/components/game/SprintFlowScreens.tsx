@@ -7,6 +7,7 @@ import CountUp from '@/components/ui/CountUp';
 import Mascot from './Mascot';
 import { GhostFace } from './GhostRace';
 import { IsoFlag } from './SprintScreen';
+import ReportButton from './ReportButton';
 import {
   findSprintMatch, divisionByKey, divisionProgress, isoName, SprintError, type SprintMatch, type SprintResult,
 } from '@/lib/sprint';
@@ -133,7 +134,7 @@ export function SprintResultScreen({ result, canRaceAgain, onAgain, onSprintHome
             <p className="text-2xl font-black text-primary">{formatNumber(r.my_score)}</p>
           </div>
           <div className={`rounded-2xl border-2 bg-card/75 px-3 py-3 ${r.outcome === 'loss' ? 'border-accent' : 'border-foreground/15'}`}>
-            <p className="text-xs font-bold uppercase text-muted-foreground truncate flex items-center justify-center gap-1"><IsoFlag iso={r.opponent.country} className="w-4" />{r.opponent.name}</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground truncate flex items-center justify-center gap-1"><IsoFlag iso={r.opponent.country} className="w-4" />{r.opponent.name}<ReportButton className="!w-6 !h-6" target={{ kind: 'player', ref: 'sprint-result', name: r.opponent.name }} /></p>
             <p className="text-2xl font-black">{formatNumber(r.opp_score)}</p>
           </div>
         </div>

@@ -19,6 +19,8 @@ import { appNumberLocale, formatNumber } from '@/lib/format';
 import { ChevronIcon, HomeIcon, LegendPin } from '@/components/ui/icons';
 import HeaderBackdrop from './HeaderBackdrop';
 import PhotoCropDialog from './PhotoCropDialog';
+import { TermsNote } from './ReportButton';
+import { nameAllowed } from '@/lib/nameFilter';
 import { clearProfilePhoto, useProfilePhoto } from '@/lib/profilePhoto';
 
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
@@ -62,8 +64,11 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
   useEffect(() => { if (serverAvatar) { setAvatar(serverAvatar); localStorage.setItem(AVATAR_KEY, serverAvatar); } }, [serverAvatar]);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+  const [nameRude, setNameRude] = useState(false);
   const saveName = async () => {
     const n = nameDraft.trim();
+    if (!nameAllowed(n)) { setNameRude(true); return; }
+    setNameRude(false);
     if (n.length >= 2) { playButtonTap(); await updateMyProfile({ displayName: n }); await refreshProfile(); }
     setEditingName(false);
   };
@@ -178,7 +183,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
 
                 {editingName ? (
                   <form onSubmit={(e) => { e.preventDefault(); saveName(); }} className="w-full max-w-xs flex gap-2">
-                    <input autoFocus value={nameDraft} onChange={(e) => setNameDraft(e.target.value.slice(0, 20))} placeholder={t('acc_namePlaceholder')} maxLength={20}
+                    <input autoFocus value={nameDraft} onChange={(e) => { setNameRude(false); setNameDraft(e.target.value.slice(0, 20)); }} placeholder={t('acc_namePlaceholder')} maxLength={20}
                       className="flex-1 min-w-0 rounded-xl border-2 border-accent/60 bg-brand-navy-deep/60 px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-accent" />
                     <button type="submit" className="rounded-xl bg-primary text-primary-foreground px-3 font-black text-sm">{t('acc_save')}</button>
                   </form>
@@ -188,7 +193,8 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                     <span className="text-sm opacity-60 group-hover:opacity-100" aria-hidden>✏️</span>
                   </button>
                 )}
-                {editingName && <p className="mt-1 text-[11px] text-muted-foreground">{t('acc_nameHint')}</p>}
+                {editingName && (nameRude ? <p className="mt-1 text-xs font-semibold text-destructive" role="alert">{t('acc_nameRude')}</p> : <p className="mt-1 text-[11px] text-muted-foreground">{t('acc_nameHint')}</p>)}
+                {editingName && <TermsNote className="mt-0.5" />}
                 <span className="mt-1.5 rounded-full border-2 border-accent/40 bg-brand-navy-deep/50 px-5 py-0.5 text-sm sm:text-base font-semibold">{levelTitle}</span>
 
                 <div className="hidden md:block w-full h-px bg-accent/20 mt-5" />
