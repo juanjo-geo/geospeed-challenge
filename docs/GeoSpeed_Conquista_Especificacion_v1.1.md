@@ -7,6 +7,8 @@ Especificación funcional para grupos de hasta cinco personas
 Versión 1.1  |  26 de octubre de 2026  |  Destinatario: equipo de desarrollo
 Desarrollar una modalidad privada y asincrónica en la que de dos a cinco personas compitan por conquistar países. Cada territorio tiene una misión geográfica y una marca que otro integrante puede superar. La temporada termina con una clasificación por territorios conservados.
 ## Decisiones aprobadas
+> **Cambio aprobado el 9 de noviembre de 2026:** los 10 países ya no son fijos. Cada temporada el servidor sortea 10 de los 30 países con banco de ciudades, sin repetir los de la temporada anterior del grupo. Lo demás sigue igual.
+
 Juan José Grillo aprobó el 26 de octubre de 2026 los trece puntos de definición: temporadas de siete días, diez países fijos, misiones de cinco ciudades, umbral de captura, puntuación, intentos, defensa, concurrencia, ganador, recompensas, avisos, administración y estructura de pantallas. El grupo admite de dos a cinco personas, incluido su creador.
 Esta versión reemplaza los parámetros preliminares de la versión 1.0. El equipo puede implementar las reglas aprobadas sin volver a decidirlas. Quedan trabajos de ejecución: curar ciudades, completar diseños y validar el balance en pruebas. Se incorpora por separado la auditoría funcional del juego público realizada hoy; no acredita la implementación de Conquista.
 | Elemento | Regla aprobada |

@@ -49,6 +49,39 @@ const err = async (fn) => { try { await fn(); return 'ok'; } catch (e) { return 
 let fails = 0;
 const check = (name, ok, extra = '') => { console.log(`${ok ? 'OK ' : 'MAL'} ${name}${extra ? ' — ' + extra : ''}`); if (!ok) fails++; };
 
+// ── Sorteo de los 10 países (2026-11-09) ───────────────────────────────────────────────────────────────────
+const pool = (await q(`select public._conq_pool() p`))[0].p;
+check('sorteo: 30 países con banco completo', pool.length === 30, String(pool.length));
+const draw = async (prev = null) => (await q(`select public._conq_draw($1::uuid) d`, [prev]))[0].d;
+const d1 = await draw();
+check('sorteo: 10 países distintos, todos del banco', d1.length === 10 && new Set(d1).size === 10 && d1.every((x) => pool.includes(x)));
+const draws = [];
+for (let i = 0; i < 60; i++) draws.push(await draw());
+check('sorteo: cambia entre temporadas', new Set(draws.map((x) => [...x].sort().join())).size > 50);
+check('sorteo: con el tiempo salen todos los países', pool.every((iso) => draws.flat().includes(iso)));
+{
+  await db.exec(`insert into public.conq_groups (id, name, admin_id, invite_code, status) values ('${id(900)}', 'Sorteo', '${A}', 'SORTE1', 'active');
+    insert into public.conq_seasons (id, group_id, number, status, catalog, rules) values ('${id(901)}', '${id(900)}', 1, 'closed', array[${d1.map((x) => `'${x}'`).join(',')}], '{}'::jsonb);`);
+  const next = await draw(id(901));
+  check('sorteo: no repite los países de la temporada anterior', next.length === 10 && next.every((x) => !d1.includes(x)));
+  await db.exec(`delete from public.conq_seasons where id = '${id(901)}'; delete from public.conq_groups where id = '${id(900)}';`);
+  // Temporada real con el sorteo (jugadores aparte para no tocar los límites del resto de la suite)
+  const [H1, H2] = [id(11), id(12)];
+  await db.exec(`insert into auth.users (id, is_anonymous) values ('${H1}', false), ('${H2}', false);
+    insert into public.profiles (id, display_name) values ('${H1}', 'Hugo'), ('${H2}', 'Helena') on conflict (id) do update set display_name = excluded.display_name;`);
+  const e2e = await one(H1, 'conq_group_create', ['Sorteo real', null]);
+  await one(H2, 'conq_invite_accept', [e2e.invite_code]);
+  const st = await one(H1, 'conq_season_start', [e2e.id]);
+  const cat = (await q(`select catalog from public.conq_seasons where id = $1`, [st.season.id]))[0].catalog;
+  const m = await one(H1, 'conq_map', [st.season.id]);
+  const pk = await q(`select country_iso, cardinality(place_ids) n from public.conq_packages where season_id = $1`, [st.season.id]);
+  check('sorteo: la temporada arranca con esos 10 países, cada uno con su territorio y su paquete de 5 ciudades',
+    cat.length === 10 && m.season.catalog.length === 10 && m.territories.length === 10 && m.territories.every((t) => cat.includes(t.iso)) && pk.length === 10 && pk.every((p) => p.n === 5 && cat.includes(p.country_iso)));
+}
+check('sorteo: el cliente no lo puede pedir', (await err(() => as(A, `select public._conq_draw(null)`))).includes('permission denied'));
+// El resto de la suite juega sobre los diez países de siempre (cita países concretos)
+await db.exec(`create or replace function public._conq_draw(p_prev uuid) returns text[] language sql as $$ select array['CO','PE','EC','CL','AR','BR','MX','ES','FR','IT'] $$;`);
+
 // ── Puntaje (CA08) ─────────────────────────────────────────────────────────────────────────────────────────
 const pts = async (d, t) => (await q(`select public._conq_points($1::numeric, $2::numeric) p`, [d, t]))[0].p;
 check('CA08 d=0 t=0 → 1.000', (await pts(0, 0)) === 1000);

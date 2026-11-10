@@ -10,7 +10,7 @@
  *  4. Verifica que el punto caiga dentro del contorno del país en countries.ts (o a menos de 30 km de su costa).
  *
  * Escribe src/data/conquestCatalog.ts (países con encuadre del mapa y los ids del banco; ciudades nuevas `cq:`),
- * supabase/seed/conquest_bank.sql (lugares nuevos + banco, para la migración de la fase C2) y
+ * supabase/seed/conquest_bank.sql (lugares nuevos + banco, lo incluye la migración 20261111120000_conquista_sorteo.sql) y
  * docs/Conquista_C1_Ciudades.md (revisión). Falla si un país no queda con 12 ciudades verificadas.
  *
  * Uso: node scripts/build-conquest-catalog.mjs [--cache <carpeta>]
@@ -69,7 +69,11 @@ const hav = (a, b, c, d) => { const r = Math.PI / 180, x = Math.sin((c - a) * r 
 const SRC_RANK = { mundo: 0, co: 1, pro: 2 };
 
 // ── Wikidata ─────────────────────────────────────────────────────────────────
-const COUNTRY_Q = { CO: 'Q739', PE: 'Q419', EC: 'Q736', CL: 'Q298', AR: 'Q414', BR: 'Q155', MX: 'Q96', ES: 'Q29', FR: 'Q142', IT: 'Q38' };
+const COUNTRY_Q = {
+  CO: 'Q739', PE: 'Q419', EC: 'Q736', CL: 'Q298', AR: 'Q414', BR: 'Q155', MX: 'Q96', ES: 'Q29', FR: 'Q142', IT: 'Q38',
+  US: 'Q30', CA: 'Q16', VE: 'Q717', DE: 'Q183', GB: 'Q145', PT: 'Q45', PL: 'Q36', GR: 'Q41', SE: 'Q34', TR: 'Q43',
+  JP: 'Q17', CN: 'Q148', IN: 'Q668', KR: 'Q884', TH: 'Q869', ID: 'Q252', EG: 'Q79', MA: 'Q1028', ZA: 'Q258', AU: 'Q408',
+};
 async function entities(qs) {
   const out = {};
   for (let i = 0; i < qs.length; i += 50) {
@@ -155,7 +159,7 @@ for (const spec of C.CONQUEST_COUNTRIES_SPEC) {
   const mx = (x1 - x0) * 0.06, my = (y1 - y0) * 0.06;
   const bounds = [+(x0 - mx).toFixed(2), +(y0 - my).toFixed(2), +(x1 + mx).toFixed(2), +(y1 + my).toFixed(2)];
   if (rows.some((c) => c.lon < bounds[0] || c.lon > bounds[2] || c.lat < bounds[1] || c.lat > bounds[3])) problems.push(`${spec.iso}: el encuadre deja ciudades afuera`);
-  result.push({ iso: spec.iso, es: spec.es, en: spec.en, bounds, rows });
+  result.push({ iso: spec.iso, es: spec.es, en: spec.en, zone: spec.zone, bounds, rows });
 }
 
 if (problems.length) { console.error('PROBLEMAS:\n' + problems.join('\n')); process.exit(1); }
@@ -165,12 +169,13 @@ const q = (s) => JSON.stringify(s);
 const newCities = result.flatMap((k) => k.rows.filter((r) => !r.reused).map((r) => ({ ...r, iso: k.iso, country: k.es })));
 writeFileSync('src/data/conquestCatalog.ts', `// Generado por scripts/build-conquest-catalog.mjs desde src/data/conquestTiers.ts. No editar a mano.
 import type { City } from './cities';
+import type { ConquestZone } from './conquestTiers';
 
-/** País de Conquista: encuadre del mapa de la misión [lonMin, latMin, lonMax, latMax] y las 12 ciudades del banco */
-export interface ConquestCountry { iso: string; name: string; nameEn: string; bounds: [number, number, number, number]; cityIds: string[] }
+/** País de Conquista: zona del tablero, encuadre del mapa de la misión [lonMin, latMin, lonMax, latMax] y las 12 ciudades del banco */
+export interface ConquestCountry { iso: string; name: string; nameEn: string; zone: ConquestZone; bounds: [number, number, number, number]; cityIds: string[] }
 
 export const CONQUEST_COUNTRIES: ConquestCountry[] = [
-${result.map((k) => `  { iso: ${q(k.iso)}, name: ${q(k.es)}, nameEn: ${q(k.en)}, bounds: [${k.bounds.join(', ')}], cityIds: [${k.rows.map((r) => q(r.id)).join(', ')}] },`).join('\n')}
+${result.map((k) => `  { iso: ${q(k.iso)}, name: ${q(k.es)}, nameEn: ${q(k.en)}, zone: ${q(k.zone)}, bounds: [${k.bounds.join(', ')}], cityIds: [${k.rows.map((r) => q(r.id)).join(', ')}] },`).join('\n')}
 ];
 
 /** Ciudades del banco que no estaban en el juego (las demás se reutilizan con su id del mundo, \`co:\` o \`ci:\`) */
@@ -181,8 +186,8 @@ ${newCities.map((r) => `  { id: ${q(r.id)}, kind: 'city', name: ${q(r.es)}, name
 
 const sqlStr = (s) => `'${String(s).replace(/'/g, "''")}'`;
 mkdirSync('supabase/seed', { recursive: true });
-writeFileSync('supabase/seed/conquest_bank.sql', `-- Generado por scripts/build-conquest-catalog.mjs (fase C1 de Conquista). Lo incluye la migración de la fase C2,
--- después de crear public.conq_bank. Idempotente.
+writeFileSync('supabase/seed/conquest_bank.sql', `-- Generado por scripts/build-conquest-catalog.mjs. Lo incluye la migración del sorteo de países, después de crear
+-- public.conq_bank. Idempotente.
 
 -- Ciudades nuevas (las demás ya están en public.places con su id del mundo, co: o ci:)
 insert into public.places (id, kind, name, country, lat, lon) values
@@ -205,7 +210,8 @@ const SRC_ES = { mundo: 'del mundo', co: 'pack Colombia', pro: 'pack Pro' };
 let doc = `# Conquista · fase C1 · banco de ciudades (para revisar)
 
 Generado por \`node scripts/build-conquest-catalog.mjs\` desde \`src/data/conquestTiers.ts\`. Doce ciudades conocidas por
-país (decisión CQ-D2). Cada temporada el servidor arma con este banco un paquete de cinco ciudades por país. Todas se
+país (decisión CQ-D2). Cada temporada el servidor sortea 10 de estos países y arma con este banco un paquete de cinco
+ciudades por país. Todas se
 verificaron con Wikidata: el país (P17) es el correcto y el punto está a menos de 30 km del aproximado de la lista; y caen
 dentro del contorno del país del mapa (o a pocos km de su costa).
 

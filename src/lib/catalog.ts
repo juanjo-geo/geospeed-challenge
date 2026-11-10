@@ -9,7 +9,6 @@
  * (src/lib/flagScoring.ts, src/lib/featureScoring.ts); el pack Colombia se elige en Región.
  */
 import { CITY_NAMES_EN } from '@/data/cityNamesEn';
-import { CONQUEST_CITIES } from '@/data/conquestCatalog';
 import { getRandomCities, getCitiesByMode, isPackMode, type City, type Difficulty, type GameMode } from '@/data/cities';
 import { COLOMBIA_CITIES, COLOMBIA_DIVISIONS } from '@/data/colombiaCatalog';
 import { PRO_PACK_META } from '@/data/proPackMeta';
@@ -30,8 +29,8 @@ export const isCategory = (v: unknown): v is Category => CATEGORIES.includes(v a
 const MIN_POOL = 13;
 
 // ── Catálogos grandes (banderas, lugares, monumentos y packs Pro, ~60 KB comprimidos): fuera de la carga inicial ──
-interface HeavyCatalogs { FLAG_ITEMS: City[]; FEATURE_ITEMS: City[]; LANDMARK_ITEMS: City[]; PRO_PACK_CITIES: City[]; PRO_PACK_DIVISIONS: City[] }
-const NO_CATALOGS: HeavyCatalogs = { FLAG_ITEMS: [], FEATURE_ITEMS: [], LANDMARK_ITEMS: [], PRO_PACK_CITIES: [], PRO_PACK_DIVISIONS: [] };
+interface HeavyCatalogs { FLAG_ITEMS: City[]; FEATURE_ITEMS: City[]; LANDMARK_ITEMS: City[]; PRO_PACK_CITIES: City[]; PRO_PACK_DIVISIONS: City[]; CONQUEST_CITIES: City[] }
+const NO_CATALOGS: HeavyCatalogs = { FLAG_ITEMS: [], FEATURE_ITEMS: [], LANDMARK_ITEMS: [], PRO_PACK_CITIES: [], PRO_PACK_DIVISIONS: [], CONQUEST_CITIES: [] };
 let heavy: HeavyCatalogs | null = null;
 let heavyLoading: Promise<void> | null = null;
 const heavyListeners = new Set<() => void>();
@@ -228,7 +227,7 @@ export function catalogItem(id: string | null | undefined): City | undefined {
   if (!catalogIndex) {
     catalogIndex = new Map();
     const d = data();
-    for (const list of [d.FLAG_ITEMS, d.FEATURE_ITEMS, d.LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS, d.PRO_PACK_CITIES, d.PRO_PACK_DIVISIONS, CONQUEST_CITIES]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
+    for (const list of [d.FLAG_ITEMS, d.FEATURE_ITEMS, d.LANDMARK_ITEMS, COLOMBIA_CITIES, COLOMBIA_DIVISIONS, d.PRO_PACK_CITIES, d.PRO_PACK_DIVISIONS, d.CONQUEST_CITIES]) for (const it of list) if (it.id) catalogIndex.set(it.id, it);
   }
   const it = catalogIndex.get(id);
   // Todavía sin los catálogos grandes: se piden (quien escucha onCatalogsLoaded vuelve a pintar con el ítem)
