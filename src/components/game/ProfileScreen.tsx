@@ -7,7 +7,7 @@ import { playButtonTap } from '@/lib/sounds';
 import { useAuth } from '@/hooks/useAuth';
 import CountryPicker from './CountryPicker';
 import { getPlayerStats, getGameHistory, formatDistance, type GameHistoryEntry } from '@/lib/gameUtils';
-import { getPlayerLevel, getPlayerBadges, type PlayerLevel, type Badge } from '@/lib/levelSystem';
+import { getPlayerLevel, getPlayerBadges, LEVELS, type PlayerLevel, type Badge } from '@/lib/levelSystem';
 import { tLevelTitle, tBadgeName, tBadgeDesc, tDifficulty } from '@/lib/gameI18n';
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
@@ -22,19 +22,6 @@ import HeaderBackdrop from './HeaderBackdrop';
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
 const AVATARS = ['mascot', '🌍', '🗺️', '🧭', '✈️', '🚀', '🏔️', '🌋', '🏝️', '🎯', '👑', '⚡', '🔮', '🦅', '🐉', '🎲', '🛸'];
 const AVATAR_KEY = 'geospeed_avatar';
-
-const LEVELS_CONFIG: { minXp: number; title: string; emoji: string }[] = [
-  { minXp: 0, title: 'Novato', emoji: '🌱' },
-  { minXp: 500, title: 'Explorador', emoji: '🧭' },
-  { minXp: 1500, title: 'Viajero', emoji: '✈️' },
-  { minXp: 3500, title: 'Navegante', emoji: '🗺️' },
-  { minXp: 7000, title: 'Geógrafo', emoji: '🌍' },
-  { minXp: 12000, title: 'Cartógrafo', emoji: '📐' },
-  { minXp: 20000, title: 'Maestro', emoji: '🎓' },
-  { minXp: 35000, title: 'Leyenda', emoji: '👑' },
-  { minXp: 60000, title: 'Oráculo', emoji: '🔮' },
-  { minXp: 100000, title: 'Deidad Geo', emoji: '⚡' },
-];
 
 type ProfileTab = 'overview' | 'stats' | 'levels' | 'badges' | 'history';
 
@@ -422,7 +409,7 @@ function LevelsTab({ currentLevel }: { currentLevel: PlayerLevel }) {
   const { t, locale } = useI18n();
   return (
     <div className="space-y-1.5 sm:space-y-2">
-      {LEVELS_CONFIG.map((lvl, i) => {
+      {LEVELS.map((lvl, i) => {
         const lvlNumber = i + 1;
         const isCurrentOrPast = currentLevel.level >= lvlNumber;
         const isCurrent = currentLevel.level === lvlNumber;

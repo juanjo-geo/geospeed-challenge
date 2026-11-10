@@ -46,6 +46,8 @@ export interface BattlePassState {
   currentXP: number;
   claimedFree: number[];  // levels claimed
   claimedPremium: number[];
+  /** Puntos de partida por XP con los que se guardó este progreso (sin valor = 1, la escala anterior) */
+  scale?: number;
 }
 
 export interface CosmeticState {
@@ -299,6 +301,12 @@ function getCurrentSeasonId(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/**
+ * Puntos de partida que valen 1 XP del pase. El pase completo pide 29.000 XP: unas 65 partidas de un jugador promedio
+ * (unos 14.000 puntos cada una), alrededor de dos al día durante la temporada, que dura un mes.
+ */
+export const POINTS_PER_PASS_XP = 30;
+
 // XP per level: starts at 500, increases by 100 per level
 function xpForLevel(level: number): number {
   return 500 + (level - 1) * 100;
@@ -363,6 +371,12 @@ export function getBattlePassState(): BattlePassState {
       if (state.seasonId !== getCurrentSeasonId()) {
         return newBattlePassState();
       }
+      // Progreso del mes guardado con otra escala: se convierte una vez (lo ya ganado se queda en la colección)
+      if ((state.scale ?? 1) !== POINTS_PER_PASS_XP) {
+        state.currentXP = Math.round(state.currentXP * (state.scale ?? 1) / POINTS_PER_PASS_XP);
+        state.scale = POINTS_PER_PASS_XP;
+        saveBattlePassState(state);
+      }
       return state;
     }
   } catch {}
@@ -375,6 +389,7 @@ function newBattlePassState(): BattlePassState {
     currentXP: 0,
     claimedFree: [],
     claimedPremium: [],
+    scale: POINTS_PER_PASS_XP,
   };
 }
 
@@ -412,12 +427,12 @@ export function getBattlePassLevel(state?: BattlePassState): { level: number; xp
   };
 }
 
-/** Add XP to battle pass (called after each game) */
-export function addBattlePassXP(xp: number): { newLevel: boolean; unlockedCosmetics: string[] } {
+/** Suma al pase los puntos de una partida terminada */
+export function addBattlePassXP(points: number): { newLevel: boolean; unlockedCosmetics: string[] } {
   const bp = getBattlePassState();
   const oldLevel = getBattlePassLevel(bp).level;
 
-  bp.currentXP += xp;
+  bp.currentXP += Math.round(Math.max(0, points) / POINTS_PER_PASS_XP);
   saveBattlePassState(bp);
 
   const newLevelNum = getBattlePassLevel(bp).level;

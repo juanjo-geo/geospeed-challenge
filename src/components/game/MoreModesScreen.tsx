@@ -35,7 +35,7 @@ const IMPOSSIBLE_UNLOCK_LEVEL = 5;
  */
 export default function MoreModesScreen({ onBack, onTimeAttack, onSpeedDemon, onWorldChallenge, onTraining, onMemory, onSprint, onQuizzes, onConquest }: MoreModesScreenProps) {
   const { t } = useI18n();
-  const level = getPlayerLevel().level;
+  const level = getPlayerLevel().unlockLevel;
   const impossibleLocked = level < IMPOSSIBLE_UNLOCK_LEVEL;
   const wcEvent = Boolean(getFlag('world_challenge_event'));
   const due = dueCount(useMemory());

@@ -2,17 +2,18 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { supabase } from '@/integrations/supabase/client';
 import { ensureCountry } from '@/lib/country';
 import { syncOnLogin } from '@/lib/cloudSync';
-import { importLegacyHistoryOnce, flushPendingResults } from '@/lib/gameResults';
+import { importLegacyHistoryOnce, flushPendingResults, fetchMyProgress } from '@/lib/gameResults';
 import { redeemTransfer, updateMyProfile } from '@/lib/identity';
 import { googleFirstName } from '@/lib/oauth';
 import type { User, Session } from '@supabase/supabase-js';
 
-/** Tareas de servidor al tener sesión: migrar historial local y vaciar la cola offline (F1). */
+/** Tareas de servidor al tener sesión: migrar historial local, vaciar la cola offline (F1) y traer la experiencia total. */
 function afterSession(userId: string) {
   // Si veníamos de una sesión anónima y entramos a una cuenta existente, traer su progreso primero
   redeemTransfer()
     .then(() => importLegacyHistoryOnce(userId))
     .then(() => flushPendingResults())
+    .then(() => fetchMyProgress())
     .catch(() => {});
 }
 

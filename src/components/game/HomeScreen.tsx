@@ -125,12 +125,12 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
   // ── Selección región/dificultad (persistida, validada contra los candados) ──
   const [selectedMode, setSelectedMode] = useState<GameMode>(() => {
     const saved = loadSelection();
-    return saved && MODE_UNLOCK[saved.mode] && playerLevel.level >= MODE_UNLOCK[saved.mode].level ? saved.mode : 'world';
+    return saved && MODE_UNLOCK[saved.mode] && playerLevel.unlockLevel >= MODE_UNLOCK[saved.mode].level ? saved.mode : 'world';
   });
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(() => {
     const saved = loadSelection();
     const cfg = saved && DIFF_CONFIG.find(d => d.key === saved.difficulty);
-    return cfg && playerLevel.level >= cfg.unlockLevel ? cfg.key : 'basic';
+    return cfg && playerLevel.unlockLevel >= cfg.unlockLevel ? cfg.key : 'basic';
   });
   // Fase 6: qué se ubica (ciudades o banderas); se recuerda como la región y la dificultad
   const [selectedCategory, setSelectedCategory] = useState<Category>(() => {
@@ -189,7 +189,7 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
   // ── Opciones de las hojas ──
   const regionOptions: SelectorOption<GameMode>[] = useMemo(() => MODE_CONFIG.map(m => {
     const lock = MODE_UNLOCK[m.key];
-    const locked = playerLevel.level < lock.level;
+    const locked = playerLevel.unlockLevel < lock.level;
     return {
       key: m.key,
       emoji: lock.emoji,
@@ -201,10 +201,10 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
       lockLabel: locked ? t('lock_level', { level: lock.level }) : undefined,
       group: regionGroup(m.key),
     };
-  }), [playerLevel.level, t]);
+  }), [playerLevel.unlockLevel, t]);
 
   const difficultyOptions: SelectorOption<Difficulty>[] = useMemo(() => DIFF_CONFIG.map(d => {
-    const locked = playerLevel.level < d.unlockLevel;
+    const locked = playerLevel.unlockLevel < d.unlockLevel;
     const cap = d.key.charAt(0).toUpperCase() + d.key.slice(1);
     return {
       key: d.key,
@@ -215,7 +215,7 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
       locked,
       lockLabel: locked ? t('lock_level', { level: d.unlockLevel }) : undefined,
     };
-  }), [playerLevel.level, t]);
+  }), [playerLevel.unlockLevel, t]);
 
   const regionLabel = t(`mode_${selectedMode}` as never) || selectedMode;
   const difficultyName = difficultyOptions.find(d => d.key === selectedDifficulty)?.label ?? '';

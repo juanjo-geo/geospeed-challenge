@@ -36,7 +36,7 @@ export function MedalsScreen({ onBack, onPickMap }: MedalsScreenProps) {
   const medals = useMemo(() => medalMap(p), [p]);
   const c = medalCounts(p);
   const total = totalMedalSlots();
-  const level = useMemo(() => getPlayerLevel().level, []);
+  const level = useMemo(() => getPlayerLevel().unlockLevel, []);
   const pick = (mode: GameMode, difficulty: string, category: Category) => {
     playButtonTap();
     // Mapa bloqueado por nivel: el Inicio no lo dejaría elegido, así que se avisa aquí
