@@ -60,49 +60,53 @@ const Support = () => {
 
           <div className="mb-10">
             <FAQItem
-              q="No puedo iniciar sesion / Mi cuenta no funciona"
-              a="Verifica tu conexion a internet e intenta de nuevo. Si usas inicio de sesion con Google o Apple, asegurate de usar la misma cuenta con la que te registraste. Si el problema persiste, escribenos a juanjogrimar@gmail.com con una captura de pantalla del error."
+              q="No puedo iniciar sesión / Mi cuenta no funciona"
+              a="Verifica tu conexión a internet e intenta de nuevo. Si entras con Google, asegúrate de usar la misma cuenta con la que te registraste. Si olvidaste tu contraseña, usa la opción Olvidé mi contraseña. Si el problema persiste, escríbenos a juanjogrimar@gmail.com con una captura de pantalla del error."
             />
             <FAQItem
               q="He perdido mi progreso de juego"
-              a="El progreso se guarda localmente en tu dispositivo. Si borraste los datos de la app o cambiaste de dispositivo, el progreso local se pierde. Si tenias una cuenta creada, tu progreso en la nube se mantiene — solo inicia sesion con la misma cuenta. Si no tenias cuenta, lamentablemente no podemos recuperar datos locales."
+              a="Si tienes una cuenta, tu progreso está guardado en ella: inicia sesión con la misma cuenta. Si juegas como invitado, tu progreso queda ligado a este dispositivo; si borras los datos de la app o cambias de dispositivo, se pierde y no podemos recuperarlo. Para conservarlo, crea una cuenta desde Ajustes."
             />
             <FAQItem
-              q="La aplicacion se congela o se cierra inesperadamente"
-              a="Intenta cerrar y volver a abrir la app. Asegurate de tener la ultima version instalada. Si el problema continua, reinicia tu dispositivo. Si persiste, contactanos indicando tu modelo de dispositivo y version del sistema operativo."
+              q="La aplicación se congela o se cierra inesperadamente"
+              a="Intenta cerrar y volver a abrir la app. Asegúrate de tener la última versión instalada. Si el problema continúa, reinicia tu dispositivo. Si persiste, contáctanos indicando tu modelo de dispositivo y versión del sistema operativo."
             />
             <FAQItem
               q="Los anuncios no se cargan o muestran contenido inapropiado"
-              a="Los anuncios son proporcionados por Google AdMob. Si ves contenido inapropiado, puedes reportarlo directamente en el anuncio (icono de info/triangulo). Si los anuncios no cargan, verifica tu conexion a internet."
+              a="Los anuncios son proporcionados por Google AdMob. Si ves contenido inapropiado, puedes reportarlo directamente en el anuncio (ícono de información o triángulo). Si los anuncios no cargan, verifica tu conexión a internet."
             />
             <FAQItem
-              q="No recibi mi compra / suscripcion premium"
-              a="Las compras se procesan con Google Play (app) o Mercado Pago (web). Si pagaste pero no recibes los beneficios: 1) Espera unos minutos y reinicia la app. 2) Verifica que estas usando la misma cuenta. 3) Si el problema persiste, envianos tu recibo de compra a juanjogrimar@gmail.com y lo resolveremos en menos de 24 horas."
+              q="No recibí mi compra / GeoSpeed Pro"
+              a="Las compras se procesan con Google Play (app) o Mercado Pago (web). Si pagaste pero no recibes los beneficios: 1) Espera unos minutos y reinicia la app. 2) Verifica que estás usando la misma cuenta. 3) Si el problema persiste, envíanos tu recibo de compra a juanjogrimar@gmail.com y lo resolveremos en menos de 24 horas."
             />
             <FAQItem
-              q="Como elimino mi cuenta y mis datos?"
-              a="En el juego: Ajustes → Cuenta → Eliminar cuenta (se borra de inmediato). Tambien desde la web en geospeed-challenge.vercel.app/eliminar-cuenta, o escribiendonos a juanjogrimar@gmail.com desde el email de tu cuenta: la eliminamos con todos sus datos en un plazo maximo de 30 dias."
+              q="¿Cómo elimino mi cuenta y mis datos?"
+              a="En el juego: Ajustes → Cuenta → Eliminar cuenta (se borra de inmediato). También desde la web en geospeed-challenge.vercel.app/eliminar-cuenta, o escribiéndonos a juanjogrimar@gmail.com desde el email de tu cuenta: la eliminamos con todos sus datos en un plazo máximo de 30 días."
             />
             <FAQItem
-              q="El modo multijugador no conecta"
-              a="El modo multijugador requiere una conexion a internet estable. Verifica tu conexion y que ambos jugadores esten en la ultima version de la app. Si sigues teniendo problemas, intenta en una red diferente (WiFi vs datos moviles)."
+              q="Un reto o una Sala en vivo no conecta"
+              a="Los retos y la Sala en vivo requieren una conexión a internet estable. Verifica tu conexión y que todos los jugadores estén en la última versión de la app. Si sigues teniendo problemas, intenta en una red diferente (Wi-Fi o datos móviles)."
             />
             <FAQItem
-              q="Como desactivo las notificaciones?"
-              a="Puedes desactivar las notificaciones desde la configuracion de tu dispositivo: Ajustes > Notificaciones > GeoSpeed Challenge."
+              q="¿Cómo desactivo las notificaciones?"
+              a="Puedes desactivar las notificaciones desde la configuración de tu dispositivo: Ajustes > Notificaciones > GeoSpeed Challenge."
+            />
+            <FAQItem
+              q="¿Cómo reporto un nombre ofensivo o a un jugador?"
+              a="Escríbenos a juanjogrimar@gmail.com con el nombre del jugador, el modo y la pantalla donde lo viste (una captura ayuda). Revisamos cada reporte y podemos cambiar el nombre o bloquear la cuenta."
             />
           </div>
 
           {/* Contact section */}
-          <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">Contactanos</h2>
+          <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">Contáctanos</h2>
           <p className="mb-6 text-[#d4d4c8] leading-relaxed">
             Si no encontraste respuesta a tu problema en las preguntas frecuentes, no dudes en
-            contactarnos. Respondemos en un plazo maximo de <strong>48 horas</strong>.
+            contactarnos. Respondemos en un plazo máximo de <strong>48 horas</strong>.
           </p>
 
           <div className="mb-10 grid gap-4 sm:grid-cols-2">
             <a
-              href="mailto:juanjogrimar@gmail.com?subject=Soporte%20GeoSpeed%20IQ%20Challenge"
+              href="mailto:juanjogrimar@gmail.com?subject=Soporte%20GeoSpeed%20Challenge"
               className="flex flex-col items-center gap-3 rounded-xl border border-[#f5c842]/20 bg-[#07130a] p-6 text-center transition hover:border-[#f5c842]/50 hover:bg-[#f5c842]/5"
             >
               <span className="text-3xl">✉</span>
@@ -112,20 +116,20 @@ const Support = () => {
             <div className="flex flex-col items-center gap-3 rounded-xl border border-[#f5c842]/20 bg-[#07130a] p-6 text-center">
               <span className="text-3xl">⏱</span>
               <span className="font-semibold text-[#f5c842]">Tiempo de respuesta</span>
-              <span className="text-sm text-[#d4d4c8]/70">Maximo 48 horas</span>
+              <span className="text-sm text-[#d4d4c8]/70">Máximo 48 horas</span>
             </div>
           </div>
 
           {/* Tips for contacting */}
           <h2 className="mb-4 text-2xl font-bold text-[#f5c842]">
-            Para una respuesta mas rapida, incluye:
+            Para una respuesta más rápida, incluye:
           </h2>
           <ul className="mb-10 list-disc space-y-2 pl-6 text-[#d4d4c8] leading-relaxed">
-            <li>Tu dispositivo y version del sistema operativo (ej: iPhone 15, iOS 18.2)</li>
-            <li>Version de la app (visible en la pantalla de configuracion)</li>
-            <li>Descripcion detallada del problema</li>
+            <li>Tu dispositivo y versión del sistema operativo (ej.: Samsung Galaxy A54, Android 14)</li>
+            <li>Versión de la app (en la información de la app de tu teléfono)</li>
+            <li>Descripción detallada del problema</li>
             <li>Capturas de pantalla si es posible</li>
-            <li>Si es un problema de pago, incluye tu recibo o ID de transaccion</li>
+            <li>Si es un problema de pago, incluye tu recibo o ID de transacción</li>
           </ul>
 
           <PhotoCredits title="Créditos de las fotos de países" intro="Las fotografías de países que aparecen en el juego pertenecen a sus autores y se usan bajo las licencias indicadas (Wikimedia Commons). Las imágenes fueron redimensionadas y convertidas a WebP; las que tienen licencia CC BY-SA se comparten bajo la misma licencia." />
@@ -161,11 +165,11 @@ const Support = () => {
             <div className="mb-10">
               <FAQItem
                 q="I can't log in / My account doesn't work"
-                a="Check your internet connection and try again. If you're using Google or Apple sign-in, make sure you're using the same account you originally registered with. If the problem persists, email us at juanjogrimar@gmail.com with a screenshot of the error."
+                a="Check your internet connection and try again. If you sign in with Google, make sure you're using the same account you originally registered with. If you forgot your password, use the Forgot my password option. If the problem persists, email us at juanjogrimar@gmail.com with a screenshot of the error."
               />
               <FAQItem
                 q="I lost my game progress"
-                a="Progress is saved locally on your device. If you cleared the app's data or switched devices, local progress is lost. If you had an account, your cloud progress is preserved — just sign in with the same account. If you didn't have an account, unfortunately we cannot recover local data."
+                a="If you have an account, your progress is saved in it: just sign in with the same account. If you play as a guest, your progress is tied to this device; if you clear the app's data or switch devices, it is lost and we cannot recover it. To keep it, create an account from Settings."
               />
               <FAQItem
                 q="The app freezes or crashes unexpectedly"
@@ -176,7 +180,7 @@ const Support = () => {
                 a="Ads are provided by Google AdMob. If you see inappropriate content, you can report it directly on the ad (info/triangle icon). If ads aren't loading, check your internet connection."
               />
               <FAQItem
-                q="I didn't receive my purchase / premium subscription"
+                q="I didn't receive my purchase / GeoSpeed Pro"
                 a="Purchases are processed through Google Play (app) or Mercado Pago (web). If you paid but don't see the benefits: 1) Wait a few minutes and restart the app. 2) Verify you're using the same account. 3) If the problem persists, send us your purchase receipt at juanjogrimar@gmail.com and we'll resolve it within 24 hours."
               />
               <FAQItem
@@ -184,12 +188,16 @@ const Support = () => {
                 a="In the game: Settings → Account → Delete account (deleted immediately). You can also use geospeed-challenge.vercel.app/delete-account, or email juanjogrimar@gmail.com from your account email: we delete it with all its data within 30 days at most."
               />
               <FAQItem
-                q="Multiplayer mode won't connect"
-                a="Multiplayer mode requires a stable internet connection. Check your connection and make sure both players are on the latest version of the app. If you still have issues, try a different network (WiFi vs mobile data)."
+                q="A challenge or Live Room won't connect"
+                a="Challenges and Live Rooms need a stable internet connection. Check your connection and make sure all players are on the latest version of the app. If you still have issues, try a different network (Wi-Fi or mobile data)."
               />
               <FAQItem
                 q="How do I turn off notifications?"
                 a="You can disable notifications from your device settings: Settings > Notifications > GeoSpeed Challenge."
+              />
+              <FAQItem
+                q="How do I report an offensive name or a player?"
+                a="Email us at juanjogrimar@gmail.com with the player's name, the game mode and the screen where you saw it (a screenshot helps). We review every report and may change the name or block the account."
               />
             </div>
 
@@ -201,7 +209,7 @@ const Support = () => {
 
             <div className="mb-10 grid gap-4 sm:grid-cols-2">
               <a
-                href="mailto:juanjogrimar@gmail.com?subject=Support%20GeoSpeed%20IQ%20Challenge"
+                href="mailto:juanjogrimar@gmail.com?subject=Support%20GeoSpeed%20Challenge"
                 className="flex flex-col items-center gap-3 rounded-xl border border-[#f5c842]/20 bg-[#07130a] p-6 text-center transition hover:border-[#f5c842]/50 hover:bg-[#f5c842]/5"
               >
                 <span className="text-3xl">✉</span>
@@ -219,8 +227,8 @@ const Support = () => {
               For a faster response, please include:
             </h2>
             <ul className="list-disc space-y-2 pl-6 text-[#d4d4c8] leading-relaxed">
-              <li>Your device and OS version (e.g., iPhone 15, iOS 18.2)</li>
-              <li>App version (visible in the settings screen)</li>
+              <li>Your device and OS version (e.g., Samsung Galaxy A54, Android 14)</li>
+              <li>App version (in your phone's app info)</li>
               <li>Detailed description of the problem</li>
               <li>Screenshots if possible</li>
               <li>If it's a payment issue, include your receipt or transaction ID</li>
@@ -232,6 +240,7 @@ const Support = () => {
         <div className="mt-8 flex justify-center gap-6 text-sm text-[#d4d4c8]/40">
           <Link to="/" className="hover:text-[#f5c842]">Inicio / Home</Link>
           <Link to="/privacy" className="hover:text-[#f5c842]">Privacidad / Privacy</Link>
+          <Link to="/terms" className="hover:text-[#f5c842]">Términos / Terms</Link>
         </div>
       </div>
     </div>
