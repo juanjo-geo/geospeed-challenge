@@ -62,7 +62,7 @@ Geography quiz game: locate cities (or a footballer's country) on an interactive
 
 ### Config & assets
 - `capacitor.config.ts` — appId `com.geospeed.challenge`, appName "GeoSpeed Challenge".
-- `android/` — Capacitor project. `build/`, `.gradle/`, `local.properties`, `*.aab/*.apk` are gitignored. versionCode 3 / versionName 1.0.2 (2026-11-09). Keystore is NOT in the repo (keep it that way).
+- `android/` — Capacitor project. `build/`, `.gradle/`, `local.properties`, `*.aab/*.apk` are gitignored. versionCode 4 / versionName 1.0.3 (2026-11-10). Keystore is NOT in the repo (keep it that way).
 - `vercel.json` — security headers (A+ Mozilla Observatory) + SPA rewrites. `public/sw.js` — PWA service worker (`CACHE_NAME` currently `geospeed-v82`).
 - `.env` — tracked in git on purpose; contains ONLY public `VITE_*` keys (Supabase anon, GA4, AdMob IDs, payment mode, RevenueCat/Stripe placeholders). Never put secrets there; server secrets live in Supabase Edge Function secrets.
 - `store-listing/metadata.json` — iOS + Android store metadata, ASO keywords.
