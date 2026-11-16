@@ -194,7 +194,7 @@ const en: Translations = {
   ref_title: '🎁 Invite friends, earn lives',
   ref_invited: '{count} invited',
   ref_share: '📤 SHARE INVITE LINK',
-  ref_sent: '✅ Invite ready to send! Your friend counts when they play with your link.',
+  ref_sent: '✅ Ready to send! Share GeoSpeed with your friends.',
   ref_copied: '✅ Link copied! Paste it in WhatsApp to invite.',
   ref_claim: '🎉 CLAIM: +{lives} lives{bonus}',
   ref_more: '🎯 {remaining} more → +{lives} lives{bonus}',

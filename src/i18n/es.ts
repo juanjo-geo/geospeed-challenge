@@ -192,7 +192,7 @@ const es = {
   ref_title: '🎁 Invita amigos, gana vidas',
   ref_invited: '{count} invitados',
   ref_share: '📤 COMPARTIR LINK DE INVITACIÓN',
-  ref_sent: '✅ ¡Invitación lista para enviar! Tu amigo suma cuando juegue con tu link.',
+  ref_sent: '✅ ¡Listo para enviar! Comparte GeoSpeed con tus amigos.',
   ref_copied: '✅ ¡Link copiado! Pégalo en WhatsApp para invitar.',
   ref_claim: '🎉 RECLAMAR: +{lives} vidas{bonus}',
   ref_more: '🎯 {remaining} más → +{lives} vidas{bonus}',

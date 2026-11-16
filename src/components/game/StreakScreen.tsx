@@ -44,8 +44,11 @@ export default function StreakScreen({ onBack, onPlayDaily }: StreakScreenProps)
   const done = playedToday(st);
   const earned = new Set((st?.badges ?? []).map((b) => b.id));
   // Qué ganó hoy o cuál es el próximo premio (lo que responde "¿y esto para qué?")
-  const wonToday = done ? STREAK_MILESTONES.find((m) => m.days === streak) ?? null : null;
-  const nextPrize = STREAK_MILESTONES.find((m) => m.days > streak) ?? null;
+  // Cada premio de hito se gana una sola vez (el servidor guarda su insignia): "hoy ganaste" solo si la insignia es de
+  // hoy, y el próximo premio es un hito que aún no tiene (auditoría 2026-11-16, P7)
+  const badgeDay = new Map((st?.badges ?? []).map((b) => [b.id, b.earned_at ? gameDay(new Date(b.earned_at)) : null]));
+  const wonToday = done ? STREAK_MILESTONES.find((m) => m.days === streak && (!badgeDay.has(m.badge) || badgeDay.get(m.badge) === today)) ?? null : null;
+  const nextPrize = STREAK_MILESTONES.find((m) => m.days > streak && !earned.has(m.badge)) ?? null;
   const daysToPrize = nextPrize ? nextPrize.days - streak : 0;
 
   // Calendario: semanas de lunes a domingo que terminan en la de hoy

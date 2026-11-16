@@ -475,7 +475,8 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
         <div className="flex items-stretch shrink-0 border-l border-border divide-x divide-border font-bold">
           <StripLink icon="🏆" label={t('home_ranking')} onClick={() => { playButtonTap(); (onOpenRanking ?? onOpenProfile)?.(); }} />
           <StripLink icon="📊" label={t('home_history')} onClick={() => { playButtonTap(); (onOpenHistory ?? onOpenProfile)?.(); }} />
-          <StripLink icon="🎁" label={t('home_inviteFriends')} shortLabel={t('home_inviteShort')} onClick={shareInvite} />
+          {/* Sin 🎁: invitar no da premio mientras el servidor no cuente las invitaciones (auditoría 2026-11-16, P9) */}
+          <StripLink icon="📤" label={t('home_inviteFriends')} shortLabel={t('home_inviteShort')} onClick={shareInvite} />
         </div>
       </section>
 

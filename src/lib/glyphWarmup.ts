@@ -43,7 +43,7 @@ const HOME_GLYPHS: [glyph: string, classes: string][] = [
   ['📍', 'text-xl'],
   ['🏆', 'text-lg lg:text-base'],
   ['📊', 'text-lg lg:text-base'],
-  ['🎁', 'text-lg lg:text-base'],
+  ['📤', 'text-lg lg:text-base'],
   // Repaso del día y aviso sin conexión (cuando aparecen)
   ['🧠', 'text-2xl sm:text-3xl'],
   ['📡', 'text-xs'],
