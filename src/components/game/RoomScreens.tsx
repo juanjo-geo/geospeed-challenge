@@ -1,3 +1,4 @@
+import { addBattlePassXP } from '@/lib/cosmetics';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useI18n } from '@/i18n';
 import { MODE_CONFIG, isPackMode, type Difficulty, type GameMode } from '@/data/cities';
@@ -297,6 +298,11 @@ function RoomFinal({ state, onExit, onSwitch, musicMuted, onToggleMusic }: { sta
     if (celebrated.current || !me) return;
     celebrated.current = true;
     trackEvent('room_finish', { players: state.player_count, rank: me.rank });
+    // La sala se guarda en el servidor (no pasa por saveGameResult): sus puntos suman al pase una sola vez
+    try {
+      const k = `geospeed_room_pass_${state.id}`;
+      if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); addBattlePassXP(me.total); }
+    } catch { /* sin almacenamiento */ }
     if (me.rank === 1) { playVictory(); fireCelebration(); }
   }, [me, state.player_count]);
   // Otra ronda armada por el anfitrión: los jugadores pasan solos a la sala nueva

@@ -20,6 +20,7 @@ import type { TimeAttackResult } from '@/components/game/TimeAttackScreen';
 import { getGameHistory, getPlayerStats, type GameHistoryEntry } from './gameUtils';
 import { ensureGuestSession } from './identity';
 import { addGameXP, mergeServerXP } from './levelSystem';
+import { addBattlePassXP } from './cosmetics';
 
 export type GameType = 'classic' | 'daily' | 'timeattack' | 'mundial' | 'speeddemon' | 'training' | 'challenge' | 'duel' | 'sprint' | 'quiz' | 'quiz_free' | 'room';
 export type EndReason = 'complete' | 'timeout' | 'abandoned';
@@ -147,6 +148,7 @@ async function rpcSave(payload: Json): Promise<{ id: string | null; retryable: b
  */
 export async function saveGameResult(input: SaveGameInput): Promise<string | null> {
   addGameXP(input.score); // antes del primer await: la pantalla final ya la ve sumada
+  addBattlePassXP(input.score); // "Sube de nivel jugando cualquier modo": todo lo que se guarda suma al pase
   const clientId = input.clientId ?? newClientId();
   const payload = toPayload(input, clientId);
   try {

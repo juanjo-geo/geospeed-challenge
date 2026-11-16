@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
+import { getEquipped } from '@/lib/cosmetics'; // pin y estela del Pase de Batalla
 import { mundialStoryItem } from '@/lib/placeStory';
 import { getMapBounds, type City, type Difficulty } from '@/data/cities';
 import { getPlayersByDifficulty, type Player } from '@/data/players';
@@ -846,6 +847,7 @@ export default function WorldChallengeScreen({ onExit, onBack, onNoLives, musicM
         )}
 
         <WorldMapCanvas
+          trailConfig={getEquipped('trail')?.config as never}
           onMapClick={handleMapClick}
           clickDisabled={isAnimating}
           userClick={userClick}

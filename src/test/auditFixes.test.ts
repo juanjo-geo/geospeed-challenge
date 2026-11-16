@@ -48,3 +48,24 @@ describe('P1: Pro desbloquea todo', () => {
     expect(Math.max(...Object.values(REGION_UNLOCK_LEVEL), ...Object.values(DIFF_UNLOCK_LEVEL))).toBeLessThanOrEqual(PRO_UNLOCK_LEVEL);
   });
 });
+
+describe('P4: el Pase de Batalla solo da premios que sirven', () => {
+  it('sin repetidos, solo pines/estelas/vidas, y la pista Pro sin vidas', async () => {
+    const { BATTLE_PASS_LEVELS, getCosmeticById, passLives } = await import('../lib/cosmetics');
+    const rewards = BATTLE_PASS_LEVELS.flatMap((l) => [l.freeReward, l.premiumReward]).filter(Boolean) as string[];
+    const cosmetics = rewards.filter((r) => !passLives(r));
+    expect(new Set(cosmetics).size).toBe(cosmetics.length);
+    for (const id of cosmetics) expect(['pin', 'trail']).toContain(getCosmeticById(id)?.category);
+    for (const l of BATTLE_PASS_LEVELS) expect(passLives(l.premiumReward)).toBe(0);
+    const last = BATTLE_PASS_LEVELS[BATTLE_PASS_LEVELS.length - 1];
+    expect(last.freeReward && last.premiumReward).toBeTruthy();
+  });
+  it('las vidas del pase se suman al llegar al nivel', async () => {
+    const { addBattlePassXP, BATTLE_PASS_LEVELS, POINTS_PER_PASS_XP, passLives } = await import('../lib/cosmetics');
+    const { getEnergy, drainLives } = await import('../lib/energySystem');
+    drainLives();
+    const lvl3 = BATTLE_PASS_LEVELS.slice(0, 3).reduce((s, l) => s + l.xpRequired, 0);
+    addBattlePassXP(lvl3 * POINTS_PER_PASS_XP);
+    expect(getEnergy().lives).toBe(passLives(BATTLE_PASS_LEVELS[2].freeReward));
+  });
+});

@@ -719,6 +719,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
         gameType: 'sprint', mode: 'world', difficulty: 'basic', score: total, roundsPlayed: rounds.length, roundsTotal: m.cities.length,
         avgDistanceKm: avgDist, endReason: reason, seed: null, rounds: roundsFromResults(rounds),
       }) as Record<string, unknown>;
+      addBattlePassXP(total); // Sprint se guarda en el servidor (sprint_submit), no por saveGameResult
       void deliverSprint(m.match_id, payload);
       return;
     }
@@ -745,7 +746,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       setEndReason(reason);
       setDailyFinish(null);
       incrementGameCounter();
-      addBattlePassXP(total);
       syncAfterGame();
       saveGameResult({
         gameType: activeQuiz.settings.clock ? 'quiz' : 'quiz_free', mode: activeQuiz.region, difficulty: 'basic', score: total,
@@ -779,7 +779,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       setFinalScore(total);
       setEndReason(reason);
       incrementGameCounter();
-      addBattlePassXP(total);
       syncAfterGame();
       const saved = saveGameResult({
         gameType: 'challenge',
@@ -833,7 +832,6 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
 
     // Track game for ad cadence, battle pass XP, analytics, and sync to cloud
     incrementGameCounter();
-    addBattlePassXP(total);
     trackGameComplete({ score: total, rounds: rounds.length, mode: gameMode, difficulty, avgDistance: avgDist, reason, durationMs: getSessionDurationMs() });
     syncAfterGame();
     // F1: partida + detalle por ciudad en servidor (fire-and-forget; encola si no hay sesión)
