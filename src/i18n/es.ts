@@ -319,6 +319,8 @@ const es = {
   store_infiniteLives: 'Vidas infinitas',
   store_noAds: 'Sin anuncios',
   store_exclusiveBadge: 'Marco y título Pro',
+  store_offerWelcome: 'Primer mes −{p} %',
+  store_offerCampaign: '{name} −{p} % · hasta el {date}',
   store_youArePro: 'ERES PRO',
   store_lifetimeAccess: 'Acceso de por vida',
   store_activeUntil: 'Activo hasta {date}',

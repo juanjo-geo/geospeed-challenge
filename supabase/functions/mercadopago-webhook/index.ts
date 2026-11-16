@@ -75,10 +75,12 @@ Deno.serve(async (req) => {
     // productId + userId desde external_reference (lo arma mercadopago-checkout)
     let productId = "";
     let userId = "";
+    let expected = 0;
     try {
       const ref = JSON.parse(payment.external_reference || "{}");
       productId = String(ref.productId || "");
       userId = String(ref.userId || "");
+      expected = Number(ref.expected || 0);
     } catch { /* ignore */ }
 
     const product = PRODUCTS[productId];
@@ -87,7 +89,10 @@ Deno.serve(async (req) => {
       return text("unassignable");
     }
     const amount = Number(payment.transaction_amount);
-    if (payment.currency_id !== "COP" || !(amount >= product.priceCOP)) {
+    // Con oferta, el checkout fijó el precio rebajado (external_reference.expected, lo arma el servidor). Nunca se
+    // acepta menos del 30 % del precio base (el mayor descuento posible es 70 %).
+    const minimum = expected > 0 ? Math.max(expected, Math.ceil(product.priceCOP * 0.3)) : product.priceCOP;
+    if (payment.currency_id !== "COP" || !(amount >= minimum)) {
       console.error("[mp-webhook] monto no coincide", id, productId, amount, payment.currency_id);
       return text("amount mismatch");
     }

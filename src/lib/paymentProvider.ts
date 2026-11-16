@@ -33,7 +33,8 @@ export interface SubscriptionStatus {
 
 export interface PaymentProvider {
   initialize(): Promise<void>;
-  purchase(productId: string): Promise<PurchaseResult>;
+  /** `campaign`: hay una campaña activa para este producto (Google Play compra su oferta / producto rebajado) */
+  purchase(productId: string, opts?: { campaign?: boolean }): Promise<PurchaseResult>;
   restorePurchases(): Promise<PurchaseResult>;
   getSubscriptionStatus(): Promise<SubscriptionStatus>;
   /** Precios en la moneda del jugador según la tienda (solo nativo). id del producto → "COP 11.900". */
@@ -81,7 +82,13 @@ class MockPaymentProvider implements PaymentProvider {
 const RC_ENTITLEMENT_ID = 'pro';
 // Ids de los productos en Google Play (docs/GeoSpeed_RevenueCat_Setup.md)
 const RC_SUBSCRIPTION_IDS = ['pro_monthly', 'pro_yearly'];
-const RC_ONE_TIME_IDS = ['lives_5', 'lives_15', 'lives_50', 'pro_lifetime'];
+const RC_ONE_TIME_IDS = ['lives_5', 'lives_15', 'lives_50', 'pro_lifetime', 'pro_lifetime_promo'];
+/** Ofertas de Google Play (docs/GeoSpeed_Ofertas.md): id de la oferta dentro del plan base y producto de campaña */
+const PLAY_WELCOME_OFFER = 'bienvenida';
+const PLAY_CAMPAIGN_OFFER = 'campana';
+const PLAY_LIFETIME_PROMO = 'pro_lifetime_promo';
+type RcOption = { id?: string; isBasePlan?: boolean; introPhase?: { price?: { formatted?: string } } | null; fullPricePhase?: { price?: { formatted?: string } } | null; pricingPhases?: Array<{ price?: { formatted?: string } }> };
+const offerIdOf = (o: RcOption) => String(o?.id ?? '').split(':')[1] ?? '';
 
 class RevenueCatProvider implements PaymentProvider {
   private apiKey: string;
@@ -160,7 +167,7 @@ class RevenueCatProvider implements PaymentProvider {
     }
   }
 
-  async purchase(productId: string): Promise<PurchaseResult> {
+  async purchase(productId: string, opts?: { campaign?: boolean }): Promise<PurchaseResult> {
     if (!this.hasKey()) {
       return { success: false, error: 'Las compras dentro de la app aún no están disponibles.' };
     }
@@ -181,16 +188,27 @@ class RevenueCatProvider implements PaymentProvider {
       await this.identify(userId);
 
       const { Purchases } = await this.load();
+      // Campaña de Pro de por vida: en Google Play es otro producto único al precio rebajado
+      const storeId = opts?.campaign && productId === 'pro_lifetime' ? PLAY_LIFETIME_PROMO : productId;
       const { products } = await Purchases.getProducts({
-        productIdentifiers: [productId],
+        productIdentifiers: [storeId],
         type: this.isSubscription(productId) ? 'subs' : 'inapp',
       });
-      const product = products?.[0];
+      const product = products?.[0] ?? (storeId !== productId
+        ? (await Purchases.getProducts({ productIdentifiers: [productId], type: 'inapp' })).products?.[0]
+        : undefined);
       if (!product) {
         return { success: false, error: `Producto no disponible (${productId}).` };
       }
 
-      const { transaction } = await Purchases.purchaseStoreProduct({ product });
+      // Campaña de Pro anual: la oferta "campana" la elige la app (Google no la aplica sola). La bienvenida del plan
+      // mensual sí la aplica Google Play a quien puede usarla (opción por defecto de RevenueCat).
+      const campaignOption = opts?.campaign && productId === 'pro_yearly'
+        ? (product.subscriptionOptions as RcOption[] | null)?.find((o) => offerIdOf(o) === PLAY_CAMPAIGN_OFFER)
+        : undefined;
+      const { transaction } = campaignOption
+        ? await Purchases.purchaseSubscriptionOption({ subscriptionOption: campaignOption as never })
+        : await Purchases.purchaseStoreProduct({ product });
       return { success: true, transactionId: transaction?.transactionIdentifier };
     } catch (e: any) {
       // Cancelación del usuario: no es un error que debamos mostrar.
@@ -245,8 +263,17 @@ class RevenueCatProvider implements PaymentProvider {
           const { products } = await Purchases.getProducts({ productIdentifiers: g.ids, type: g.type });
           for (const p of products ?? []) {
             const id = String(p?.identifier ?? '').split(':')[0];
-            if (g.ids.includes(id) && typeof p?.priceString === 'string' && p.priceString && !out[id]) {
-              out[id] = p.priceString;
+            if (!g.ids.includes(id)) continue;
+            const opts = (p?.subscriptionOptions ?? []) as RcOption[];
+            // Precio normal = el del plan base (priceString es el de la opción por defecto, que puede ser una oferta)
+            const base = opts.find((o) => o.isBasePlan)?.fullPricePhase?.price?.formatted ?? p?.priceString;
+            if (typeof base === 'string' && base && !out[id]) out[id] = base;
+            // Ofertas que Google Play le ofrece a este jugador (solo vienen las que puede usar)
+            for (const o of opts) {
+              const offer = offerIdOf(o);
+              const first = o.introPhase?.price?.formatted ?? o.pricingPhases?.[0]?.price?.formatted;
+              if (offer === PLAY_WELCOME_OFFER && first) out[`${id}@welcome`] = first;
+              if (offer === PLAY_CAMPAIGN_OFFER && first) out[`${id}@campaign`] = first;
             }
           }
         } catch (e) {

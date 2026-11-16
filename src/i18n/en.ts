@@ -321,6 +321,8 @@ const en: Translations = {
   store_infiniteLives: 'Unlimited lives',
   store_noAds: 'No ads',
   store_exclusiveBadge: 'Pro frame and title',
+  store_offerWelcome: 'First month −{p}%',
+  store_offerCampaign: '{name} −{p}% · until {date}',
   store_youArePro: 'YOU ARE PRO',
   store_lifetimeAccess: 'Lifetime access',
   store_activeUntil: 'Active until {date}',

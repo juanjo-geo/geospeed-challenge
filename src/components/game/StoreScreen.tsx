@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { playButtonTap } from '@/lib/sounds';
 import {
   STORE_PRODUCTS,
@@ -13,7 +13,8 @@ import {
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
 import { paymentProvider, paymentProviderKind } from '@/lib/paymentProvider';
-import { displayPrice, useLocalPrices } from '@/lib/storePrices';
+import { displayPrice, localPrice, useLocalPrices } from '@/lib/storePrices';
+import { discountedUsd, offerFor, useStoreOffers, type ProductOffer } from '@/lib/storeOffers';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
 interface StoreScreenProps {
@@ -36,7 +37,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     setPurchaseMessage(null);
 
     try {
-      const result = await paymentProvider.purchase(product.id);
+      const result = await paymentProvider.purchase(product.id, { campaign: offerOfRef.current(product)?.kind === 'campaign' });
 
       if (!result.success) {
         // Si el usuario canceló, no mostramos error.
@@ -131,6 +132,31 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   useLocalPrices();
   const price = (p: StoreProduct) => displayPrice(p, { month: t('store_perMonth'), year: t('store_perYear') });
 
+  // ── Ofertas reales (docs/GeoSpeed_Ofertas.md): bienvenida en Pro mensual y campañas con fecha ──
+  const offers = useStoreOffers();
+  const native = paymentProviderKind === 'revenuecat';
+  /** Precio de la oferta en Google Play (solo llega si Google se la ofrece a este jugador) */
+  const playOfferPrice = (p: StoreProduct, o: ProductOffer) =>
+    o.kind === 'welcome' ? localPrice('pro_monthly@welcome') : p.id === 'pro_yearly' ? localPrice('pro_yearly@campaign') : p.id === 'pro_lifetime' ? localPrice('pro_lifetime_promo') : null;
+  const offerOf = (p: StoreProduct): ProductOffer | null => {
+    let o = offerFor(p.id, offers);
+    // En la app la bienvenida la decide Google: se muestra si Google trae su precio aunque el servidor no lo sepa
+    if (!o && native && p.id === 'pro_monthly' && offers?.welcome && localPrice('pro_monthly@welcome')) o = { kind: 'welcome', percent: offers.welcome.percent };
+    if (o && native && !playOfferPrice(p, o)) return null; // sin la oferta configurada en Play no se promete
+    return o;
+  };
+  const offerOfRef = useRef(offerOf);
+  offerOfRef.current = offerOf;
+  const periodSuffix = (p: StoreProduct) => (p.type === 'pro_monthly' ? t('store_perMonth') : p.type === 'pro_yearly' ? t('store_perYear') : '');
+  const offerPrice = (p: StoreProduct, o: ProductOffer) => `${native ? playOfferPrice(p, o) : discountedUsd(p.priceCents, o.percent)}${periodSuffix(p)}`;
+  const offerLabel = (o: ProductOffer) => o.kind === 'welcome'
+    ? t('store_offerWelcome', { p: o.percent })
+    : t('store_offerCampaign', {
+        name: locale === 'en' ? o.campaign!.name_en : o.campaign!.name_es,
+        p: o.percent,
+        date: new Date(o.campaign!.ends_at).toLocaleString(locale === 'en' ? 'en' : 'es', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }),
+      });
+
   const livesPill = (
     <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1.5">
       {energy.unlimited ? (
@@ -208,9 +234,19 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                     <span className="flex-1 min-w-0">
                       <span className="block font-black text-sm sm:text-base">{txt(product, 'label')}</span>
                       <span className="block text-[11px] sm:text-xs text-muted-foreground leading-snug">{txt(product, 'desc')}</span>
+                      {(() => { const o = offerOf(product); return o ? <span className="inline-block mt-1 text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full bg-primary/20 text-primary leading-snug">{offerLabel(o)}</span> : null; })()}
                     </span>
                     <span className="shrink-0 text-right">
-                      <span className="block font-black font-mono text-base sm:text-lg text-primary">{price(product)}</span>
+                      {(() => {
+                        const o = offerOf(product);
+                        if (!o) return <span className="block font-black font-mono text-base sm:text-lg text-primary">{price(product)}</span>;
+                        return (
+                          <>
+                            <span className="block text-[11px] font-mono text-muted-foreground line-through">{price(product)}</span>
+                            <span className="block font-black font-mono text-base sm:text-lg text-primary">{offerPrice(product, o)}</span>
+                          </>
+                        );
+                      })()}
                       {product.badge && (
                         <span className="inline-block mt-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-accent/20 text-accent">{txt(product, 'badge')}</span>
                       )}
