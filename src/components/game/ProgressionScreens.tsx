@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isMascotAvatar } from '@/lib/avatars';
+import MascotFace from './MascotFace';
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import Mascot from './Mascot';
 import RewardsGlossary from './RewardsGlossary';
 import { REGION_MODES, PACK_MODES, type GameMode } from '@/data/cities';
 import { CATEGORY_ART, categoriesForMode, categoryLabelKey, type Category } from '@/lib/catalog';
@@ -217,7 +218,7 @@ function Showcase({ earned }: { earned: Set<string> }) {
       <div className="flex items-center gap-3 mb-3">
         <span className="w-16 h-16 shrink-0 rounded-full border-[3px] border-primary bg-[radial-gradient(circle_at_50%_40%,hsl(var(--brand-navy-card)),hsl(var(--brand-navy-deep)))] flex items-center justify-center overflow-hidden"
           style={fs ? { borderColor: fs.ring, boxShadow: `0 0 14px ${fs.glow}` } : undefined} aria-hidden>
-          {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : !avatar || avatar === 'mascot' ? <Mascot state="wink" className="w-[80%]" /> : <span className="text-3xl">{avatar}</span>}
+          {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : isMascotAvatar(avatar) ? <MascotFace avatar={avatar} /> : <span className="text-3xl">{avatar}</span>}
         </span>
         <span className="min-w-0">
           <span className="block font-black text-xl truncate">{displayName || t('profile_player')}</span>

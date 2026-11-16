@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
+import { isMascotAvatar } from '@/lib/avatars';
+import MascotFace from './MascotFace';
 import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
-import Mascot from './Mascot';
 import { useProfilePhoto } from '@/lib/profilePhoto';
 
 const AVATAR_KEY = 'geospeed_avatar';
@@ -32,8 +33,8 @@ export function AccountButton({ onOpenProfile, showName = true, nameClassName = 
         {hasAccount ? (
           photo
             ? <img src={photo} alt="" className="w-full h-full object-cover" />
-            : avatar === 'mascot'
-            ? <Mascot className="w-[80%]" />
+            : isMascotAvatar(avatar)
+            ? <MascotFace avatar={avatar} state="idle" />
             : <span className="text-lg" aria-hidden>{avatar}</span>
         ) : (
           <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
