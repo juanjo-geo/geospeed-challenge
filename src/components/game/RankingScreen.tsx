@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { isMascotAvatar } from '@/lib/avatars';
+import MascotFace from './MascotFace';
 import { MODE_CONFIG, type Difficulty } from '@/data/cities';
 import { CATEGORY_ART, CATEGORY_KEY, categoriesForMode, categoryForMode, categoryLabelKey, type Category } from '@/lib/catalog';
 import { FRAME_STYLE, TITLE_KEY, getCachedDailyStatus } from '@/lib/dailyChallenge';
@@ -265,7 +267,7 @@ function Avatar({ avatar, photo, size = 'sm', frame }: { avatar: string; photo?:
       style={fs ? { borderColor: fs.ring, borderWidth: 3, boxShadow: `0 0 10px ${fs.glow}` } : undefined}
       aria-hidden
     >
-      {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : !avatar || avatar === 'mascot' ? <Mascot state="wink" className="w-[80%]" /> : <span className={size === 'lg' ? 'text-3xl' : 'text-xl'}>{avatar}</span>}
+      {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : isMascotAvatar(avatar) ? <MascotFace avatar={avatar} /> : <span className={size === 'lg' ? 'text-3xl' : 'text-xl'}>{avatar}</span>}
     </span>
   );
 }

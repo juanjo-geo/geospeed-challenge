@@ -1,4 +1,5 @@
 import { useI18n } from '@/i18n';
+import { isMascotAvatar, mascotFilter } from '@/lib/avatars';
 import { formatNumber } from '@/lib/format';
 import { playButtonTap } from '@/lib/sounds';
 
@@ -13,11 +14,11 @@ import { playButtonTap } from '@/lib/sounds';
 
 /** Cara del rival: su emoji si eligió uno; si no, el Explorador en turquesa (el color del rival en el mapa) */
 export function GhostFace({ avatar, className = 'w-7 h-7' }: { avatar: string | null; className?: string }) {
-  const emoji = avatar && avatar !== 'mascot' ? avatar : null;
+  const emoji = avatar && !isMascotAvatar(avatar) ? avatar : null;
   return (
     <span className={`relative inline-flex shrink-0 items-center justify-center rounded-full border-2 border-accent bg-brand-navy-deep overflow-hidden ${className}`} aria-hidden>
       {emoji ? <span className="text-[0.95em] leading-none">{emoji}</span> : (
-        <span className="inline-flex w-[82%] h-[82%]" style={{ filter: 'hue-rotate(150deg) saturate(1.3)' }}>
+        <span className="inline-flex w-[82%] h-[82%]" style={{ filter: mascotFilter(avatar) ?? 'hue-rotate(150deg) saturate(1.3)' }}>
           <img src="/mascot/explorer-logo.webp" alt="" className="w-full h-full object-contain" />
         </span>
       )}

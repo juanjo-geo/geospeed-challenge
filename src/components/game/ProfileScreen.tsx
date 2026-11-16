@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { isMascotAvatar, MASCOT_AVATARS, MASCOT_COLORS } from '@/lib/avatars';
+import MascotFace from './MascotFace';
 import { ACHIEVEMENTS, achievementTier, medalCounts, useProgression } from '@/lib/progression';
 import { scrollAppToTop } from '@/lib/appScroll';
 import { fetchMyGamesByType, fetchMyProgress, type GameType, type MyProgress } from '@/lib/gameResults';
@@ -14,7 +16,6 @@ import { useI18n } from '@/i18n';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { updateMyProfile } from '@/lib/identity';
 import { useNavigate } from 'react-router-dom';
-import Mascot from './Mascot';
 import { appNumberLocale, formatNumber } from '@/lib/format';
 import { ChevronIcon, HomeIcon, LegendPin } from '@/components/ui/icons';
 import HeaderBackdrop from './HeaderBackdrop';
@@ -24,7 +25,7 @@ import { nameAllowed } from '@/lib/nameFilter';
 import { clearProfilePhoto, useProfilePhoto } from '@/lib/profilePhoto';
 
 /** 'mascot' = el Explorador (avatar por defecto, maqueta Perfil_APROBADA_v1) */
-const AVATARS = ['mascot', '🌍', '🗺️', '🧭', '✈️', '🚀', '🏔️', '🌋', '🏝️', '🎯', '👑', '⚡', '🔮', '🦅', '🐉', '🎲', '🛸'];
+const AVATARS = [...MASCOT_AVATARS, '🌍', '🗺️', '🧭', '✈️', '🚀', '🏔️', '🌋', '🏝️', '🎯', '👑', '⚡', '🔮', '🦅', '🐉', '🎲', '🛸'];
 const AVATAR_KEY = 'geospeed_avatar';
 
 type ProfileTab = 'overview' | 'stats' | 'levels' | 'badges' | 'history';
@@ -42,7 +43,7 @@ interface ProfileScreenProps {
 }
 
 function AvatarFace({ avatar, size }: { avatar: string; size: 'lg' | 'sm' }) {
-  if (avatar === 'mascot') return <Mascot state="wink" className={size === 'lg' ? 'w-[84%]' : 'w-[80%]'} />;
+  if (isMascotAvatar(avatar)) return <MascotFace avatar={avatar} className={size === 'lg' ? 'w-[84%]' : 'w-[80%]'} />;
   return <span className={size === 'lg' ? 'text-6xl sm:text-7xl' : 'text-xl sm:text-2xl'}>{avatar}</span>;
 }
 
@@ -163,7 +164,7 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                           className={`aspect-square rounded-xl flex items-center justify-center transition-all active:scale-90 ${
                             avatar === a && !photo ? 'bg-primary/20 border-2 border-primary' : 'bg-muted/40 border border-transparent hover:border-accent/50'
                           }`}
-                          aria-label={a === 'mascot' ? t('profile_avatarExplorer') : a}
+                          aria-label={a === 'mascot' ? t('profile_avatarExplorer') : a.startsWith('mascot:') ? `${t('profile_avatarExplorer')} · ${t((MASCOT_COLORS.find((c) => `mascot:${c.id}` === a)?.nameKey ?? 'profile_avatarExplorer') as never)}` : a}
                         >
                           <AvatarFace avatar={a} size="sm" />
                         </button>
