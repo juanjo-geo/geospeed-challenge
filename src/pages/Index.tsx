@@ -154,7 +154,7 @@ const SprintResultScreen = lazyWithReload(() => import('@/components/game/Sprint
 const MoreModesScreen = lazyWithReload(() => import('@/components/game/MoreModesScreen'));
 const HowToPlayScreen = lazyWithReload(() => import('@/components/game/HowToPlayScreen'));
 import { supabase } from '@/integrations/supabase/client';
-import { consumeLife, getEnergy, addLives } from '@/lib/energySystem';
+import { consumeLife, getEnergy, addLives, refundLife } from '@/lib/energySystem';
 import { incrementGameCounter, shouldShowInterstitial, refreshEntitlements, ENTITLEMENTS_EVENT, PURCHASE_PENDING_KEY, type EntitlementsResult } from '@/lib/premiumSystem';
 import { toast } from 'sonner';
 import { showInterstitial, initAds } from '@/lib/adSystem';
@@ -527,11 +527,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
    */
   const withPackTrial = useCallback((mode: GameMode, start: () => void) => {
     if (!isPackTrial(mode)) { start(); return; }
-    if (packClaimingRef.current) { addLives(1); return; } // doble toque mientras se pregunta
+    if (packClaimingRef.current) { refundLife(); return; } // doble toque mientras se pregunta
     packClaimingRef.current = true;
     void claimPackTrial(mode).then((ok) => {
       packClaimingRef.current = false;
-      if (!ok) { addLives(1); blockPackTrial(); return; }
+      if (!ok) { refundLife(); blockPackTrial(); return; }
       toast(t('pack_trialStarted'));
       start();
     });
@@ -875,7 +875,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       if (phase === 'wc-playing') return;
       scheduleDailyReminder();
       const energy = getEnergy();
-      if (energy.lives < energy.maxLives && energy.nextRegenMs > 0) {
+      if (!energy.unlimited && energy.lives < energy.maxLives && energy.nextRegenMs > 0) {
         // Schedule for when ALL lives are full (se vuelve a comprobar al momento de avisar)
         const msPerLife = 20 * 60 * 1000;
         const livesNeeded = energy.maxLives - energy.lives;
@@ -947,7 +947,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [gameMode, blockPackTrial, withPackTrial]); // eslint-disable-line react-hooks/exhaustive-deps
   // Cancelar durante la cuenta regresiva / aviso de giro: la partida no empezo → se devuelve la vida
   const handleCancelCountdown = useCallback(() => {
-    if (!isTraining) addLives(1);
+    if (!isTraining) refundLife();
     refundPackTrial(gameMode); // pack Pro sin Pro: la prueba de hoy tampoco se gastó
     setChallengeSeed(null);
     setChallengerScore(null);
@@ -1096,7 +1096,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (offlineBlocked('play')) return;
     unlockAudio();
     // La vida se cobra al arrancar la partida (onStarted): volver atrás o cancelar la cuenta regresiva no cuesta nada
-    if (getEnergy().lives <= 0) { setShowNoLives(true); return; }
+    { const e = getEnergy(); if (!e.unlimited && e.lives <= 0) { setShowNoLives(true); return; } }
     setPhase('ta-select');
   }, []);
   const handleDailyChallenge = useCallback(() => {

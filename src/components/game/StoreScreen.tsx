@@ -141,7 +141,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
   const livesPill = (
     <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1.5">
-      {energy.lives > energy.maxLives ? (
+      {energy.unlimited ? (
+        <span className="text-sm font-bold" aria-label={t('store_infiniteLives')}>❤️ <span aria-hidden>∞</span></span>
+      ) : energy.lives > energy.maxLives ? (
         <span className="text-sm font-bold">❤️ <span className="font-mono">×{energy.lives}</span></span>
       ) : (
         <>
