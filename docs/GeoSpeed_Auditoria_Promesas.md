@@ -27,9 +27,9 @@ Decisiones de JuanJo (2026-11-16): Pro desbloquea todo · marco dorado + título
 - [x] C6 Letra grande de Android desconfigura la interfaz (pedido nuevo) — MainActivity limita el aumento a 130 %; FitWidth encoge nombre y títulos de una línea; probado simulando +30 % en Inicio, Tienda, Perfil, Más modos, Ajustes y partida
 
 **Promesas (decisiones tomadas)**
-- [ ] P1 Pro desbloquea todas las regiones, dificultades e Imposible — pro-todo-desbloqueado, legal-01, flujos-05
-- [ ] P2 Marco dorado y título Pro — pro-badge-exclusivo, recompensas-badge-pro-inexistente, legal-02
-- [ ] P3 "Modos exclusivos" de Pro mensual → texto real (packs Pro) — pro-modos-exclusivos
+- [x] P1 Pro desbloquea todas las regiones, dificultades e Imposible — pro-todo-desbloqueado, legal-01, flujos-05
+- [x] P2 Marco dorado y título Pro — pro-badge-exclusivo, recompensas-badge-pro-inexistente, legal-02
+- [x] P3 "Modos exclusivos" de Pro mensual → texto real (packs Pro) — pro-modos-exclusivos
 - [ ] P4 Pase de Batalla: premios que sirvan, sin repetidos; XP del pase en todos los modos — pro-pase-premium-vacio, recompensas-pase-*, flujos-06
 - [ ] P5 Cosméticos con precio que no se pueden comprar — pro-cosmeticos-precio-sin-compra, recompensas-pase-cosmeticos-tienda
 - [ ] P6 Descuentos reales en vez de la "Oferta de hoy" falsa (diseño aparte; mientras tanto se quita la cuenta regresiva falsa) — pro-oferta-de-hoy-ficticia

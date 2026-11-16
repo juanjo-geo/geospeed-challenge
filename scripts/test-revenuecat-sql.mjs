@@ -92,6 +92,8 @@ check('…un aviso repetido no las vuelve a dar', (await apply(ev('NON_RENEWING_
 r = await apply(ev('NON_RENEWING_PURCHASE', { app_user_id: C, product_id: 'pro_lifetime', transaction_id: 'GPA.4' }));
 e = await ent(C);
 check('pro_lifetime → Pro para siempre', r.action === 'recorded' && e.is_pro && e.source === 'lifetime' && e.expires_at === null, JSON.stringify(e));
+check('comprar Pro da la insignia del marco y el título Pro', (await q(`select count(*)::int n from public.user_badges where user_id = $1 and badge_id = 'pro_member'`, [C]))[0].n === 1);
+check('…y el servidor deja ponerse el marco Pro', (await q(`select public._cosmetic_badge('frame', 'pro') b`))[0].b === 'pro_member');
 check('producto desconocido se ignora', (await apply(ev('NON_RENEWING_PURCHASE', { app_user_id: C, product_id: 'coins_99', transaction_id: 'GPA.5' }))).action === 'unknown_product' && (await rows(C)).length === 2);
 
 // ── El comprador ──

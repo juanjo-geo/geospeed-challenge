@@ -1,6 +1,7 @@
 import { dailyBestKey } from '@/lib/gameDay';
 import { getPlayerStats, getGameHistory } from './gameUtils';
 import { addLives } from './energySystem';
+import { isPro } from './premiumSystem';
 
 export interface PlayerLevel {
   level: number;
@@ -103,6 +104,12 @@ function unlockFloor(): number {
   return floor;
 }
 
+/** Nivel que abre regiones, dificultades e Imposible. Pro = "Todo desbloqueado", como promete la tienda. */
+export const PRO_UNLOCK_LEVEL = 99;
+function proUnlock(level: number): number {
+  return isPro() ? PRO_UNLOCK_LEVEL : Math.max(level, unlockFloor());
+}
+
 export function getPlayerLevel(): PlayerLevel {
   const xp = calculateXP();
   let currentLevel = LEVELS[0];
@@ -129,7 +136,7 @@ export function getPlayerLevel(): PlayerLevel {
     xp,
     xpForNext,
     progress,
-    unlockLevel: Math.max(levelIndex + 1, unlockFloor()),
+    unlockLevel: proUnlock(levelIndex + 1),
   };
 }
 
@@ -176,7 +183,7 @@ function getPlayerLevelByNumber(levelNumber: number): PlayerLevel {
     xp,
     xpForNext,
     progress,
-    unlockLevel: Math.max(levelNumber, unlockFloor()),
+    unlockLevel: proUnlock(levelNumber),
   };
 }
 
