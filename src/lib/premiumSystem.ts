@@ -336,6 +336,22 @@ export async function activatePro(source: 'subscription' | 'lifetime', durationD
   _serverProCache = { isPro: true, checkedAt: Date.now() };
 }
 
+/**
+ * Compra de vidas en la app (RevenueCat): el webhook la registra en el servidor como pendiente y aquí se recoge
+ * (claim_purchased_lives), igual que en la web. Espera unos segundos a que llegue el aviso; si no llega, queda
+ * marcada como compra en curso y se recoge al volver a la app (Index, visibilitychange) o al abrir la tienda.
+ * Devuelve cuántas vidas se sumaron ahora (0 = llegarán después).
+ */
+export async function awaitPurchasedLives(tries = 8, everyMs = 2500): Promise<number> {
+  try { localStorage.setItem(PURCHASE_PENDING_KEY, JSON.stringify({ at: Date.now() })); } catch { /* ignore */ }
+  for (let i = 0; i < tries; i++) {
+    const r = await refreshEntitlements().catch(() => null);
+    if (r && r.livesAdded > 0) return r.livesAdded;
+    if (i < tries - 1) await new Promise((res) => setTimeout(res, everyMs));
+  }
+  return 0;
+}
+
 export function purchaseLives(productId: string): boolean {
   const product = STORE_PRODUCTS.find(p => p.id === productId);
   if (!product || product.type !== 'lives' || !product.lives) return false;

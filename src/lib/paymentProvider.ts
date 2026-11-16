@@ -197,6 +197,8 @@ class RevenueCatProvider implements PaymentProvider {
       if (e?.userCancelled === true || e?.code === '1' || e?.code === 'PURCHASE_CANCELLED') {
         return { success: false, cancelled: true };
       }
+      // Un pago que Google aprueba más tarde vuelve como error: se deja marcado para recoger lo que llegue
+      try { localStorage.setItem(PURCHASE_PENDING_KEY, JSON.stringify({ productId, at: Date.now() })); } catch { /* ignore */ }
       return { success: false, error: e?.message || 'No se pudo completar la compra.' };
     }
   }
@@ -206,8 +208,15 @@ class RevenueCatProvider implements PaymentProvider {
       return { success: false, error: 'Restaurar compras no está disponible.' };
     }
     if (!this.initialized) await this.initialize();
+    if (!this.initialized) return { success: false, error: 'No se pudo iniciar el sistema de pagos.' };
     try {
-      await this.identify(await this.sessionUserId());
+      // Como al comprar: la restauración debe quedar a nombre de un usuario del servidor. Sin sesión, RevenueCat
+      // la pasaba a su id anónimo y el servidor no veía el Pro (Sprint, quizzes y packs se comportaban como gratis).
+      const { ensureGuestSession } = await import('@/lib/identity');
+      if ((await ensureGuestSession({ force: true })) === 'unavailable') return { success: false, code: 'login_required' };
+      const userId = await this.sessionUserId();
+      if (!userId) return { success: false, code: 'login_required' };
+      await this.identify(userId);
       const { Purchases } = await this.load();
       await Purchases.restorePurchases();
       return { success: true };

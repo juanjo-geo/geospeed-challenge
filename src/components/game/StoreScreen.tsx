@@ -4,6 +4,7 @@ import {
   STORE_PRODUCTS,
   getProStatus,
   purchaseLives,
+  awaitPurchasedLives,
   activatePro,
   refreshEntitlements,
   ENTITLEMENTS_EVENT,
@@ -73,9 +74,17 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       // (Solo proveedores nativos que confirman en el cliente, p.ej. RevenueCat)
       // Payment succeeded — apply the entitlement locally
       if (product.type === 'lives') {
-        purchaseLives(product.id);
-        setEnergy(getEnergy());
-        setPurchaseMessage(t('store_livesAdded', { count: String(product.lives) }));
+        if (paymentProviderKind === 'mock') {
+          purchaseLives(product.id); // pruebas locales: no hay servidor que las registre
+          setEnergy(getEnergy());
+          setPurchaseMessage(t('store_livesAdded', { count: String(product.lives) }));
+        } else {
+          // Google Play: el servidor registra la compra y desde ahí se recoge (no se pierde si el pago tarda)
+          setPurchaseMessage(t('store_livesCrediting'));
+          const n = await awaitPurchasedLives();
+          setEnergy(getEnergy());
+          setPurchaseMessage(n > 0 ? t('store_livesAdded', { count: String(n) }) : t('store_livesSoon'));
+        }
       } else if (product.type === 'pro_monthly') {
         activatePro('subscription', 30);
         setProStatus(getProStatus());
@@ -103,7 +112,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     try {
       const result = await paymentProvider.restorePurchases();
       if (!result.success) {
-        setPurchaseMessage(result.error || t('store_purchaseError'));
+        setPurchaseMessage(result.code === 'login_required' ? t('store_loginRequired') : result.error || t('store_purchaseError'));
         return;
       }
       // Servidor (compras web) + tienda nativa (RevenueCat): Pro y vidas pendientes

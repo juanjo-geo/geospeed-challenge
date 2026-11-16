@@ -1,5 +1,5 @@
 // RevenueCat → purchases (migración 20261109120000_revenuecat.sql): cada aviso del webhook, la vigencia
-// explícita de las suscripciones de Google Play, reembolsos, transferencias, vidas ya entregadas en la app
+// explícita de las suscripciones de Google Play, reembolsos, transferencias, vidas pendientes de recoger
 // y que _is_pro / my_entitlements lo vean, sobre toda la cadena de migraciones en Postgres embebido (PGlite).
 //
 // Uso: npm run test:revenuecat-sql   (o node scripts/test-revenuecat-sql.mjs [carpeta de migraciones])
@@ -85,9 +85,10 @@ check('reembolso revertido → vuelve el Pro', r.action === 'restored' && (await
 // ── Compras únicas ──
 r = await apply(ev('NON_RENEWING_PURCHASE', { app_user_id: C, product_id: 'lives_15', transaction_id: 'GPA.3' }));
 let rc = await rows(C);
-check('vidas compradas en la app: registradas como ya entregadas', r.action === 'recorded' && rc[0].lives === 15 && rc[0].lives_claimed_at !== null);
+check('vidas compradas en la app: quedan pendientes (no se pierden si la app no las sumó)', r.action === 'recorded' && rc[0].lives === 15 && rc[0].lives_claimed_at === null);
 e = await ent(C);
-check('…la web no las vuelve a dar', e.lives_pending === 0 && (await as(C, `select public.claim_purchased_lives() n`))[0].n === 0);
+check('…la app las recoge una sola vez', e.lives_pending === 15 && (await as(C, `select public.claim_purchased_lives() n`))[0].n === 15 && (await as(C, `select public.claim_purchased_lives() n`))[0].n === 0);
+check('…un aviso repetido no las vuelve a dar', (await apply(ev('NON_RENEWING_PURCHASE', { app_user_id: C, product_id: 'lives_15', transaction_id: 'GPA.3' }))).action === 'recorded' && (await ent(C)).lives_pending === 0);
 r = await apply(ev('NON_RENEWING_PURCHASE', { app_user_id: C, product_id: 'pro_lifetime', transaction_id: 'GPA.4' }));
 e = await ent(C);
 check('pro_lifetime → Pro para siempre', r.action === 'recorded' && e.is_pro && e.source === 'lifetime' && e.expires_at === null, JSON.stringify(e));

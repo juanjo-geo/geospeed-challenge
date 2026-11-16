@@ -58,6 +58,20 @@ export async function syncStreakReminder(): Promise<void> {
   } catch { /* sin complemento (web) o sin permiso */ }
 }
 
+/**
+ * Ajustes → encender el recordatorio en la app: pide el permiso si falta. 'granted' | 'denied' (bloqueado: hay que
+ * activarlo en los ajustes del teléfono) | 'web' (en la web lo maneja el aviso de notificaciones).
+ */
+export async function ensureReminderPermission(): Promise<'granted' | 'denied' | 'web'> {
+  if (!isNative()) return 'web';
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications');
+    let perm = await LocalNotifications.checkPermissions();
+    if (perm.display === 'prompt' || perm.display === 'prompt-with-rationale') perm = await LocalNotifications.requestPermissions();
+    return perm.display === 'granted' ? 'granted' : 'denied';
+  } catch { return 'denied'; }
+}
+
 /** App instalada: pide el permiso de notificaciones una sola vez (tras el primer diario con racha) */
 export async function askNativeReminderPermissionOnce(): Promise<void> {
   if (!isNative() || !getPrefs().streakReminder) return;
