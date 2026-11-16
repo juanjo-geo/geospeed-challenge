@@ -24,7 +24,7 @@ import { COMBO_LEVELS, comboLevelOf, SCORING_VERSION } from '@/lib/scoring';
 import FinalResultScreen from './FinalResultScreen';
 import Wordmark from '@/components/ui/Wordmark';
 import { saveGameResult } from '@/lib/gameResults';
-import { consumeLife, addLives } from '@/lib/energySystem';
+import { consumeLife, refundLife } from '@/lib/energySystem';
 import { useGameLayoutMode, useIsPortraitMobile } from '@/hooks/use-mobile';
 import { useI18n } from '@/i18n';
 import { announce } from './ScreenReaderAnnouncer';
@@ -217,7 +217,7 @@ export default function WorldChallengeScreen({ onExit, onBack, onNoLives, musicM
 
   // Cancelar en la cuenta regresiva o en el aviso de girar: la partida no empezó → se devuelve la vida
   const cancelCountdown = useCallback(() => {
-    addLives(1);
+    refundLife();
     setStage('select');
   }, []);
 

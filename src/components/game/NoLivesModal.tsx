@@ -25,7 +25,7 @@ export default function NoLivesModal({ onClose, onOpenStore }: NoLivesModalProps
     const interval = setInterval(() => {
       const e = getEnergy();
       setEnergy(e);
-      if (e.lives > 0) {
+      if (e.lives > 0 || e.unlimited) {
         const elapsed = Date.now() - mountedAt;
         if (elapsed < MIN_VISIBLE_MS) {
           // Too soon — show "life restored" message, then close after remaining time

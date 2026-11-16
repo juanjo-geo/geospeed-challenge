@@ -1,3 +1,6 @@
+// Pro = vidas infinitas: no se cobran ni se devuelven. (Ciclo premiumSystem ↔ energySystem: solo se usa al llamar.)
+import { isPro } from './premiumSystem';
+
 const STORAGE_KEY = 'geospeed_energy';
 const MAX_REGEN_LIVES = 5;          // Tope SOLO de las vidas que se regeneran solas
 const REGEN_MINUTES = 20;           // Una vida se regenera cada 20 minutos
@@ -34,6 +37,7 @@ export function getEnergy(): {
   bonusLives: number;     // solo las compradas
   maxLives: number;       // tope de regeneración (5)
   nextRegenMs: number;
+  unlimited: boolean;     // Pro: vidas infinitas (no se cobran)
 } {
   const state = getState();
   const now = Date.now();
@@ -63,11 +67,13 @@ export function getEnergy(): {
     bonusLives: bonus,
     maxLives: MAX_REGEN_LIVES,
     nextRegenMs: Math.max(0, timeToNext),
+    unlimited: isPro(),
   };
 }
 
 /** Consume una vida. Devuelve false si no hay vidas. Gasta primero las compradas. */
 export function consumeLife(): boolean {
+  if (isPro()) return true; // Pro: vidas infinitas
   getEnergy(); // aplicar regen primero
   const state = getState();
   const bonus = state.bonusLives ?? 0;
@@ -104,6 +110,12 @@ export function addLives(count: number) {
     state.bonusLives = (state.bonusLives ?? 0) + remainder;
   }
   saveState(state);
+}
+
+/** Devuelve la vida de una partida que no empezó (cancelada). Con Pro no se cobró, así que no se devuelve. */
+export function refundLife() {
+  if (isPro()) return;
+  addLives(1);
 }
 
 /** PRUEBAS: vacía todas las vidas (regenerables + bonus) para probar el modal "sin vidas". */

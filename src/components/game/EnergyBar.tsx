@@ -15,6 +15,15 @@ export default function EnergyBar({ stacked = false, chip = false }: { stacked?:
     return () => clearInterval(interval);
   }, []);
 
+  // Pro: vidas infinitas, sin tiempo de recarga.
+  if (energy.unlimited) {
+    return (
+      <span aria-label={t('store_infiniteLives')} className={`inline-flex items-center gap-1 font-extrabold ${chip ? 'rounded-full border-2 border-destructive/50 px-2 py-0.5 text-sm' : 'text-base'}`}>
+        <span aria-hidden>❤️</span><span aria-hidden>∞</span>
+      </span>
+    );
+  }
+
   // Si el total supera el tope de regeneración (5), mostrar "❤️ ×N" (no caben N corazones).
   const showCompact = energy.lives > energy.maxLives;
 

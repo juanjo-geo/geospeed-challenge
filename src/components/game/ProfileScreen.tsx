@@ -377,7 +377,7 @@ function StatsTab({ stats, avgDist, totalXp, energy, history }: {
         <StatBlock label={t('profile_avgDist')} value={formatDistance(avgDist)} icon="📍" />
         <StatBlock label={t('profile_totalRounds')} value={stats.totalRounds.toLocaleString(appNumberLocale())} icon="🔄" />
         <StatBlock label={t('profile_totalXP')} value={totalXp.toLocaleString(appNumberLocale())} icon="⚡" />
-        <StatBlock label={t('profile_lives')} value={energy.lives > energy.maxLives ? `${energy.lives}` : `${energy.lives}/${energy.maxLives}`} icon="❤️" />
+        <StatBlock label={t('profile_lives')} value={energy.unlimited ? '∞' : energy.lives > energy.maxLives ? `${energy.lives}` : `${energy.lives}/${energy.maxLives}`} icon="❤️" />
       </div>
 
       {/* Modes breakdown */}
