@@ -32,7 +32,7 @@ Decisiones de JuanJo (2026-11-16): Pro desbloquea todo · marco dorado + título
 - [x] P3 "Modos exclusivos" de Pro mensual → texto real (packs Pro) — pro-modos-exclusivos
 - [x] P4 Pase de Batalla: premios que sirvan, sin repetidos; XP del pase en todos los modos — pro-pase-premium-vacio, recompensas-pase-*, flujos-06
 - [x] P5 Cosméticos con precio que no se pueden comprar — pro-cosmeticos-precio-sin-compra, recompensas-pase-cosmeticos-tienda
-- [ ] P6 Descuentos reales en vez de la "Oferta de hoy" falsa (diseño aparte; mientras tanto se quita la cuenta regresiva falsa) — pro-oferta-de-hoy-ficticia
+- [ ] P6 Descuentos reales en vez de la "Oferta de hoy" falsa (diseño aparte; **hecho: se quitó la cuenta regresiva falsa**; falta diseñar los descuentos) — pro-oferta-de-hoy-ficticia
 - [ ] P7 Hitos de racha: texto según lo que el servidor entrega — recompensas-hitos-racha-repetidos
 - [ ] P8 Cofre: insignias que no existen — recompensas-cofre-insignias-fantasma
 - [ ] P9 Invitar amigos: contador que nunca sube — flujos-07, recompensas-referidos-no-suman

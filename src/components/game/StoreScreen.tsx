@@ -16,18 +16,6 @@ import { paymentProvider, paymentProviderKind } from '@/lib/paymentProvider';
 import { displayPrice, useLocalPrices } from '@/lib/storePrices';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
-function msUntilEndOfDay(): number {
-  const now = new Date();
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
-  return end.getTime() - now.getTime();
-}
-function formatCountdown(ms: number): string {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(h)}:${pad(m)}:${pad(sec)}`;
-}
-
 interface StoreScreenProps {
   onClose: () => void;
 }
@@ -39,11 +27,6 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
-  const [offerMs, setOfferMs] = useState(() => msUntilEndOfDay());
-  useEffect(() => {
-    const id = setInterval(() => setOfferMs(msUntilEndOfDay()), 1000);
-    return () => clearInterval(id);
-  }, []);
 
   const liveProducts = STORE_PRODUCTS.filter(p => p.type === 'lives');
   const proProducts = STORE_PRODUCTS.filter(p => p.type !== 'lives');
@@ -202,13 +185,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 ))}
               </div>
 
-              {/* Oferta con urgencia — cuenta atrás al fin del día */}
-              <div className="text-center mb-4">
-                <span className="inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 py-1.5 text-xs sm:text-sm font-bold text-accent">
-                  ⏳ {t('store_offerEndsIn')} <span className="font-mono tabular-nums text-foreground">{formatCountdown(offerMs)}</span>
-                </span>
-              </div>
-
+              {/* La "Oferta de hoy" con cuenta atrás no tenía descuento detrás (auditoría 2026-11-16, P6): fuera hasta
+                  que existan descuentos reales con precio rebajado en Google Play y Mercado Pago */}
               <div className="flex flex-col gap-3">
                 {proProducts.map(product => (
                   <button
