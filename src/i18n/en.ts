@@ -720,6 +720,7 @@ const en: Translations = {
   train_masteryLine: '{region}: {pct}% mastered',
   train_savingMemory: 'Updating your memory…',
   train_memoryNote: 'The ones you missed will come back in your Daily review.',
+  train_memoryNotePack: 'The ones you missed will come back next time you train this pack.',
   train_again: 'ANOTHER ROUND',
   train_changeSettings: 'Change settings',
   mem_title: 'Your memory',

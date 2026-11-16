@@ -718,6 +718,7 @@ const es = {
   train_masteryLine: '{region}: {pct}% dominado',
   train_savingMemory: 'Actualizando tu memoria…',
   train_memoryNote: 'Las que fallaste volverán en tu Repaso del día.',
+  train_memoryNotePack: 'Las que fallaste volverán cuando vuelvas a entrenar este pack.',
   train_again: 'OTRA TANDA',
   train_changeSettings: 'Cambiar ajustes',
   mem_title: 'Tu memoria',

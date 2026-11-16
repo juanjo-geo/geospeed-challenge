@@ -182,6 +182,23 @@ export function getPlayerStats(): PlayerStats {
   return stats;
 }
 
+// ── Récord por mapa (auditoría 2026-11-16): "¡Nuevo récord!" compara con partidas del mismo tipo, mapa, nivel y
+// categoría; antes comparaba con un único máximo que mezclaba Imposible, quizzes y la suma de la revancha ──
+const BEST_BY_KEY = 'geospeed_best_by_key';
+function readBestByKey(): Record<string, number> {
+  try { const v = JSON.parse(localStorage.getItem(BEST_BY_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
+}
+export function getBestFor(key: string): number {
+  const v = readBestByKey()[key];
+  return typeof v === 'number' && v > 0 ? v : 0;
+}
+export function setBestFor(key: string, score: number): void {
+  const all = readBestByKey();
+  if (score <= (all[key] ?? 0)) return;
+  all[key] = score;
+  try { localStorage.setItem(BEST_BY_KEY, JSON.stringify(all)); } catch { /* sin espacio */ }
+}
+
 export function updatePlayerStats(score: number, distances: number[]) {
   const stats = getPlayerStats();
   stats.gamesPlayed++;

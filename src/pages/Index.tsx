@@ -380,10 +380,15 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const launchOriginRef = useRef<Phase | null>(null);
   // 60s de Caos: partida lanzada desde la elección de nivel a la que aún no se le cobró la vida
   const taLifePendingRef = useRef(false);
+  // La partida que está en la cuenta regresiva cobró una vida: solo entonces Cancelar la devuelve (las partidas
+  // gratis — quiz, repetir, revancha, Sprint, entrenamiento — no la cobran y no deben regalar una).
+  const lifeChargedRef = useRef(false);
+  const chargeLife = () => { const ok = consumeLife(); lifeChargedRef.current = ok; return ok; };
   useEffect(() => {
     const prev = lastPhaseRef.current;
     if (prev === phase) return;
     lastPhaseRef.current = phase;
+    if (phase === 'playing' || phase === 'daily') lifeChargedRef.current = false; // la partida empezó: la vida ya se usó
     if ((phase === 'countdown' || phase === 'tutorial') && prev !== 'tutorial') launchOriginRef.current = BACK_RETURNS.has(prev) ? prev : null;
     const isTab = phase === tabTargetRef.current;
     tabTargetRef.current = null;
@@ -527,17 +532,19 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
    */
   const withPackTrial = useCallback((mode: GameMode, start: () => void) => {
     if (!isPackTrial(mode)) { start(); return; }
-    if (packClaimingRef.current) { refundLife(); return; } // doble toque mientras se pregunta
+    if (packClaimingRef.current) { refundLife(); lifeChargedRef.current = false; return; } // doble toque mientras se pregunta
     packClaimingRef.current = true;
     void claimPackTrial(mode).then((ok) => {
       packClaimingRef.current = false;
-      if (!ok) { refundLife(); blockPackTrial(); return; }
+      if (!ok) { refundLife(); lifeChargedRef.current = false; blockPackTrial(); return; }
       toast(t('pack_trialStarted'));
       start();
     });
   }, [blockPackTrial, t]);
 
   const startSelected = (diff: Difficulty, mode: GameMode, category: Category) => {
+    countdownNextRef.current = 'playing';
+    sprintMatchRef.current = null; setSprintMatch(null);
     setIsTraining(false);
     setIsSpeedDemon(false);
     setActiveChallenge(null);
@@ -566,7 +573,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       blockPackTrial();
       return;
     }
-    if (!consumeLife()) {
+    if (!chargeLife()) {
       setShowNoLives(true);
       return;
     }
@@ -933,7 +940,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleNewGame = useCallback(() => {
     if (offlineBlocked('play')) return;
     if (!canPlayPack(gameMode)) { blockPackTrial(); return; }
-    if (!consumeLife()) { setShowNoLives(true); return; }
+    if (!chargeLife()) { setShowNoLives(true); return; }
     withPackTrial(gameMode, () => {
       setReplayCities(null);
       setRevengeCities(null);
@@ -947,15 +954,20 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [gameMode, blockPackTrial, withPackTrial]); // eslint-disable-line react-hooks/exhaustive-deps
   // Cancelar durante la cuenta regresiva / aviso de giro: la partida no empezo → se devuelve la vida
   const handleCancelCountdown = useCallback(() => {
-    if (!isTraining) refundLife();
+    if (lifeChargedRef.current) refundLife();
+    lifeChargedRef.current = false;
+    countdownNextRef.current = 'playing'; // un diario cancelado no convierte la próxima partida en el diario
+    // Sprint: la carrera queda pendiente en el servidor y se retoma al volver a buscar; aquí no debe quedar cargada
+    const wasSprint = !!sprintMatchRef.current;
+    if (wasSprint) { sprintMatchRef.current = null; setSprintMatch(null); }
     refundPackTrial(gameMode); // pack Pro sin Pro: la prueba de hoy tampoco se gastó
     setChallengeSeed(null);
     setChallengerScore(null);
     setIsTraining(false); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null);
-    const origin = launchOriginRef.current;
+    const origin = wasSprint ? 'sprint' : launchOriginRef.current;
     if (origin) { setPhase(origin); scrollAppToTop(); return; }
     setPhase('home'); scrollAppToTop(); navigate('/', { replace: true });
-  }, [isTraining, navigate, gameMode]);
+  }, [navigate, gameMode]);
 
   // ── F3: retos asincrónicos ──
   const handleFriends = useCallback(() => { if (offlineBlocked('online')) return; setPhase('friends'); scrollAppToTop(); }, [offlineBlocked]);
@@ -963,7 +975,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleOpenChallengeCode = useCallback((code: string) => { setChallengeSource({ type: 'code', code }); setPhase('challenge'); scrollAppToTop(); }, []);
   const handlePlayChallenge = useCallback((ch: Challenge) => {
     unlockAudio();
-    if (!consumeLife()) { setShowNoLives(true); return; }
+    if (!chargeLife()) { setShowNoLives(true); return; }
     setIsTraining(false); setIsSpeedDemon(false); setRevengeCities(null); setReplayCities(null);
     setChallengeSeed(null); setChallengerScore(null);
     setDifficulty(ch.difficulty);
@@ -1011,7 +1023,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     gameKeyRef.current += 1;
     setPhase('countdown');
   }, []);
-  const resetRunState = useCallback(() => { setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setActiveQuiz(null); setQuizCities(null); }, []);
+  const resetRunState = useCallback(() => { sprintMatchRef.current = null; setSprintMatch(null); setIsTraining(false); trainingRunRef.current = null; setTrainingRun(null); setRevengeCities(null); setReplayCities(null); setActiveChallenge(null); setActiveQuiz(null); setQuizCities(null); }, []);
   const handleGoHome = useCallback(() => { resetRunState(); setPhase('home'); scrollAppToTop(); navigate('/', { replace: true }); }, [navigate, resetRunState]);
   // Atrás: a la pantalla anterior del menú; sin anterior, al Inicio
   const handleBack = useCallback(() => {
@@ -1102,7 +1114,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleDailyChallenge = useCallback(() => {
     if (offlineBlocked('online')) return;
     unlockAudio();
-    if (!consumeLife()) { setShowNoLives(true); return; }
+    if (!chargeLife()) { setShowNoLives(true); return; }
     setDifficulty('medium');
     setGameMode('world');
     setIsTraining(false);
@@ -1137,7 +1149,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleSpeedDemon = useCallback(() => {
     if (offlineBlocked('play')) return;
     unlockAudio();
-    if (!consumeLife()) { setShowNoLives(true); return; }
+    if (!chargeLife()) { setShowNoLives(true); return; }
     setIsTraining(false);
     setIsSpeedDemon(true);
     setReplayCities(null);
@@ -1262,7 +1274,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (challengeSeed !== null && phase === 'home' && autoStartedSeedRef.current !== challengeSeed) {
       autoStartedSeedRef.current = challengeSeed;
       unlockAudio();
-      if (!consumeLife()) { setShowNoLives(true); return; }
+      if (!chargeLife()) { setShowNoLives(true); return; }
       setIsTraining(false);
       setIsSpeedDemon(false);
       setReplayCities(null);
@@ -1291,7 +1303,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     if (deepLink.type === 'daily') {
       // /daily or /daily/2026-05-12 → start daily challenge
       unlockAudio();
-      if (!consumeLife()) { setShowNoLives(true); navigate('/', { replace: true }); return; }
+      if (!chargeLife()) { setShowNoLives(true); navigate('/', { replace: true }); return; }
       setDifficulty('medium');
       setGameMode('world');
       setPhase('daily');
@@ -1594,7 +1606,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           reason="complete"
           totalRounds={taResult.rounds.length}
           previousBestOverride={taPrevBest}
-          onNewGame={() => { gameKeyRef.current += 1; setPhase('ta-playing'); }}
+          onNewGame={() => { if (offlineBlocked('play')) return; const e = getEnergy(); if (!e.unlimited && e.lives <= 0) { setShowNoLives(true); return; } taLifePendingRef.current = true; gameKeyRef.current += 1; setPhase('ta-playing'); }}
           onGoHome={handleGoHome}
           onOpenStore={handleOpenStore}
         />
@@ -1799,6 +1811,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       return (
         <FinalResultScreen
           noOffers={isTraining || !!activeQuiz}
+          recordKey={revengeUsed ? null : `${isSpeedDemon ? 'imposible' : activeQuiz ? `quiz-${activeQuiz.code}` : activeChallenge ? 'challenge' : dailyFinish ? 'daily' : isTraining ? 'training' : 'classic'}:${gameMode}:${difficulty}:${gameCategory}`}
           musicMuted={isMusicMuted}
           onToggleMusic={toggleMusic}
           rankBoard={!isTraining && !activeQuiz && !activeChallenge && !sprintMatch && challengeSeed === null && !isSpeedDemon && !isOffline()
@@ -1811,7 +1824,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           onPlayAgain={playedChallenge ? undefined : activeQuiz ? () => startQuizRun(activeQuiz) : handlePlayAgain}
           onNewGame={activeQuiz ? () => startQuizRun(activeQuiz) : handleNewGame}
           onGoHome={handleGoHome}
-          onRevenge={revengeUsed || activeChallenge || activeQuiz ? undefined : handleRevenge}
+          onRevenge={revengeUsed || activeChallenge || activeQuiz || dailyFinish ? undefined : handleRevenge}
           onShareChallenge={canShareChallenge && !dailyFinish && !activeQuiz ? handleFriends : undefined}
           onViewChallenge={playedChallenge ? handleViewChallenge : undefined}
           onOpenStore={handleOpenStore}
