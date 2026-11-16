@@ -42,3 +42,6 @@ scripts/store-shots/chr-*/
 scripts/store-shots/tmp-*.html
 scripts/store-shots/catalog.json
 scripts/store-shots/catalog-bundle.mjs
+
+# Llave de la cuenta de servicio de Google (RevenueCat). Secreta: nunca al repo.
+/Revenue/
