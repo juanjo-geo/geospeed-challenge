@@ -12,6 +12,7 @@ import {
 import { getEnergy } from '@/lib/energySystem';
 import { useI18n } from '@/i18n';
 import { paymentProvider, paymentProviderKind } from '@/lib/paymentProvider';
+import { displayPrice, useLocalPrices } from '@/lib/storePrices';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
 function msUntilEndOfDay(): number {
@@ -134,7 +135,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     if (v && v !== k) return v;
     return field === 'label' ? p.label : field === 'desc' ? p.description : (p.badge ?? '');
   };
-  const price = (p: StoreProduct) => p.price.replace('/mes', t('store_perMonth')).replace('/año', t('store_perYear'));
+  // App nativa: el precio de Google Play en la moneda del jugador; web: US$ del catálogo
+  useLocalPrices();
+  const price = (p: StoreProduct) => displayPrice(p, { month: t('store_perMonth'), year: t('store_perYear') });
 
   const livesPill = (
     <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1.5">
