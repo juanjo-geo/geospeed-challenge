@@ -157,5 +157,28 @@ check('los jugadores siguen sin leer purchases', await (async () => {
   try { await as(A, `select * from public.purchases`); return false; } catch (e) { return /permission denied/.test(e.message); }
 })());
 
+// ── Ofertas (migración 20261117150000_ofertas.sql) ──
+const G = id(7);
+await db.exec(`insert into auth.users (id) values ('${G}');`);
+const offers = async (uid) => (await (uid ? as(uid, `select public.store_offers() o`) : q(`select public.store_offers() o`)))[0].o;
+const disc = async (prod, uid) => (await q(`select public._store_discount($1, $2::uuid) d`, [prod, uid]))[0].d;
+check('bienvenida: quien nunca compró Pro la ve', (await offers(G)).welcome.eligible === true && (await disc('pro_monthly', G)).percent === 50);
+check('bienvenida: solo para Pro mensual', (await disc('pro_yearly', G)).percent === 0 && (await disc('lives_5', G)).percent === 0);
+check('bienvenida: quien ya compró Pro no la ve', (await offers(C)).welcome.eligible === false && (await disc('pro_monthly', C)).percent === 0);
+await q(`insert into public.store_campaigns values ('lanz', 'Lanzamiento', 'Launch', 30, array['pro_yearly','pro_lifetime'], now() - interval '1 hour', now() + interval '2 days')`);
+await q(`insert into public.store_campaigns values ('vieja', 'Vieja', 'Old', 60, array['pro_yearly'], now() - interval '3 days', now() - interval '1 day')`);
+const o = await offers(null);
+check('campaña activa visible (sin sesión también), la vencida no', o.campaigns.length === 1 && o.campaigns[0].id === 'lanz' && o.campaigns[0].percent === 30);
+check('campaña: descuento en sus productos', (await disc('pro_lifetime', C)).percent === 30 && (await disc('pro_lifetime', C)).reason === 'campaign');
+check('gana el mayor descuento (bienvenida 50 > campaña)', (await disc('pro_monthly', G)).reason === 'welcome');
+r = await apply(ev('NON_RENEWING_PURCHASE', { app_user_id: E, product_id: 'pro_lifetime_promo', transaction_id: 'GPA.promo' }));
+check('Google Play: pro_lifetime_promo da Pro de por vida', r.action === 'recorded' && (await ent(E)).source === 'lifetime');
+check('un jugador no puede pedir el descuento interno', await (async () => {
+  try { await as(A, `select public._store_discount('pro_monthly', '${A}'::uuid)`); return false; } catch (e) { return /permission denied/.test(e.message); }
+})());
+check('ni leer las campañas directo', await (async () => {
+  try { await as(A, `select * from public.store_campaigns`); return false; } catch (e) { return /permission denied/.test(e.message); }
+})());
+
 console.log(fails ? `\n${fails} FALLAS` : '\nTodo bien');
 process.exit(fails ? 1 : 0);

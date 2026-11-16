@@ -63,19 +63,30 @@ Deno.serve(async (req) => {
     const userId = auth?.user?.id;
     if (!userId) return json({ error: "login_required" }, 401);
 
+    // Ofertas reales (docs/GeoSpeed_Ofertas.md): el servidor decide el descuento de este jugador (bienvenida o
+    // campaña activa). Redondeado a centenas de peso. Sin la función (migración sin aplicar) se cobra el precio base.
+    let percent = 0;
+    let offer: string | null = null;
+    try {
+      const { data } = await admin.rpc("_store_discount", { p_product: productId, p_user: userId });
+      const p = Number((data as { percent?: number } | null)?.percent ?? 0);
+      if (p > 0 && p <= 70) { percent = p; offer = String((data as { reason?: string }).reason ?? "offer"); }
+    } catch { /* sin ofertas */ }
+    const priceCOP = percent ? Math.round((product.priceCOP * (100 - percent)) / 100 / 100) * 100 : product.priceCOP;
+
     // Crear la preferencia de pago
     const preference = {
       items: [
         {
-          title: product.title,
+          title: offer ? `${product.title} (−${percent} %)` : product.title,
           quantity: 1,
-          unit_price: product.priceCOP,
+          unit_price: priceCOP,
           currency_id: "COP",
         },
       ],
-      // Guardamos a quién acreditar y qué compró (vuelve en el webhook)
-      external_reference: JSON.stringify({ productId, userId }),
-      metadata: { product_id: productId, user_id: userId },
+      // Guardamos a quién acreditar, qué compró y cuánto debe pagar (vuelve en el webhook, que lo valida)
+      external_reference: JSON.stringify({ productId, userId, expected: priceCOP }),
+      metadata: { product_id: productId, user_id: userId, offer, percent },
       back_urls: {
         success: `${appUrl}/?purchase=success`,
         failure: `${appUrl}/?purchase=failure`,
