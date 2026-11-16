@@ -119,10 +119,6 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      // @revenuecat/purchases-capacitor es un plugin NATIVO (Capacitor), solo se usa en la app móvil.
-      // En la web nunca se ejecuta (PaymentProvider.load() no se llama), así que lo marcamos externo
-      // para que el build de Vite/Rollup no intente resolverlo y falle.
-      external: ["@revenuecat/purchases-capacitor"],
       output: {
         // Vendors aparte del código del juego: cambian poco entre despliegues y el navegador los
         // conserva en caché. OJO: todo lo que importa React (react, react-dom, radix, router…) debe ir en
