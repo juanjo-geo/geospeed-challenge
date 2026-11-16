@@ -17,12 +17,13 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { getPlayerStats, type PlayerStats } from './gameUtils';
 import { refreshEntitlements } from './premiumSystem';
+import { restoreBonusLives } from './energySystem';
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface CloudPlayerData {
   stats: PlayerStats;
   history: unknown[];
-  energy: { lives: number; lastRegenTimestamp: number };
+  energy: { lives: number; bonusLives?: number; lastRegenTimestamp: number };
   premium: { isPro: boolean; proExpiresAt: string | null; proSource: string | null };
   updated_at: string;
 }
@@ -93,6 +94,18 @@ export async function syncOnLogin(): Promise<void> {
       await pushToCloud();
       return;
     }
+
+    // Vidas compradas: viajan con la cuenta. La primera vez que esta cuenta entra en este teléfono (nuevo o
+    // reinstalado) se traen las que quedaban guardadas; después manda lo local (se gastan sin conexión).
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const flag = user ? `geospeed_cloud_lives_${user.id}` : null;
+      if (flag && !localStorage.getItem(flag)) {
+        const added = restoreBonusLives(Number(cloudData.energy?.bonusLives ?? 0));
+        localStorage.setItem(flag, '1');
+        if (added > 0) await pushToCloud();
+      }
+    } catch { /* sin almacenamiento */ }
 
     // Merge strategy: keep whichever has more games played (more progress)
     const cloudStats = cloudData.stats as PlayerStats;

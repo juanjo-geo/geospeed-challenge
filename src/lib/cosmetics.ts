@@ -1,4 +1,5 @@
 import { BRAND_RGB, BRAND, rgba } from '@/lib/theme';
+import { addLives } from '@/lib/energySystem';
 /**
  * GeoSpeed — Cosmetics & Battle Pass System
  *
@@ -117,7 +118,7 @@ export const PIN_SKINS: Cosmetic[] = [
     emoji: '👻',
     rarity: 'epic',
     config: { fill: 'rgba(255,255,255,0.6)', stroke: 'rgba(255,255,255,0.9)', glow: 'rgba(255,255,255,0.3)', size: 8, pulse: true },
-    source: 'store',
+    source: 'battlepass_premium',
     priceCents: 199,
   },
 ];
@@ -162,7 +163,7 @@ export const TRAIL_EFFECTS: Cosmetic[] = [
     description: 'Estela de fuego ardiente',
     emoji: '🔥',
     rarity: 'epic',
-    config: { color: '239,68,68', width: 3, style: 'fire', particles: true },
+    config: { color: '255,122,40', width: 3, style: 'fire', particles: true },
     source: 'battlepass_premium',
   },
   {
@@ -312,28 +313,37 @@ function xpForLevel(level: number): number {
   return 500 + (level - 1) * 100;
 }
 
+/**
+ * Premios del pase (auditoría 2026-11-16): solo cosas que se ven o se usan. Pines y estelas (se ven en el mapa de
+ * Clásico, Caos y Mundial) y vidas en la pista gratis; la pista Pro no da vidas (Pro ya las tiene infinitas). Ningún
+ * premio se repite entre pistas ni dentro de una. Los marcos y temas de mapa salieron: no se aplicaban en ningún lado.
+ * Las vidas son `lives_<n>`: se suman al llegar al nivel.
+ */
 export const BATTLE_PASS_LEVELS: BattlePassLevel[] = [
   { level: 1,  xpRequired: xpForLevel(1),  freeReward: 'pin_gold' },
-  { level: 2,  xpRequired: xpForLevel(2),  premiumReward: 'trail_gold' },
-  { level: 3,  xpRequired: xpForLevel(3),  freeReward: 'frame_gold' },
-  { level: 4,  xpRequired: xpForLevel(4),  premiumReward: 'pin_neon' },
+  { level: 2,  xpRequired: xpForLevel(2),  premiumReward: 'trail_lightning' },
+  { level: 3,  xpRequired: xpForLevel(3),  freeReward: 'lives_2' },
+  { level: 4,  xpRequired: xpForLevel(4) },
   { level: 5,  xpRequired: xpForLevel(5),  freeReward: 'trail_rainbow' },
-  { level: 6,  xpRequired: xpForLevel(6),  premiumReward: 'map_vintage' },
-  { level: 7,  xpRequired: xpForLevel(7) },
-  { level: 8,  xpRequired: xpForLevel(8),  freeReward: 'map_vintage' },
-  { level: 9,  xpRequired: xpForLevel(9),  premiumReward: 'trail_lightning' },
-  { level: 10, xpRequired: xpForLevel(10), freeReward: undefined, premiumReward: 'pin_fire' },
-  { level: 11, xpRequired: xpForLevel(11) },
-  { level: 12, xpRequired: xpForLevel(12), freeReward: 'trail_gold' },
-  { level: 13, xpRequired: xpForLevel(13), premiumReward: 'frame_neon' },
+  { level: 6,  xpRequired: xpForLevel(6),  premiumReward: 'pin_fire' },
+  { level: 7,  xpRequired: xpForLevel(7),  freeReward: 'lives_3' },
+  { level: 8,  xpRequired: xpForLevel(8) },
+  { level: 9,  xpRequired: xpForLevel(9),  freeReward: 'lives_3' },
+  { level: 10, xpRequired: xpForLevel(10), freeReward: 'pin_neon' },
+  { level: 11, xpRequired: xpForLevel(11), premiumReward: 'trail_fire' },
+  { level: 12, xpRequired: xpForLevel(12) },
+  { level: 13, xpRequired: xpForLevel(13), freeReward: 'lives_5' },
   { level: 14, xpRequired: xpForLevel(14) },
-  { level: 15, xpRequired: xpForLevel(15), freeReward: 'pin_neon', premiumReward: 'map_ice' },
-  { level: 16, xpRequired: xpForLevel(16) },
-  { level: 17, xpRequired: xpForLevel(17), premiumReward: 'trail_fire' },
-  { level: 18, xpRequired: xpForLevel(18) },
+  { level: 15, xpRequired: xpForLevel(15), premiumReward: 'pin_ghost' },
+  { level: 16, xpRequired: xpForLevel(16), freeReward: 'lives_5' },
+  { level: 17, xpRequired: xpForLevel(17) },
+  { level: 18, xpRequired: xpForLevel(18), freeReward: 'lives_5' },
   { level: 19, xpRequired: xpForLevel(19) },
-  { level: 20, xpRequired: xpForLevel(20), freeReward: 'frame_gold', premiumReward: 'pin_diamond' },
+  { level: 20, xpRequired: xpForLevel(20), freeReward: 'trail_gold', premiumReward: 'pin_diamond' },
 ];
+
+/** Vidas de premio del pase: `lives_<n>` → n (0 si el premio es un cosmético) */
+export const passLives = (reward?: string): number => (reward?.startsWith('lives_') ? Number(reward.slice(6)) || 0 : 0);
 
 // ─── Storage ─────────────────────────────────────────────────────────
 
@@ -443,7 +453,14 @@ export function addBattlePassXP(points: number): { newLevel: boolean; unlockedCo
     const cosmState = getCosmeticState();
     for (let l = oldLevel + 1; l <= newLevelNum; l++) {
       const lvlConfig = BATTLE_PASS_LEVELS.find(bl => bl.level === l);
-      if (lvlConfig?.freeReward && !cosmState.unlockedIds.includes(lvlConfig.freeReward)) {
+      const lives = passLives(lvlConfig?.freeReward);
+      if (lives > 0 && !bp.claimedFree.includes(l)) {
+        addLives(lives);
+        unlockedCosmetics.push(lvlConfig!.freeReward!);
+        bp.claimedFree.push(l);
+        continue;
+      }
+      if (lvlConfig?.freeReward && !lives && !cosmState.unlockedIds.includes(lvlConfig.freeReward)) {
         cosmState.unlockedIds.push(lvlConfig.freeReward);
         unlockedCosmetics.push(lvlConfig.freeReward);
         if (!bp.claimedFree.includes(l)) bp.claimedFree.push(l);

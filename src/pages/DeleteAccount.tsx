@@ -35,6 +35,7 @@ export default function DeleteAccount() {
         <div>
           <p className="font-extrabold">{t('delpage_keptTitle')}</p>
           <p className="text-sm text-foreground/80 leading-snug mt-1">{t('del_paymentsNote')}</p>
+          <p className="text-sm text-foreground/80 leading-snug mt-1">{t('delpage_keptReports')}</p>
         </div>
         <div>
           <p className="font-extrabold">{t('delpage_howTitle')}</p>

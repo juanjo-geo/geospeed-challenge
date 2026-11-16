@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import ReportButton from './ReportButton';
 import {
   previewChallenge, joinChallenge, fetchChallengeDetail, challengeLink, ChallengeError,
   type Challenge, type ChallengePreview, type ChallengeDetail,
@@ -161,7 +162,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
         <Hero badge={preview.is_rematch ? `↻ ${t('ch_rematchBadge')}` : t('friends_badge')} />
         <div className="grid gap-4 md:grid-cols-2 md:items-start">
           <Card className="text-center flex flex-col items-center">
-            <p className="text-xl sm:text-2xl font-extrabold">{preview.creator_name}</p>
+            <p className="text-xl sm:text-2xl font-extrabold flex items-center justify-center gap-1">{preview.creator_name}{preview.creator_name && <ReportButton className="!w-7 !h-7" target={{ kind: 'player', ref: `reto:${preview.code}`, name: preview.creator_name }} />}</p>
             <p className="text-sm sm:text-base text-foreground/75">{preview.is_rematch ? t('ch_rematchInviteFrom') : t('ch_inviteFrom')}</p>
             <CodeBox code={preview.code} />
           </Card>

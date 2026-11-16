@@ -97,9 +97,6 @@ export default function DailyChestModal({ reward, onOpen, onClose }: DailyChestM
                 ? t('home_streakBonusLives', { lives: String(reward.lives) })
                 : t('home_streakBonusLivesPlural', { lives: String(reward.lives) })}
             </p>
-            {reward.badge && (
-              <p className="mt-1 text-xs sm:text-sm font-bold text-accent">🏅 {reward.badge}</p>
-            )}
           </div>
         )}
       </div>

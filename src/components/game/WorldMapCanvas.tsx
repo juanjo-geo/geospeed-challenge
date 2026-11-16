@@ -1086,6 +1086,10 @@ export default function WorldMapCanvas({
       // Equipped trail cosmetic overrides the default distance-based color.
     const equippedTrail = trailConfig?.color;
     const trailColor = equippedTrail ?? ((distanceKm ?? 0) > 1000 ? '239,68,68' : '234,120,30'); // red if far, deep orange if close
+      // Estela Arcoíris del Pase: cada tramo toma el siguiente color de su paleta
+      const rainbow = !equippedTrail && trailConfig?.colors?.length
+        ? trailConfig.colors.map((h) => { const n = parseInt(h.replace('#', ''), 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`; })
+        : null;
       const steps = Math.max(Math.floor(eased * 80), 2);
       for (let i = 0; i < steps - 1; i++) {
         const t0 = (i / steps) * eased;
@@ -1093,7 +1097,7 @@ export default function WorldMapCanvas({
         const p0 = bezierPt(t0);
         const p1 = bezierPt(t1);
         const alpha = 0.5 + 0.5 * (i / steps); // starts at 0.5, ends at 1.0
-        ctx.strokeStyle = `rgba(${trailColor},${alpha})`;
+        ctx.strokeStyle = `rgba(${rainbow ? rainbow[Math.min(rainbow.length - 1, Math.floor((i / steps) * rainbow.length))] : trailColor},${alpha})`;
         ctx.lineWidth = 3.5;
         ctx.setLineDash([]);
         ctx.beginPath();

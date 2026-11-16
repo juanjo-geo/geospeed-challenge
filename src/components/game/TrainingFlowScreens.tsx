@@ -2,7 +2,7 @@ import { useI18n } from '@/i18n';
 import { playButtonTap } from '@/lib/sounds';
 import Flag from '@/components/ui/Flag';
 import Mascot from './Mascot';
-import type { City, GameMode } from '@/data/cities';
+import { isPackMode, type City, type GameMode } from '@/data/cities';
 
 /**
  * Entrenamiento y repaso (Fase 4): entre tandas, la ronda extra con las falladas ("hasta acertarlas"), y al
@@ -87,7 +87,7 @@ export function TrainingResultScreen({ summary, onAgain, onSettings, onMemory, o
               : <p className="mt-1 text-xs text-muted-foreground">{t('train_masteryHint')}</p>}
           </div>
         )}
-        <p className="mt-3 text-sm text-foreground/75">{t('train_memoryNote')}</p>
+        <p className="mt-3 text-sm text-foreground/75">{t(isPackMode(s.mode) ? 'train_memoryNotePack' : 'train_memoryNote')}</p>
         {onAgain && (
           <button onClick={() => { playButtonTap(); onAgain(); }} className="btn3d mt-4 w-full rounded-2xl py-3.5 font-black text-lg text-primary-foreground" style={{ background: 'var(--grad-cta)' }}>
             🎯 {t('train_again')}

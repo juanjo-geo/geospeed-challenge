@@ -62,6 +62,15 @@ export const achievementBadge = (a: AchievementDef, tier: 1 | 2 | 3) => (a.badge
 /** Nivel alcanzado (0–3) por la cifra actual */
 export const achievementTier = (a: AchievementDef, value: number): 0 | 1 | 2 | 3 =>
   (value >= a.tiers[2] ? 3 : value >= a.tiers[1] ? 2 : value >= a.tiers[0] ? 1 : 0);
+/**
+ * Nivel conseguido: el mayor entre la cifra actual y las insignias ya ganadas. Los Puntos Sprint vuelven a empezar
+ * cada temporada; sin esto el logro "bajaba" de nivel aunque su insignia y su premio se quedan (auditoría, T6).
+ */
+export const reachedTier = (a: AchievementDef, value: number, earned: Set<string>): 0 | 1 | 2 | 3 => {
+  let t = achievementTier(a, value);
+  for (const tier of [3, 2, 1] as const) if (tier > t && earned.has(achievementBadge(a, tier))) { t = tier; break; }
+  return t;
+};
 export const achievementOfBadge = (badgeId: string): { def: AchievementDef; tier: 1 | 2 | 3 } | null => {
   for (const def of ACHIEVEMENTS) for (const tier of [1, 2, 3] as const) if (achievementBadge(def, tier) === badgeId) return { def, tier };
   return null;
@@ -76,15 +85,17 @@ export const TITLES: { id: string; badge: string }[] = [
   { id: 'incansable', badge: 'ach_games_3' }, { id: 'sabio', badge: 'ach_golds_3' }, { id: 'leyenda', badge: 'streak_365' },
   // Conquista el mapa (C6): campeón de una temporada de su grupo
   { id: 'conquistador', badge: 'conq_champion' },
+  // Insignia de GeoSpeed Pro ("Badge exclusivo" de la tienda): se gana al comprar Pro y es para siempre
+  { id: 'pro', badge: 'pro_member' },
 ];
 export const FRAMES: { id: string; badge: string }[] = [
   { id: 'bronze', badge: 'streak_7' }, { id: 'medal', badge: 'ach_golds_2' }, { id: 'sprint', badge: 'ach_sprint_2' },
   { id: 'silver', badge: 'streak_100' }, { id: 'flame', badge: 'ach_combo_3' }, { id: 'globe', badge: 'ach_regions_3' },
-  { id: 'sniper', badge: 'ach_perfects_3' }, { id: 'gold', badge: 'streak_365' },
+  { id: 'sniper', badge: 'ach_perfects_3' }, { id: 'gold', badge: 'streak_365' }, { id: 'pro', badge: 'pro_member' },
 ];
 /** Qué pide un título o marco (para el candado): el logro y nivel, o la racha del diario */
 export const cosmeticRequirement = (badge: string) => achievementOfBadge(badge)
-  ?? (badge.startsWith('streak_') ? { streakDays: Number(badge.slice(7)) } : badge === 'conq_champion' ? { conquest: true as const } : null);
+  ?? (badge.startsWith('streak_') ? { streakDays: Number(badge.slice(7)) } : badge === 'conq_champion' ? { conquest: true as const } : badge === 'pro_member' ? { pro: true as const } : null);
 
 // ── Lectura y caché ─────────────────────────────────────────────────────────
 const CACHE_KEY = 'geospeed_progression';

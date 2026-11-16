@@ -4,7 +4,9 @@
  * ni el ranking. La última configuración se recuerda en este teléfono.
  */
 import type { City, Difficulty, GameMode } from '@/data/cities';
-import { getRandomItems, isCategory, type Category } from '@/lib/catalog';
+import { isPackMode } from '@/data/cities';
+import { catalogPool, getRandomItems, isCategory, type Category } from '@/lib/catalog';
+import { getCachedMemory } from '@/lib/itemMemory';
 
 export interface TrainingCfg { mode: GameMode; difficulty: Difficulty; size: number; clock: boolean; category: Category }
 
@@ -24,7 +26,24 @@ export function saveTrainingCfg(cfg: TrainingCfg): void {
   try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch { /* sin espacio */ }
 }
 
-export const trainingCities = (cfg: TrainingCfg): City[] => getRandomItems(cfg.category, cfg.difficulty, cfg.size, cfg.mode);
+/**
+ * Tanda de entrenamiento. En un pack (Colombia, packs Pro) el repaso del día no puede jugarse (va en el mapa del
+ * mundo), así que lo que toca repasar de ese pack entra primero aquí: "las que fallaste vuelven" se cumple entrenando
+ * el pack. Fuera de los packs, la tanda es al azar como siempre (esas falladas sí van al Repaso del día).
+ */
+export function trainingCities(cfg: TrainingCfg, memory = getCachedMemory()): City[] {
+  const fresh = getRandomItems(cfg.category, cfg.difficulty, cfg.size, cfg.mode);
+  if (!isPackMode(cfg.mode)) return fresh;
+  const pool = new Map(catalogPool(cfg.category, cfg.mode).map((c) => [c.id ?? c.name, c]));
+  const due = memory
+    .filter((m) => m.due && pool.has(m.item_id))
+    .sort((a, b) => a.box - b.box || (a.next_review_on ?? '').localeCompare(b.next_review_on ?? ''))
+    .slice(0, Math.ceil(cfg.size / 2)) // mitad repaso como máximo: la tanda sigue trayendo lugares nuevos
+    .map((m) => pool.get(m.item_id)!);
+  if (!due.length) return fresh;
+  const ids = new Set(due.map((c) => c.id ?? c.name));
+  return shuffled([...due, ...fresh.filter((c) => !ids.has(c.id ?? c.name))].slice(0, cfg.size));
+}
 
 /** Orden al azar (la ronda extra con las falladas no las repite en el mismo orden) */
 export function shuffled<T>(list: T[]): T[] {

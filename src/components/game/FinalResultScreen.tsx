@@ -3,7 +3,7 @@ import { itemTitleAuto, type Category } from '@/lib/catalog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { type RoundResult } from './GameScreen';
 import CountUp from '@/components/ui/CountUp';
-import { formatDistance, updatePlayerStats, getPlayerStats } from '@/lib/gameUtils';
+import { formatDistance, updatePlayerStats, getPlayerStats, getBestFor, setBestFor } from '@/lib/gameUtils';
 import { fetchMyRank } from '@/lib/gameResults';
 import { isPro } from '@/lib/premiumSystem';
 import { playVictory, playLevelUp, playRevengeActivate, playShareSuccess, playButtonTap, playGameOver } from '@/lib/sounds';
@@ -54,6 +54,9 @@ interface FinalResultScreenProps {
   tiles?: { emoji: string; label: string; value: string }[];
   /** Mejor puntaje previo del modo (si no, se usa el récord global de stats) */
   previousBestOverride?: number;
+  /** Récord por mapa: clave del tipo de partida, mapa, nivel y categoría; null = esta partida no puede ser récord
+   *  (la revancha suma la partida original + la mejora). Sin la prop se usa el máximo global (comportamiento viejo). */
+  recordKey?: string | null;
   /** false → updatePlayerStats sin distancias (Mundial mide países, no km) */
   countDistancesInStats?: boolean;
   /** Nueva partida: mismas condiciones, ciudades nuevas */
@@ -99,6 +102,7 @@ export default function FinalResultScreen({
   variant = 'classic',
   tiles,
   previousBestOverride,
+  recordKey,
   countDistancesInStats = true,
   musicMuted,
   onToggleMusic,
@@ -140,13 +144,14 @@ export default function FinalResultScreen({
 
   useEffect(() => {
     const stats = getPlayerStats();
-    const prevBest = previousBestOverride ?? stats.bestScore;
+    const prevBest = previousBestOverride ?? (recordKey === null ? 0 : recordKey ? getBestFor(recordKey) : stats.bestScore);
     setPreviousBest(prevBest);
     // saveGameResult ya sumó esta partida al acumulado
     const newXp = calculateXP();
     const prevXp = Math.max(0, newXp - totalScore);
     // 60s de Caos nunca contó en stats (su escala de puntos inflaría el récord global)
-    if (variant !== 'timeattack') updatePlayerStats(totalScore, countDistancesInStats ? distances : []);
+    if (variant !== 'timeattack' && recordKey !== null) updatePlayerStats(totalScore, countDistancesInStats ? distances : []);
+    if (recordKey) setBestFor(recordKey, totalScore);
     const record = totalScore > prevBest && prevBest > 0;
     if (record) {
       playVictory();

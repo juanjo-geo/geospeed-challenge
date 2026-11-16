@@ -111,9 +111,11 @@ export const FRAME_STYLE: Record<string, { ring: string; glow: string }> = {
   globe: { ring: 'hsl(199 89% 62%)', glow: 'hsl(199 95% 60% / 0.6)' },
   sniper: { ring: 'hsl(330 80% 64%)', glow: 'hsl(330 90% 62% / 0.6)' },
   sprint: { ring: 'hsl(265 80% 70%)', glow: 'hsl(265 90% 68% / 0.6)' },
+  // GeoSpeed Pro: dorado con brillo cálido, distinto del Oro de la racha
+  pro: { ring: 'hsl(42 100% 62%)', glow: 'hsl(36 100% 55% / 0.85)' },
 };
 /** Nombre de cada título (racha del diario y logros de la Fase 9): clave `title_<id>` */
-const TITLE_IDS = ['viajero', 'leyenda', 'medallista', 'veterano', 'francotirador', 'rayo', 'retador', 'ojeador', 'cartografo', 'trotamundos', 'memoria', 'abanderado', 'elite', 'incansable', 'sabio', 'conquistador'];
+const TITLE_IDS = ['viajero', 'leyenda', 'medallista', 'veterano', 'francotirador', 'rayo', 'retador', 'ojeador', 'cartografo', 'trotamundos', 'memoria', 'abanderado', 'elite', 'incansable', 'sabio', 'conquistador', 'pro'];
 export const TITLE_KEY: Record<string, string> = Object.fromEntries(TITLE_IDS.map((id) => [id, `title_${id}`]));
 
 // ── Compartir (sin revelar las ciudades) ────────────────────────────────────

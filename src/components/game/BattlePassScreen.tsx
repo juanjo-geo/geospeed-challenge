@@ -6,6 +6,7 @@ import {
   getBattlePassLevel,
   getCosmeticState,
   getCosmeticById,
+  passLives,
   claimPremiumReward,
   equipCosmetic,
   getEquipped,
@@ -27,12 +28,19 @@ interface BattlePassScreenProps {
   onOpenStore?: () => void;
 }
 
-const CATEGORY_LABELS: Record<CosmeticCategory, string> = {
+// Solo lo que se ve en el juego: pines y estelas (los marcos y temas de mapa no se aplicaban en ningún lado)
+const CATEGORY_LABELS: Partial<Record<CosmeticCategory, string>> = {
   pin: '📍 Pins',
   trail: '〰️ Estelas',
-  frame: '🖼️ Marcos',
-  mapTheme: '🗺️ Mapas',
 };
+
+/** Premio del pase para mostrar: un cosmético, o vidas (`lives_<n>`) como una ficha "❤️ 3 vidas" */
+function rewardOf(id: string | undefined, livesLabel: (n: number) => string): Cosmetic | null {
+  if (!id) return null;
+  const n = passLives(id);
+  if (n > 0) return { id, category: 'pin', name: livesLabel(n), description: '', emoji: '❤️', rarity: 'common', config: {}, source: 'battlepass_free' };
+  return getCosmeticById(id) ?? null;
+}
 
 export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScreenProps) {
   const { t: tr, locale } = useI18n();
@@ -114,8 +122,10 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
           <div className="space-y-2">
             {BATTLE_PASS_LEVELS.map(lvl => {
               const reached = bpLevel.level >= lvl.level;
-              const freeCosmetic = lvl.freeReward ? getCosmeticById(lvl.freeReward) : null;
-              const premCosmetic = lvl.premiumReward ? getCosmeticById(lvl.premiumReward) : null;
+              const livesLabel = (n: number) => tr('bp_lives', { n });
+              const freeCosmetic = rewardOf(lvl.freeReward, livesLabel);
+              const premCosmetic = rewardOf(lvl.premiumReward, livesLabel);
+              const freeIsLives = passLives(lvl.freeReward) > 0;
               const freeClaimed = bp.claimedFree.includes(lvl.level);
               const premClaimed = bp.claimedPremium.includes(lvl.level);
 
@@ -145,7 +155,7 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                       <RewardPill
                         cosmetic={freeCosmetic}
                         reached={reached}
-                        claimed={freeClaimed || isUnlocked(freeCosmetic.id)}
+                        claimed={freeClaimed || (!freeIsLives && isUnlocked(freeCosmetic.id))}
                         label={tr('bp_free')}
                       />
                     ) : (
@@ -262,12 +272,6 @@ export default function BattlePassScreen({ onClose, onOpenStore }: BattlePassScr
                     >
                       {tr('bp_equip')}
                     </button>
-                  )}
-
-                  {!unlocked && cosmetic.source === 'store' && cosmetic.priceCents && (
-                    <p className="text-[9px] text-center mt-2 text-muted-foreground">
-                      💰 ${(cosmetic.priceCents / 100).toFixed(2)}
-                    </p>
                   )}
 
                   {!unlocked && cosmetic.source.startsWith('battlepass') && (

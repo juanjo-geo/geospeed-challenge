@@ -136,7 +136,8 @@ function TvRound({ state, phase, round, closesAt, opensAt, now, locale }: { stat
   }, [raw?.id, raw?.lat]); // eslint-disable-line react-hooks/exhaustive-deps
   const revealed = phase === 'reveal' && state.reveal?.round === round && raw?.lat != null;
   const clicks = useMemo(() => (revealed ? state.reveal?.clicks ?? [] : []), [revealed, state.reveal]);
-  const best = clicks[0] ?? null; // el servidor las ordena por puntos
+  // "Más cerca" = la mejor cercanía (luego la menor distancia), no el que más puntos sacó con rapidez y combo
+  const best = useMemo(() => [...clicks].sort((a, b) => b.base - a.base || (a.km ?? Infinity) - (b.km ?? Infinity))[0] ?? null, [clicks]);
 
   const featureShapes = useFeatureShapes(item?.kind === 'feature');
   const packShapes = usePackShapes(item?.kind === 'division' ? item.id ?? null : null);

@@ -215,7 +215,8 @@ export default function ProfileScreen({ onBack, initialTab = 'overview', onMyCha
                   </div>
                 </div>
 
-                {user && !isAnonymous && <CountryPicker />}
+                {/* También invitados: su país se fija solo y lo ven sus rivales de Sprint, así que deben poder cambiarlo (T8) */}
+                {user && <CountryPicker />}
                 {(!user || isAnonymous) && (
                   <div className="w-full mt-3 rounded-2xl border border-primary/50 bg-primary/10 p-3 text-left">
                     <p className="font-black text-sm">🔒 {t('acc_guestTitle')}</p>

@@ -36,15 +36,17 @@ export interface StreakCheckResult {
  * Rewards for streak milestones — generous to drive retention
  * Every day gives at least 1 life; milestones give bonuses
  */
+// El cofre solo da vidas: sus "insignias" no se guardaban en ningún lado (auditoría 2026-11-16, P8). Las insignias
+// reales de la racha del diario están en STREAK_MILESTONES (dailyChallenge.ts) y las entrega el servidor.
 const STREAK_REWARDS: StreakReward[] = [
   { day: 1, lives: 1 },  // Always reward coming back
   { day: 2, lives: 1 },
-  { day: 3, lives: 2, badge: '3 días 🔥' },
-  { day: 5, lives: 3, badge: 'Explorador Constante' },
-  { day: 7, lives: 5, badge: 'Racha Semanal ⚡' },
-  { day: 14, lives: 5, badge: 'Maratonista 💎' },
-  { day: 21, lives: 5, badge: 'Imparable 👑' },
-  { day: 30, lives: 10, badge: 'Deidad de la Racha 🏆' },
+  { day: 3, lives: 2 },
+  { day: 5, lives: 3 },
+  { day: 7, lives: 5 },
+  { day: 14, lives: 5 },
+  { day: 21, lives: 5 },
+  { day: 30, lives: 10 },
 ];
 
 /**
@@ -112,7 +114,7 @@ function getRewardForDay(day: number): StreakReward {
 
   // After day 30, every 7 days is a mini-milestone with 5 lives
   if (day > 30 && day % 7 === 0) {
-    return { day, lives: 5, badge: `Semana ${Math.floor(day / 7)}` };
+    return { day, lives: 5 };
   }
 
   // Default: 1 life per day (always rewarding)

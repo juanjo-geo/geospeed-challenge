@@ -8,8 +8,8 @@ import {
 import { FRAME_STYLE, TITLE_KEY } from '@/lib/dailyChallenge';
 
 const sql = readFileSync(join(__dirname, '../../supabase/migrations/20261102120000_progression.sql'), 'utf8');
-// La versión vigente de _cosmetic_badge es la última que la redefine (Conquista agregó el título "conquistador")
-const cosmeticSql = readFileSync(join(__dirname, '../../supabase/migrations/20261108120000_conquest.sql'), 'utf8');
+// La versión vigente de _cosmetic_badge es la última que la redefine (insignia Pro, auditoría 2026-11-16)
+const cosmeticSql = readFileSync(join(__dirname, '../../supabase/migrations/20261117130000_insignia_pro.sql'), 'utf8');
 const stats = (o: Partial<Progression['stats']> = {}): Progression['stats'] => ({
   games: 0, perfects: 0, fast: 0, combo: 0, golds: 0, regions: 0, categories: 0, dominated: 0, flags: 0, challenges: 0, sprint: 0, mundial: 0, daily: 0, ...o,
 });

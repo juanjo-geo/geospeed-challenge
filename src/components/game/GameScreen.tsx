@@ -603,7 +603,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
 
   // Casi: motivar cuando faltó poco para el siguiente escalón (puntaje v2)
   const nearMissMsg = (() => {
-    if (!lastResult) return null;
+    // En entrenamiento no hay puntos ni combo a la vista; sin reloj la rapidez no cuenta (auditoría 2026-11-16, T2)
+    if (!lastResult || isTraining) return null;
     const d = lastResult.distance;
     const scale = scaleForMode(gameMode);
     // A pocos km de la cercanía perfecta (1.000 a menos de 25 km)
@@ -613,7 +614,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     if (lastResult.quality === 'regular' && d - goodKm < scale * 0.12) return t('game_nearGood', { km: Math.max(1, Math.round(d - goodKm)) });
     // Rápido pero no tanto: 2 s menos subían la rapidez
     const te = lastResult.timeExact ?? lastResult.timeUsed;
-    if (te >= 3 && te <= 6 && lastResult.quality === 'good') {
+    if (!fixedSpeed && te >= 3 && te <= 6 && lastResult.quality === 'good') {
       const better = speedMultiplier(te - 2);
       return t('game_nearSpeed', { s: 2, mult: better.toLocaleString(numberLocale, { maximumFractionDigits: 2 }) });
     }

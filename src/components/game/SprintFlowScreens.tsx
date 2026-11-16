@@ -65,7 +65,7 @@ export function SprintSearchScreen({ rematchOf, onFound, onCancel, onOpenStore }
             <p className="text-sm font-bold uppercase tracking-widest text-accent">{t('sprint_found')}</p>
             <div className="mt-3 rounded-3xl border-2 border-accent bg-card/85 p-5 shadow-[0_0_30px_hsl(var(--accent)/0.35)]">
               <GhostFace avatar={match.opponent.avatar} className="w-20 h-20 text-4xl mx-auto" />
-              <p className="mt-2 text-2xl font-black">{match.opponent.name}</p>
+              <p className="mt-2 text-2xl font-black flex items-center justify-center gap-1">{match.opponent.name}{match.opponent.name && <ReportButton className="!w-7 !h-7" target={{ kind: 'player', ref: 'sprint-search', name: match.opponent.name }} />}</p>
               <p className="mt-1 flex items-center justify-center gap-2 text-foreground/85">
                 {match.opponent.country
                   ? <><IsoFlag iso={match.opponent.country} className="w-6" />{isoName(match.opponent.country, locale)}</>

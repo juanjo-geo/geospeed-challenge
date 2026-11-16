@@ -112,6 +112,21 @@ export function addLives(count: number) {
   saveState(state);
 }
 
+/**
+ * Vidas compradas guardadas en la cuenta (player_data.energy, que se sube tras cada partida): en un teléfono nuevo
+ * o tras reinstalar, el primer inicio de sesión las trae de vuelta. Nunca baja las que ya hay en este teléfono.
+ */
+export function restoreBonusLives(n: number): number {
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  const state = getState();
+  const have = state.bonusLives ?? 0;
+  const target = Math.min(Math.floor(n), 10000);
+  if (target <= have) return 0;
+  state.bonusLives = target;
+  saveState(state);
+  return target - have;
+}
+
 /** Devuelve la vida de una partida que no empezó (cancelada). Con Pro no se cobró, así que no se devuelve. */
 export function refundLife() {
   if (isPro()) return;

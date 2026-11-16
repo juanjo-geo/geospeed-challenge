@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { getEquipped } from '@/lib/cosmetics'; // pin y estela del Pase de Batalla
 import { getRandomCities, getMapBounds, type Difficulty, type GameMode, MODE_CONFIG } from '@/data/cities';
 import CountUp from '@/components/ui/CountUp';
 import { haversineDistance, formatDistance } from '@/lib/gameUtils';
@@ -477,6 +478,8 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
         )}
 
         <WorldMapCanvas
+          pinConfig={getEquipped('pin')?.config as never}
+          trailConfig={getEquipped('trail')?.config as never}
           onMapClick={handleMapClick}
           onCursorMove={handleCursorMove}
           clickDisabled={isAnimating}

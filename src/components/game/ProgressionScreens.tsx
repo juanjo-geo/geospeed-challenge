@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { formatNumber } from '@/lib/format';
 import {
   ACHIEVEMENTS, DIFFICULTIES, FRAMES, MEDAL_EMOJI, MEDAL_RULE, TITLES,
-  achievementBadge, achievementTier, cosmeticRequirement, earnedSet, markAchievementsSeen, medalCounts, medalKey, medalMap,
+  achievementBadge, achievementTier, reachedTier, cosmeticRequirement, earnedSet, markAchievementsSeen, medalCounts, medalKey, medalMap,
   totalMedalSlots, useProgression, type AchievementDef, type Progression,
 } from '@/lib/progression';
 import { DAILY_STATUS_EVENT, FRAME_STYLE, TITLE_KEY, fetchDailyStatus, getCachedDailyStatus, setActiveCosmetics, type DailyStatus } from '@/lib/dailyChallenge';
@@ -134,7 +134,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
   // Lo nuevo se marca como visto al rato de abrir la pantalla (se alcanza a ver la etiqueta "Nuevo")
   useEffect(() => { const id = setTimeout(() => markAchievementsSeen(p), 2500); return () => clearTimeout(id); }, [p]);
   const earned = earnedSet(p);
-  const reached = ACHIEVEMENTS.reduce((n, a) => n + achievementTier(a, p?.stats[a.id] ?? 0), 0);
+  const reached = ACHIEVEMENTS.reduce((n, a) => n + reachedTier(a, p?.stats[a.id] ?? 0, earned), 0);
   return (
     <div className="min-h-[100dvh] flex flex-col items-center game-bg overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6">
       <div className="w-full max-w-4xl animate-fade-in-up pb-6" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
@@ -154,7 +154,7 @@ const TIER_COLOR = ['', 'hsl(28 62% 52%)', 'hsl(210 14% 78%)', 'hsl(45 95% 58%)'
 function AchievementCard({ a, p, fresh }: { a: AchievementDef; p: Progression | null; fresh: Set<string> }) {
   const { t } = useI18n();
   const value = p?.stats[a.id] ?? 0;
-  const tier = achievementTier(a, value);
+  const tier = reachedTier(a, value, earnedSet(p));
   const next = tier < 3 ? a.tiers[tier as 0 | 1 | 2] : null;
   const prev = tier > 0 ? a.tiers[(tier - 1) as 0 | 1 | 2] : 0;
   const pct = next == null ? 100 : Math.max(0, Math.min(100, Math.round(((value - prev) / (next - prev)) * 100)));
@@ -241,6 +241,7 @@ export function CosmeticsPicker({ earned, st }: { earned: Set<string>; st: Daily
     if (!r) return '';
     if ('streakDays' in r) return t('ach_needStreak', { n: r.streakDays });
     if ('conquest' in r) return t('ach_needConquest');
+    if ('pro' in r) return t('ach_needPro');
     return t('ach_needTier', { name: t(`ach_${r.def.id}` as never), tier: ['', '🥉', '🥈', '🥇'][r.tier] });
   };
   const equip = async (title: string | null, frame: string | null) => {

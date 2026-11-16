@@ -9,6 +9,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private static final float MAX_TEXT_SCALE = 1.3f;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -19,6 +21,11 @@ public class MainActivity extends BridgeActivity {
             CookieManager cookies = CookieManager.getInstance();
             cookies.setAcceptCookie(true);
             cookies.setAcceptThirdPartyCookies(webView, true);
+            // Letra grande del teléfono: el WebView agranda todo el texto según el tamaño de letra de Android, pero no
+            // las cajas. Se respeta hasta un 130 % (la interfaz está probada a ese tamaño: lo que no cabe se encoge
+            // solo); más allá los textos se salían de los botones y de las tarjetas.
+            float fontScale = getResources().getConfiguration().fontScale;
+            webView.getSettings().setTextZoom(Math.round(Math.max(1f, Math.min(fontScale, MAX_TEXT_SCALE)) * 100));
         }
         hideSystemBars();
     }
