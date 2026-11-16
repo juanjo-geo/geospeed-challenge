@@ -25,7 +25,16 @@ export default function FitText({ text, className = '', min = 0.7 }: { text: str
         el.style.whiteSpace = 'normal';
         f = Math.min(1, avail / el.scrollWidth);
       }
-      if (f < 1) el.style.fontSize = `${Math.max(min, Math.floor(f * 100) / 100) * base}px`;
+      if (f >= 1) return;
+      const floor = min * base;
+      let size = Math.max(floor, Math.floor(f * 100) / 100 * base);
+      el.style.fontSize = `${size}px`;
+      // Con la letra grande de Android el tamaño que se dibuja puede no ser el que se pidió: se vuelve a medir
+      // y se corrige hasta que quepa (máximo 3 veces)
+      for (let i = 0; i < 3 && el.scrollWidth > avail + 1 && size > floor; i++) {
+        size = Math.max(floor, size * (avail / el.scrollWidth) * 0.98);
+        el.style.fontSize = `${size}px`;
+      }
     };
     const ro = new ResizeObserver(() => fit());
     if (el.parentElement) ro.observe(el.parentElement);

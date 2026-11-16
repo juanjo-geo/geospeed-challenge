@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { playButtonTap } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 import Wordmark from './Wordmark';
+import FitWidth from './FitWidth';
 import { HudIconButton } from '@/components/game/GameHud';
 import { useBackHandler } from '@/lib/backNav';
 
@@ -46,10 +47,14 @@ export default function ScreenHeader({ onBack, title, subtitle, right, align = '
     <header className="w-full mb-4 sm:mb-6 short:mb-2">
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
         <HudIconButton icon="back" label={t('back')} onClick={() => { playButtonTap(); onBack(); }} />
-        <div className="flex items-center justify-center gap-2 min-w-0 md:invisible">
-          <img src="/mascot/explorer-logo.webp" alt="" className="w-10 h-10 short:w-8 short:h-8 object-contain" />
-          <Wordmark size="custom" className="text-[1.6rem] short:text-xl" />
-        </div>
+        {/* Con la letra grande de Android (o un contenido ancho a la derecha, como las vidas de la Tienda) el logo se
+            encoge en vez de taparlo */}
+        <FitWidth align="center" className="md:invisible">
+          <span className="inline-flex items-center gap-2">
+            <img src="/mascot/explorer-logo.webp" alt="" className="w-10 h-10 short:w-8 short:h-8 object-contain" />
+            <Wordmark size="custom" className="text-[1.6rem] short:text-xl" />
+          </span>
+        </FitWidth>
         <div className="min-w-[2.75rem] flex justify-end">
           {right ?? <span className="md:hidden"><HudIconButton icon="gear" label={t('settings_title')} onClick={() => { playButtonTap(); requestOpenSettings(); }} /></span>}
         </div>

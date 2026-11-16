@@ -9,22 +9,22 @@ El resumen con prioridades y decisiones pendientes está en la conversación del
 Decisiones de JuanJo (2026-11-16): Pro desbloquea todo · marco dorado + título Pro · descuentos reales (diseño aparte) · premios del Pase que sirvan. Nuevo pedido: la app debe verse bien con la letra grande de Android.
 
 **Errores de juego**
-- [ ] E1 Cancelar el 3-2-1 devuelve una vida que no se cobró (quiz, repetir, revancha, Sprint) — reglas-01, flujos-01
-- [ ] E2 Cancelar el 3-2-1 de Sprint deja la carrera cargada para el siguiente Clásico — flujos-03
-- [ ] E3 Cancelar el 3-2-1 del diario: el siguiente Clásico se juega como diario — flujos-02
-- [ ] E4 Revancha después del diario muestra un puntaje equivocado — flujos-04
-- [ ] E5 Reintentar en 60s de Caos no cobra vida ni revisa conexión — flujos-10
-- [ ] E6 Pantalla para proyectar: "Más cerca" muestra al de más puntos — reglas-02
-- [ ] E7 Récord local mezcla modos — reglas-03
-- [ ] E8 Repaso del día no incluye Colombia — reglas-04
+- [x] E1 Cancelar el 3-2-1 devuelve una vida que no se cobró (quiz, repetir, revancha, Sprint) — reglas-01, flujos-01
+- [x] E2 Cancelar el 3-2-1 de Sprint deja la carrera cargada para el siguiente Clásico — flujos-03
+- [x] E3 Cancelar el 3-2-1 del diario: el siguiente Clásico se juega como diario — flujos-02
+- [x] E4 Revancha después del diario muestra un puntaje equivocado — flujos-04 (ya no se ofrece revancha tras el diario)
+- [x] E5 Reintentar en 60s de Caos no cobra vida ni revisa conexión — flujos-10
+- [x] E6 Pantalla para proyectar: "Más cerca" muestra al de más puntos — reglas-02
+- [x] E7 Récord local mezcla modos — reglas-03
+- [x] E8 Repaso del día no incluye Colombia — reglas-04
 
 **Compras y Android**
-- [ ] C1 Android: vidas pagadas que el webhook marca como entregadas y se pierden — pro-vidas-nativas-pendientes
-- [ ] C2 Restaurar compras sin sesión: el servidor no ve el Pro (dudoso) — pro-servidor-no-reconoce-android
-- [ ] C3 Vidas compradas solo en el dispositivo — pro-compras-atadas-al-dispositivo, legal-03
-- [ ] C4 Vibración sin permiso VIBRATE — android-vibracion-sin-permiso
-- [ ] C5 Recordatorio de racha encendido sin permiso — android-recordatorio-sin-permiso
-- [ ] C6 Letra grande de Android desconfigura la interfaz (pedido nuevo)
+- [x] C1 Android: vidas pagadas que el webhook marca como entregadas y se pierden — pro-vidas-nativas-pendientes
+- [x] C2 Restaurar compras sin sesión: el servidor no ve el Pro (dudoso) — pro-servidor-no-reconoce-android
+- [x] C3 Vidas compradas solo en el dispositivo — pro-compras-atadas-al-dispositivo, legal-03
+- [x] C4 Vibración sin permiso VIBRATE — android-vibracion-sin-permiso
+- [x] C5 Recordatorio de racha encendido sin permiso — android-recordatorio-sin-permiso
+- [x] C6 Letra grande de Android desconfigura la interfaz (pedido nuevo) — MainActivity limita el aumento a 130 %; FitWidth encoge nombre y títulos de una línea; probado simulando +30 % en Inicio, Tienda, Perfil, Más modos, Ajustes y partida
 
 **Promesas (decisiones tomadas)**
 - [ ] P1 Pro desbloquea todas las regiones, dificultades e Imposible — pro-todo-desbloqueado, legal-01, flujos-05

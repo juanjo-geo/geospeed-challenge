@@ -29,6 +29,7 @@ import { useI18n } from '@/i18n';
 import { getReferralProgress, claimReferralReward } from '@/lib/referralSystem';
 import { tLevelTitle } from '@/lib/gameI18n';
 import Wordmark from '@/components/ui/Wordmark';
+import FitWidth from '@/components/ui/FitWidth';
 import FitText from '@/components/ui/FitText';
 import SprintHomeCard from './SprintHomeCard';
 import { REGION_ART, DIFF_ART, REGION_FLAG, regionGroup, packGroups, REGION_UNLOCK_LEVEL, DIFF_UNLOCK_LEVEL } from '@/lib/selectionArt';
@@ -296,14 +297,17 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
           <EnergyBar chip />
           <StreakChip />
         </div>
-        <div className="flex items-center justify-center gap-1.5 min-w-0 overflow-hidden">
-          {/* Tres tamaños según el ancho para que nombre y lema nunca toquen los botones (< 390 px sin lema) */}
-          <img src="/mascot/explorer-logo.webp" alt="" className="w-7 h-7 min-[390px]:w-9 min-[390px]:h-9 min-[430px]:w-10 min-[430px]:h-10 object-contain shrink-0" />
-          <span className="flex flex-col leading-none min-w-0">
-            <Wordmark size="custom" className="text-[1.1rem] min-[390px]:text-[1.25rem] min-[430px]:text-2xl" />
-            <span className="hidden min-[390px]:block text-[8.5px] min-[430px]:text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">{t('home_tagline')}</span>
+        {/* Tres tamaños según el ancho para que nombre y lema nunca toquen los botones (< 390 px sin lema); con la
+            letra grande de Android el bloque entero se encoge lo justo (FitWidth) en vez de cortarse */}
+        <FitWidth align="center">
+          <span className="inline-flex items-center gap-1.5">
+            <img src="/mascot/explorer-logo.webp" alt="" className="w-7 h-7 min-[390px]:w-9 min-[390px]:h-9 min-[430px]:w-10 min-[430px]:h-10 object-contain shrink-0" />
+            <span className="flex flex-col leading-none">
+              <Wordmark size="custom" className="text-[1.1rem] min-[390px]:text-[1.25rem] min-[430px]:text-2xl" />
+              <span className="hidden min-[390px]:block text-[8.5px] min-[430px]:text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">{t('home_tagline')}</span>
+            </span>
           </span>
-        </div>
+        </FitWidth>
         <div className="flex items-center gap-0.5">
           <AccountButton onOpenProfile={onOpenProfile} showName={false} />
           {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
@@ -369,8 +373,8 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
             <div className="row-span-2 lg:row-span-1 self-center">
               <Mascot state="happy" className="w-full animate-mascot-float drop-shadow-[0_8px_18px_hsl(var(--brand-navy-deep)/0.6)]" />
             </div>
-            <h2 className="text-[min(5.6vw,1.6rem)] sm:text-[1.9rem] lg:text-[min(1.85vw,1.9rem)] font-extrabold leading-tight whitespace-nowrap">
-              {t('home_nextAdventureLead')} <span className="text-primary">{t('home_nextAdventureTail')}</span>
+            <h2 className="min-w-0 pr-5 sm:pr-7 text-[min(5.6vw,1.6rem)] sm:text-[1.9rem] lg:text-[min(1.85vw,1.9rem)] font-extrabold leading-tight">
+              <FitWidth>{t('home_nextAdventureLead')} <span className="text-primary">{t('home_nextAdventureTail')}</span></FitWidth>
             </h2>
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:col-span-2 lg:grid-cols-1 lg:mt-3">
               <Dropdown label={t('home_category')} emoji={CATEGORY_ART[selectedCategory].emoji} value={categoryLabel} onClick={() => { playButtonTap(); setSheet('category'); }} />
