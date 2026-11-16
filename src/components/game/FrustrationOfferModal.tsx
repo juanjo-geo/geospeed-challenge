@@ -4,6 +4,8 @@ import { playButtonTap } from '@/lib/sounds';
 import { trackEvent } from '@/lib/analytics';
 import { BACK_LAYER, useBackHandler } from '@/lib/backNav';
 import { useI18n } from '@/i18n';
+import { STORE_PRODUCTS } from '@/lib/premiumSystem';
+import { displayPrice, useLocalPrices } from '@/lib/storePrices';
 
 interface FrustrationOfferModalProps {
   offer: FrustrationOffer;
@@ -47,7 +49,11 @@ export default function FrustrationOfferModal({ offer, onAccept, onDismiss }: Fr
   const k = offer.textKey;
   const headline = k ? t(`offer_${k}_head` as never) : offer.headline;
   const subtext = k ? t(`offer_${k}_sub` as never) : offer.subtext;
-  const ctaLabel = k ? t(`offer_${k}_cta` as never) : offer.ctaLabel;
+  // Precio del producto de la oferta: el de Google Play en la app nativa, US$ en la web
+  useLocalPrices();
+  const offerProduct = STORE_PRODUCTS.find(p => p.id === (k === 'pro' ? 'pro_monthly' : 'lives_5'));
+  const offerPrice = offerProduct ? displayPrice(offerProduct, { month: t('store_perMonth'), year: t('store_perYear') }) : '';
+  const ctaLabel = k ? t(`offer_${k}_cta` as never, { price: offerPrice }) : offer.ctaLabel;
 
   return (
     <div

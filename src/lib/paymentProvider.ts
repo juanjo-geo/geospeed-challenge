@@ -36,6 +36,8 @@ export interface PaymentProvider {
   purchase(productId: string): Promise<PurchaseResult>;
   restorePurchases(): Promise<PurchaseResult>;
   getSubscriptionStatus(): Promise<SubscriptionStatus>;
+  /** Precios en la moneda del jugador según la tienda (solo nativo). id del producto → "COP 11.900". */
+  getLocalPrices?(): Promise<Record<string, string>>;
 }
 
 // ─── Mock Provider (development / fallback) ─────────────────────────
@@ -77,6 +79,9 @@ class MockPaymentProvider implements PaymentProvider {
 
 // Entitlement configurado en el panel de RevenueCat que representa "GeoSpeed Pro".
 const RC_ENTITLEMENT_ID = 'pro';
+// Ids de los productos en Google Play (docs/GeoSpeed_RevenueCat_Setup.md)
+const RC_SUBSCRIPTION_IDS = ['pro_monthly', 'pro_yearly'];
+const RC_ONE_TIME_IDS = ['lives_5', 'lives_15', 'lives_50', 'pro_lifetime'];
 
 class RevenueCatProvider implements PaymentProvider {
   private apiKey: string;
@@ -131,7 +136,7 @@ class RevenueCatProvider implements PaymentProvider {
 
   /** Las suscripciones (Pro mensual/anual) usan tipo 'subs'; el resto 'inapp'. */
   private isSubscription(productId: string): boolean {
-    return productId === 'pro_monthly' || productId === 'pro_yearly';
+    return RC_SUBSCRIPTION_IDS.includes(productId);
   }
 
   async initialize(): Promise<void> {
@@ -209,6 +214,40 @@ class RevenueCatProvider implements PaymentProvider {
     } catch (e: any) {
       return { success: false, error: e?.message || 'No se pudieron restaurar las compras.' };
     }
+  }
+
+  /**
+   * Precios de Google Play en la moneda del jugador. Las suscripciones llegan como
+   * "pro_monthly:mensual" (producto:plan base): se guardan con el id del producto.
+   */
+  async getLocalPrices(): Promise<Record<string, string>> {
+    if (!this.hasKey()) return {};
+    if (!this.initialized) await this.initialize();
+    if (!this.initialized) return {};
+    const out: Record<string, string> = {};
+    try {
+      const { Purchases } = await this.load();
+      const groups: Array<{ ids: string[]; type: 'subs' | 'inapp' }> = [
+        { ids: RC_SUBSCRIPTION_IDS, type: 'subs' },
+        { ids: RC_ONE_TIME_IDS, type: 'inapp' },
+      ];
+      for (const g of groups) {
+        try {
+          const { products } = await Purchases.getProducts({ productIdentifiers: g.ids, type: g.type });
+          for (const p of products ?? []) {
+            const id = String(p?.identifier ?? '').split(':')[0];
+            if (g.ids.includes(id) && typeof p?.priceString === 'string' && p.priceString && !out[id]) {
+              out[id] = p.priceString;
+            }
+          }
+        } catch (e) {
+          console.warn('[PaymentProvider] No se pudieron leer los precios de la tienda:', e);
+        }
+      }
+    } catch (e) {
+      console.warn('[PaymentProvider] RevenueCat no disponible para precios:', e);
+    }
+    return out;
   }
 
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {

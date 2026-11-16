@@ -180,6 +180,29 @@ async function getStorePro(): Promise<{ isActive: boolean; expiresAt: string | n
   }
 }
 
+let _pricesAt = 0;
+
+/**
+ * Trae de Google Play los precios en la moneda del jugador (solo app nativa; en la web no hace
+ * nada). Como mucho una vez cada 10 min salvo `force`; los guarda storePrices.setLocalPrices.
+ */
+export async function refreshLocalPrices(force = false): Promise<void> {
+  if (!isNativeApp()) return;
+  if (!force && Date.now() - _pricesAt < 10 * 60_000) return;
+  _pricesAt = Date.now();
+  try {
+    const [{ paymentProvider }, { setLocalPrices }] = await Promise.all([
+      import('./paymentProvider'),
+      import('./storePrices'),
+    ]);
+    const prices = (await paymentProvider.getLocalPrices?.()) ?? {};
+    if (Object.keys(prices).length) setLocalPrices(prices);
+    else _pricesAt = 0; // la tienda no respondió: reintentar la próxima vez
+  } catch {
+    _pricesAt = 0;
+  }
+}
+
 let _refreshing: Promise<EntitlementsResult> | null = null;
 
 /**
@@ -188,6 +211,7 @@ let _refreshing: Promise<EntitlementsResult> | null = null;
  */
 export function refreshEntitlements(): Promise<EntitlementsResult> {
   if (!_refreshing) _refreshing = doRefreshEntitlements().finally(() => { _refreshing = null; });
+  void refreshLocalPrices(); // app nativa: precios de Google Play en la moneda del jugador
   return _refreshing;
 }
 
