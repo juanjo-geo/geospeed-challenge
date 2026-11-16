@@ -62,6 +62,15 @@ export const achievementBadge = (a: AchievementDef, tier: 1 | 2 | 3) => (a.badge
 /** Nivel alcanzado (0–3) por la cifra actual */
 export const achievementTier = (a: AchievementDef, value: number): 0 | 1 | 2 | 3 =>
   (value >= a.tiers[2] ? 3 : value >= a.tiers[1] ? 2 : value >= a.tiers[0] ? 1 : 0);
+/**
+ * Nivel conseguido: el mayor entre la cifra actual y las insignias ya ganadas. Los Puntos Sprint vuelven a empezar
+ * cada temporada; sin esto el logro "bajaba" de nivel aunque su insignia y su premio se quedan (auditoría, T6).
+ */
+export const reachedTier = (a: AchievementDef, value: number, earned: Set<string>): 0 | 1 | 2 | 3 => {
+  let t = achievementTier(a, value);
+  for (const tier of [3, 2, 1] as const) if (tier > t && earned.has(achievementBadge(a, tier))) { t = tier; break; }
+  return t;
+};
 export const achievementOfBadge = (badgeId: string): { def: AchievementDef; tier: 1 | 2 | 3 } | null => {
   for (const def of ACHIEVEMENTS) for (const tier of [1, 2, 3] as const) if (achievementBadge(def, tier) === badgeId) return { def, tier };
   return null;

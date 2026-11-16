@@ -151,6 +151,7 @@ export default function SprintScreen({ onBack, onFind, onOpenStore, onCreateAcco
             {st.inbox.map((i) => (
               <li key={i.match_id} className="flex items-center gap-3 rounded-2xl border border-foreground/10 bg-background/40 px-3 py-2">
                 <GhostFace avatar={i.avatar} className="w-9 h-9 text-lg" />
+                {i.name && <ReportButton className="!w-7 !h-7 shrink-0" target={{ kind: 'player', ref: 'sprint-inbox', name: i.name }} />}
                 <span className="flex-1 min-w-0">
                   <span className="block font-bold truncate">{i.outcome === 'loss' ? t('sprint_inboxLost', { name: i.name }) : i.outcome === 'win' ? t('sprint_inboxWon', { name: i.name }) : t('sprint_inboxDraw', { name: i.name })}</span>
                   <span className={`text-sm font-extrabold ${i.delta >= 0 ? 'text-accent' : 'text-destructive'}`}>{i.delta >= 0 ? '+' : '−'}{Math.abs(i.delta)} PS</span>

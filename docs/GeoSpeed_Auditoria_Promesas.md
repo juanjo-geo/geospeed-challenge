@@ -38,15 +38,15 @@ Decisiones de JuanJo (2026-11-16): Pro desbloquea todo · marco dorado + título
 - [x] P9 Invitar amigos: contador que nunca sube — flujos-07, recompensas-referidos-no-suman (texto honesto y sin 🎁; un programa de referidos real necesita el servidor: pendiente si se quiere)
 
 **Textos y menores**
-- [ ] T1 Regla de "dominada" distinta a la del servidor — reglas-05
-- [ ] T2 "2 s más rápido = ×1,9" donde la rapidez no cuenta — reglas-06
-- [ ] T3 Campo de tiro "6 rondas con pistas" — reglas-07
-- [ ] T4 Sin conexión sugiere modos bloqueados — reglas-08, flujos-09
-- [ ] T5 Notificaciones web prometen recordatorios que casi no llegan — android-notificaciones-web-incumplidas, flujos-08
-- [ ] T6 Logro de Sprint baja al cambiar de temporada — recompensas-logro-sprint-se-pierde
-- [ ] T7 Borrar cuenta: el texto no dice que el nombre queda en datos de otros — legal-04
-- [ ] T8 País de invitado fijo y visible — legal-05
-- [ ] T9 Botón de reportar falta en algunas pantallas — legal-06
+- [x] T1 Regla de "dominada" distinta a la del servidor — reglas-05
+- [x] T2 "2 s más rápido = ×1,9" donde la rapidez no cuenta — reglas-06
+- [x] T3 Campo de tiro "6 rondas con pistas" — reglas-07
+- [x] T4 Sin conexión sugiere modos bloqueados — reglas-08, flujos-09
+- [x] T5 Notificaciones web prometen recordatorios que casi no llegan — android-notificaciones-web-incumplidas, flujos-08
+- [x] T6 Logro de Sprint baja al cambiar de temporada — recompensas-logro-sprint-se-pierde
+- [x] T7 Borrar cuenta: el texto no dice que el nombre queda en datos de otros — legal-04
+- [x] T8 País de invitado fijo y visible — legal-05
+- [x] T9 Botón de reportar falta en algunas pantallas — legal-06
 
 **Grandes, para después (anotados)**
 - [ ] G1 Cuentas de Google no pueden entrar en Android (login nativo) — android-google-sin-entrada

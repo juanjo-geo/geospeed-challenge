@@ -35,7 +35,7 @@ import HomeScreen from '@/components/game/HomeScreen';
 import SplashScreen from '@/components/game/SplashScreen';
 import NoLivesModal from '@/components/game/NoLivesModal';
 import { appNumberLocale } from '@/lib/format';
-import { publicOrigin } from '@/lib/assetUrl';
+import { isNativeApp, publicOrigin } from '@/lib/assetUrl';
 
 // ── Error Boundary — catches lazy-load failures and render crashes ──
 class PhaseErrorBoundary extends Component<
@@ -288,7 +288,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   offlineTRef.current = t;
   const offlineBlocked = useCallback((need: 'play' | 'online'): boolean => {
     if (!isOffline()) return false;
-    if (need === 'online') { toast(offlineTRef.current('offline_needsConnection')); return true; }
+    if (need === 'online') { toast(offlineTRef.current(canPlayOffline() ? 'offline_needsConnection' : 'offline_needsConnectionFree')); return true; }
     if (!canPlayOffline()) { toast(offlineTRef.current('offline_proOnly')); return true; }
     return false;
   }, []);
@@ -1915,7 +1915,8 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
             <p className="text-2xl text-center mb-2">🔔</p>
             <p className="text-sm font-bold text-center mb-1" style={{ color: 'hsl(var(--primary))' }}>{t('notif_title')}</p>
             <p className="text-xs text-muted-foreground text-center mb-4">
-              {t('notif_desc')}
+              {/* En la web los avisos solo salen con la pestaña abierta (no hay push todavía): el texto lo dice */}
+              {t(isNativeApp() ? 'notif_desc' : 'notif_descWeb')}
             </p>
             <div className="flex gap-2">
               <button
