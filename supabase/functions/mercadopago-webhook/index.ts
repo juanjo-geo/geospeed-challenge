@@ -21,12 +21,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 // Debe coincidir con el catálogo de mercadopago-checkout
 const PRODUCTS: Record<string, { priceCOP: number; lives?: number; proKind?: "subscription" | "lifetime"; proDays?: number }> = {
-  pro_monthly:  { priceCOP: 11900,  proKind: "subscription", proDays: 30 },
-  pro_yearly:   { priceCOP: 71900,  proKind: "subscription", proDays: 365 },
-  pro_lifetime: { priceCOP: 119900, proKind: "lifetime" },
-  lives_5:      { priceCOP: 3900,  lives: 5 },
-  lives_15:     { priceCOP: 7900,  lives: 15 },
-  lives_50:     { priceCOP: 19900, lives: 50 },
+  pro_monthly:  { priceCOP: 10000,  proKind: "subscription", proDays: 30 },
+  pro_yearly:   { priceCOP: 60000,  proKind: "subscription", proDays: 365 },
+  pro_lifetime: { priceCOP: 100000, proKind: "lifetime" },
+  lives_5:      { priceCOP: 3500,  lives: 5 },
+  lives_15:     { priceCOP: 6500,  lives: 15 },
+  lives_50:     { priceCOP: 16500, lives: 50 },
 };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
