@@ -1,0 +1,12 @@
+node_modules/
+out/
+rec/
+# Se regeneran con scripts (ver README.md)
+public/frames*/
+public/sfx/
+public/music/
+public/people/
+public/explorer_*/
+# Clips del Explorador que no se usaron
+higgsfield/clip-b/
+higgsfield/clip-c/
