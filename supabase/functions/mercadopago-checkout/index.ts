@@ -26,6 +26,8 @@ const corsHeaders = {
 // Catálogo de productos. Precio en la moneda del país del comprador.
 // Mercado Pago usa una cuenta por país; aquí van precios sugeridos en COP
 // (ajústalos en MX/CL cuando crees esas cuentas).
+// Desde 2026-11-17 son los mismos precios que Google Play cobra en Colombia (decisión de JuanJo: Play es la
+// referencia). Si cambias un precio en Play, cámbialo aquí y en mercadopago-webhook, y publica PRIMERO el webhook.
 interface ProductDef {
   title: string;
   // precio en pesos colombianos (moneda de la cuenta MP Colombia)
@@ -34,12 +36,12 @@ interface ProductDef {
 }
 
 const PRODUCTS: Record<string, ProductDef> = {
-  pro_monthly:  { title: "GeoSpeed Pro — Mensual",   priceCOP: 11900,  kind: "pro_monthly" },
-  pro_yearly:   { title: "GeoSpeed Pro — Anual",     priceCOP: 71900,  kind: "pro_yearly" },
-  pro_lifetime: { title: "GeoSpeed Pro — Para siempre", priceCOP: 119900, kind: "pro_lifetime" },
-  lives_5:      { title: "5 Vidas",  priceCOP: 3900,  kind: "lives" },
-  lives_15:     { title: "15 Vidas", priceCOP: 7900,  kind: "lives" },
-  lives_50:     { title: "50 Vidas", priceCOP: 19900, kind: "lives" },
+  pro_monthly:  { title: "GeoSpeed Pro — Mensual",   priceCOP: 10000,  kind: "pro_monthly" },
+  pro_yearly:   { title: "GeoSpeed Pro — Anual",     priceCOP: 60000,  kind: "pro_yearly" },
+  pro_lifetime: { title: "GeoSpeed Pro — Para siempre", priceCOP: 100000, kind: "pro_lifetime" },
+  lives_5:      { title: "5 Vidas",  priceCOP: 3500,  kind: "lives" },
+  lives_15:     { title: "15 Vidas", priceCOP: 6500,  kind: "lives" },
+  lives_50:     { title: "50 Vidas", priceCOP: 16500, kind: "lives" },
 };
 
 Deno.serve(async (req) => {
