@@ -33,6 +33,15 @@ Los videos sin personas (los tres ganchos A, B y C normales y el de la ficha de 
 - Horizontal. La ficha lo reproduce sin sonido al comienzo; por eso todo va en texto.
 - No decir "gratis", precios, "el mejor" ni "n.º 1". El horizontal no lo dice. **Los verticales sí dicen "JUEGA GRATIS": son solo para redes, no para la ficha.**
 
+**Publicados (2026-11-18/19), canal de YouTube "Geospeed" (@GeoSpeedChallenge), no listados:**
+
+| Video | Enlace | Ficha de Play |
+|---|---|---|
+| Español (`geospeed-lanzamiento-30s-sonido.mp4`) | https://youtu.be/d25TZlog_Js | es-419 |
+| Inglés (`geospeed-launch-30s-EN.mp4`) | https://youtu.be/YORyLzUXhAM | en-US |
+
+En la ficha, la "Declaración de recursos de IA" quedó en "Etiquetar los recursos como creados o editados con IA" (el Explorador animado del cierre se hizo con Higgsfield). Si se cambia el video, hay que subir el nuevo a YouTube y reemplazar el enlace en las dos fichas; los videos ya publicados no se editan.
+
 ## Antes de publicar (pedirle a Claude)
 
 1. **Volver a capturar la pantalla del Diario.** Hoy muestra "16 noviembre · #189". Se regraba el día de publicar y se renderiza de nuevo (unos 15 minutos).
