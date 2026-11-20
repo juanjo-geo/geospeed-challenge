@@ -333,7 +333,7 @@ insert into public.places (id, kind, name, country, lat, lon) values
   ('feat:niagara', 'feature', 'Cataratas del Niágara', null, 43.088, -79.044),
   ('feat:iguazu', 'feature', 'Cataratas del Iguazú', null, -25.695, -54.437),
   ('feat:victoria-cataratas', 'feature', 'Cataratas Victoria', null, -17.928, 25.853),
-  ('feat:salto-angel', 'feature', 'Salto Ángel', null, 5.687, -62.062),
+  ('feat:salto-angel', 'feature', 'Salto Ángel', null, 5.97, -62.536),
   ('feat:gran-canon', 'feature', 'Gran Cañón', null, 36.267, -112.656),
   ('feat:amazonia', 'feature', 'Amazonia', null, -7.015, -61.939),
   ('feat:patagonia', 'feature', 'Patagonia', null, -43.418, -69.392),
