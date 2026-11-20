@@ -58,6 +58,8 @@ python -I scripts/key_clip.py tmp-a public/explorer_a
 
 (`tmp-a` es cualquier carpeta temporal vacía. Si cambia el clip, copiar los números que imprime a `META` en `src/MascotClip.tsx`.)
 
+**Biblioteca de reacciones del Explorador** (`higgsfield/biblioteca/explorador/<nombre>/clip.mp4`, 14 clips; las imágenes de inicio salen de `python -E -P scripts/make-mascot-refs.py`): por cada clip, sacar los cuadros a una carpeta temporal y recortar a `public/explorer_<nombre>` como arriba; al final `node scripts/build-explorer-lib.mjs` escribe `src/explorerLib.ts`. Las escenas de personas de la serie de ganchos (`higgsfield/biblioteca/ganchos/<nombre>/clip.mp4`) van a `public/people/<nombre>/` con el comando de abajo.
+
 **Tomas de personas** (una por carpeta: `bus`, `amigos_v` desde `amigos-1`, `amigos_h` desde `amigos-2`):
 
 ```bash

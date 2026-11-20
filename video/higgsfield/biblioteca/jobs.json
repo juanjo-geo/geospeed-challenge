@@ -1,0 +1,26 @@
+{
+  "_nota": "Clips generados con Higgsfield (Seedance 2.0, 720p, 9:16, 5 s, std, sin audio) el 2026-11-20. Imágenes de inicio: refs/ (scripts/make-mascot-refs.py). explorador = fondo azul marino liso para recortar; ganchos = personas hechas con IA (marcar como IA al publicar).",
+  "explorador": {
+    "celebra":    { "job": "2498134f-3629-402e-a6cb-0028e0d974b4", "pose": "alegre1", "que": "se agacha, salta con los puños arriba, celebra" },
+    "baile":      { "job": "2f81954d-f7a2-4900-996e-4bbf3a91d0af", "pose": "alegre1", "que": "baile de victoria, gira y termina con los brazos arriba" },
+    "saluda":     { "job": "57e14e93-deb8-4cb8-9186-68e43048c355", "pose": "alegre", "que": "saluda a cámara y abre los brazos" },
+    "te-reta":    { "job": "0eac9f0b-797c-42d2-9b24-7533ea772a3e", "pose": "alegre", "que": "señala al espectador ('¡tú!'), pulgar arriba, guiña" },
+    "presenta":   { "job": "38cdf5c5-8fdb-41ab-aa60-7a16e99e0b62", "pose": "alegre", "que": "señala hacia arriba (espacio para texto)" },
+    "idea":       { "job": "a4269103-9c57-48a4-b0ca-ebc47fb0258f", "pose": "pensando", "que": "piensa y se le ocurre la respuesta" },
+    "confundido": { "job": "c15209bb-73c3-4807-8643-8a08a7177879", "pose": "confundido", "que": "se rasca la cabeza y se encoge de hombros" },
+    "sorpresa":   { "job": "d9b56f72-beec-4718-ad3c-274ec834b636", "pose": "sorprendido", "que": "salta del susto, manos en las mejillas, se ríe" },
+    "triste":     { "job": "77114812-c74f-4aba-9ee2-2433f07be2dc", "pose": "triste", "que": "se desanima y se recupera" },
+    "otra-vez":   { "job": "70df9e67-2cb9-4304-9866-664339a67291", "pose": "molesto", "que": "pisotón, brazos cruzados, y '¡otra vez!'" },
+    "mapa":       { "job": "c0fe1022-ee43-4a5f-8674-3d8e395ca511", "pose": "consultando", "que": "busca en el mapa y encuentra el lugar" },
+    "despierta":  { "job": "38e50b61-e322-47a8-83ba-ba718b198dc5", "pose": "dormido", "que": "cabecea y se despierta de golpe" },
+    "risa":       { "job": "5f8aa525-934a-40b6-b1e8-0aaf53345890", "pose": "alegre", "que": "se ríe a carcajadas y señala a cámara" },
+    "apurado":    { "job": "d7ccc7f8-7f20-40f2-abd6-d0fa64d8127d", "pose": "alegre", "que": "mira el reloj y corre en el sitio" }
+  },
+  "ganchos": {
+    "profe-clase":   { "job": "aab31c43-127f-4507-978e-ecc4ec7fb93e", "que": "profesora proyecta el mapa, la clase juega y celebra (Sala en vivo)" },
+    "pareja-cena":   { "job": "bd53297d-ef3b-4cc6-8fe6-0c7dabf51d68", "que": "ella lo reta en la cena, él falla, ella celebra" },
+    "sofa-grito":    { "job": "5a67aa52-3206-4f1e-8a7e-243eb7ffb380", "que": "chico en el sofá acierta y salta celebrando" },
+    "abuelo-nieto":  { "job": "2009b62e-581f-4fad-b57b-9977a35b2a27", "que": "abuelo le gana al nieto" },
+    "cafe-otra":     { "job": "f0aed784-3e64-41b9-8e9b-a35ffb238bd7", "que": "chica en el café falla, se ríe y vuelve a intentar" }
+  }
+}

@@ -9,6 +9,8 @@ import { Vertical, VERTICAL_FRAMES, type Hook } from './Vertical';
 import type { Lang } from './lang';
 import type { ClipId } from './MascotClip';
 import { FRIENDS_CUT_FRAMES, FRIENDS_OVERLAP, FriendsCut, VERTICAL_INTRO_FRAMES, VerticalIntro } from './Redes';
+import { GANCHO_FRAMES, GANCHOS, Gancho, type GanchoId } from './Ganchos';
+import { DONDE, DONDE_FRAMES, Donde, type DondeId } from './Donde';
 
 // Los bloques se unen por corte: cada uno empieza donde termina el anterior
 const CUT_1 = 300;          // fin del bloque 1 (escenas 1 a 3)
@@ -54,6 +56,14 @@ export const RemotionRoot = () => (
     ))}
     {(['a', 'b'] as const).flatMap((hook) => (['es', 'en'] as Lang[]).map((lang) => (
       <Composition key={'intro' + hook + lang} id={`VerticalIntro${hook.toUpperCase()}${lang === 'en' ? 'EN' : ''}`} component={VerticalIntro} durationInFrames={VERTICAL_INTRO_FRAMES} fps={30} width={1080} height={1920} defaultProps={{ lang, hook }} />
+    )))}
+    {/* Serie para TikTok e Instagram: tomas con personas (IA) + juego real + cierre de la biblioteca del Explorador */}
+    {(Object.keys(GANCHOS) as GanchoId[]).flatMap((id) => (['es', 'en'] as Lang[]).map((lang) => (
+      <Composition key={'gancho' + id + lang} id={`Gancho${id[0].toUpperCase()}${id.slice(1)}${lang === 'en' ? 'EN' : ''}`} component={Gancho} durationInFrames={GANCHO_FRAMES} fps={30} width={1080} height={1920} defaultProps={{ lang, id }} />
+    )))}
+    {/* Serie "¿Dónde queda esto?": foto real animada + respuesta en el globo + dato curioso */}
+    {(Object.keys(DONDE) as DondeId[]).flatMap((id) => (['es', 'en'] as Lang[]).map((lang) => (
+      <Composition key={'donde' + id + lang} id={`Donde-${id}${lang === 'en' ? '-EN' : ''}`} component={Donde} durationInFrames={DONDE_FRAMES} fps={30} width={1080} height={1920} defaultProps={{ lang, id }} />
     )))}
     <Composition id="Bloque3" component={Bloque3} durationInFrames={BLOQUE3_FRAMES} fps={30} width={1920} height={1080} defaultProps={{ solo: true, lang: 'es' as Lang }} />
     <Composition id="Bloque1" component={Bloque1} durationInFrames={BLOQUE1_FRAMES} fps={30} width={1920} height={1080} defaultProps={{ solo: true, lang: 'es' as Lang }} />
