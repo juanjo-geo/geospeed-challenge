@@ -406,7 +406,8 @@ export const FEATURES: FeatureSpec[] = [
   // El punto de Natural Earth cae 20 km al oeste, en Paraguay: Garganta del Diablo
   f('iguazu', 'waterfall', 'easy', 'Cataratas del Iguazú', 'Iguazu Falls', undefined, { ...pt(-25.695, -54.437), isos: ['AR', 'BR'] }),
   f('victoria-cataratas', 'waterfall', 'easy', 'Cataratas Victoria', 'Victoria Falls', P('Victoria Falls')),
-  f('salto-angel', 'waterfall', 'medium', 'Salto Ángel', 'Angel Falls', P('Salto Angel')),
+  // Natural Earth lo ubica 60 km al sureste (5,687, −62,062); el punto es el de Wikidata (Q80299)
+  f('salto-angel', 'waterfall', 'medium', 'Salto Ángel', 'Angel Falls', undefined, pt(5.97, -62.536)),
   f('gran-canon', 'canyon', 'easy', 'Gran Cañón', 'Grand Canyon', G('Grand Canyon')),
   f('amazonia', 'basin', 'basic', 'Amazonia', 'Amazon Basin', G('AMAZON BASIN')),
   f('patagonia', 'region', 'easy', 'Patagonia', 'Patagonia', G('PATAGONIA')),
