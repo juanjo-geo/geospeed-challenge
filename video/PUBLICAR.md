@@ -110,6 +110,46 @@ Music: original GeoSpeed Challenge theme.
 | B | Mi amiga me retó y esto pasó 👀 #geografia #reto #geospeed | My friend challenged me and this happened 👀 #geography #challenge #geospeed |
 | C | 13 ciudades en 30 segundos 🔥 #geografia #speedrun #geospeed | 13 cities in 30 seconds 🔥 #geography #speedrun #geospeed |
 
+## Serie de ganchos con personas (noviembre 2026)
+
+Cinco verticales de 17,5 s: 2,5 s de una escena con personas (hecha con IA), el juego real y un cierre con el Explorador. **Todos llevan la etiqueta de contenido hecho con IA** (ver arriba). Archivos en `out/`: `geospeed-gancho-<nombre>.mp4` y `-EN.mp4`.
+
+| Video | Qué pasa | Texto para publicar (español) | Inglés |
+|---|---|---|---|
+| `profe` | La profe proyecta el mapa y la clase celebra | ¿Tu profe también hace esto? 🌍 #geografia #profesores #clase #geospeed | Does your teacher do this too? 🌍 #geography #teachers #classroom #geospeed |
+| `pareja` | Valentina lo reta en la cena; sigue la carrera real contra ella | Nunca retes a tu pareja en geografía 😅 #geografia #pareja #reto #geospeed | Never challenge your partner at geography 😅 #geography #couple #challenge #geospeed |
+| `sofa` | Acierta y salta del sofá | Esa sensación cuando por fin le atinas 🤯 #geografia #quiz #geospeed | That feeling when you finally nail it 🤯 #geography #quiz #geospeed |
+| `abuelo` | El abuelo le gana al nieto; siguen las 13 ciudades | Los abuelos saben más 👴🔥 #geografia #abuelo #familia #geospeed | Grandpas just know 👴🔥 #geography #grandpa #family #geospeed |
+| `cafe` | "Solo una partida más" en la pausa del café | Solo una más… ☕ #geografia #pausa #quiz #geospeed | Just one more… ☕ #geography #coffeebreak #quiz #geospeed |
+
+Publicar uno por día a la misma hora, alternando con los ganchos A, B y C. Los emojis van en el texto de la publicación, no dentro del video (el render no los dibuja bien).
+
+**Biblioteca para más videos:** `higgsfield/biblioteca/` tiene 14 reacciones del Explorador (fondo recortado en `public/explorer_<nombre>/`, regenerable con `scripts/key_clip.py` + `node scripts/build-explorer-lib.mjs`) y las 5 escenas con personas. Cualquier reacción sirve de cierre con la propiedad `mascot` de `Ganchos.tsx`; las hojas `hoja-*.jpg` muestran qué hace cada una.
+
+## Serie "¿Dónde queda esto?" (noviembre 2026)
+
+Ocho verticales de 16 s: una toma "de dron" del lugar con la cuenta 5…1 y una pista, la respuesta en el globo del juego con el dato curioso del juego, y el cierre. Archivos: `out/geospeed-donde-<lugar>.mp4` y `-EN.mp4`.
+
+Cada toma es **una foto real** de Wikimedia Commons (dominio público, CC0 o CC BY: ninguna exige compartir con la misma licencia) **animada con IA** (Higgsfield, Seedance 2.0). Por eso:
+
+- **Marcar como contenido hecho con IA** en TikTok, Instagram y YouTube (la toma es realista y está generada).
+- **Poner el crédito de la foto en el texto de la publicación** (CC BY lo exige; en las de dominio público es cortesía). Va tal cual, con "animada con IA" al final.
+
+| Lugar | Texto para publicar (español) | Crédito (copiar al final del texto) |
+|---|---|---|
+| `iguazu` | ¿Sabes dónde queda? Comenta antes del final 👇 #geografia #quiz #viajes #geospeed | Foto: DINOCBA, Wikimedia Commons, CC BY 3.0, animada con IA |
+| `ciudad-perdida` | Pocos la ubican 👀 ¿Tú sí? #geografia #colombia #quiz #geospeed | Foto: Gavin Rough, Wikimedia Commons, CC BY 2.0, animada con IA |
+| `mont-saint-michel` | Con la marea alta es una isla 🌊 ¿Dónde está? #geografia #quiz #geospeed | Foto: Diliff, Wikimedia Commons, dominio público, animada con IA |
+| `neuschwanstein` | Parece de película… ¿dónde está? 🏰 #geografia #quiz #geospeed | Foto: Wilfredor, Wikimedia Commons, CC0, animada con IA |
+| `abu-simbel` | Lo movieron bloque por bloque 🤯 ¿Dónde queda? #geografia #historia #geospeed | Foto: Olaf Tausch, Wikimedia Commons, dominio público, animada con IA |
+| `bagan` | Más de 2.000 templos 😮 ¿Dónde queda? #geografia #viajes #geospeed | Foto: Vyacheslav Argenberg, Wikimedia Commons, CC BY 4.0, animada con IA |
+| `ait-ben-haddou` | Salió en Gladiator 🎬 ¿Dónde queda? #geografia #cine #geospeed | Foto: Wonker, Wikimedia Commons, CC BY 2.0, animada con IA |
+| `fitz-roy` | La montaña humeante 🏔️ ¿Dónde está? #geografia #patagonia #geospeed | Foto: Prissantenbär, Wikimedia Commons, dominio público, animada con IA |
+
+En inglés: "Do you know where this is? Comment before the end 👇 #geography #quiz #travel #geospeed" y el crédito igual, con "animated with AI".
+
+Los originales están en `higgsfield/donde/` (`fotos/` = la foto de Commons, `refs/` = el recorte vertical que se animó, `<lugar>/clip.mp4` = la toma). Las fotos del Registán, Potala, Hampi, Taj Mahal, Angkor y la Calzada del Gigante se descartaron porque no funcionaban en vertical.
+
 **Cómo probar los ganchos:** publicar los tres con uno o dos días de diferencia, a la misma hora. Mirar en cada uno el porcentaje de personas que lo ven completo (no el número de vistas). El que gane es el que se usa en los anuncios pagados.
 
 ## Qué es real y qué no en el video
@@ -126,5 +166,9 @@ Desde la carpeta `video/`:
 ```bash
 npx remotion render Lanzamiento out/geospeed-lanzamiento-30s-sonido.mp4 --crf=18
 ```
+
+Composiciones de "¿Dónde queda esto?": `Donde-<lugar>` y `Donde-<lugar>-EN` (lugares en `src/Donde.tsx`). Las tomas van a `public/donde/<lugar>/` con `npx remotion ffmpeg -y -i higgsfield/donde/<lugar>/clip.mp4 -start_number 0 -q:v 3 public/donde/<lugar>/f%03d.jpg`.
+
+Composiciones de la serie de ganchos: `GanchoProfe`, `GanchoPareja`, `GanchoSofa`, `GanchoAbuelo`, `GanchoCafe` (+ `EN`).
 
 Composiciones: `Lanzamiento`, `LanzamientoEN`, `Vertical`, `VerticalEN`, `VerticalB`, `VerticalBEN`, `VerticalC`, `VerticalCEN`, y las de redes con personas: `LanzamientoRedes`, `LanzamientoRedesEN`, `VerticalIntroA`, `VerticalIntroAEN`, `VerticalIntroB`, `VerticalIntroBEN`.

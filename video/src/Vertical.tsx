@@ -80,7 +80,8 @@ const noise = seeded(77);
 const SHAKE = Array.from({ length: 40 }, () => [noise() - 0.5, noise() - 0.5]);
 
 /** music = false y headlineOn: cuando va después de una toma de persona (Redes.tsx), que ya trae la música y el titular */
-export const Vertical = ({ lang = 'es', mascot = 'a', hook = 'a', music = true, headlineOn = false }: { lang?: Lang; mascot?: ClipId; hook?: Hook; music?: boolean; headlineOn?: boolean }) => {
+/** hookText: reemplaza el titular del gancho (Ganchos.tsx, cuando la toma de persona cuenta otra historia) */
+export const Vertical = ({ lang = 'es', mascot = 'a', hook = 'a', music = true, headlineOn = false, hookText }: { lang?: Lang; mascot?: ClipId; hook?: Hook; music?: boolean; headlineOn?: boolean; hookText?: readonly [string, string] }) => {
   useFonts();
   const { rec, t } = getL(lang);
   const frame = useCurrentFrame();
@@ -195,9 +196,10 @@ export const Vertical = ({ lang = 'es', mascot = 'a', hook = 'a', music = true, 
         )}
       </ThreeCanvas>
 
-      {hook === 'a' && <Headline frame={frame} from={headlineOn ? -40 : 4} to={T.pin + 2} a={t.v1[0]} b={t.v1[1]} />}
-      {hook === 'b' && <Headline frame={frame} from={headlineOn ? -40 : 4} to={T.pin + 2} a={t.hookB[0]} b={t.hookB[1]} fit />}
-      {hook === 'c' && <Headline frame={frame} from={4} to={T.pin + 2} a={t.hookC[0]} b={t.hookC[1]} fit />}
+      {hookText && <Headline frame={frame} from={headlineOn ? -40 : 4} to={T.pin + 2} a={hookText[0]} b={hookText[1]} fit />}
+      {!hookText && hook === 'a' && <Headline frame={frame} from={headlineOn ? -40 : 4} to={T.pin + 2} a={t.v1[0]} b={t.v1[1]} />}
+      {!hookText && hook === 'b' && <Headline frame={frame} from={headlineOn ? -40 : 4} to={T.pin + 2} a={t.hookB[0]} b={t.hookB[1]} fit />}
+      {!hookText && hook === 'c' && <Headline frame={frame} from={4} to={T.pin + 2} a={t.hookC[0]} b={t.hookC[1]} fit />}
       <Headline frame={frame} from={T.pin + 6} to={T.combo - 2} a={t.v2[0]} b={t.v2[1]} />
       <Headline frame={frame} from={T.combo + 4} to={T.daily - 2} a={t.v3[0]} b={t.v3[1]} bColor="#FF8A3D" />
       <Headline frame={frame} from={T.daily + 6} to={T.end - 2} a={t.v4[0]} b={t.v4[1]} />
