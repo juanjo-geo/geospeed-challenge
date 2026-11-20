@@ -75,6 +75,66 @@ export const DONDE = {
     fact: { es: 'Lo mandó construir el rey Luis II de Baviera, y sirvió de inspiración para el castillo de La bella durmiente de Disney.', en: "King Ludwig II of Bavaria had it built, and it inspired the castle of Disney's Sleeping Beauty." },
     react: 'mapa', credit: 'Foto: Wilfredor, Wikimedia Commons, CC0',
   },
+  'machu-picchu': {
+    name: { es: 'Machu Picchu', en: 'Machu Picchu' }, country: { es: 'Perú', en: 'Peru' }, flags: ['PE'], lat: -13.1633, lon: -72.5456,
+    hint: { es: 'Pista: la construyeron los incas', en: 'Hint: the Inca built it' },
+    fact: { es: 'Se cree que se construyó para el inca Pachacútec; sus muros encajan sin mortero y Hiram Bingham la dio a conocer en 1911.', en: 'It is believed to have been built for the Inca ruler Pachacuti; its walls fit without mortar, and Hiram Bingham publicized it in 1911.' },
+    react: 'celebra', credit: 'Foto: Jay Warburton, Wikimedia Commons, CC BY 3.0',
+  },
+  uyuni: {
+    name: { es: 'Salar de Uyuni', en: 'Salar de Uyuni' }, country: { es: 'Bolivia', en: 'Bolivia' }, flags: ['BO'], lat: -20.249, lon: -67.393,
+    hint: { es: 'Pista: no es agua, es sal', en: "Hint: it isn't water, it's salt" },
+    fact: { es: 'En época de lluvias, una fina capa de agua lo convierte en un espejo gigante que refleja el cielo.', en: 'In the rainy season a thin layer of water turns it into a giant mirror that reflects the sky.' },
+    react: 'sorpresa', credit: 'Foto: Mareike Heuer (WMDE), Wikimedia Commons, CC0',
+  },
+  'chichen-itza': {
+    name: { es: 'Chichén Itzá', en: 'Chichen Itza' }, country: { es: 'México', en: 'Mexico' }, flags: ['MX'], lat: 20.6831, lon: -88.5686,
+    hint: { es: 'Pista: la hicieron los mayas', en: 'Hint: the Maya built it' },
+    fact: { es: 'En los equinoccios, la luz y la sombra dibujan una serpiente que parece bajar por la escalera de la pirámide de Kukulcán.', en: 'At the equinoxes, light and shadow form a serpent that seems to slither down the staircase of the Kukulcán pyramid.' },
+    react: 'idea', credit: 'Foto: Arian Zwegers (Flickr), Wikimedia Commons, CC BY 2.0',
+  },
+  petra: {
+    name: { es: 'Petra', en: 'Petra' }, country: { es: 'Jordania', en: 'Jordan' }, flags: ['JO'], lat: 30.3289, lon: 35.4403,
+    hint: { es: 'Pista: salió en Indiana Jones', en: 'Hint: it was in Indiana Jones' },
+    fact: { es: 'Los nabateos la tallaron en arenisca rosada, y la fachada del Tesoro aparece en la película Indiana Jones y la última cruzada.', en: 'The Nabataeans carved it into rose-colored sandstone, and its Treasury facade appears in Indiana Jones and the Last Crusade.' },
+    react: 'mapa', credit: 'Foto: Vyacheslav Argenberg, Wikimedia Commons, CC BY 4.0',
+  },
+  'salto-angel': {
+    name: { es: 'Salto Ángel', en: 'Angel Falls' }, country: { es: 'Venezuela', en: 'Venezuela' }, flags: ['VE'], lat: 5.9701, lon: -62.5362,
+    hint: { es: 'Pista: es la cascada más alta del mundo', en: "Hint: it is the world's tallest waterfall" },
+    fact: { es: 'Debe su nombre al aviador estadounidense Jimmie Angel, que en 1937 aterrizó su avioneta en la cima del tepuy y quedó atascado.', en: 'It is named after US aviator Jimmie Angel, who landed his plane on top of the tepui in 1937 and got stuck there.' },
+    react: 'sorpresa', credit: 'Foto: Diego Delso, Wikimedia Commons, CC BY 3.0',
+  },
+  'taj-mahal': {
+    name: { es: 'Taj Mahal', en: 'Taj Mahal' }, country: { es: 'India', en: 'India' }, flags: ['IN'], lat: 27.175, lon: 78.0419,
+    hint: { es: 'Pista: es un monumento al amor', en: 'Hint: it is a monument to love' },
+    fact: { es: 'El emperador Shah Jahan lo mandó construir como mausoleo para su esposa Mumtaz Mahal; su mármol cambia de tono con la luz.', en: 'Emperor Shah Jahan had it built as a mausoleum for his wife Mumtaz Mahal; its marble changes hue with the light of day.' },
+    react: 'presenta', credit: 'Foto: Almbauer, Wikimedia Commons, CC0',
+  },
+  'angkor-wat': {
+    name: { es: 'Angkor Wat', en: 'Angkor Wat' }, country: { es: 'Camboya', en: 'Cambodia' }, flags: ['KH'], lat: 13.4125, lon: 103.8667,
+    hint: { es: 'Pista: aparece en una bandera', en: 'Hint: it appears on a flag' },
+    fact: { es: 'Aparece en la bandera de Camboya; se construyó en el siglo XII como templo hindú dedicado a Visnú y luego pasó a ser budista.', en: "It appears on Cambodia's flag; it was built in the 12th century as a Hindu temple to Vishnu and later became Buddhist." },
+    react: 'idea', credit: 'Foto: Random username 083794703875938, Wikimedia Commons, CC0',
+  },
+  potala: {
+    name: { es: 'Palacio de Potala', en: 'Potala Palace' }, country: { es: 'China', en: 'China' }, flags: ['CN'], lat: 29.6578, lon: 91.1169,
+    hint: { es: 'Pista: está a 3.700 metros de altura', en: 'Hint: it stands 3,700 meters high' },
+    fact: { es: 'Tiene más de mil habitaciones; su Palacio Blanco cumplía funciones de gobierno y su Palacio Rojo, funciones religiosas.', en: 'It has more than a thousand rooms; its White Palace served government purposes and its Red Palace religious ones.' },
+    react: 'mapa', credit: 'Foto: Hiroki Ogawa (Panoramio), Wikimedia Commons, CC BY 3.0',
+  },
+  'cano-cristales': {
+    name: { es: 'Caño Cristales', en: 'Caño Cristales' }, country: { es: 'Colombia', en: 'Colombia' }, flags: ['CO'], lat: 2.27, lon: -73.79,
+    hint: { es: 'Pista: el río de cinco colores', en: 'Hint: the river of five colors' },
+    fact: { es: 'Lo llaman el río de los cinco colores porque una planta acuática, la Macarenia clavigera, tiñe su lecho de rojo intenso.', en: 'It is called the river of five colors because an aquatic plant, Macarenia clavigera, turns its bed bright red.' },
+    react: 'baile', credit: 'Foto: Mario Carvajal, Wikimedia Commons, CC BY 3.0',
+  },
+  uluru: {
+    name: { es: 'Uluru', en: 'Uluru' }, country: { es: 'Australia', en: 'Australia' }, flags: ['AU'], lat: -25.345, lon: 131.036,
+    hint: { es: 'Pista: está en medio del desierto', en: 'Hint: it is in the middle of the desert' },
+    fact: { es: 'Es sagrado para el pueblo anangu, y desde octubre de 2019 está prohibido escalarlo por respeto a su cultura.', en: 'It is sacred to the Anangu people, and climbing it has been banned since October 2019 out of respect for their culture.' },
+    react: 'sorpresa', credit: 'Foto: Weyf, Wikimedia Commons, CC0',
+  },
 } satisfies Record<string, DondeDef>;
 export type DondeId = keyof typeof DONDE;
 
