@@ -128,7 +128,7 @@ Publicar uno por día a la misma hora, alternando con los ganchos A, B y C. Los 
 
 ## Serie "¿Dónde queda esto?" (noviembre 2026)
 
-Ocho verticales de 16 s: una toma "de dron" del lugar con la cuenta 5…1 y una pista, la respuesta en el globo del juego con el dato curioso del juego, y el cierre. Archivos: `out/geospeed-donde-<lugar>.mp4` y `-EN.mp4`.
+Dieciocho verticales de 16 s (8 del primer lote y 10 del segundo): una toma "de dron" del lugar con la cuenta 5…1 y una pista, la respuesta en el globo del juego con el dato curioso del juego, y el cierre. Archivos: `out/geospeed-donde-<lugar>.mp4` y `-EN.mp4`.
 
 Cada toma es **una foto real** de Wikimedia Commons (dominio público, CC0 o CC BY: ninguna exige compartir con la misma licencia) **animada con IA** (Higgsfield, Seedance 2.0). Por eso:
 
@@ -145,10 +145,20 @@ Cada toma es **una foto real** de Wikimedia Commons (dominio público, CC0 o CC 
 | `bagan` | Más de 2.000 templos 😮 ¿Dónde queda? #geografia #viajes #geospeed | Foto: Vyacheslav Argenberg, Wikimedia Commons, CC BY 4.0, animada con IA |
 | `ait-ben-haddou` | Salió en Gladiator 🎬 ¿Dónde queda? #geografia #cine #geospeed | Foto: Wonker, Wikimedia Commons, CC BY 2.0, animada con IA |
 | `fitz-roy` | La montaña humeante 🏔️ ¿Dónde está? #geografia #patagonia #geospeed | Foto: Prissantenbär, Wikimedia Commons, dominio público, animada con IA |
+| `machu-picchu` | Esta es fácil… ¿o no? 🏔️ #geografia #peru #quiz #geospeed | Foto: Jay Warburton, Wikimedia Commons, CC BY 3.0, animada con IA |
+| `uyuni` | No es agua, es sal 🤯 ¿Dónde queda? #geografia #bolivia #viajes #geospeed | Foto: Mareike Heuer (WMDE), Wikimedia Commons, CC0, animada con IA |
+| `chichen-itza` | En el equinoccio baja una serpiente de luz 🐍 ¿Dónde está? #geografia #mexico #geospeed | Foto: Arian Zwegers, Wikimedia Commons, CC BY 2.0, animada con IA |
+| `petra` | Salió en Indiana Jones 🎬 ¿Dónde queda? #geografia #cine #geospeed | Foto: Vyacheslav Argenberg, Wikimedia Commons, CC BY 4.0, animada con IA |
+| `salto-angel` | La cascada más alta del mundo 💧 ¿Dónde está? #geografia #venezuela #geospeed | Foto: Diego Delso, Wikimedia Commons, CC BY 3.0, animada con IA |
+| `taj-mahal` | Un monumento al amor ❤️ ¿Dónde queda? #geografia #viajes #geospeed | Foto: Almbauer, Wikimedia Commons, CC0, animada con IA |
+| `angkor-wat` | Está en una bandera 🏳️ ¿Sabes cuál? #geografia #quiz #geospeed | Foto: Random username 083794703875938, Wikimedia Commons, CC0, animada con IA |
+| `potala` | Más de mil habitaciones a 3.700 metros 😮 ¿Dónde queda? #geografia #viajes #geospeed | Foto: Hiroki Ogawa, Wikimedia Commons, CC BY 3.0, animada con IA |
+| `cano-cristales` | El río de cinco colores 🌈 ¿Dónde está? #geografia #colombia #geospeed | Foto: Mario Carvajal, Wikimedia Commons, CC BY 3.0, animada con IA |
+| `uluru` | Una roca sagrada en medio del desierto 🏜️ ¿Dónde está? #geografia #australia #geospeed | Foto: Weyf, Wikimedia Commons, CC0, animada con IA |
 
 En inglés: "Do you know where this is? Comment before the end 👇 #geography #quiz #travel #geospeed" y el crédito igual, con "animated with AI".
 
-Los originales están en `higgsfield/donde/` (`fotos/` = la foto de Commons, `refs/` = el recorte vertical que se animó, `<lugar>/clip.mp4` = la toma). Las fotos del Registán, Potala, Hampi, Taj Mahal, Angkor y la Calzada del Gigante se descartaron porque no funcionaban en vertical.
+Los originales están en `higgsfield/donde/` (`fotos/` = la foto de Commons, `refs/` = el recorte vertical que se animó, `<lugar>/clip.mp4` = la toma). En el primer lote se descartaron el Registán, Hampi y la Calzada del Gigante porque sus fotos no funcionaban en vertical; Potala, Taj Mahal y Angkor entraron en el segundo lote con otras fotos. Las fotos del segundo lote se buscaron con un filtro de licencias (solo dominio público, CC0 y CC BY) en la API de Commons.
 
 **Cómo probar los ganchos:** publicar los tres con uno o dos días de diferencia, a la misma hora. Mirar en cada uno el porcentaje de personas que lo ven completo (no el número de vistas). El que gane es el que se usa en los anuncios pagados.
 

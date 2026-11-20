@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense, Component, startTransition, type ReactNode, type ErrorInfo } from 'react';
 import { categoryOf, loadCatalogs, type Category } from '@/lib/catalog';
+import { freshSeed } from '@/lib/freshSeed';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { addGameHistory, getGameHistory } from '@/lib/gameUtils';
@@ -462,7 +463,10 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Semilla de la partida en curso: permite que "Reta a un amigo" comparta EXACTAMENTE
   // las mismas ciudades (antes se generaba una semilla nueva al compartir → bug B1).
   const gameSeedRef = useRef<number>(Math.floor(Math.random() * 1_000_000));
-  const newGameSeed = () => { gameSeedRef.current = Math.floor(Math.random() * 1_000_000); };
+  // Partida nueva: sin mapa, semilla al azar; con mapa, la que menos repite lugares de las últimas partidas (freshSeed)
+  const newGameSeed = (map?: { category: Category; difficulty: Difficulty; mode: GameMode }) => {
+    gameSeedRef.current = map ? freshSeed(map.category, map.difficulty, map.mode) : Math.floor(Math.random() * 1_000_000);
+  };
   // Overlay-based rotate screen — keeps game mounted so state is preserved
   const [showRotateOverlay, setShowRotateOverlay] = useState(false);
   // Declarados aquí (antes de handleGameOver) para que sus deps no los lean en TDZ
@@ -549,7 +553,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     setIsSpeedDemon(false);
     setActiveChallenge(null);
     setReplayCities(null); // partida nueva: ciudades frescas (no reusar las de "Otra vez")
-    newGameSeed();
+    newGameSeed({ category, difficulty: diff, mode });
     setDifficulty(diff);
     setGameMode(mode);
     setGameCategory(category);
@@ -945,11 +949,11 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
       setChallengeSeed(null);
       setChallengerScore(null);
       setActiveChallenge(null); // tras un reto, "Nueva partida" es una partida normal
-      newGameSeed();
+      newGameSeed({ category: gameCategory, difficulty, mode: gameMode });
       gameKeyRef.current += 1;
       setPhase('countdown');
     });
-  }, [gameMode, blockPackTrial, withPackTrial]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gameMode, difficulty, gameCategory, blockPackTrial, withPackTrial]); // eslint-disable-line react-hooks/exhaustive-deps
   // Cancelar durante la cuenta regresiva / aviso de giro: la partida no empezo → se devuelve la vida
   const handleCancelCountdown = useCallback(() => {
     if (lifeChargedRef.current) refundLife();
@@ -999,7 +1003,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   const handleConquestCode = useCallback((code: string) => { if (offlineBlocked('online')) return; setConqCode(code); setPhase('conq-invite'); scrollAppToTop(); }, [offlineBlocked]);
   const handleConquestGroup = useCallback((id: string) => { setConqGroupId(id); setPhase('conq-group'); scrollAppToTop(); }, []);
   const handleMyChallenges = useCallback(() => { if (offlineBlocked('online')) return; setActiveChallenge(null); setPhase('my-challenges'); scrollAppToTop(); }, [offlineBlocked]);
-  const handleOpenMyChallenge = useCallback((item: MyChallenge) => { setChallengeSource({ type: 'code', code: item.code }); setPhase('challenge'); scrollAppToTop(); }, []);
+  const handleOpenMyChallenge = useCallback((item: Pick<MyChallenge, 'code'>) => { setChallengeSource({ type: 'code', code: item.code }); setPhase('challenge'); scrollAppToTop(); }, []);
   const [rematchBusy, setRematchBusy] = useState(false);
   // Revancha (F4): mismo rival y condiciones, ciudades nuevas; el rival la recibe en Mis retos
   const handleRematch = useCallback(async (parent: ChallengeDetail) => {
@@ -1855,7 +1859,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
     }
 
     return (
-      <HomeScreen onOpenDownloads={handleOpenDownloads} onFavorite={handleFavorite} onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onStartReview={handleStartReview} onOpenSprint={handleOpenSprint} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
+      <HomeScreen onOpenDownloads={handleOpenDownloads} onFavorite={handleFavorite} onStartGame={handleSelectDifficulty} onMultiplayer={handleFriends} onMyChallenges={handleMyChallenges} onOpenChallenge={handleOpenMyChallenge} onTimeAttack={handleTimeAttack} onDailyChallenge={handleDailyIntro} onWorldChallenge={handleWorldChallenge} onStartTraining={handleStartTraining} onStartReview={handleStartReview} onOpenSprint={handleOpenSprint} onSpeedDemon={handleSpeedDemon} onOpenStore={handleOpenStore} onOpenProfile={handleOpenProfile} onOpenBattlePass={handleOpenBattlePass} onOpenSettings={handleOpenSettings} onOpenHistory={handleOpenHistory} onOpenRanking={handleOpenRanking} onMoreModes={handleMoreModes} onHowToPlay={handleHowTo} />
     );
   };
 

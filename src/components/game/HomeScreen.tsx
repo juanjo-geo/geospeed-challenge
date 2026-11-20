@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react
 import { CATEGORY_ART, CATEGORY_KEY, isCategory, categoriesForMode, categoryForMode, categoryLabelKey, type Category } from '@/lib/catalog';
 import { scrollAppToTop } from '@/lib/appScroll';
 import { useMemory, dueCount } from '@/lib/itemMemory';
+import { useChallengeInbox } from '@/lib/challengeInbox';
 import { Difficulty, GameMode, MODE_CONFIG, isPackMode } from '@/data/cities';
 import { getPlayerStats, getDailyPlayerCount } from '@/lib/gameUtils';
 import { getPlayerLevel } from '@/lib/levelSystem';
@@ -53,6 +54,8 @@ interface HomeScreenProps {
   onOpenSprint?: () => void;
   /** F4: bandeja Mis retos (4ª tarjeta de acceso) */
   onMyChallenges?: () => void;
+  /** Abrir una invitación pendiente (revancha o reto) desde el aviso del Inicio */
+  onOpenChallenge?: (c: { code: string }) => void;
   onSpeedDemon?: () => void;
   onOpenStore?: () => void;
   onOpenProfile?: () => void;
@@ -112,9 +115,10 @@ function loadSelection(): { mode: GameMode; difficulty: Difficulty; category?: C
 /** El día del cofre se registra una vez por apertura de la app (ver efecto del cofre). */
 let dayRegisteredThisSession = false;
 
-export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onOpenSprint, onMyChallenges, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, onMultiplayer, onTimeAttack, onDailyChallenge, onStartTraining, onStartReview, onOpenSprint, onMyChallenges, onOpenChallenge, onOpenProfile, onOpenSettings, onOpenHistory, onOpenRanking, onMoreModes, onHowToPlay }: HomeScreenProps) {
   const { t, locale } = useI18n();
   const reviewDue = dueCount(useMemory());
+  const inbox = useChallengeInbox(!!onMyChallenges);
   const stats = getPlayerStats();
   const avgDist = stats.totalRounds > 0 ? Math.round(stats.totalDistance / stats.totalRounds) : 0;
   const playerLevel = getPlayerLevel();
@@ -424,10 +428,26 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
         <AccessCard offline={!isOnline} icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📅</span>} title={t('home_dailyCard')} desc={dailyDone ? t('home_dailyDoneDesc', { n: dailyStreakNow }) : dailyStreakNow > 0 ? `${t('home_dailyStreakDesc', { n: dailyStreakNow })} · ${t('home_dailyRollover', { time: dailyRolloverTime })}` : `${dailyPlayers > 0 ? (dailyPlayers === 1 ? t('home_dailyPlayedOne') : t('home_dailyPlayedMany', { count: dailyPlayers })) : t('home_dailyCardDesc')} · ${t('home_dailyRollover', { time: dailyRolloverTime })}`} onClick={() => { playButtonTap(); onDailyChallenge(); }} extra={<button onClick={(e) => { e.stopPropagation(); shareDaily(); }} className="absolute top-1.5 right-2 text-xs opacity-60 hover:opacity-100" aria-label={t('share')} title={t('share')}>🔗</button>} />
         <AccessCard offline={!isOnline} icon={<FriendsIcon />} title={t('home_friends')} desc={t('home_friendsDesc')} onClick={() => { playButtonTap(); onMultiplayer(); }} />
         {onMyChallenges
-          ? <AccessCard offline={!isOnline} icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📋</span>} title={t('home_myChallenges')} desc={t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }} />
+          ? <AccessCard offline={!isOnline} icon={<span className="text-[1.7rem] sm:text-[2.5rem]">📋</span>} title={t('home_myChallenges')} desc={inbox.pending > 0 ? (inbox.pending === 1 ? t('home_inboxPendingOne') : t('home_inboxPending', { n: inbox.pending })) : t('home_myChallengesDesc')} onClick={() => { playButtonTap(); onMyChallenges(); }}
+              extra={inbox.pending > 0 ? <span className="pointer-events-none absolute -top-1.5 -right-1 min-w-[1.4rem] h-[1.4rem] px-1 rounded-full bg-destructive text-white text-xs font-black flex items-center justify-center shadow-md" aria-hidden>{inbox.pending > 9 ? '9+' : inbox.pending}</span> : undefined} />
           : <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">🎯</span>} title={t('home_trainingCard')} desc={t('home_trainingCardDesc')} onClick={() => { playButtonTap(); onStartTraining(); }} />}
         <AccessCard icon={<span className="text-[1.7rem] sm:text-[2.5rem]">⚡</span>} title={t('home_moreModes')} desc={t('home_moreModesDesc')} onClick={() => { playButtonTap(); (onMoreModes ?? onTimeAttack)(); }} />
       </div>
+
+      {/* ── Invitación pendiente: una revancha o un reto que todavía no acepto (no hay notificaciones push) ── */}
+      {inbox.invite && onOpenChallenge && isOnline && (
+        <button
+          onClick={() => { playButtonTap(); onOpenChallenge(inbox.invite!); }}
+          className="w-full max-w-md md:max-w-2xl lg:max-w-6xl mb-2 sm:mb-3 flex items-center gap-3 rounded-2xl border-2 border-primary/70 bg-card/80 px-3 sm:px-4 py-2 sm:py-2.5 text-left shadow-[0_0_16px_hsl(var(--primary)/0.2)] active:scale-[0.99] animate-fade-in-up"
+        >
+          <span className="text-2xl sm:text-3xl" aria-hidden>{inbox.invite.is_rematch ? '↻' : '⚔️'}</span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-extrabold leading-tight line-clamp-2">{t(inbox.invite.is_rematch ? 'home_inboxRematch' : 'home_inboxChallenge', { name: inbox.invite.rival_name || t('ch_yourFriend') })}</span>
+            <span className="block text-xs sm:text-sm text-foreground/80 truncate">{t('home_inboxSub')}</span>
+          </span>
+          <span className="shrink-0 rounded-full bg-primary px-3 sm:px-4 py-1 text-xs sm:text-sm font-black text-primary-foreground">{t('home_inboxGo')}</span>
+        </button>
+      )}
 
       {/* ── Repaso del día (Fase 4): solo cuando hay lugares que tocan hoy ── */}
       {reviewDue > 0 && onStartReview && (

@@ -98,8 +98,8 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
     playButtonTap();
     try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* sin portapapeles */ }
   };
-  const share = async () => {
-    const text = t('ch_shareText', { code, link });
+  const share = async (rematch = false) => {
+    const text = t(rematch ? 'ch_rematchShareText' : 'ch_shareText', { code, link });
     try {
       if (navigator.share) await navigator.share({ title: 'GeoSpeed', text, url: link });
       else { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1800); }
@@ -230,6 +230,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
         participants={participantsCard}
         primary={{ label: t('ch_playRematch'), onClick: () => { playButtonTap(); onPlay(challenge); } }}
         secondary={{ label: t('mc_viewMine'), onClick: onMyChallenges, icon: <BarsMini className="w-6 h-6" /> }}
+        notify={rival?.finished || rival?.accepted ? undefined : { label: copied ? t('ch_copied') : t('ch_rematchNotify'), onClick: () => { playButtonTap(); share(true); }, done: copied }}
         note={t('ch_rematchSaved')} homeLabel={t('ob_backHome')} />
     );
   }
@@ -251,7 +252,7 @@ export default function ChallengeScreen({ source, onPlay, onBack, onSignIn, onCr
               </div>
             </div>
           </div>
-          <button onClick={share} className="mt-3 w-full rounded-2xl py-3.5 border-2 border-accent text-accent font-black text-base sm:text-lg hover:bg-accent/10 active:scale-[0.98] flex items-center justify-center gap-2.5">
+          <button onClick={() => share()} className="mt-3 w-full rounded-2xl py-3.5 border-2 border-accent text-accent font-black text-base sm:text-lg hover:bg-accent/10 active:scale-[0.98] flex items-center justify-center gap-2.5">
             <ShareIcon className="w-6 h-6" /> {t('ch_share')}
           </button>
           <p className="mt-2 text-center text-xs sm:text-sm text-foreground/75">{isRematch && rival ? t('ch_rematchInInbox') : t('ch_shareHint')}</p>
@@ -377,7 +378,7 @@ function BackHome({ onClick, label }: { onClick: () => void; label: string }) {
  * (el rival queda invitado solo); en su lugar la tarjeta "Tu rival" / "Te reta", las condiciones con
  * "13 nuevas" y "Cada uno a su ritmo", participantes (enviada) o "Un reto nuevo" (recibida).
  */
-function RematchView({ variant, onBack, title, subtitle, name, mode, difficulty, rounds, rivalPill, participants, primary, secondary, note, homeLabel }: {
+function RematchView({ variant, onBack, title, subtitle, name, mode, difficulty, rounds, rivalPill, participants, primary, secondary, notify, note, homeLabel }: {
   variant: 'sent' | 'received';
   onBack: () => void;
   title: string;
@@ -390,6 +391,8 @@ function RematchView({ variant, onBack, title, subtitle, name, mode, difficulty,
   participants?: React.ReactNode;
   primary: { label: string; onClick: () => void; busy?: boolean };
   secondary: { label: string; onClick: () => void; icon?: React.ReactNode };
+  /** Revancha enviada: avisarle al rival (no hay push; la invitación solo aparece cuando abre la app) */
+  notify?: { label: string; onClick: () => void; done?: boolean };
   note?: string;
   homeLabel: string;
 }) {
@@ -450,6 +453,12 @@ function RematchView({ variant, onBack, title, subtitle, name, mode, difficulty,
           ? <p className="text-sm sm:text-base"><span className="font-bold">{t('ch_startNow')}</span><span className="block text-foreground/75 text-xs sm:text-sm">{t('ch_compareWhenBoth')}</span></p>
           : <p className="text-sm sm:text-base">{t('ch_noSameTime')}</p>}
       </div>
+
+      {notify && (
+        <button onClick={notify.onClick} className="mt-4 w-full max-w-xl mx-auto rounded-2xl py-3.5 border-2 border-accent text-accent font-black text-base sm:text-lg hover:bg-accent/10 active:scale-[0.98] flex items-center justify-center gap-2.5">
+          {notify.done ? <span aria-hidden>✓</span> : <ShareIcon className="w-6 h-6" />} {notify.label}
+        </button>
+      )}
 
       <div className="mt-4 flex flex-col md:flex-row md:justify-center items-center gap-2.5 md:gap-4">
         <div className="w-full md:w-auto md:min-w-[22rem]"><PlayButton onClick={primary.onClick} busy={primary.busy} label={primary.label} /></div>
