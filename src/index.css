@@ -131,6 +131,16 @@ html[lang="en"] .gs-es, html:not([lang="en"]) .gs-en { display: none; }
     /* Prevent iOS tap highlight */
     -webkit-tap-highlight-color: transparent;
   }
+  /* Los campos de texto SÍ deben poder seleccionar: con user-select: none heredado del body, el teclado de Android
+     (Gboard, Samsung) pierde la posición dentro del campo, repite letras y no deja borrar (reporte de testers,
+     2026-11-21: nombre y correo en Crear cuenta / Entrar). */
+  input,
+  textarea,
+  select,
+  [contenteditable='true'] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 /* ── Background gradient utility ── */
