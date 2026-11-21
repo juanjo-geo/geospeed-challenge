@@ -571,7 +571,7 @@ function TerritorySheet({ map, iso, styles, onBack, onPractice, onStart, onResum
     const reset = left(me?.next_reset_at);
     switch (r) {
       case 'reserved': return t('cq_why_reserved', { time: left(detail?.reserved_until) });
-      case 'daily_limit': return t('cq_why_daily_limit', { n: me?.missions_per_day ?? 5, time: reset });
+      case 'daily_limit': return t('cq_why_daily_limit', { n: me?.missions_per_day ?? 8, time: reset });
       case 'country_limit': return t('cq_why_country_limit', { n: detail?.per_country_daily ?? 2, time: reset });
       case 'cooldown': return t('cq_why_cooldown', { time: left(detail?.cooldown_until) });
       default: return t(`cq_why_${r}` as never);
@@ -583,7 +583,7 @@ function TerritorySheet({ map, iso, styles, onBack, onPractice, onStart, onResum
   const start = () => {
     playButtonTap();
     if (resumeId) { onResume(resumeId); return; }
-    if (!window.confirm(t('cq_startConfirm2', { country: name, n: me?.missions_left ?? 0, total: me?.missions_per_day ?? 5 }))) return;
+    if (!window.confirm(t('cq_startConfirm2', { country: name, n: me?.missions_left ?? 0, total: me?.missions_per_day ?? 8 }))) return;
     onStart(iso);
   };
 

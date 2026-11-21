@@ -269,7 +269,8 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     pausedMsRef.current = 0;
     pauseStartRef.current = (isPortraitMobile || isPageHidden || settingsOpenRef.current) ? Date.now() : null;
     setTimeLeft(effectiveMaxTime);
-    announce(noClock ? t('sr_announceRoundNoClock', { round: currentRound + 1, city: itemTitle(currentCity, locale) }) : t('sr_announceRound', { round: currentRound + 1, city: itemTitle(currentCity, locale), time: effectiveMaxTime }), 'assertive');
+    if (isFlag(currentCity)) announce(noClock ? t('sr_announceRoundFlagNoClock', { round: currentRound + 1 }) : t('sr_announceRoundFlag', { round: currentRound + 1, time: effectiveMaxTime }), 'assertive');
+    else announce(noClock ? t('sr_announceRoundNoClock', { round: currentRound + 1, city: itemTitle(currentCity, locale) }) : t('sr_announceRound', { round: currentRound + 1, city: itemTitle(currentCity, locale), time: effectiveMaxTime }), 'assertive');
   }, [currentRound, currentCity, t]);
 
   // ── Carrera contra el fantasma (Fase 3): el rival ya jugó estas mismas ciudades ──
@@ -651,7 +652,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
     <div
       className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${isTimerUrgent ? 'vignette-urgent' : ''} ${(isTimerCritical || failShake) ? 'animate-screen-shake' : ''}`}
       role="main"
-      aria-label="Pantalla de juego"
+      aria-label={t('a11y_gameScreen')}
       data-game-container
     >
       {/* Portrait top bar — stacked vertical layout for mobile portrait */}
@@ -678,7 +679,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
           </div>
           {/* Row 2: Country + Timer */}
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-muted-foreground">{isFlag(currentCity) ? `🚩 ${t('cat_flags')}` : currentCity.ftype ? `${featureTypeEmoji(currentCity.ftype)} ${featureTypeLabel(currentCity.ftype, locale)}` : isMonument(currentCity) ? `📍 ${itemSubtitle(currentCity, locale)}` : `🌍 ${currentCity.country}`}</p>
+            <p className="text-[10px] text-muted-foreground">{isFlag(currentCity) ? `🚩 ${t('cat_flags')}` : currentCity.ftype ? `${featureTypeEmoji(currentCity.ftype)} ${featureTypeLabel(currentCity.ftype, locale)}` : isMonument(currentCity) ? `📍 ${itemSubtitle(currentCity, locale)}` : `🌍 ${itemSubtitle(currentCity, locale)}`}</p>
             <TimerBar timeLeft={timeLeft} maxTime={effectiveMaxTime} isRunning={!isWaiting} compact />
           </div>
         </div>
@@ -838,7 +839,7 @@ export default function GameScreen({ difficulty, gameMode, onRoundComplete, onGa
                 {isFlag(currentCity)
                   ? <><img src={itemFlagUrl(currentCity) ?? ''} alt="" className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" /><span className="align-middle">{t('flag_whichCountry')}</span></>
                   : <>{isMonument(currentCity) && <SafeImg src={itemPhotoUrl(currentCity, 'sm')} className="inline-block w-14 aspect-[3/2] object-cover rounded-[3px] align-middle mr-2 ring-1 ring-black/20" />}<span className="align-middle">{t('game_whereIsLead')} <span className="text-primary">{itemTitle(currentCity, locale)}</span>?</span>{currentCity.ftype && <span className="text-muted-foreground font-semibold"> · {featureTypeEmoji(currentCity.ftype)} {featureTypeLabel(currentCity.ftype, locale)}</span>}</>}
-                {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {isSpecial(currentCity) ? itemSubtitle(currentCity, locale) : currentCity.country}</span>}
+                {isTraining && !isWaiting && <span className="text-muted-foreground font-semibold"> · {itemSubtitle(currentCity, locale)}</span>}
               </div>
             </div>
             <AudioButtons size="sm" musicMuted={musicMuted} onToggleMusic={onToggleMusic} />

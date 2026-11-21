@@ -4,6 +4,8 @@
  * se sirven desde el mismo origen y el service worker las guarda cuando se descarga su pack ("Descargas").
  */
 const REMOTE_ORIGIN = 'https://geospeed-challenge.vercel.app';
+/** Sitio publicado (los App Links de Android solo abren la app con enlaces de este dominio) */
+export const PUBLIC_SITE = REMOTE_ORIGIN;
 
 export function isNativeApp(): boolean {
   if (typeof window === 'undefined') return false;

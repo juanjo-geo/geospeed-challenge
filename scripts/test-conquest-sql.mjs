@@ -136,7 +136,7 @@ check('CA04 temporada activa rechaza nuevos miembros', (await err(() => one(F, '
 check('CA04 temporada activa rechaza expulsiones', (await err(() => one(A, 'conq_member_remove', [GID, B]))).includes('conq_season_active'));
 check('CA04 temporada activa: nadie sale ni la reinicia', (await err(() => one(B, 'conq_group_leave', [GID]))).includes('conq_season_active') && (await err(() => one(A, 'conq_season_start', [GID]))).includes('conq_season_active'));
 let map = await one(B, 'conq_map', [S]);
-check('tablero: 10 países libres, 5 jugadores con su lugar, 5 misiones', map.territories.length === 10 && map.territories.every((t) => !t.owner_id) && map.players.length === 5 && map.me.missions_left === 5);
+check('tablero: 10 países libres, 5 jugadores con su lugar, 8 misiones', map.territories.length === 10 && map.territories.every((t) => !t.owner_id) && map.players.length === 5 && map.me.missions_left === 8);
 check('el paquete de cada país tiene 5 ciudades del banco', (await q(`select bool_and(cardinality(place_ids) = 5 and place_ids <@ (select array_agg(place_id) from public.conq_bank b where b.country_iso = k.country_iso)) ok from public.conq_packages k where season_id = $1`, [S]))[0].ok);
 
 // Utilidades de misión
@@ -191,7 +191,7 @@ check('coordenada inválida se rechaza', (await err(() => answer(B, a1.id, 3, 95
 // CA13: abandono
 const ab = await one(B, 'conq_attempt_abandon', [a1.id]);
 map = await one(B, 'conq_map', [S]);
-check('CA13 abandono: no conquista, consume la misión y libera el país', ab.status === 'abandoned' && !map.territories.find((t) => t.iso === 'PE').owner_id && !map.territories.find((t) => t.iso === 'PE').reserved_until && map.me.missions_left === 4);
+check('CA13 abandono: no conquista, consume la misión y libera el país', ab.status === 'abandoned' && !map.territories.find((t) => t.iso === 'PE').owner_id && !map.territories.find((t) => t.iso === 'PE').reserved_until && map.me.missions_left === 7);
 
 // ── Captura (CA06) ─────────────────────────────────────────────────────────────────────────────────────────
 // d = 0: puntos = redondear(1.000 × (1 − t/30)) → 1.000 (t=0) y 999 (t=0,03)
@@ -228,9 +228,9 @@ await tick(3600);
 await quick(B, 'MX');
 await tick(3601);
 check('CA09 tercera sobre el mismo país en el día: rechazada', (await err(() => start(B, 'MX'))).includes('conq_country_limit'));
-await quick(B, 'ES'); await quick(B, 'FR');
-check('CA09 sexta misión del día: rechazada', (await err(() => start(B, 'IT'))).includes('conq_daily_limit'));
-const tb = await one(B, 'conq_territory', [S, 'IT']);
+await quick(B, 'ES'); await quick(B, 'FR'); await quick(B, 'IT'); await quick(B, 'AR'); await quick(B, 'EC');
+check('CA09 novena misión del día (8 por día desde 2026-11-21): rechazada', (await err(() => start(B, 'CL'))).includes('conq_daily_limit'));
+const tb = await one(B, 'conq_territory', [S, 'CL']);
 check('la ficha explica por qué está bloqueado y cuándo renueva', tb.reason === 'daily_limit' && tb.me.missions_left === 0 && tb.me.next_reset_at);
 // CA23: frontera común de 24 h, sin acumular, y la espera de 1 h cruza el día
 await clock(START + 2 * 86400e3 - 20 * 60e3); // 11:40 del día 1
@@ -238,23 +238,23 @@ await quick(G1, 'AR').catch(() => {}); // Gaby no está en este grupo (otra temp
 const dAtt = await start(D, 'CL'); await open(D, dAtt.id, 1); await one(D, 'conq_attempt_abandon', [dAtt.id]);
 await clock(START + 2 * 86400e3 + 10 * 60e3); // 12:10 del día 2 (30 min después)
 check('CA23 la espera de 1 h sigue aunque cambie el día', (await err(() => start(D, 'CL'))).includes('conq_cooldown'));
-check('CA23 el cupo se renueva para todos en la misma frontera, sin acumular', (await one(B, 'conq_map', [S])).me.missions_left === 5 && (await one(D, 'conq_map', [S])).me.missions_left === 5);
+check('CA23 el cupo se renueva para todos en la misma frontera, sin acumular', (await one(B, 'conq_map', [S])).me.missions_left === 8 && (await one(D, 'conq_map', [S])).me.missions_left === 8);
 // Misión que cruza la frontera: cuenta para el día en que empezó
 await clock(START + 3 * 86400e3 - 30e3);
 const cross = await start(C, 'AR'); await open(C, cross.id, 1);
 await clock(START + 3 * 86400e3 + 10e3);
 await one(C, 'conq_attempt_abandon', [cross.id]);
-check('CA23 una misión que cruza la frontera cuenta para el día de inicio', (await one(C, 'conq_map', [S])).me.missions_left === 5);
+check('CA23 una misión que cruza la frontera cuenta para el día de inicio', (await one(C, 'conq_map', [S])).me.missions_left === 8);
 
 // CA13: reserva vencida y CA26: se libera sin transferir · intento nulo
 const ex = await start(D, 'EC'); await open(D, ex.id, 1); await tick(200);
 const exs = await one(D, 'conq_attempt_state', [ex.id]);
 map = await one(D, 'conq_map', [S]);
-check('CA13/CA26 reserva vencida: expirado, no conquista, consume y libera', exs.status === 'expired' && !map.territories.find((t) => t.iso === 'EC').owner_id && !map.territories.find((t) => t.iso === 'EC').reserved_until && map.me.missions_left === 4);
+check('CA13/CA26 reserva vencida: expirado, no conquista, consume y libera', exs.status === 'expired' && !map.territories.find((t) => t.iso === 'EC').owner_id && !map.territories.find((t) => t.iso === 'EC').reserved_until && map.me.missions_left === 7);
 await tick(3601);
 const vd = await start(D, 'EC'); await tick(31);
 const vds = await one(D, 'conq_attempt_state', [vd.id]);
-check('falla antes de la primera pregunta: no consume misión ni activa la espera', vds.status === 'void' && (await one(D, 'conq_map', [S])).me.missions_left === 4 && (await one(D, 'conq_territory', [S, 'EC'])).can_start);
+check('falla antes de la primera pregunta: no consume misión ni activa la espera', vds.status === 'void' && (await one(D, 'conq_map', [S])).me.missions_left === 7 && (await one(D, 'conq_territory', [S, 'EC'])).can_start);
 
 // Práctica fuera del paquete oficial
 const pr = await one(B, 'conq_practice_set', [S, 'PE']);
@@ -310,7 +310,7 @@ const S2 = g.season.id;
 CUR = S2;
 const m2 = await one(B, 'conq_map', [S2]);
 const pk2 = (await q(`select place_ids from public.conq_packages where season_id = $1 and country_iso = 'PE'`, [S2]))[0].place_ids;
-check('CA22 nueva temporada: países libres, cupos nuevos, otra plantilla', m2.territories.every((t) => !t.owner_id) && m2.me.missions_left === 5 && m2.players.length === 3);
+check('CA22 nueva temporada: países libres, cupos nuevos, otra plantilla', m2.territories.every((t) => !t.owner_id) && m2.me.missions_left === 8 && m2.players.length === 3);
 check('CA22 preguntas nuevas: el paquete cambia', pk2.join() !== pkg.join() && pk2.filter((x) => pkg.includes(x)).length <= 2, `${pk2.filter((x) => pkg.includes(x)).length} repetidas`);
 check('CA22 el historial anterior se conserva', (await one(A, 'conq_standings', [S2])).history.length === 1 && (await one(A, 'conq_map', [S])).final);
 

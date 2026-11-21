@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
-import { readdirSync, statSync, writeFileSync } from "fs";
+import { readdirSync, readFileSync, statSync, writeFileSync } from "fs";
+import { execSync } from "child_process";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -102,8 +103,25 @@ function deferEntry(): Plugin {
   };
 }
 
+/** Versión visible en Ajustes y Soporte (src/lib/buildInfo.ts): Android versionName/Code, CACHE_NAME del SW y commit */
+function buildInfo() {
+  const read = (f: string) => { try { return readFileSync(path.resolve(__dirname, f), "utf8"); } catch { return ""; } };
+  const gradle = read("android/app/build.gradle");
+  const sw = read("public/sw.js");
+  let sha = "";
+  try { sha = execSync("git rev-parse --short=7 HEAD", { cwd: __dirname }).toString().trim(); } catch { /* sin git */ }
+  return {
+    version: gradle.match(/versionName\s+"([^"]+)"/)?.[1] ?? "dev",
+    code: gradle.match(/versionCode\s+(\d+)/)?.[1] ?? "0",
+    web: sw.match(/CACHE_NAME\s*=\s*'geospeed-([^']+)'/)?.[1] ?? "dev",
+    sha,
+    date: new Date().toISOString().slice(0, 10),
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: { __APP_BUILD__: JSON.stringify(buildInfo()) },
   server: {
     host: "::",
     port: 8080,

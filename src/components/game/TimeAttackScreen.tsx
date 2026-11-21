@@ -81,6 +81,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
   const { fxClass, fire: fireComboFx } = useComboFx();
   useEffect(() => { resetComboJuice(); return () => resetComboJuice(); }, []);
   const [globalTime, setGlobalTime] = useState(GLOBAL_TIME);
+  const remainingMsRef = useRef(GLOBAL_TIME * 1000);
   const [isAnimating, setIsAnimating] = useState(false);
   const [lastClick, setLastClick] = useState<{ lat: number; lon: number } | null>(null);
   const [lastCorrect, setLastCorrect] = useState<{ lat: number; lon: number } | null>(null);
@@ -136,42 +137,49 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
   useEffect(() => { if (taStarted) roundStartRef.current = Date.now(); }, [taStarted]);
   useEffect(() => { if (taStarted) onStarted?.(); }, [taStarted]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Global countdown timer — pauses when portrait on mobile / antes de arrancar
+  // Reloj global en milisegundos (una sola fuente para el reloj visible y los anuncios).
+  // Se detiene con el teléfono vertical, antes de arrancar y mientras se ve la tarjeta de respuesta
+  // (auditoría beta 2026-11-20: el reloj seguía corriendo durante el resultado de cada ciudad).
   useEffect(() => {
-    if (isPortraitMobile || !taStarted) {
-      clearInterval(globalTimerRef.current);
-      return;
-    }
+    clearInterval(globalTimerRef.current);
+    if (isPortraitMobile || !taStarted || isAnimating || gameOverRef.current) return;
+    let last = performance.now();
     globalTimerRef.current = setInterval(() => {
-      setGlobalTime(prev => {
-        if (prev <= 1) {
-          clearInterval(globalTimerRef.current);
-          if (!gameOverRef.current) {
-            gameOverRef.current = true;
-            playTimeExpired();
-            hapticError();
-            // Fuera del updater de setState (avisar al padre durante el render dispara un warning de React).
-            // El sonido de cierre lo pone FinalResultScreen.
-            setTimeout(() => onGameOverRef.current({
-              cities: roundsRef.current.length,
-              totalScore: roundsRef.current.reduce((s, r) => s + r.totalPoints, 0),
-              rounds: roundsRef.current,
-            }), 0);
-          }
-          return 0;
+      const now = performance.now();
+      const prevMs = remainingMsRef.current;
+      const nextMs = Math.max(0, prevMs - (now - last));
+      last = now;
+      remainingMsRef.current = nextMs;
+      const prevSec = Math.ceil(prevMs / 1000);
+      const sec = Math.ceil(nextMs / 1000);
+      if (sec === prevSec) return;
+      setGlobalTime(sec);
+      if (sec <= 0) {
+        clearInterval(globalTimerRef.current);
+        if (!gameOverRef.current) {
+          gameOverRef.current = true;
+          playTimeExpired();
+          hapticError();
+          // Fuera del updater de setState (avisar al padre durante el render dispara un warning de React).
+          // El sonido de cierre lo pone FinalResultScreen.
+          setTimeout(() => onGameOverRef.current({
+            cities: roundsRef.current.length,
+            totalScore: roundsRef.current.reduce((s, r) => s + r.totalPoints, 0),
+            rounds: roundsRef.current,
+          }), 0);
         }
-        if (prev <= 10) {
-          playStressBeat(prev); // tensión creciente en los últimos 10s
-          hapticTick();
-          if (prev <= 3) playHeartbeat(); // latido de clímax en el final
-        } else if (prev <= 12) {
-          playTick(prev); hapticTick();
-        }
-        return prev - 1;
-      });
-    }, 1000);
+        return;
+      }
+      if (prevSec <= 10) {
+        playStressBeat(prevSec); // tensión creciente en los últimos 10s
+        hapticTick();
+        if (prevSec <= 3) playHeartbeat(); // latido de clímax en el final
+      } else if (prevSec <= 12) {
+        playTick(prevSec); hapticTick();
+      }
+    }, 100);
     return () => clearInterval(globalTimerRef.current);
-  }, [isPortraitMobile, taStarted]);
+  }, [isPortraitMobile, taStarted, isAnimating]);
 
   useEffect(() => {
     roundStartRef.current = Date.now();
@@ -237,7 +245,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
     setLastDistance(distance);
     setLastPoints(totalPoints);
     setIsAnimating(true);
-    announce(t('sr_timeAttackResult', { city: currentCity.name, distance: Math.round(distance), points: totalPoints, time: globalTime }));
+    announce(t('sr_timeAttackResult', { city: itemTitle(currentCity, locale), distance: Math.round(distance), points: totalPoints, time: Math.ceil(remainingMsRef.current / 1000) }));
 
     clearTimeout(advanceTimerRef.current);
     advanceTimerRef.current = setTimeout(advance, CAOS_FEEDBACK_MS);
@@ -302,7 +310,7 @@ export default function TimeAttackScreen({ difficulty, gameMode, onGameOver, onE
       : 'grid grid-cols-[clamp(13rem,24vw,21rem)_minmax(0,1fr)]';
 
   return (
-    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${globalTime <= 5 && !isAnimating ? 'vignette-urgent' : ''} ${(failShake || (globalTime <= 3 && !isAnimating)) ? 'animate-screen-shake' : ''}`} role="main" aria-label="Modo contrareloj" data-game-container>
+    <div className={`h-[100dvh] min-h-0 overflow-hidden bg-background ${layoutClass} ${globalTime <= 5 && !isAnimating ? 'vignette-urgent' : ''} ${(failShake || (globalTime <= 3 && !isAnimating)) ? 'animate-screen-shake' : ''}`} role="main" aria-label={t('a11y_caosScreen')} data-game-container>
       {/* Portrait top bar — stacked vertical layout */}
       {isPortraitMobile && (
         <div className="bg-card/95 backdrop-blur-md border-b border-border px-3 py-2 flex flex-col gap-1 shrink-0 z-20">

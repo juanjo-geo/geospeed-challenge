@@ -577,6 +577,7 @@ export default function WorldChallengeScreen({ onExit, onBack, onNoLives, musicM
         <CountdownIntro
           count={countdown}
           label={`${BALL} ${t('wc_modeName')} · ${diffLabel}`}
+          instruction={t('countdown_readyMundial')}
           onCancel={cancelCountdown}
           running={!isPortraitMobile}
         />

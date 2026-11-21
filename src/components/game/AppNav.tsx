@@ -70,7 +70,7 @@ export default function AppNav({ active, onNavigate, onOpenSettings }: AppNavPro
     <nav
       className="app-nav fixed z-40 inset-x-0 bottom-0 md:top-0 md:bottom-auto border-t md:border-t-0 md:border-b border-border/60 backdrop-blur-md"
       style={{ background: 'hsl(var(--brand-navy-deep) / 0.92)', paddingBottom: 'var(--sab)' }}
-      aria-label="Navegación principal"
+      aria-label={t('a11y_mainNav')}
     >
       <div className="mx-auto max-w-6xl flex items-center md:gap-4 lg:gap-6 px-1 md:px-4" style={{ height: 'var(--nav-h)' }}>
         <div className="hidden md:flex items-center gap-2 shrink-0">

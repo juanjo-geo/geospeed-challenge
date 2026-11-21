@@ -1,3 +1,4 @@
+import { buildLabel } from '@/lib/buildInfo';
 import { fetchPhotoCredits, type PhotoCredit } from '@/lib/countryPhotos';
 import { fetchCityPhotoCredits, type CityPhotoCredit } from '@/lib/cityPhotos';
 import { fetchLandmarkCredits, type LandmarkCredit } from '@/lib/landmarkPhotos';
@@ -47,8 +48,11 @@ const Support = () => {
         <h1 className="mb-2 text-4xl font-extrabold text-[#f5c842]">
           Centro de Soporte
         </h1>
-        <p className="mb-8 text-[#d4d4c8]/60">
+        <p className="mb-2 text-[#d4d4c8]/60">
           GeoSpeed Challenge &middot; Desarrollado por JuanJo Grimar
+        </p>
+        <p className="mb-8 text-sm text-[#d4d4c8]/60 select-text">
+          Versión / Version: <span className="text-[#f5c842]">{buildLabel()}</span> &middot; inclúyela al reportar un problema / include it when reporting a problem
         </p>
 
         <div className="rounded-xl border border-[#f5c842]/10 bg-[#0d1f12] p-8">

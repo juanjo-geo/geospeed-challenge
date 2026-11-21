@@ -15,6 +15,8 @@ interface CountdownIntroProps {
   onCancel?: () => void;
   /** false mientras el conteo está detenido (aviso de girar el teléfono): el anillo y el número entran al arrancar */
   running?: boolean;
+  /** Qué hay que hacer (auditoría GS-07: "Localiza las ciudades" salía también en banderas, departamentos y Mundial) */
+  instruction?: string;
 }
 
 /** Marcas amarillas alrededor del anillo (diagonales, como en la maqueta). */
@@ -28,7 +30,7 @@ const TICKS = [-45, 45, 135, 225];
  * entra cuando aparece el primer número, no antes.
  * Es solo presentación: el temporizador (3→2→1→0) lo maneja cada modo y va pasando el valor por `count`.
  */
-export default function CountdownIntro({ count, label, ruleHint, onCancel, running = true }: CountdownIntroProps) {
+export default function CountdownIntro({ count, label, ruleHint, onCancel, running = true, instruction }: CountdownIntroProps) {
   const { t } = useI18n();
   // "Atrás" del teléfono = "Cancelar" (capa de superposición: la pantalla de la partida debajo registra la suya)
   useBackHandler(onCancel, { layer: BACK_LAYER.overlay });
@@ -108,7 +110,7 @@ export default function CountdownIntro({ count, label, ruleHint, onCancel, runni
         </div>
 
         <p className="mt-[3dvh] font-semibold text-foreground/90 text-[min(4.4vw,4.2dvh,1.3rem)] text-center px-6 animate-fade-in">
-          {t('countdown_ready')}
+          {instruction ?? t('countdown_ready')}
         </p>
         {ruleHint && (
           <p className="mt-1 text-center px-6 text-[min(3.6vw,3.4dvh,1rem)] font-semibold text-primary animate-fade-in">{ruleHint}</p>

@@ -1814,7 +1814,7 @@ export default function WorldMapCanvas({
         onClick={handleClick}
         onMouseMove={handleMouseMove}
         role="img"
-        aria-label="Mapa mundial interactivo. Haz clic para colocar tu respuesta."
+        aria-label={t('a11y_mapLabel')}
         tabIndex={0}
         style={{
           display: 'block',

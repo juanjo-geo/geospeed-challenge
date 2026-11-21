@@ -5,7 +5,7 @@ import { useI18n } from '@/i18n';
 import Mascot, { type MascotState } from './Mascot';
 import Flag from '@/components/ui/Flag';
 import CountryPhoto from '@/components/ui/CountryPhoto';
-import { itemPhotoUrl } from '@/lib/catalog';
+import { itemPhotoUrl, itemSubtitle, itemTitle } from '@/lib/catalog';
 import { photoKnownMissing } from '@/lib/countryPhotos';
 import { playAccordion } from '@/lib/sounds';
 import { appNumberLocale } from '@/lib/format';
@@ -55,8 +55,8 @@ export default function RoundFeedbackCard({ result, feedback, mascot, nearMissMs
   const time = timeLabel ?? `${result.timeUsed} s`;
   // Maqueta: las respuestas buenas en turquesa; las lejanas conservan su color de advertencia
   const phraseColor = phraseColorProp ?? (result.distance < 1000 ? 'text-accent' : feedback.color);
-  const heading = title ?? result.city.name;
-  const subheading = subtitle ?? result.city.country;
+  const heading = title ?? itemTitle(result.city, locale);
+  const subheading = subtitle ?? itemSubtitle(result.city, locale);
   // Foto: la del monumento si la tiene; si no, la del país (D7)
   const photoUrl = itemPhotoUrl(result.city, 'sm');
   // La mascota solo va montada sobre la foto si la foto está: sin ella, el margen negativo la cortaba contra el borde

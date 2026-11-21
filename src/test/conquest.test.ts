@@ -216,7 +216,7 @@ describe('Conquista: tablero y práctica (C4)', () => {
     const map = await fetchMap(sid);
     expect(map.territories).toHaveLength(10);
     expect(map.players).toHaveLength(3);
-    expect(map.me).toMatchObject({ missions_left: 5, missions_per_day: 5 });
+    expect(map.me).toMatchObject({ missions_left: 8, missions_per_day: 8 });
     expect(map.standings.every((x) => x.rank === 1)).toBe(true);
     // Un rival captura Perú con 3.420; yo tengo Colombia
     w.__mockConqOwn('PE', 'bot', 3420);
@@ -234,7 +234,7 @@ describe('Conquista: tablero y práctica (C4)', () => {
     expect((await fetchTerritory(sid, 'CL')).reason).toBe('country_limit');
     w.__mockConqReserve('AR', 2);
     expect((await fetchTerritory(sid, 'AR')).reason).toBe('reserved');
-    expect((await fetchMap(sid)).me!.missions_left).toBe(3);
+    expect((await fetchMap(sid)).me!.missions_left).toBe(6);
     // Práctica: 5 ciudades del banco de Perú que no son del paquete simulado (las 5 primeras)
     const pr = await fetchPracticeSet(sid, 'PE');
     const bank = conqCountry('PE')!.cityIds;
@@ -263,7 +263,7 @@ describe('Conquista: misión oficial (C5)', () => {
     expect(a0.rounds.every((r) => r.place_id === null && r.correct === null)).toBe(true);
     // Repetir el inicio con la misma clave no gasta otra misión
     expect((await startAttempt(sid, 'BR', 'req-1')).id).toBe(a0.id);
-    expect((await fetchMap(sid)).me).toMatchObject({ missions_left: 4, active_attempt: a0.id });
+    expect((await fetchMap(sid)).me).toMatchObject({ missions_left: 7, active_attempt: a0.id });
     await expect(openRound(a0.id, 2)).rejects.toMatchObject({ code: 'round_invalid' });
     await expect(startAttempt(sid, 'PE', 'req-2')).rejects.toMatchObject({ code: 'attempt_active' });
     let a = a0;
@@ -320,7 +320,7 @@ describe('Conquista: misión oficial (C5)', () => {
     const v = await startAttempt(sid, 'CL', 'req-v');
     vi.setSystemTime(Date.now() + 31_000);
     expect(await fetchAttempt(v.id)).toMatchObject({ status: 'void', outcome: 'void' });
-    expect((await fetchMap(sid)).me!.missions_left).toBe(5);
+    expect((await fetchMap(sid)).me!.missions_left).toBe(8);
     const e = await startAttempt(sid, 'MX', 'req-e');
     await openRound(e.id, 1);
     vi.setSystemTime(Date.now() + 181_000);

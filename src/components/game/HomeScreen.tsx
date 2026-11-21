@@ -488,7 +488,7 @@ export default function HomeScreen({ onStartGame, onFavorite, onOpenDownloads, o
         </div>
         {/* Estadísticas (solo computador, como en la maqueta) */}
         <div className="hidden lg:flex items-center gap-5 lg:gap-7 border-l border-border pl-5">
-          <StripStat icon="🎮" value={fmt(stats.gamesPlayed)} label={t('home_stripGames')} />
+          <StripStat icon="🎮" value={fmt(stats.gamesPlayed)} label={t('home_stripGames')} hint={t('home_stripGamesHint')} />
           <StripStat icon="🏆" value={fmt(stats.bestScore)} label={t('home_stripRecord')} />
           <StripStat icon="📍" value={`${fmt(avgDist)} km`} label={t('home_stripAvgDist')} />
         </div>
@@ -627,13 +627,14 @@ function AccessCard({ icon, title, desc, onClick, extra, offline = false }: { ic
   );
 }
 
-function StripStat({ icon, value, label }: { icon: string; value: string; label: string }) {
+function StripStat({ icon, value, label, hint }: { icon: string; value: string; label: string; hint?: string }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" title={hint}>
       <span className="text-xl" aria-hidden>{icon}</span>
       <span className="leading-tight">
         <span className="block font-bold text-sm">{value}</span>
         <span className="block text-[11px] text-muted-foreground">{label}</span>
+        {hint && <span className="sr-only">{hint}</span>}
       </span>
     </div>
   );
