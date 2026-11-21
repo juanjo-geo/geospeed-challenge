@@ -1,3 +1,4 @@
+import { buildLabel } from '@/lib/buildInfo';
 import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n, LOCALES, type Locale } from '@/i18n';
@@ -139,6 +140,7 @@ export default function SettingsScreen({ onBack, onHowToPlay, onDownloads }: Set
               <LinkRow icon="help" label={t('settings_howToPlay')} onClick={() => { playButtonTap(); onHowToPlay(); }} />
               {onDownloads && <LinkRow icon="download" label={t('dl_title')} onClick={() => { playButtonTap(); onDownloads(); }} />}
               <LinkRow icon="chat" label={t('settings_support')} onClick={() => go('/support')} />
+              <p className="px-3 pt-1 pb-2 text-xs text-foreground/55 select-text">{t('settings_version', { v: buildLabel() })}</p>
             </Section>
 
             <Section title={t('settings_privacySection')}>

@@ -277,6 +277,11 @@ export interface DeepLinkProps {
   deepLink?: { type: 'daily' | 'challenge' | 'duel' | 'reto' | 'dailyInvite' | 'quiz' | 'sala' | 'conquista' };
 }
 
+/** Instrucción de la cuenta regresiva según lo que se ubica (auditoría GS-07) */
+const COUNTDOWN_INSTRUCTION: Record<Category, 'countdown_ready' | 'countdown_readyFlags' | 'countdown_readyFeatures' | 'countdown_readyMonuments' | 'countdown_readyDivisions'> = {
+  cities: 'countdown_ready', flags: 'countdown_readyFlags', features: 'countdown_readyFeatures', monuments: 'countdown_readyMonuments', divisions: 'countdown_readyDivisions',
+};
+
 const Index = ({ deepLink }: DeepLinkProps = {}) => {
   // Si llegamos a montar bien, limpiar el flag de recarga por chunk viejo (permite
   // que un futuro deploy vuelva a auto-recargar si hace falta).
@@ -1287,10 +1292,13 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
   }, [challengeSeed, phase]);
 
   // ── Deep link processing — /daily, /challenge/:seed, /duel/:code (enlaces viejos del duelo → Jugar con amigos) ──
-  const deepLinkProcessed = useRef(false);
+  // Clave del enlace ya atendido: con la app nativa abierta pueden llegar varios enlaces seguidos (App Links)
+  const deepLinkProcessed = useRef<string | null>(null);
   useEffect(() => {
-    if (phase !== 'home' || deepLinkProcessed.current || !deepLink) return;
-    deepLinkProcessed.current = true;
+    if (!deepLink) { deepLinkProcessed.current = null; return; }
+    const linkKey = `${deepLink.type}:${JSON.stringify(routeParams)}:${window.location.search}`;
+    if (phase !== 'home' || deepLinkProcessed.current === linkKey) return;
+    deepLinkProcessed.current = linkKey;
 
     if (deepLink.type === 'dailyInvite') {
       // /d/<número>?r=Juanjo&h=8&t=42&g=… → presentación del diario de hoy con el resultado del amigo
@@ -1479,6 +1487,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
           count={countdown}
           label={activeQuiz ? `🧩 ${activeQuiz.name}` : sprintMatch ? `⚡ Sprint · vs ${sprintMatch.opponent.name}` : activeChallenge ? `⚔️ ${t('ch_countdownLabel')} · ${modeLabel} · ${diffLabel}` : isTraining ? t('game_training') : isSpeedDemon ? `👹 ${t('home_speedDemon')} · 5s` : `${countdownNextRef.current === 'daily' ? t('home_dailyCard') : t('countdown_classic')} · ${modeLabel} · ${diffLabel}`}
           ruleHint={!isTraining && !activeQuiz ? t('countdown_timeoutRule') : undefined}
+          instruction={t(COUNTDOWN_INSTRUCTION[gameCategory])}
           onCancel={handleCancelCountdown}
           running={!showRotateOverlay}
         />
@@ -1507,7 +1516,7 @@ const Index = ({ deepLink }: DeepLinkProps = {}) => {
                   }`}
                 >
                   <span className="text-lg">{m.emoji}</span>
-                  <span className={`text-xs font-bold ${gameMode === m.key ? 'text-primary' : 'text-foreground'}`}>{m.label}</span>
+                  <span className={`text-xs font-bold ${gameMode === m.key ? 'text-primary' : 'text-foreground'}`}>{t(`mode_${m.key}` as never)}</span>
                 </button>
               ))}
             </div>

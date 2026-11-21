@@ -107,7 +107,7 @@ export const CONQ_NAME_MIN = 3;
 export const CONQ_NAME_MAX = 30;
 /** Reglas aprobadas (se muestran antes de iniciar; el servidor manda las de cada temporada) */
 export const CONQ_RULES_V1: ConqRules = {
-  version: 1, season_days: 7, rounds: 5, seconds: 15, threshold: 2000, daily_missions: 5, per_country_daily: 2,
+  version: 1, season_days: 7, rounds: 5, seconds: 15, threshold: 2000, daily_missions: 8, per_country_daily: 2,
   cooldown_s: 3600, reservation_s: 180, last_minutes_s: 180, min_players: 2, max_players: 5, time_scale: 1,
 };
 

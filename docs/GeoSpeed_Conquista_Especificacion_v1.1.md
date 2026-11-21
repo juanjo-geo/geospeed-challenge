@@ -8,6 +8,10 @@ Versión 1.1  |  26 de octubre de 2026  |  Destinatario: equipo de desarrollo
 Desarrollar una modalidad privada y asincrónica en la que de dos a cinco personas compitan por conquistar países. Cada territorio tiene una misión geográfica y una marca que otro integrante puede superar. La temporada termina con una clasificación por territorios conservados.
 ## Decisiones aprobadas
 > **Cambio aprobado el 9 de noviembre de 2026:** los 10 países ya no son fijos. Cada temporada el servidor sortea 10 de los 30 países con banco de ciudades, sin repetir los de la temporada anterior del grupo. Lo demás sigue igual.
+>
+> **Cambio aprobado el 21 de noviembre de 2026:** 8 misiones oficiales por día (antes 5). El máximo de 2 por país al día y la hora de espera entre inicios sobre un mismo país no cambian. Aplica a las temporadas nuevas y a las que estaban en sala de espera o en curso (migración `20261121120000_conquista_8_misiones.sql`).
+>
+> Las secciones de abajo conservan el texto aprobado en octubre; donde digan "diez países fijos" o "cinco misiones por día", rigen los dos cambios anteriores.
 
 Juan José Grillo aprobó el 26 de octubre de 2026 los trece puntos de definición: temporadas de siete días, diez países fijos, misiones de cinco ciudades, umbral de captura, puntuación, intentos, defensa, concurrencia, ganador, recompensas, avisos, administración y estructura de pantallas. El grupo admite de dos a cinco personas, incluido su creador.
 Esta versión reemplaza los parámetros preliminares de la versión 1.0. El equipo puede implementar las reglas aprobadas sin volver a decidirlas. Quedan trabajos de ejecución: curar ciudades, completar diseños y validar el balance en pruebas. Se incorpora por separado la auditoría funcional del juego público realizada hoy; no acredita la implementación de Conquista.
@@ -15,9 +19,9 @@ Esta versión reemplaza los parámetros preliminares de la versión 1.0. El equi
 | Participantes | 2 a 5 cuentas por temporada, incluido quien crea el grupo |
 | Formato | Asincrónico; no requiere jugadores conectados al mismo tiempo |
 | Temporada | 7 días exactos desde el inicio confirmado por el administrador |
-| Mapa | 10 países con catálogo de ciudades verificado; mismo catálogo para todo el grupo |
+| Mapa | 10 países sorteados por temporada entre los 30 con banco de ciudades verificado; mismo catálogo para todo el grupo durante la temporada |
 | Misión | 5 ciudades del país, 15 segundos por ciudad, dificultad Turista para todos |
-| Intentos | 5 misiones por día; máximo 2 por país y 1 hora entre inicios sobre ese país |
+| Intentos | 8 misiones por día; máximo 2 por país y 1 hora entre inicios sobre ese país |
 | Victoria | Mayor número de territorios al cierre; desempate descrito en página 5 |
 | Pago | Sin vidas, compras de intentos ni ventajas de puntuación en esta modalidad |
 
@@ -57,7 +61,7 @@ El jugador inicia una misión oficial y completa sus cinco rondas. Debe obtener 
 Se muestra el propietario y la marca antes de iniciar. Para conquistar, la nueva puntuación total debe ser estrictamente mayor que la marca defensiva. En empate conserva el propietario. Un ataque fallido no modifica la marca del dueño. El ganador se convierte en dueño y su puntuación pasa a ser la marca que futuros atacantes deben superar.
 No se puede atacar un país propio ni elevar su defensa repitiendo una misión mientras se posee. Al perderlo se habilita “Recuperar territorio”, sujeto al mismo límite y espera que cualquier ataque. La defensa es la marca guardada: el dueño no tiene que conectarse ni aceptar cada ataque.
 ## Intentos y límites
-Cada jugador dispone de cinco misiones oficiales por día de temporada, como máximo dos sobre un mismo país en ese día. Capturar, atacar y recuperar consumen el mismo presupuesto. Debe pasar una hora entre inicios oficiales sobre el mismo país, incluso al cambiar de día. Los cupos se renuevan en periodos comunes de 24 horas contados desde started_at; no se acumulan. El servidor muestra cupo total, cupo por país y tiempo de espera.
+Cada jugador dispone de ocho misiones oficiales por día (cinco hasta el 21-nov-2026) de temporada, como máximo dos sobre un mismo país en ese día. Capturar, atacar y recuperar consumen el mismo presupuesto. Debe pasar una hora entre inicios oficiales sobre el mismo país, incluso al cambiar de día. Los cupos se renuevan en periodos comunes de 24 horas contados desde started_at; no se acumulan. El servidor muestra cupo total, cupo por país y tiempo de espera.
 Un error anterior a entregar la primera pregunta no consume misión ni activa espera. Tras abrirla, abandono o desconexión consumen la misión. La misión se asigna al día de su inicio y no se descuenta otra vez si termina al día siguiente. Solo se permite un intento activo por jugador y uno por territorio. La práctica no consume misiones ni altera el tablero.
 # 3 Partida y puntuación
 ## Comportamiento por ronda
@@ -173,10 +177,10 @@ Liberar inicialmente mediante bandera de función para un grupo de prueba. Antes
 ## Registro de reglas aprobadas
 | Decisión | Decisión aprobada |
 | Duración y horarios | 7 días exactos; no iniciar ataques en los últimos 3 minutos |
-| Catálogo inicial | 10 países fijos; ciudades verificadas y dificultad Turista para todos |
+| Catálogo | 10 países sorteados por temporada (sin repetir los de la temporada anterior del grupo); ciudades verificadas y dificultad Turista para todos |
 | Regla de captura libre | Misión completa con al menos 2.000 de 5.000 puntos |
 | Puntuación | Fórmula sin combos de página 4; constante de distancia 500 km |
-| Frecuencia | 5 misiones por día; máximo 2 por país; 1 hora entre inicios en ese país |
+| Frecuencia | 8 misiones por día; máximo 2 por país; 1 hora entre inicios en ese país |
 | Concurrencia | Reserva exclusiva de 3 minutos; un intento activo por jugador |
 | Cierre y premio | Países, suma de defensas y empate compartido; insignia cosmética |
 | Integración | Sin vidas, compras de ataques, XP del pase ni ranking clásico en versión inicial |
@@ -233,8 +237,8 @@ Aceptación: distinguir nivel de jugador y nivel del pase; indicar el próximo r
 ## Condición para cerrar los hallazgos
 Desarrollo registra por cada AUD: responsable, causa encontrada, versión corregida y evidencia. QA reproduce el escenario, contrasta el resultado esperado y marca verificado o pendiente. En AUD04 primero debe identificarse dónde ocurre el error; no convertir una limitación de la revisión en un defecto confirmado.
 ## Cambios aprobados en la versión 1 punto 1
-- Temporadas de siete días y diez países fijos; cinco ciudades y quince segundos por ronda.
-- Captura libre desde 2.000 puntos; cinco misiones por día, máximo dos por país y espera de una hora entre inicios en ese país, incluso al cambiar de día.
+- Temporadas de siete días y diez países sorteados en cada temporada; cinco ciudades y quince segundos por ronda.
+- Captura libre desde 2.000 puntos; ocho misiones por día, máximo dos por país y espera de una hora entre inicios en ese país, incluso al cambiar de día.
 - Reserva exclusiva reducida de cuatro a tres minutos. No se abren misiones en los últimos tres minutos de la temporada.
 - Defensa por marca, empate favorable al dueño y clasificación final por territorios, suma de defensas y empate compartido.
 - Premios cosméticos; sin vidas, ventajas pagadas o XP del pase en la primera versión.

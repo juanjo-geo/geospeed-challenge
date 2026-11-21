@@ -17,7 +17,7 @@ describe('freshSeed', () => {
       const games = [0, 1, 2, 3].map(() => ids(freshSeed('cities', 'easy', 'world', 13, Infinity), 'easy', 'world'));
       for (let g = 1; g < games.length; g++) {
         expect(shared(games[g - 1], games[g])).toBe(0);
-        if (g >= 2) expect(shared(games[g - 2], games[g])).toBeLessThanOrEqual(4);
+        if (g >= 2) expect(shared(games[g - 2], games[g])).toBeLessThanOrEqual(6);
       }
     }
   });

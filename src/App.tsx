@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import { isNativeApp } from "@/lib/assetUrl";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
@@ -24,6 +25,21 @@ const RoomTv = lazy(() => Promise.all([import("./pages/RoomTv.tsx"), loadCatalog
 // Sin QueryClientProvider, TooltipProvider ni el Toaster de Radix (plantilla de shadcn): nadie usa
 // useQuery ni Tooltip y todos los avisos van por sonner; mantenerlos sumaba ~30 KB al arranque.
 
+/** App nativa: los enlaces del juego (retos, salas, quizzes, diario, Conquista) abren su pantalla dentro de la app */
+function NativeAppLinks() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    let stop: (() => void) | undefined;
+    let alive = true;
+    void import("@/lib/appLinks").then(({ listenAppLinks }) => listenAppLinks((path) => navigate(path))).then((s) => {
+      if (alive) stop = s; else s();
+    });
+    return () => { alive = false; stop?.(); };
+  }, [navigate]);
+  return null;
+}
+
 const App = () => {
   // Red de seguridad: si una ruta sin pantalla de carga recibió la copia estática de index.html, retirarla
   useEffect(() => { document.getElementById('static-splash')?.remove(); }, []);
@@ -34,6 +50,7 @@ const App = () => {
       <Sonner />
       <ScreenReaderAnnouncer />
       <BrowserRouter>
+        <NativeAppLinks />
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Index />} />

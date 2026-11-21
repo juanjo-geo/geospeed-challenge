@@ -23,6 +23,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- App Links: estos enlaces del sitio abren la app (src/lib/appLinks.ts). Android los verifica con
+                 https://geospeed-challenge.vercel.app/.well-known/assetlinks.json (huellas de la llave de Play). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="geospeed-challenge.vercel.app" />
+                <data android:pathPrefix="/reto/" />
+                <data android:pathPrefix="/sala/" />
+                <data android:pathPrefix="/q/" />
+                <data android:pathPrefix="/d/" />
+                <data android:pathPrefix="/conquista" />
+                <data android:pathPrefix="/challenge/" />
+                <data android:pathPrefix="/daily" />
+                <data android:pathPrefix="/duel/" />
+            </intent-filter>
+
         </activity>
 
         <!-- AdMob: id de la app (público). Sin esta línea el SDK de anuncios cierra la app al iniciar. -->

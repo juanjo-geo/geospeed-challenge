@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.geospeed.challenge",
+      "sha256_cert_fingerprints": [
+        "C7:18:1F:11:59:D3:05:D9:9C:A2:1B:AD:03:6A:D5:F7:47:3D:23:50:18:E3:B3:09:92:97:55:CF:66:47:94:21",
+        "25:1B:7C:94:18:24:6F:06:5B:1C:FE:6A:3B:53:3A:6B:43:BA:DD:5F:FF:0B:F4:2E:E8:8A:73:4D:53:E3:77:37"
+      ]
+    }
+  }
+]
